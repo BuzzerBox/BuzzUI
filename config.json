@@ -1,0 +1,24 @@
+{
+  "gameName": "Buzzer Game",
+  "masterName": "Master",
+  "screenName": "Screen",
+  "server": {
+    "port": 8080,
+    "address": "localhost",
+    "webSocketProtocol": "ws"
+  },
+  "buzzers": [
+    {
+      "name": "Buzzer 1",
+      "key": "NUMPAD_0"
+    },
+    {
+      "name": "Buzzer 2",
+      "key": "NUMPAD_1"
+    },
+    {
+      "name": "Buzzer 3",
+      "key": "NUMPAD_2"
+    }
+  ]
+}
