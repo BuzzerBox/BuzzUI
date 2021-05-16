@@ -1,0 +1,5 @@
+export enum EGameStates {
+    WAITING_FOR_MASTER,
+    WAITING_FOR_ACTION,
+    WAITING_FOR_SETUP
+}
