@@ -1,0 +1,32 @@
+mat-card {
+  width: 95%;
+  margin: auto;
+  position: absolute;
+  bottom: 1em;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+mat-card-header {
+  font-size: xxx-large;
+}
+
+mat-card-content {
+  font-size: xx-large;
+  background-color: red;
+}
+
+mat-grid-list {
+  margin-top: 1em !important;
+}
+
+mat-grid-tile {
+  /*padding: 50px;*/
+}
+
+button {
+  height: 95%;
+  width: 90%;
+  box-sizing: content-box;
+  font-size: xx-large;
+}

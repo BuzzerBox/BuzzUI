@@ -1,6 +1,8 @@
 export enum EGameStatesMaster {
-  STARTING = 'starting',
-  MASTER_ACCEPTED = 'masterAccepted',
-  RECEIVED_PRESETUP_DATA = 'receivedPresetupData',
-  END = 'end'
+  STARTING,
+  MASTER_ACCEPTED,
+  RECEIVED_PRESETUP_DATA,
+  END,
+  READY_TO_START,
+  PLAYING
 }

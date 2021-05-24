@@ -2,6 +2,7 @@ import {ModuleWithProviders, NgModule} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {RouterModule, Routes} from '@angular/router';
 import {StartComponent} from './master/start/start.component';
+import {ChooseComponent} from './choose/choose.component';
 
 
 export const routes: Routes = [
@@ -10,7 +11,8 @@ export const routes: Routes = [
     loadChildren: () => import('./master/master.module').then(m => m.MasterModule)
   },
   // TODO: once available, let the base path point to the screen instead of the master
-  { path: '', redirectTo: 'master', pathMatch: 'full' }
+  { path: 'choose', component: ChooseComponent },
+  { path: '', redirectTo: 'choose', pathMatch: 'full' }
 ];
 
 

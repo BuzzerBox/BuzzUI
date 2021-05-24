@@ -1,0 +1,11 @@
+p {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+button {
+  height: 2em;
+  font-size: xxx-large;
+  margin: 5em;
+}

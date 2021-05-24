@@ -1,0 +1,15 @@
+<div class="play-container" fxLayout="row" fxLayoutAlign="start stretch">
+  <div fxFlex="15" class="teams-left-pane">
+    <ng-container *ngFor="let team of getTeams(); let even = even">
+      <app-team-card [team]="team" *ngIf="even" [isMaster]="isMaster"></app-team-card>
+    </ng-container>
+  </div>
+  <div fxFlex="70" class="questions-pane">
+    <app-question-pane [question]="getCurrentQuestion()"></app-question-pane>
+  </div>
+  <div fxFlex="15" class="teams-right-pane">
+    <ng-container *ngFor="let team of getTeams(); let odd = odd">
+      <app-team-card [team]="team" *ngIf="odd" [isMaster]="isMaster"></app-team-card>
+    </ng-container>
+  </div>
+</div>

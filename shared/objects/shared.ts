@@ -8,6 +8,13 @@ import {ITeam} from './interfaces/ITeam';
 import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {EKeyBinds} from './enums/EKeyBinds';
+import {IQuestion} from './interfaces/IQuestion';
+import {ISetupPacket} from './interfaces/ISetupPacket';
+import {IAnswer} from './interfaces/IAnswer';
+import {INewMasterAccepted} from './interfaces/INewMasterAccepted';
+import {IGameState} from './interfaces/IGameState';
+import {IStartGamePacket} from './interfaces/IStartGamePacket';
+import {ITeamSetPointsPacket} from './interfaces/ITeamSetPointsPacket';
 
 export {
     IGamePacket,
@@ -19,5 +26,12 @@ export {
     ITeam,
     IRegisterMasterPacket,
     IBuzzer,
-    EKeyBinds
+    EKeyBinds,
+    IQuestion,
+    ISetupPacket,
+    IAnswer,
+    INewMasterAccepted,
+    IGameState,
+    IStartGamePacket,
+    ITeamSetPointsPacket
 }

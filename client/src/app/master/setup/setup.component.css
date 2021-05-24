@@ -1,0 +1,11 @@
+.team-form-group mat-checkbox {
+  margin-left: 2em;
+}
+
+.question {
+  width: 10em;
+}
+
+.answers {
+  margin-left: 4em;
+}

@@ -1,4 +1,4 @@
-import {IGamePacket, EPacketTypes, ITeam} from '../shared';
+import {IGamePacket, EPacketTypes, ITeam, IQuestion} from '../shared';
 
 export interface ISetupPacket extends IGamePacket {
     packetType: EPacketTypes.SETUP_GAME;
@@ -6,4 +6,5 @@ export interface ISetupPacket extends IGamePacket {
      * The teams playing
      */
     teams: ITeam[];
+    questions: IQuestion[];
 }
