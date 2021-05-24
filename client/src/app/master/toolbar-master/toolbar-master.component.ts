@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import config from '../../../../../config.json';
 import {GameService} from '../../services/game.service';
+import {SafeUrl} from '@angular/platform-browser';
 
 @Component({
   selector: 'app-toolbar-master',
@@ -8,6 +9,7 @@ import {GameService} from '../../services/game.service';
   styleUrls: ['./toolbar-master.component.css']
 })
 export class ToolbarMasterComponent implements OnInit {
+  @Input() showSaveIcon = false;
 
   constructor(private game: GameService) { }
 
@@ -16,6 +18,14 @@ export class ToolbarMasterComponent implements OnInit {
 
   public getName(): string {
     return this.game.getGameName();
+  }
+
+  public exportGameState(): SafeUrl {
+    return this.game.exportGameStateAsJson();
+  }
+
+  public getDownloadFileName(): string {
+    return this.getName().toLowerCase().replace(' ', '-') + '-save-file.json';
   }
 
 }
