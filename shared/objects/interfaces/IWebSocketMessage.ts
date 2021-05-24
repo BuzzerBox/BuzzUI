@@ -1,3 +1,3 @@
 export interface IWebSocketMessage {
-    packetType: string;
+    packetType: string | number;
 }

@@ -8,6 +8,18 @@ import { ToolbarMasterComponent } from './toolbar-master/toolbar-master.componen
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button';
+import { ErrorPageComponent } from './error-page/error-page.component';
+import {ReactiveFormsModule} from '@angular/forms';
+import {MatStepperModule} from '@angular/material/stepper';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import {FlexModule} from '@angular/flex-layout';
+import { StartGameComponent } from './start-game/start-game.component';
+import { PlayComponent } from './play/play.component';
+import { PlayUiComponent } from '../play-ui/play-ui.component';
+import {MatCardModule} from '@angular/material/card';
+import {AppModule} from '../app.module';
 
 
 
@@ -16,14 +28,26 @@ import {MatButtonModule} from '@angular/material/button';
     StartComponent,
     SetupComponent,
     MasterAlreadyRegisteredComponent,
-    ToolbarMasterComponent
+    ToolbarMasterComponent,
+    ErrorPageComponent,
+    StartGameComponent,
+    PlayComponent,
+    PlayUiComponent
   ],
   imports: [
     CommonModule,
     MasterRoutingModule,
     MatToolbarModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    ReactiveFormsModule,
+    MatStepperModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCheckboxModule,
+    FlexModule,
+    MatCardModule,
+    AppModule
   ],
   exports: [
     StartComponent

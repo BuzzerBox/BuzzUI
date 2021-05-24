@@ -1,9 +1,27 @@
 import {WebSocketConnection} from "../objects/web-socket-connection";
 import {WebSocketService} from "./web-socket.service";
 import {Observable, Subscription} from "rxjs";
-import {EGameStates, EPacketTypes, IPresetupAvailableInfoPacket, IGamePacket, IResponsePacket, IBuzzer, EKeyBinds} from "../../shared/objects/shared";
+import {
+    EGameStates,
+    EPacketTypes,
+    IPresetupAvailableInfoPacket,
+    IGamePacket,
+    IResponsePacket,
+    IBuzzer,
+    EKeyBinds,
+    ISetupPacket,
+    ITeam,
+    IQuestion,
+    IRegisterMasterPacket,
+    INewMasterAccepted,
+    IGameState,
+    IStartGamePacket,
+    ITeamSetPointsPacket
+} from "../../shared/objects/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
+import {LoggerService} from "./logger.service";
+import {PacketHelper} from "../helpers/packet.helper";
 
 export class GameService {
     private static instance: GameService;
@@ -12,9 +30,12 @@ export class GameService {
     private newConnectionEstablished$: Observable<WebSocketConnection>;
     private newConnectionEstablishedSubscription: Subscription;
     private newMessageMasterSubscription: Subscription;
-    private currentState: EGameStates;
-    private previousState: EGameStates;
+    private currentStateInAutomaton: EGameStates;
+    private previousStateInAutomaton: EGameStates;
     private buzzerConfig: IBuzzer[];
+    private teams: ITeam[];
+    private questions: IQuestion[];
+    private currentGameState: IGameState;
 
     private constructor() {
         this.webSocketConnectionsScreens = new Map<string, WebSocketConnection>();
@@ -41,42 +62,33 @@ export class GameService {
         // console.dir(con);
 
         // wait until the first packet to determine whether it is a master or a screen
-        let  sub = con.onMessage().subscribe((packet: IGamePacket) => {
+        const sub = con.onMessage().subscribe((packet: IGamePacket) => {
+            // the "sub" will be unsubscribed in the onRegisterMasterPacket
             if (packet.packetType == EPacketTypes.REGISTER_MASTER) {
-                const getResponsePacket: (boolean) => IResponsePacket = b => {
-                    return {
-                        packetType: EPacketTypes.RESPONSE_PACKET,
-                        responseTo: EPacketTypes.REGISTER_MASTER,
-                        wasSuccessful: b,
-                    };
-                };
-
-                if (this.webSocketConnectionMaster == null && this.currentState == EGameStates.WAITING_FOR_MASTER) {
-                    this.webSocketConnectionMaster = con;
-                    this.webSocketConnectionMaster.send<IResponsePacket>(getResponsePacket(true));
-                    this.setNewState(EGameStates.WAITING_FOR_SETUP);
-                    this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
-                        packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-                        availableBuzzers: this.getBuzzerConfig()
-                    })
-                    this.webSocketConnectionMaster.addOnCloseCallback(this.onMasterConnectionDestroy.bind(this))
-                } else {
-                    con.send<IResponsePacket>(getResponsePacket(false));
-                    con.close();
-                }
+                this.onRegisterMasterPacket(con, sub, packet as IRegisterMasterPacket);
+            } else if (packet.packetType == EPacketTypes.SETUP_GAME) {
+                this.onSetupGamePackage(packet as ISetupPacket);
+            } else if (packet.packetType === EPacketTypes.START_GAME) {
+                this.onStartGamePacket(packet as IStartGamePacket);
+            } else if (packet.packetType === EPacketTypes.TEAM_SET_POINTS) {
+                this.onTeamSetPointsPacket(packet as ITeamSetPointsPacket);
             }
         })
     }
 
     private onMasterConnectionDestroy(): void {
-        console.log("SJKHJKADJNDSAHDHNS")
         this.webSocketConnectionMaster = null;
-        this.setNewState(EGameStates.WAITING_FOR_MASTER);
+        if (this.currentStateInAutomaton == EGameStates.WAITING_FOR_SETUP) {
+            this.setNewState(EGameStates.WAITING_FOR_MASTER);
+        } else {
+            this.setNewState(EGameStates.LOST_MASTER);
+        }
     }
 
     private setNewState(newState: EGameStates): void {
-        this.previousState = this.currentState;
-        this.currentState = newState;
+        LoggerService.log(`setting new state: ${EGameStates[newState]}`);
+        this.previousStateInAutomaton = this.currentStateInAutomaton;
+        this.currentStateInAutomaton = newState;
     }
 
     private getBuzzerConfig(): IBuzzer[] {
@@ -103,5 +115,83 @@ export class GameService {
             }
         }
         return this.buzzerConfig;
+    }
+
+    private onSetupGamePackage(packet: ISetupPacket): void {
+        if (this.currentStateInAutomaton != EGameStates.WAITING_FOR_SETUP) {
+            return;
+        }
+        let packetOk = true;
+        // check if at least two teams are defined
+        if (packet.teams.length < 2) {
+            packetOk = false;
+        }
+
+        const responsePacket: IResponsePacket = {
+            packetType: EPacketTypes.RESPONSE_PACKET,
+            responseTo: EPacketTypes.SETUP_GAME,
+            wasSuccessful: packetOk
+        }
+
+        if (packetOk) {
+            this.teams = packet.teams;
+            this.questions = packet.questions;
+            this.setNewState(EGameStates.WAITING_FOR_START);
+        }
+        this.webSocketConnectionMaster.send<IResponsePacket>(responsePacket);
+    }
+
+    private onRegisterMasterPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterMasterPacket): void {
+        if (this.webSocketConnectionMaster == null) {
+            this.webSocketConnectionMaster = con;
+            if (this.currentStateInAutomaton == EGameStates.WAITING_FOR_MASTER) {
+                this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
+                this.setNewState(EGameStates.WAITING_FOR_SETUP);
+                this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
+                    packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
+                    availableBuzzers: this.getBuzzerConfig()
+                })
+            } else if (this.currentStateInAutomaton == EGameStates.LOST_MASTER) {
+                if (this.previousStateInAutomaton === EGameStates.WAITING_FOR_START || this.previousStateInAutomaton === EGameStates.PLAYING) {
+                    this.setNewState(EGameStates.WAITING_FOR_START);
+                    this.webSocketConnectionMaster.send<INewMasterAccepted>({
+                        packetType: EPacketTypes.NEW_MASTER_ACCEPTED,
+                        serverState: EGameStates.WAITING_FOR_START,
+                        teams: this.teams,
+                        questions: this.questions
+                    })
+                }
+            }
+
+            this.webSocketConnectionMaster.addOnCloseCallback(this.onMasterConnectionDestroy.bind(this))
+            this.webSocketConnectionMaster.addOnCloseCallback(() => sub.unsubscribe());
+        } else {
+            con.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, false));
+            con.close();
+            sub.unsubscribe();
+        }
+    }
+
+    private onStartGamePacket(packet: IStartGamePacket): void {
+        let isLegal = this.currentStateInAutomaton === EGameStates.WAITING_FOR_START;
+        if (isLegal) {
+            this.setNewState(EGameStates.PLAYING);
+        }
+        this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
+    }
+
+    private onTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {
+        const team: ITeam = this.findTeam(packet.teamId);
+        if (team != null) {
+            team.points = packet.points;
+        }
+    }
+
+    private findTeam(teamId: string): ITeam {
+        for (const team of this.teams) {
+            if (teamId === team.teamId) {
+                return team;
+            }
+        }
     }
 }

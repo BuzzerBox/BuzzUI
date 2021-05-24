@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import config from '../../../../../config.json';
+import {GameService} from '../../services/game.service';
 
 @Component({
   selector: 'app-toolbar-master',
@@ -8,13 +9,13 @@ import config from '../../../../../config.json';
 })
 export class ToolbarMasterComponent implements OnInit {
 
-  constructor() { }
+  constructor(private game: GameService) { }
 
   ngOnInit(): void {
   }
 
   public getName(): string {
-    return config.gameName + ' ' + config.masterName;
+    return this.game.getGameName();
   }
 
 }
