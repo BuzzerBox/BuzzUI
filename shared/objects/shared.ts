@@ -15,6 +15,10 @@ import {INewMasterAccepted} from './interfaces/INewMasterAccepted';
 import {IGameState} from './interfaces/IGameState';
 import {IStartGamePacket} from './interfaces/IStartGamePacket';
 import {ITeamSetPointsPacket} from './interfaces/ITeamSetPointsPacket';
+import {EAnswerStates} from './enums/EAnswerStates';
+import {IAnswerSetStatePacket} from './interfaces/IAnswerSetStatePacket';
+import {ISetQuestionPacket} from './interfaces/ISetQuestionPacket';
+import {IEndGamePacket} from './interfaces/IEndGamePacket';
 
 export {
     IGamePacket,
@@ -33,5 +37,9 @@ export {
     INewMasterAccepted,
     IGameState,
     IStartGamePacket,
-    ITeamSetPointsPacket
+    ITeamSetPointsPacket,
+    EAnswerStates,
+    IAnswerSetStatePacket,
+    ISetQuestionPacket,
+    IEndGamePacket
 }

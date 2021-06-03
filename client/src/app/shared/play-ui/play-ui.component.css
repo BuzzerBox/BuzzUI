@@ -1,0 +1,65 @@
+.play-container {
+  height: calc(100% - 64px);
+}
+
+.teams-left-pane {
+}
+
+.teams-right-pane {
+}
+
+.questions-pane {
+  position: relative;
+}
+
+mat-card.question {
+  width: 95%;
+  /*margin: 0 auto;*/
+  position: absolute;
+  /*bottom: 1em;*/
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, 8%);
+}
+
+.parent {
+  position: relative;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.score {
+  position: relative !important;
+}
+
+mat-card.scores {
+  max-width: 95%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.score-entry {
+  margin: .6em 0;
+  display: block;
+}
+
+.placed-1 {
+  font-size: xxx-large;
+}
+
+.placed-2 {
+  font-size: xx-large;
+}
+
+.placed-3 {
+  font-size: x-large;
+}
+.placed {
+  font-size: large;
+}
+
+

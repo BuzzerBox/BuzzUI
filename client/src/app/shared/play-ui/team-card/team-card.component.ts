@@ -1,6 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {ITeam} from '../../../../../shared/objects/shared';
-import {GameService} from '../../services/game.service';
+import {ITeam} from '../../../../../../shared/objects/shared';
+import {GameService} from '../../../services/game.service';
 
 @Component({
   selector: 'app-team-card',

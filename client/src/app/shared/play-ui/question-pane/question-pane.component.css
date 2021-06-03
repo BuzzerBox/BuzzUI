@@ -1,19 +1,9 @@
-mat-card {
-  width: 95%;
-  margin: auto;
-  position: absolute;
-  bottom: 1em;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 mat-card-header {
   font-size: xxx-large;
 }
 
 mat-card-content {
   font-size: xx-large;
-  background-color: red;
 }
 
 mat-grid-list {
@@ -29,4 +19,17 @@ button {
   width: 90%;
   box-sizing: content-box;
   font-size: xx-large;
+  transition: background-color 500ms ease-in;
+}
+
+.logged-in {
+  background-color: aqua;
+}
+
+.wrong {
+  background-color: orangered;
+}
+
+.correct {
+  background-color: forestgreen;
 }
