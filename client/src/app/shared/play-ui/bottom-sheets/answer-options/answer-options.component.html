@@ -1,0 +1,10 @@
+<mat-nav-list>
+  <a mat-list-item>
+    <span mat-line *ngIf="isAlreadyLoggedIn()" (click)="logOutAnswer()">Anwort ausloggen</span>
+    <span mat-line *ngIf="!isAlreadyLoggedIn()" (click)="logInAnswer()">Anwort einloggen</span>
+  </a>
+
+  <a mat-list-item>
+    <span mat-line (click)="activateAnswer()">Antwort aktivieren</span>
+  </a>
+</mat-nav-list>

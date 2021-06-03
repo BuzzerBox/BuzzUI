@@ -17,9 +17,10 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {FlexModule} from '@angular/flex-layout';
 import { StartGameComponent } from './start-game/start-game.component';
 import { PlayComponent } from './play/play.component';
-import { PlayUiComponent } from '../play-ui/play-ui.component';
 import {MatCardModule} from '@angular/material/card';
-import {AppModule} from '../app.module';
+import {SharedModule} from '../shared/shared.module';
+import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
 
 
 
@@ -31,8 +32,7 @@ import {AppModule} from '../app.module';
     ToolbarMasterComponent,
     ErrorPageComponent,
     StartGameComponent,
-    PlayComponent,
-    PlayUiComponent
+    PlayComponent
   ],
   imports: [
     CommonModule,
@@ -47,7 +47,8 @@ import {AppModule} from '../app.module';
     MatCheckboxModule,
     FlexModule,
     MatCardModule,
-    AppModule
+    SharedModule,
+    MatBottomSheetModule
   ],
   exports: [
     StartComponent

@@ -1,0 +1,51 @@
+import {CUSTOM_ELEMENTS_SCHEMA, NgModule} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {PlayUiComponent} from './play-ui/play-ui.component';
+import {TeamCardComponent} from './play-ui/team-card/team-card.component';
+import {QuestionPaneComponent} from './play-ui/question-pane/question-pane.component';
+import {AnswerOptionsComponent} from './play-ui/bottom-sheets/answer-options/answer-options.component';
+import {DialogConfirmEndingGameComponent} from './play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
+import {MatGridListModule} from '@angular/material/grid-list';
+import {MatCardModule} from '@angular/material/card';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialogModule} from '@angular/material/dialog';
+import {FlexModule} from '@angular/flex-layout';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
+import {MatListModule} from '@angular/material/list';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+
+
+
+@NgModule({
+  declarations: [
+    PlayUiComponent,
+    TeamCardComponent,
+    QuestionPaneComponent,
+    AnswerOptionsComponent,
+    DialogConfirmEndingGameComponent
+  ],
+  imports: [
+    CommonModule,
+    FlexModule,
+    MatButtonModule,
+    MatCardModule,
+    MatGridListModule,
+    MatDialogModule,
+    MatBottomSheetModule,
+    MatListModule,
+    MatSnackBarModule
+  ],
+  exports: [
+    PlayUiComponent,
+    TeamCardComponent,
+    QuestionPaneComponent,
+    AnswerOptionsComponent,
+    DialogConfirmEndingGameComponent
+  ],
+  entryComponents: [
+    DialogConfirmEndingGameComponent
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+})
+export class SharedModule { }

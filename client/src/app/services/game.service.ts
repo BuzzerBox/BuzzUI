@@ -12,7 +12,12 @@ import {
   IStartGamePacket,
   ITeam,
   IGameState,
-  ITeamSetPointsPacket
+  ITeamSetPointsPacket,
+  IAnswer,
+  IAnswerSetStatePacket,
+  EAnswerStates,
+  ISetQuestionPacket,
+  IEndGamePacket
 } from '../../../../shared/objects/shared';
 import {Subscription} from 'rxjs';
 import {Router} from '@angular/router';
@@ -21,12 +26,28 @@ import {Logger} from '../helper/logger';
 import {pathsMaster} from '../master/paths-master';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import config from '../../../../config.json';
+import {TeamHelper} from '../helper/team.helper';
+import {ArraysHelper} from '../helper/arrays.helper';
+import {PacketsHelper} from '../helper/packets.helper';
 
 export interface IGameStateAsJson {
+  /**
+   * Can be used to determine what data is actually stored in this and how to extract it
+   */
+  version?: number;
   teams: ITeam[];
   question: IQuestion[];
   gameState: IGameState;
 }
+
+/**
+ * The key is the place the team/s finished at
+ */
+/*export interface ITeamsScore {
+  [key: number]: ITeam[];
+}*/
+
+export type ITeamsScore = ITeam[][];
 
 @Injectable({
   providedIn: 'root'
@@ -253,5 +274,73 @@ export class GameService implements OnDestroy {
 
   public getGameName(): string {
     return config.gameName + ' ' + config.masterName;
+  }
+
+  /**
+   * This one is just to mark an answer as given, without revealing if it is true
+   */
+  public logInAnswer(answer: IAnswer): void {
+    this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_IN, answer));
+    // TODO: test on server
+  }
+
+  /**
+   * This one activates a given answer, revealing if it was true
+   */
+  public activateAnswer(answer: IAnswer): void {
+    this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer));
+    // TODO: test on server
+  }
+
+  public logOutAnswer(answer: IAnswer): void {
+    this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_OUT, answer));
+    // TODO: test on server
+  }
+
+  public getPreviousQuestion(): IQuestion {
+    if (this.hasPreviousQuestion()) {
+      this.currentGameState.currentQuestionNumber--;
+    }
+    this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket('previous'));
+    // TODO: test on server
+    return this.getCurrentQuestion();
+  }
+
+  public getNextQuestion(): IQuestion {
+    if (this.hasNextQuestion()) {
+      this.currentGameState.currentQuestionNumber++;
+    }
+    this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket('next'));
+    // TODO: test on server
+    return this.getCurrentQuestion();
+  }
+
+  public hasPreviousQuestion(): boolean {
+    return this.getCurrentQuestionNumber() > 0;
+  }
+
+  public hasNextQuestion(): boolean {
+    return this.getCurrentQuestionNumber() < this.questions.length - 1;
+  }
+
+  public endGame(): void {
+    this.webSocketService.send<IEndGamePacket>(PacketsHelper.makeEndGamePacket());
+    // TODO: test on server
+  }
+
+  /**
+   * This will make a copy and does not alter the original teams' array
+   */
+  public getTeamsOrderedByScore(): ITeam[] {
+    const clonedTeamsArray: ITeam[] = TeamHelper.cloneTeams(this.teams);
+    return clonedTeamsArray.sort((a, b) => {
+      let ret = 0;
+      if (a.points > b.points) {
+        ret = -1;
+      } else if (a.points < b.points) {
+        ret = 1;
+      }
+      return ret;
+    });
   }
 }

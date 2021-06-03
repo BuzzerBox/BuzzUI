@@ -12,5 +12,8 @@ export enum EPacketTypes {
      */
     NEW_MASTER_ACCEPTED,
     START_GAME,
-    TEAM_SET_POINTS
+    TEAM_SET_POINTS,
+    ANSWER_SET_STATE,
+    SET_QUESTION,
+    END_GAME
 }
