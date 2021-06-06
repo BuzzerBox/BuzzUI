@@ -1,34 +1,38 @@
-import {Injectable, OnDestroy, Sanitizer} from '@angular/core';
+import {Injectable, OnDestroy} from '@angular/core';
 import {WebSocketService} from './web-socket.service';
 import {
+  EAnswerStates,
   EPacketTypes,
+  IAnswer,
+  IAnswerSetStatePacket,
+  IDataForScreenPacket,
+  IEndGamePacket,
   IGamePacket,
+  IGameState,
   INewMasterAccepted,
   IPresetupAvailableInfoPacket,
   IQuestion,
   IRegisterMasterPacket,
+  IRegisterScreenPacket,
+  IResetServerPacket,
   IResponsePacket,
+  ISetQuestionPacket,
   ISetupPacket,
   IStartGamePacket,
   ITeam,
-  IGameState,
-  ITeamSetPointsPacket,
-  IAnswer,
-  IAnswerSetStatePacket,
-  EAnswerStates,
-  ISetQuestionPacket,
-  IEndGamePacket
+  ITeamSetPointsPacket
 } from '../../../../shared/objects/shared';
-import {Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
-import {pathsMaster} from '../master/paths-master';
+import {baseUrlMaster, pathsMaster} from '../master/paths-master';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import config from '../../../../config.json';
 import {TeamHelper} from '../helper/team.helper';
-import {ArraysHelper} from '../helper/arrays.helper';
 import {PacketsHelper} from '../helper/packets.helper';
+import * as Uuid from 'uuid';
+import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
 
 export interface IGameStateAsJson {
   /**
@@ -40,14 +44,10 @@ export interface IGameStateAsJson {
   gameState: IGameState;
 }
 
-/**
- * The key is the place the team/s finished at
- */
-/*export interface ITeamsScore {
-  [key: number]: ITeam[];
-}*/
-
+// TODO remove?
 export type ITeamsScore = ITeam[][];
+
+export type ZeroVoidCallback = () => void;
 
 @Injectable({
   providedIn: 'root'
@@ -62,13 +62,49 @@ export class GameService implements OnDestroy {
   private currentGameState: IGameState;
   private presetupData: IPresetupAvailableInfoPacket;
   private joinedRunningGame: boolean;
+  private initedAsMaster = false;
+  private initedAsScreen = false;
+  private screenId: string = null;
+  private isScreenDataAvailable = false;
+  private answerSetStatePacketSubject: Subject<IAnswerSetStatePacket>;
+  private cbUpdateCurrentQuestion: ZeroVoidCallback;
+  private cbEndGame: ZeroVoidCallback;
+
 
   constructor(private webSocketService: WebSocketService, private router: Router, private sanitizer: DomSanitizer) {
-    this.joinedRunningGame = false;
+    /*this.joinedRunningGame = false;
     this.teams = [];
     this.setNewGameState(EGameStatesMaster.STARTING);
     this.webSocketListenSubscription = webSocketService.listen(this.onMessage.bind(this));
-    this.registerMaster();
+    this.registerMaster();*/
+    this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
+    this.teams = [];
+  }
+
+  public useAsMaster(): void {
+    if (!this.initedAsMaster && !this.initedAsScreen) {
+      this.joinedRunningGame = false;
+      this.setNewGameState(EGameStatesMaster.STARTING);
+      // this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
+      this.registerMaster();
+      this.initedAsMaster = true;
+    }
+  }
+
+  public useAsScreen(): void {
+    if (!this.initedAsScreen && !this.initedAsMaster) {
+      this.screenId = Uuid.v4();
+      this.registerScreen();
+      this.initedAsScreen = true;
+      this.answerSetStatePacketSubject = new Subject<IAnswerSetStatePacket>();
+    }
+  }
+
+  /**
+   * Checks whether the data for a screen is completely available
+   */
+  public dataAvailable(): boolean {
+    return this.isScreenDataAvailable;
   }
 
   private registerMaster(): void {
@@ -90,6 +126,21 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.NEW_MASTER_ACCEPTED:
         this.handleNewMasterAcceptedPacket(message as INewMasterAccepted);
+        break;
+      case EPacketTypes.DATA_FOR_SCREEN:
+        this.handleDataForScreenPacket(message as IDataForScreenPacket);
+        break;
+      case EPacketTypes.TEAM_SET_POINTS:
+        this.handleTeamSetPointsPacket(message as ITeamSetPointsPacket);
+        break;
+      case EPacketTypes.ANSWER_SET_STATE:
+        this.handleAnswerSetStatePacket(message as IAnswerSetStatePacket);
+        break;
+      case EPacketTypes.SET_QUESTION:
+        this.handleSetQuestionPacket(message as ISetQuestionPacket);
+        break;
+      case EPacketTypes.END_GAME:
+        this.handleEndGamePacket(message as IEndGamePacket);
         break;
       default:
         break;
@@ -148,13 +199,14 @@ export class GameService implements OnDestroy {
     return this.presetupData;
   }
 
-  public setupGame(teams: ITeam[], questions: IQuestion[], sendPacket: boolean = true): void {
-    this.setGameData(teams, questions);
+  public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true): void {
+    this.setGameData(teams, questions, currentGameState);
     if (sendPacket) {
       this.webSocketService.send<ISetupPacket>({
         packetType: EPacketTypes.SETUP_GAME,
         teams,
-        questions
+        questions,
+        currentGameState
       });
     }
   }
@@ -173,12 +225,10 @@ export class GameService implements OnDestroy {
 
   private handleNewMasterAcceptedPacket(packet: INewMasterAccepted): void {
     if (this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
-      if (packet.currentGameState == null) {
-        this.joinedRunningGame = true;
-        this.setGameData(packet.teams, packet.questions, packet.currentGameState);
-        this.setNewGameState(EGameStatesMaster.READY_TO_START);
-        this.redirect(pathsMaster.readyToStart);
-      }
+      this.joinedRunningGame = true;
+      this.setGameData(packet.teams, packet.questions, packet.currentGameState);
+      this.setNewGameState(EGameStatesMaster.READY_TO_START);
+      this.redirect(pathsMaster.readyToStart);
     }
   }
 
@@ -207,7 +257,7 @@ export class GameService implements OnDestroy {
     return this.questions;
   }
 
-  private setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState): void {
+  public setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState): void {
     this.teams = teams;
     for (const team of this.teams) {
       if (team.points == null) {
@@ -219,6 +269,8 @@ export class GameService implements OnDestroy {
       this.currentGameState = {
         currentQuestionNumber: 0,
       };
+    } else {
+      this.currentGameState = gameState;
     }
   }
 
@@ -269,7 +321,7 @@ export class GameService implements OnDestroy {
 
   public importGameStateFromJson(gameState: IGameStateAsJson): void {
     this.currentGameState = gameState.gameState;
-    this.setupGame(gameState.teams, gameState.question);
+    this.setupGame(gameState.teams, gameState.question, gameState.gameState);
   }
 
   public getGameName(): string {
@@ -281,7 +333,6 @@ export class GameService implements OnDestroy {
    */
   public logInAnswer(answer: IAnswer): void {
     this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_IN, answer));
-    // TODO: test on server
   }
 
   /**
@@ -289,29 +340,25 @@ export class GameService implements OnDestroy {
    */
   public activateAnswer(answer: IAnswer): void {
     this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer));
-    // TODO: test on server
   }
 
   public logOutAnswer(answer: IAnswer): void {
     this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_OUT, answer));
-    // TODO: test on server
   }
 
   public getPreviousQuestion(): IQuestion {
     if (this.hasPreviousQuestion()) {
       this.currentGameState.currentQuestionNumber--;
+      this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
-    this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket('previous'));
-    // TODO: test on server
     return this.getCurrentQuestion();
   }
 
   public getNextQuestion(): IQuestion {
     if (this.hasNextQuestion()) {
       this.currentGameState.currentQuestionNumber++;
+      this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
-    this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket('next'));
-    // TODO: test on server
     return this.getCurrentQuestion();
   }
 
@@ -324,8 +371,8 @@ export class GameService implements OnDestroy {
   }
 
   public endGame(): void {
+    this.setNewGameState(EGameStatesMaster.END);
     this.webSocketService.send<IEndGamePacket>(PacketsHelper.makeEndGamePacket());
-    // TODO: test on server
   }
 
   /**
@@ -343,4 +390,82 @@ export class GameService implements OnDestroy {
       return ret;
     });
   }
+
+  private registerScreen(): void {
+    this.webSocketService.send<IRegisterScreenPacket>({
+      packetType: EPacketTypes.REGISTER_SCREEN,
+      screenId: this.screenId
+    });
+  }
+
+  private handleDataForScreenPacket(packet: IDataForScreenPacket): void {
+    if (this.isUsedAsScreen()) {
+      this.setGameData(packet.teams, packet.questions, packet.gameState);
+      // this.currentQuestionSubject = new BehaviorSubject<IQuestion>(this.getCurrentQuestion());
+      this.isScreenDataAvailable = true;
+      this.redirect(baseUrlScreen + pathsScreen.main);
+    }
+  }
+
+  public resetServer(): void {
+    this.webSocketService.send<IResetServerPacket>({
+      packetType: EPacketTypes.RESET_SERVER
+    });
+    window.location.reload();
+  }
+
+  private isUsedAsScreen(): boolean {
+    return this.initedAsScreen && !this.initedAsMaster;
+  }
+
+  private handleTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {
+    if (this.isUsedAsScreen()) {
+      const team: ITeam = this.findTeam(packet.teamId);
+      if (team != null) {
+        team.points = packet.points;
+      }
+    }
+  }
+
+  private findTeam(teamId: string): ITeam {
+    for (const team of this.teams) {
+      if (teamId === team.teamId) {
+        return team;
+      }
+    }
+  }
+
+  private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
+    if (this.isUsedAsScreen()) {
+      this.answerSetStatePacketSubject.next(packet);
+    }
+  }
+
+  private handleSetQuestionPacket(packet: ISetQuestionPacket): void {
+    if (this.isUsedAsScreen()) {
+      this.currentGameState.currentQuestionNumber = packet.set;
+      if (this.cbUpdateCurrentQuestion != null) {
+        this.cbUpdateCurrentQuestion();
+      }
+      // this.currentQuestionSubject.next(this.getCurrentQuestion());
+    }
+  }
+
+  public observeAnswerSetStatePacket(): Observable<IAnswerSetStatePacket> {
+    return this.answerSetStatePacketSubject.asObservable();
+  }
+
+ public setCallbackUpdateCurrentQuestion(cb: ZeroVoidCallback): void {
+    this.cbUpdateCurrentQuestion = cb;
+ }
+
+ private handleEndGamePacket(packet: IEndGamePacket): void {
+    if (this.isUsedAsScreen() && this.cbEndGame != null) {
+      this.cbEndGame();
+    }
+ }
+
+ public setCallbackEndGame(cb: ZeroVoidCallback): void {
+    this.cbEndGame = cb;
+ }
 }

@@ -1,0 +1,26 @@
+import {Component, Input, OnInit} from '@angular/core';
+import {GameService} from '../../../services/game.service';
+import {ITeam} from '../../../../../../shared/objects/shared';
+
+@Component({
+  selector: 'app-score-board',
+  templateUrl: './score-board.component.html',
+  styleUrls: ['./score-board.component.css']
+})
+export class ScoreBoardComponent implements OnInit {
+  @Input() isMaster = false;
+
+  constructor(private game: GameService) { }
+
+  ngOnInit(): void {
+  }
+
+  public getTeamsOrderedByScore(): ITeam[] {
+    return this.game.getTeamsOrderedByScore();
+  }
+
+  public resetServer(): void {
+    this.game.resetServer();
+  }
+
+}

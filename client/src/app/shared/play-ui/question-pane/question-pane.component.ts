@@ -1,13 +1,13 @@
-import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {IAnswer, IQuestion} from '../../../../../../shared/objects/shared';
+import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates} from '../../../../../../shared/objects/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
   AnswerOptionsComponent,
   EDecisionBottomSheetAnswerOptions,
   IBottomSheetsAnswerOptionsData
 } from '../bottom-sheets/answer-options/answer-options.component';
-import {Subscription} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {ArraysHelper} from '../../../helper/arrays.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
 
@@ -16,7 +16,7 @@ import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/s
   templateUrl: './question-pane.component.html',
   styleUrls: ['./question-pane.component.css']
 })
-export class QuestionPaneComponent implements OnInit, OnChanges {
+export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isMaster = false;
   @Input() question: IQuestion;
 
@@ -28,12 +28,15 @@ export class QuestionPaneComponent implements OnInit, OnChanges {
   private activatedAnswers: IAnswer[];
   private correctAnswersThatAreLeft: number;
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
+  private answerSetStatePacketSubscription: Subscription;
 
   constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
     // Not needed here since ngOnChange is fired even upon the first instantiation
-    // this.reset();
+    if (!this.isMaster) {
+      this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
+    }
   }
 
   public reset(): void {
@@ -100,19 +103,23 @@ export class QuestionPaneComponent implements OnInit, OnChanges {
     });
   }
 
-  public logInAnswer(answer: IAnswer, button: HTMLButtonElement): void {
+  public logInAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
     button.classList.add(this.STYLE_CLASS_ANSWER_LOGGED_IN);
     this.loggedInAnswers.push(answer);
-    this.game.logInAnswer(answer);
+    if (setInService) {
+      this.game.logInAnswer(answer);
+    }
   }
 
-  public logOutAnswer(answer: IAnswer, button: HTMLButtonElement): void {
+  public logOutAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
     button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
-    this.game.logOutAnswer(answer);
+    if (setInService) {
+      this.game.logOutAnswer(answer);
+    }
   }
 
-  public activateAnswer(answer: IAnswer, button: HTMLButtonElement): void {
+  public activateAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
     button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
     let style: string;
@@ -131,11 +138,39 @@ export class QuestionPaneComponent implements OnInit, OnChanges {
     }
     button.classList.add(style);
     this.activatedAnswers.push(answer);
-    this.game.activateAnswer(answer);
+    if (setInService) {
+      this.game.activateAnswer(answer);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     this.reset();
+  }
+
+  private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
+    const answer = packet.answer;
+    const button: HTMLButtonElement = document.getElementById('button' + this.getAnswerIndex(answer)) as HTMLButtonElement;
+    if (packet.state === EAnswerStates.LOG_IN) {
+      this.logInAnswer(answer, button, false);
+    } else if (packet.state === EAnswerStates.LOG_OUT) {
+      this.logOutAnswer(answer, button, false);
+    } else if (packet.state === EAnswerStates.ACTIVATE) {
+      this.activateAnswer(answer, button, false);
+    }
+  }
+
+  private getAnswerIndex(answer: IAnswer): number {
+    for (let i = 0; i < this.question.answers.length; i++) {
+      if (answer.isCorrect === this.question.answers[i].isCorrect && answer.text === this.question.answers[i].text) {
+        return i;
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.answerSetStatePacketSubscription != null) {
+      this.answerSetStatePacketSubscription.unsubscribe();
+    }
   }
 
 }

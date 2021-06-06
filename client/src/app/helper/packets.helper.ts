@@ -14,7 +14,7 @@ export class PacketsHelper {
     };
   }
 
-  public static makeSetQuestionPacket(set: 'next' | 'previous' | number): ISetQuestionPacket {
+  public static makeSetQuestionPacket(set: number): ISetQuestionPacket {
     return {
       packetType: EPacketTypes.SET_QUESTION,
       set

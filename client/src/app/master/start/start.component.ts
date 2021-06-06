@@ -12,6 +12,7 @@ export class StartComponent implements OnInit {
 
   constructor(private gs: GameService, private titleService: Title) {
     titleService.setTitle(config.gameName + ' ' + config.masterName);
+    gs.useAsMaster();
   }
 
   ngOnInit(): void {
