@@ -16,7 +16,14 @@ import {
     INewMasterAccepted,
     IGameState,
     IStartGamePacket,
-    ITeamSetPointsPacket
+    ITeamSetPointsPacket,
+    IAnswerSetStatePacket,
+    ISetQuestionPacket,
+    IAnswer,
+    IEndGamePacket,
+    IRegisterScreenPacket,
+    IDataForScreenPacket,
+    IResetServerPacket
 } from "../../shared/objects/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
@@ -36,6 +43,7 @@ export class GameService {
     private teams: ITeam[];
     private questions: IQuestion[];
     private currentGameState: IGameState;
+    private screensWaitingForData: string[] = [];
 
     private constructor() {
         this.webSocketConnectionsScreens = new Map<string, WebSocketConnection>();
@@ -64,14 +72,24 @@ export class GameService {
         // wait until the first packet to determine whether it is a master or a screen
         const sub = con.onMessage().subscribe((packet: IGamePacket) => {
             // the "sub" will be unsubscribed in the onRegisterMasterPacket
-            if (packet.packetType == EPacketTypes.REGISTER_MASTER) {
+            if (packet.packetType === EPacketTypes.REGISTER_MASTER) {
                 this.onRegisterMasterPacket(con, sub, packet as IRegisterMasterPacket);
-            } else if (packet.packetType == EPacketTypes.SETUP_GAME) {
+            } else if (packet.packetType === EPacketTypes.SETUP_GAME) {
                 this.onSetupGamePackage(packet as ISetupPacket);
             } else if (packet.packetType === EPacketTypes.START_GAME) {
                 this.onStartGamePacket(packet as IStartGamePacket);
             } else if (packet.packetType === EPacketTypes.TEAM_SET_POINTS) {
                 this.onTeamSetPointsPacket(packet as ITeamSetPointsPacket);
+            } else if (packet.packetType === EPacketTypes.ANSWER_SET_STATE) {
+                this.onAnswerSetStatePacket(packet as IAnswerSetStatePacket);
+            } else if (packet.packetType === EPacketTypes.SET_QUESTION) {
+                this.onSetQuestionPacket(packet as ISetQuestionPacket);
+            } else if (packet.packetType === EPacketTypes.END_GAME) {
+                this.onEndGamePacket(packet as IEndGamePacket);
+            } else if (packet.packetType === EPacketTypes.REGISTER_SCREEN) {
+                this.onRegisterScreenPacket(con, sub, packet as IRegisterScreenPacket);
+            } else if (packet.packetType === EPacketTypes.RESET_SERVER) {
+                this.onResetServerPacket(packet as IResetServerPacket);
             }
         })
     }
@@ -80,6 +98,10 @@ export class GameService {
         this.webSocketConnectionMaster = null;
         if (this.currentStateInAutomaton == EGameStates.WAITING_FOR_SETUP) {
             this.setNewState(EGameStates.WAITING_FOR_MASTER);
+        } else if (this.currentStateInAutomaton === EGameStates.END) {
+            this.resetServerData();
+            this.setNewState(EGameStates.WAITING_FOR_MASTER);
+            this.previousStateInAutomaton = null;
         } else {
             this.setNewState(EGameStates.LOST_MASTER);
         }
@@ -136,14 +158,20 @@ export class GameService {
         if (packetOk) {
             this.teams = packet.teams;
             this.questions = packet.questions;
+            if (packet.currentGameState != null) {
+                this.currentGameState = packet.currentGameState;
+            }
             this.setNewState(EGameStates.WAITING_FOR_START);
         }
         this.webSocketConnectionMaster.send<IResponsePacket>(responsePacket);
+
+        this.sendToAllScreens<IDataForScreenPacket>(this.makeInitDataForScreen())
     }
 
     private onRegisterMasterPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterMasterPacket): void {
         if (this.webSocketConnectionMaster == null) {
             this.webSocketConnectionMaster = con;
+            // TODO: maybe also allow EGameStates.END as state for this one?
             if (this.currentStateInAutomaton == EGameStates.WAITING_FOR_MASTER) {
                 this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
                 this.setNewState(EGameStates.WAITING_FOR_SETUP);
@@ -158,7 +186,8 @@ export class GameService {
                         packetType: EPacketTypes.NEW_MASTER_ACCEPTED,
                         serverState: EGameStates.WAITING_FOR_START,
                         teams: this.teams,
-                        questions: this.questions
+                        questions: this.questions,
+                        currentGameState: this.currentGameState
                     })
                 }
             }
@@ -178,6 +207,7 @@ export class GameService {
             this.setNewState(EGameStates.PLAYING);
         }
         this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
+        // TODO: send to screen
     }
 
     private onTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {
@@ -185,8 +215,10 @@ export class GameService {
         if (team != null) {
             team.points = packet.points;
         }
+        this.sendToAllScreens<ITeamSetPointsPacket>(packet);
     }
 
+    // TODO move to some shared resource
     private findTeam(teamId: string): ITeam {
         for (const team of this.teams) {
             if (teamId === team.teamId) {
@@ -194,4 +226,98 @@ export class GameService {
             }
         }
     }
+
+    private onAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
+        this.sendToAllScreens(packet);
+    }
+
+    private onSetQuestionPacket(packet: ISetQuestionPacket): void {
+        let value: number = packet.set;
+        if (value >= 0 && value <= this.questions.length - 1) {
+            this.currentGameState.currentQuestionNumber = value;
+        }
+        this.sendToAllScreens(packet);
+    }
+
+    // TODO move it to some shared class/helper since it is used in the frontend as well
+    private hasPreviousQuestion(): boolean {
+        return this.getCurrentQuestionNumber() > 0;
+    }
+
+    // TODO move it to some shared class/helper since it is used in the frontend as well
+    private hasNextQuestion(): boolean {
+        return this.getCurrentQuestionNumber() < this.questions.length - 1;
+    }
+
+    // TODO move it to some shared class/helper since it is used in the frontend as well
+    private getCurrentQuestionNumber(): number {
+        return this.currentGameState.currentQuestionNumber;
+    }
+
+    private getCurrentQuestion(): IQuestion {
+        return this.questions[this.getCurrentQuestionNumber()];
+    }
+
+    private getIdOfAnswer(answer: IAnswer): number {
+        let answers = this.getCurrentQuestion().answers;
+        for (let i = 0; i < answers.length; i++) {
+            if (answers[i] === answer) {
+                return i;
+            }
+        }
+        // if the answer was not found in the current question, return some number less than zero
+        return -1;
+    }
+
+    private onEndGamePacket(packet: IEndGamePacket): void {
+        this.setNewState(EGameStates.END);
+        this.sendToAllScreens(packet);
+    }
+
+    private onRegisterScreenPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterScreenPacket): void {
+        this.webSocketConnectionsScreens.set(packet.screenId, con);
+        if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_START || this.currentStateInAutomaton === EGameStates.LOST_MASTER || this.currentStateInAutomaton === EGameStates.PLAYING) {
+            con.send<IDataForScreenPacket>(this.makeInitDataForScreen());
+        }
+        con.addOnCloseCallback(() => {
+            con.close();
+            sub.unsubscribe();
+            this.webSocketConnectionsScreens.delete(packet.screenId);
+        });
+    }
+
+    private sendToAllScreens<T extends IGamePacket>(packet: T): void {
+        this.webSocketConnectionsScreens.forEach((con) => {
+            con.send<T>(packet);
+        })
+    }
+
+    private makeInitDataForScreen(): IDataForScreenPacket {
+        return {
+            packetType: EPacketTypes.DATA_FOR_SCREEN,
+            teams: this.teams,
+            questions: this.questions,
+            gameState: this.currentGameState
+        }
+    }
+
+    private onResetServerPacket(packet: IResetServerPacket): void {
+        if (this.currentStateInAutomaton === EGameStates.END) {
+            this.setNewState(EGameStates.WAITING_FOR_SETUP);
+            this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
+                packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
+                availableBuzzers: this.getBuzzerConfig()
+            });
+        }
+        this.resetServerData();
+    }
+
+    private resetServerData(): void {
+        this.teams = [];
+        this.questions = [];
+        this.currentGameState = {
+            currentQuestionNumber: 0
+        };
+    }
+
 }

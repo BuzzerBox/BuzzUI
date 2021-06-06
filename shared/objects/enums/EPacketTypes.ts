@@ -15,5 +15,7 @@ export enum EPacketTypes {
     TEAM_SET_POINTS,
     ANSWER_SET_STATE,
     SET_QUESTION,
-    END_GAME
+    END_GAME,
+    DATA_FOR_SCREEN,
+    RESET_SERVER
 }

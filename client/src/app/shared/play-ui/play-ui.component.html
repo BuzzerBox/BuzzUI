@@ -14,7 +14,7 @@
             <button mat-button [disabled]="!hasNextQuestion()" (click)="getNextQuestion()" *ngIf="isMaster" title="Springe zur nächsten Frage">Nächste Frage</button>
             <span class="spacer"></span>
 <!--            TODO: move this button to the right. Also, show dialog to confirm it-->
-            <button mat-button (click)="endGameLocally()" *ngIf="isMaster" title="Beende das Spiel und zeige das gewinnende Team an">Spiel Beenden</button>
+            <button mat-button (click)="endGame()" *ngIf="isMaster" title="Beende das Spiel und zeige das gewinnende Team an">Spiel Beenden</button>
           </mat-card-actions>
 
         </mat-card>
@@ -27,7 +27,7 @@
     </div>
   </ng-container>
   <ng-container *ngIf="isGameOver">
-    <mat-card class="scores">
+    <!--<mat-card class="scores">
       <mat-card-header>
         <mat-card-title>Punkteliste</mat-card-title>
       </mat-card-header>
@@ -39,9 +39,10 @@
         </div>
       </mat-card-content>
       <mat-card-actions *ngIf="isMaster">
-        <button mat-button (click)="endGameOnServerAndGoToStartScreen()" *ngIf="isMaster" title="Spiel beenden und zum Startbildschirm zurückkehren">Spielsession beenden</button>
+        <button mat-button (click)="resetServer()" *ngIf="isMaster" title="Spiel beenden und zum Startbildschirm zurückkehren">Spielsession beenden</button>
       </mat-card-actions>
 
-    </mat-card>
+    </mat-card>-->
+    <app-score-board [isMaster]="isMaster"></app-score-board>
   </ng-container>
 </div>

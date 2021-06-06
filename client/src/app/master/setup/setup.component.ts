@@ -24,6 +24,7 @@ export class SetupComponent implements OnInit {
   public hasReachedLastStep = false;
 
   constructor(private game: GameService) {
+    game.useAsMaster();
   }
 
   ngOnInit(): void {
@@ -152,7 +153,6 @@ export class SetupComponent implements OnInit {
   }
 
   private buildSetupQuestionsObject(): IQuestion[] {
-    console.log("hiiiiiiii!");
     const ret: IQuestion[] = [];
     for (const name of this.questionFormGroupNames) {
       const questionFormGroup: FormGroup = this.questionsFormGroup.get(name) as FormGroup;
@@ -179,7 +179,7 @@ export class SetupComponent implements OnInit {
     }
     const teams: ITeam[] = this.buildSetupTeamsObject();
     const questions: IQuestion[] = this.buildSetupQuestionsObject();
-    this.game.setupGame(teams, questions, false);
+    this.game.setGameData(teams, questions);
     return this.game.exportGameStateAsJson();
   }
 

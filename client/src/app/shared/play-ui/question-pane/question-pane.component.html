@@ -4,8 +4,8 @@
 <mat-card-content>
   {{getQuestionText()}}
   <mat-grid-list cols="2" rowHeight="2:1">
-    <mat-grid-tile *ngFor="let answer of getAnswers()">
-      <button mat-raised-button (click)="onClickAnswer(answer, button._getHostElement())" #button>{{answer.text}}</button>
+    <mat-grid-tile *ngFor="let answer of getAnswers(); let i = index">
+      <button id="button{{i}}" mat-raised-button (click)="onClickAnswer(answer, button._getHostElement())" #button>{{answer.text}}</button>
 
     </mat-grid-tile>
   </mat-grid-list>

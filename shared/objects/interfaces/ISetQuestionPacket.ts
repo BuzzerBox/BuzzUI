@@ -5,5 +5,5 @@ export interface ISetQuestionPacket extends IGamePacket {
     /**
      * If a number is sent, then it the question with that ID shall be set
      */
-    set: 'next' | 'previous' | number;
+    set: number;
 }

@@ -1,3 +1,5 @@
+export const baseUrlMaster = 'master/';
+
 export const pathsMaster = {
   start: 'start',
   setup: 'setup',

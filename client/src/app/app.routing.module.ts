@@ -10,7 +10,10 @@ export const routes: Routes = [
     path: 'master',
     loadChildren: () => import('./master/master.module').then(m => m.MasterModule)
   },
-  // TODO: once available, let the base path point to the screen instead of the master
+  {
+    path: 'screen',
+    loadChildren: () => import('./screen/screen.module').then(m => m.ScreenModule)
+  },
   { path: 'choose', component: ChooseComponent },
   { path: '', redirectTo: 'choose', pathMatch: 'full' }
 ];

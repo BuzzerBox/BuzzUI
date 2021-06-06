@@ -4,5 +4,6 @@ export enum EGameStates {
     WAITING_FOR_SETUP,
     WAITING_FOR_START,
     LOST_MASTER,
-    PLAYING
+    PLAYING,
+    END
 }

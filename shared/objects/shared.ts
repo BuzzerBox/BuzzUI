@@ -19,6 +19,9 @@ import {EAnswerStates} from './enums/EAnswerStates';
 import {IAnswerSetStatePacket} from './interfaces/IAnswerSetStatePacket';
 import {ISetQuestionPacket} from './interfaces/ISetQuestionPacket';
 import {IEndGamePacket} from './interfaces/IEndGamePacket';
+import {IRegisterScreenPacket} from './interfaces/IRegisterScreenPacket';
+import {IDataForScreenPacket} from './interfaces/IDataForScreenPacket';
+import {IResetServerPacket} from './interfaces/IResetServerPacket';
 
 export {
     IGamePacket,
@@ -41,5 +44,8 @@ export {
     EAnswerStates,
     IAnswerSetStatePacket,
     ISetQuestionPacket,
-    IEndGamePacket
+    IEndGamePacket,
+    IRegisterScreenPacket,
+    IDataForScreenPacket,
+    IResetServerPacket
 }

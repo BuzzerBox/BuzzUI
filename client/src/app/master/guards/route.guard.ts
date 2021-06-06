@@ -8,6 +8,7 @@ import {pathsMaster} from '../paths-master';
 @Injectable()
 export class RouteGuard implements CanActivate {
   constructor(private game: GameService, private router: Router) {
+    game.useAsMaster();
   }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
@@ -59,7 +60,7 @@ export class RouteGuard implements CanActivate {
   }
 
   private redirect(target: string): UrlTree {
-    return this.router.createUrlTree([target]);
+    return this.router.createUrlTree(['master/' + target]);
   }
 
   private handleReadyToStartRoute(): boolean | UrlTree {
