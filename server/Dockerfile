@@ -1,29 +1,25 @@
-# extra metadata
-#LABEL version="0.1"
-#LABEL description="Image for the OER Tool Backend"
+ARG DIR_SERVER=server
+ARG WORK_DIR=/usr/buzzerWebUI/$WORK_DIR
 
 # In this image, we transpile the typescript to javascript
-FROM node:12.13-alpine as node
-ENV DIR=/usr/src/app
-WORKDIR $DIR
+FROM node:current-alpine3.13 as node
+LABEL version="0.0.1"
+LABEL description="Image for the buzzer web UI backend server"
+ARG WORK_DIR
+ARG DIR_SERVER
+WORKDIR $WORK_DIR
 # copy the package.json and ther ts.config into the image
-COPY package.json $DIR
-COPY tsconfig.json $DIR
+COPY $DIR_SERVER/package.json ./
+COPY $DIR_SERVER/tsconfig.json ./
 # then run npm install in productive mode to install all dependencies of the project
 RUN npm i  --production
 # Add all the content to the WORKDIR
-ADD . /usr/src/app
+COPY $DIR_SERVER ./
+COPY config.json ../
 # finally transpile the source
-RUN npx tsc --outDir $DIR/dist
+#RUN npx tsc --outDir ./dist
+RUN npx tsc
 # RUN the server
-CMD ["node","./dist/server.js"]
+CMD ["node","./dist/server/main.js"]
 # Expose the port to make communication with the API from the outside world possible
 EXPOSE 4201
-
-
-
-#FROM node:12.13-alpine as node2
-#ENV DIR=/usr/src/app
-#WORKDIR $DIR
-#COPY --from=node $DIR/dist $DIR
-#CMD ["node","/usr/src/app/server.js"]

@@ -3,7 +3,7 @@
   "masterName": "Master",
   "screenName": "Screen",
   "server": {
-    "port": 8080,
+    "port": 4201,
     "address": "localhost",
     "webSocketProtocol": "ws"
   },
