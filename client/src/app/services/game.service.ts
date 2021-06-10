@@ -20,7 +20,10 @@ import {
   ISetupPacket,
   IStartGamePacket,
   ITeam,
-  ITeamSetPointsPacket
+  ITeamSetPointsPacket,
+  IKeypressOnScreenPacket,
+  IMarkTeamPacket,
+  CURRENT_SAVEGAME_VERSION
 } from '../../../../shared/objects/shared';
 import {BehaviorSubject, Observable, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
@@ -38,14 +41,11 @@ export interface IGameStateAsJson {
   /**
    * Can be used to determine what data is actually stored in this and how to extract it
    */
-  version?: number;
+  version: number;
   teams: ITeam[];
   question: IQuestion[];
   gameState: IGameState;
 }
-
-// TODO remove?
-export type ITeamsScore = ITeam[][];
 
 export type ZeroVoidCallback = () => void;
 
@@ -69,6 +69,7 @@ export class GameService implements OnDestroy {
   private answerSetStatePacketSubject: Subject<IAnswerSetStatePacket>;
   private cbUpdateCurrentQuestion: ZeroVoidCallback;
   private cbEndGame: ZeroVoidCallback;
+  private markTeamSubject: Subject<IMarkTeamPacket>;
 
 
   constructor(private webSocketService: WebSocketService, private router: Router, private sanitizer: DomSanitizer) {
@@ -78,6 +79,7 @@ export class GameService implements OnDestroy {
     this.webSocketListenSubscription = webSocketService.listen(this.onMessage.bind(this));
     this.registerMaster();*/
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
+    this.markTeamSubject = new Subject<IMarkTeamPacket>();
     this.teams = [];
   }
 
@@ -142,6 +144,9 @@ export class GameService implements OnDestroy {
       case EPacketTypes.END_GAME:
         this.handleEndGamePacket(message as IEndGamePacket);
         break;
+      case EPacketTypes.MARK_TEAM:
+        this.handleMarkTeamPacket(message as IMarkTeamPacket);
+        break;
       default:
         break;
     }
@@ -200,7 +205,7 @@ export class GameService implements OnDestroy {
   }
 
   public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true): void {
-    this.setGameData(teams, questions, currentGameState);
+    this.setGameData(teams, questions, currentGameState, true);
     if (sendPacket) {
       this.webSocketService.send<ISetupPacket>({
         packetType: EPacketTypes.SETUP_GAME,
@@ -257,8 +262,10 @@ export class GameService implements OnDestroy {
     return this.questions;
   }
 
-  public setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState): void {
-    this.teams = teams;
+  public setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState, dotNotMergeBuzzerIds: boolean = false): void {
+    if (!dotNotMergeBuzzerIds) {
+      this.teams = this.mergeBuzzerIdsFromPresetupDataWithSetTeams(teams);
+    }
     for (const team of this.teams) {
       if (team.points == null) {
         team.points = 0;
@@ -268,6 +275,8 @@ export class GameService implements OnDestroy {
     if (gameState == null) {
       this.currentGameState = {
         currentQuestionNumber: 0,
+        loggedAnswers: [],
+        markedTeamIds: []
       };
     } else {
       this.currentGameState = gameState;
@@ -309,6 +318,7 @@ export class GameService implements OnDestroy {
 
   public exportGameStateAsJson(): SafeUrl {
     const gameStateAsJson: IGameStateAsJson = {
+      version: CURRENT_SAVEGAME_VERSION,
       teams: this.teams,
       question: this.questions,
       gameState: this.currentGameState
@@ -320,6 +330,10 @@ export class GameService implements OnDestroy {
   }
 
   public importGameStateFromJson(gameState: IGameStateAsJson): void {
+    if (gameState.version !== CURRENT_SAVEGAME_VERSION) {
+      alert('savegame version is not okay');
+      return;
+    }
     this.currentGameState = gameState.gameState;
     this.setupGame(gameState.teams, gameState.question, gameState.gameState);
   }
@@ -349,6 +363,7 @@ export class GameService implements OnDestroy {
   public getPreviousQuestion(): IQuestion {
     if (this.hasPreviousQuestion()) {
       this.currentGameState.currentQuestionNumber--;
+      this.sendUnmarkAllTeamsPacket();
       this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
     return this.getCurrentQuestion();
@@ -357,6 +372,7 @@ export class GameService implements OnDestroy {
   public getNextQuestion(): IQuestion {
     if (this.hasNextQuestion()) {
       this.currentGameState.currentQuestionNumber++;
+      this.sendUnmarkAllTeamsPacket();
       this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
     return this.getCurrentQuestion();
@@ -401,7 +417,6 @@ export class GameService implements OnDestroy {
   private handleDataForScreenPacket(packet: IDataForScreenPacket): void {
     if (this.isUsedAsScreen()) {
       this.setGameData(packet.teams, packet.questions, packet.gameState);
-      // this.currentQuestionSubject = new BehaviorSubject<IQuestion>(this.getCurrentQuestion());
       this.isScreenDataAvailable = true;
       this.redirect(baseUrlScreen + pathsScreen.main);
     }
@@ -455,17 +470,55 @@ export class GameService implements OnDestroy {
     return this.answerSetStatePacketSubject.asObservable();
   }
 
- public setCallbackUpdateCurrentQuestion(cb: ZeroVoidCallback): void {
+  public setCallbackUpdateCurrentQuestion(cb: ZeroVoidCallback): void {
     this.cbUpdateCurrentQuestion = cb;
- }
+  }
 
- private handleEndGamePacket(packet: IEndGamePacket): void {
+  private handleEndGamePacket(packet: IEndGamePacket): void {
     if (this.isUsedAsScreen() && this.cbEndGame != null) {
       this.cbEndGame();
     }
- }
+  }
 
- public setCallbackEndGame(cb: ZeroVoidCallback): void {
+  public setCallbackEndGame(cb: ZeroVoidCallback): void {
     this.cbEndGame = cb;
- }
+  }
+
+  public sendKeypress(keyCode: string): void {
+    this.webSocketService.send<IKeypressOnScreenPacket>(PacketsHelper.makeKeypressOnScreenPacket(keyCode));
+  }
+
+  private mergeBuzzerIdsFromPresetupDataWithSetTeams(teams: ITeam[]): ITeam[] {
+    if (this.presetupData != null) {
+    const availableBuzzers = this.presetupData.availableBuzzers;
+    for (let i = 0; i < availableBuzzers.length; i++) {
+      const buzzerId: string = availableBuzzers[i].id;
+      teams[i].buzzerId = buzzerId;
+      teams[i].teamId = buzzerId;
+      }
+    }
+    return teams;
+  }
+
+  private handleMarkTeamPacket(packet: IMarkTeamPacket): void {
+    this.markTeamSubject.next(packet);
+  }
+
+  public observeMarkTeamPackets(): Observable<IMarkTeamPacket> {
+    return this.markTeamSubject.asObservable();
+  }
+
+  public setMarkTeam(teamId: string, marked: boolean = true): void {
+    this.webSocketService.send<IMarkTeamPacket>(PacketsHelper.makeMarkTeamPacket(teamId, marked));
+  }
+
+  private sendUnmarkAllTeamsPacket(): void {
+    this.webSocketService.send<IMarkTeamPacket>({
+      packetType: EPacketTypes.MARK_TEAM,
+      teamId: null,
+      mark: null,
+      unmarkAll: true
+    });
+  }
+
 }

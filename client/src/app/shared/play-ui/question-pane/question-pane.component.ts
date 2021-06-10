@@ -43,9 +43,11 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.loggedInAnswers = [];
     this.activatedAnswers = [];
     this.correctAnswersThatAreLeft = 0;
-    for (const answer of this.question.answers) {
-      if (answer.isCorrect) {
-        this.correctAnswersThatAreLeft++;
+    if (this.question) {
+      for (const answer of this.question.answers) {
+        if (answer.isCorrect) {
+          this.correctAnswersThatAreLeft++;
+        }
       }
     }
     if (this.allCorrectAnswersFoundSnackBar != null) {
@@ -63,11 +65,11 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   public getQuestionText(): string {
-    return this.question.text;
+    return this.question?.text;
   }
 
   public getAnswers(): IAnswer[] {
-    return this.question.answers;
+    return this.question?.answers;
   }
 
   public onClickAnswer(answer, button: HTMLButtonElement): void {

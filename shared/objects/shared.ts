@@ -12,7 +12,7 @@ import {IQuestion} from './interfaces/IQuestion';
 import {ISetupPacket} from './interfaces/ISetupPacket';
 import {IAnswer} from './interfaces/IAnswer';
 import {INewMasterAccepted} from './interfaces/INewMasterAccepted';
-import {IGameState} from './interfaces/IGameState';
+import {IGameState, CURRENT_SAVEGAME_VERSION} from './interfaces/IGameState';
 import {IStartGamePacket} from './interfaces/IStartGamePacket';
 import {ITeamSetPointsPacket} from './interfaces/ITeamSetPointsPacket';
 import {EAnswerStates} from './enums/EAnswerStates';
@@ -22,6 +22,8 @@ import {IEndGamePacket} from './interfaces/IEndGamePacket';
 import {IRegisterScreenPacket} from './interfaces/IRegisterScreenPacket';
 import {IDataForScreenPacket} from './interfaces/IDataForScreenPacket';
 import {IResetServerPacket} from './interfaces/IResetServerPacket';
+import {IKeypressOnScreenPacket} from './interfaces/IKeypressOnScreenPacket';
+import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
 
 export {
     IGamePacket,
@@ -47,5 +49,8 @@ export {
     IEndGamePacket,
     IRegisterScreenPacket,
     IDataForScreenPacket,
-    IResetServerPacket
+    IResetServerPacket,
+    IKeypressOnScreenPacket,
+    IMarkTeamPacket,
+    CURRENT_SAVEGAME_VERSION
 }

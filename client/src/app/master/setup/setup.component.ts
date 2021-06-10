@@ -46,6 +46,8 @@ export class SetupComponent implements OnInit {
     this.teamNameSuggestions = [];
     this.teamFormControlNames = [];
     const presetupData = this.game.getPresetupData();
+    console.log("presetupData");
+    console.log(presetupData);
     const teamFormControls: {
       [key: string]: AbstractControl;
     } = {};
@@ -187,6 +189,8 @@ export class SetupComponent implements OnInit {
     return this.game.getGameName();
   }
 
+  // TODO: check that there are not more teams in the savegame as there are buzzers now. If there are, show some dialog to choose
+  //  teams to be kept
   public onFileSelected(uploadEvent): void {
     // if typed as File, the fileReader.readAsText complains
     const configFile: any = uploadEvent.target.files[0];
