@@ -11,12 +11,12 @@ WebApp for the BuzzerBox
   "buzzers": [
     {
       "name": "Buzzer 1",
-      "key": "NUMPAD_0"
+      "key": "Numpad0"
     }
     ...
     {
       "name": "Buzzer 5",
-      "key": "NUMPAD_4"
+      "key": "Numpad4"
     }
   ]
 }
