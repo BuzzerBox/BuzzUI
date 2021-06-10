@@ -10,15 +10,15 @@
   "buzzers": [
     {
       "name": "Buzzer 1",
-      "key": "NUMPAD_0"
+      "key": "Numpad0"
     },
     {
       "name": "Buzzer 2",
-      "key": "NUMPAD_1"
+      "key": "Numpad1"
     },
     {
       "name": "Buzzer 3",
-      "key": "NUMPAD_2"
+      "key": "Numpad2"
     }
   ]
 }

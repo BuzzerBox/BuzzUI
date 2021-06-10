@@ -1,13 +1,17 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {GameService, ITeamsScore} from '../../services/game.service';
+import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
+import {GameService} from '../../services/game.service';
 import {
   ITeam,
   IQuestion,
-  IEndGamePacket
+  IEndGamePacket,
+  IMarkTeamPacket
 } from '../../../../../shared/objects/shared';
 import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialog} from '@angular/material/dialog';
-import {Observable, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
+import {jsDocComment} from '@angular/compiler';
+import {keyframes} from '@angular/animations';
+import {SubscriptionsHelper} from '../../helper/subscriptions.helper';
 
 @Component({
   selector: 'app-play-ui',
@@ -28,6 +32,10 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     if (!this.isMaster) {
       this.game.setCallbackUpdateCurrentQuestion(this.callbackUpdateCurrentQuestion.bind(this));
       this.game.setCallbackEndGame(this.callbackEndGame.bind(this));
+      // There is some angular directive to achieve the binding of a listener (@HostListener) but it is not possible to remove that binding
+      // or have it react to some boolean state but we only need it if this component is used from a screen, thus I prefer the "old" JS-way
+      // of adding an event listener
+      document.addEventListener('keypress', this.handleKeyboardEvent.bind(this));
     }
   }
 
@@ -70,19 +78,29 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     });
   }
 
-  // TODO implement this as observalbe instead of this callback fizzle
+  // TODO implement this as observable instead of this callback fizzle
   private callbackUpdateCurrentQuestion(): void {
     this.currentQuestion = this.game.getCurrentQuestion();
   }
 
   ngOnDestroy(): void {
-    if (this.setQuestionPacketSubscription != null) {
-      this.setQuestionPacketSubscription.unsubscribe();
+    SubscriptionsHelper.cleanUpSubscriptions(this.setQuestionPacketSubscription);
+    if (!this.isMaster) {
+      document.removeEventListener('keypress', this.handleKeyboardEvent.bind(this));
     }
   }
 
   private callbackEndGame(packet: IEndGamePacket): void {
     this.isGameOver = true;
   }
+
+  handleKeyboardEvent(event: KeyboardEvent): void {
+    console.log(event.code);
+    this.game.sendKeypress(event.code);
+  }
+
+
+
+
 
 }

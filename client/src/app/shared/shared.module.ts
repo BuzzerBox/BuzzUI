@@ -14,6 +14,7 @@ import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
 import {MatListModule} from '@angular/material/list';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import { ScoreBoardComponent } from './play-ui/score-board/score-board.component';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 
 
 

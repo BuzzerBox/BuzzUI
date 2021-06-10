@@ -23,7 +23,10 @@ import {
     IEndGamePacket,
     IRegisterScreenPacket,
     IDataForScreenPacket,
-    IResetServerPacket
+    IResetServerPacket,
+    IKeypressOnScreenPacket,
+    IMarkTeamPacket,
+    EAnswerStates
 } from "../../shared/objects/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
@@ -43,7 +46,10 @@ export class GameService {
     private teams: ITeam[];
     private questions: IQuestion[];
     private currentGameState: IGameState;
-    private screensWaitingForData: string[] = [];
+    private keypressLocked = false;
+    private keyCodesInUse: string[] = [];
+    private ignoredKeypresses: string[] = [];
+    private lastKeyPressed: string;
 
     private constructor() {
         this.webSocketConnectionsScreens = new Map<string, WebSocketConnection>();
@@ -51,6 +57,8 @@ export class GameService {
         this.newConnectionEstablishedSubscription = this.newConnectionEstablished$.subscribe(this.onNewConnection.bind(this))
         // When this is instantiated, the game is looking for a master
         this.setNewState(EGameStates.WAITING_FOR_MASTER);
+        // call this once to read config and create necessary variables
+        this.getBuzzerConfig();
     }
 
     public static get(): GameService {
@@ -90,6 +98,10 @@ export class GameService {
                 this.onRegisterScreenPacket(con, sub, packet as IRegisterScreenPacket);
             } else if (packet.packetType === EPacketTypes.RESET_SERVER) {
                 this.onResetServerPacket(packet as IResetServerPacket);
+            } else  if (packet.packetType === EPacketTypes.KEYPRESS_ON_SCREEN) {
+                this.onKeypressOnScreenPacket(packet as IKeypressOnScreenPacket);
+            } else if (packet.packetType === EPacketTypes.MARK_TEAM) {
+                this.onMarkTeamPacket(packet as IMarkTeamPacket);
             }
         })
     }
@@ -117,9 +129,9 @@ export class GameService {
         if (this.buzzerConfig == null) {
             this.buzzerConfig = [];
             // check if no key was used more than once
-            let keys: EKeyBinds[] = [];
+            let keys: string[] = [];
             for (let buzzConf of config.buzzers) {
-                let eKeyBind = EKeyBinds[buzzConf.key];
+                let eKeyBind = buzzConf.key;
                 if (keys.includes(eKeyBind))
                 {
                     throw new Error("Cannot used the same key bind more than once");
@@ -131,9 +143,11 @@ export class GameService {
                 let c: IBuzzer = {
                     name: buzzConf.name,
                     id: id,
-                    keyBind: EKeyBinds[buzzConf.key]
+                    keyBind: buzzConf.key
+                    // TODO remove EKeyBind
                 }
                 this.buzzerConfig.push(c);
+                this.keyCodesInUse.push(c.keyBind);
             }
         }
         return this.buzzerConfig;
@@ -228,6 +242,15 @@ export class GameService {
     }
 
     private onAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
+        if (packet.state === EAnswerStates.ACTIVATE && !packet.answer.isCorrect) {
+            this.webSocketConnectionMaster.send<IMarkTeamPacket>(PacketHelper.makeUnmarkAllTeamsPacket());
+            this.sendToAllScreens<IMarkTeamPacket>(PacketHelper.makeUnmarkAllTeamsPacket());
+            this.setKeypressLocked(false);
+            if (this.lastKeyPressed != null) {
+                // if the answer is wrong an there is a last key press, then ignore it for this round
+                this.ignoredKeypresses.push(this.lastKeyPressed);
+            }
+        }
         this.sendToAllScreens(packet);
     }
 
@@ -236,6 +259,8 @@ export class GameService {
         if (value >= 0 && value <= this.questions.length - 1) {
             this.currentGameState.currentQuestionNumber = value;
         }
+        this.setKeypressLocked(false);
+        this.ignoredKeypresses = [];
         this.sendToAllScreens(packet);
     }
 
@@ -302,13 +327,11 @@ export class GameService {
     }
 
     private onResetServerPacket(packet: IResetServerPacket): void {
-        if (this.currentStateInAutomaton === EGameStates.END) {
-            this.setNewState(EGameStates.WAITING_FOR_SETUP);
-            this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
-                packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-                availableBuzzers: this.getBuzzerConfig()
-            });
-        }
+        this.setNewState(EGameStates.WAITING_FOR_SETUP);
+        this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
+            packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
+            availableBuzzers: this.getBuzzerConfig()
+        });
         this.resetServerData();
     }
 
@@ -316,8 +339,61 @@ export class GameService {
         this.teams = [];
         this.questions = [];
         this.currentGameState = {
-            currentQuestionNumber: 0
+            currentQuestionNumber: 0,
+            markedTeamIds: [],
+            loggedAnswers: []
         };
     }
 
+
+    private onKeypressOnScreenPacket(packet: IKeypressOnScreenPacket): void {
+        if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
+            const team: ITeam = this.getTeamForKeyCode(packet.keyCode);
+            if (team == null) {
+                return
+            }
+            this.setKeypressLocked(true);
+            this.lastKeyPressed = packet.keyCode;
+            const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
+            this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+            this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
+        }
+    }
+
+    private setKeypressLocked(locked: boolean): void {
+        this.keypressLocked = locked;
+    }
+
+    private isKeypressLocked(): boolean {
+        return this.keypressLocked;
+    }
+
+    private getTeamForKeyCode(keyCode: string): ITeam {
+        console.log(this.keyCodesInUse)
+        if (!this.keyCodesInUse.includes(keyCode)) {
+            return null;
+        }
+        let b: IBuzzer;
+        for (const buzzer of this.getBuzzerConfig()) {
+            if (buzzer.keyBind === keyCode) {
+                b = buzzer;
+            }
+        }
+        if (b == null) {
+            return null;
+        }
+        for (const team of this.teams) {
+            console.log(team)
+            if (b.id === team.buzzerId) {
+                return team;
+            }
+        }
+        return null;
+    }
+
+    private onMarkTeamPacket(packet: IMarkTeamPacket): void {
+        // we conclude that only the master can send such a package
+        this.webSocketConnectionMaster.send<IMarkTeamPacket>(packet);
+        this.sendToAllScreens<IMarkTeamPacket>(packet);
+    }
 }

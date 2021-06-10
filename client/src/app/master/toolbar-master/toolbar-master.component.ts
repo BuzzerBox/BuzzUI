@@ -28,4 +28,9 @@ export class ToolbarMasterComponent implements OnInit {
     return this.getName().toLowerCase().replace(' ', '-') + '-save-file.json';
   }
 
+  public resetServer(): void {
+    this.game.resetServer();
+    window.location.reload();
+  }
+
 }

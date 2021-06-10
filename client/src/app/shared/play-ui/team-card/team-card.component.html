@@ -1,4 +1,4 @@
-<mat-card class="team-card">
+<mat-card class="team-card" [class.marked]="isMarked">
   <mat-card-header>
     <mat-card-title>{{getName()}}</mat-card-title>
   </mat-card-header>
@@ -10,5 +10,7 @@
   <mat-card-actions *ngIf="isMaster">
     <button mat-button (click)="addPoint()">+1</button>
     <button mat-button (click)="removePoint()" [disabled]="getPoints() == 0">-1</button>
+<!--    TODO: take care of this later-->
+<!--    <button mat-button (click)="markTeamInvert()">{{isMarked ? "Unm" : "M"}}arkiere Team</button>-->
   </mat-card-actions>
 </mat-card>

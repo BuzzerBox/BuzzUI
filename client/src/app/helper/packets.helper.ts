@@ -1,4 +1,5 @@
-import {EAnswerStates, IAnswer, EPacketTypes, IAnswerSetStatePacket, ISetQuestionPacket, IEndGamePacket} from '../../../../shared/objects/shared';
+import {EAnswerStates, IAnswer, EPacketTypes, IAnswerSetStatePacket, ISetQuestionPacket, IEndGamePacket, IKeypressOnScreenPacket,
+IMarkTeamPacket} from '../../../../shared/objects/shared';
 
 export class PacketsHelper {
 
@@ -24,6 +25,21 @@ export class PacketsHelper {
   public static makeEndGamePacket(): IEndGamePacket {
     return {
       packetType: EPacketTypes.END_GAME
+    };
+  }
+
+  public static makeKeypressOnScreenPacket(keyCode: string): IKeypressOnScreenPacket {
+    return {
+      packetType: EPacketTypes.KEYPRESS_ON_SCREEN,
+      keyCode
+    };
+  }
+
+  public static makeMarkTeamPacket(teamId: string, marked: boolean = true): IMarkTeamPacket {
+    return {
+      packetType: EPacketTypes.MARK_TEAM,
+      teamId,
+      mark: marked
     };
   }
 

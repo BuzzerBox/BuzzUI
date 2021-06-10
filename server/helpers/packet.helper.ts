@@ -1,4 +1,4 @@
-import {IGamePacket, IWebSocketMessage, IResponsePacket, EPacketTypes} from "../../shared/objects/shared";
+import {IGamePacket, IWebSocketMessage, IResponsePacket, EPacketTypes, IMarkTeamPacket} from "../../shared/objects/shared";
 
 export class PacketHelper {
     private constructor() {
@@ -12,5 +12,19 @@ export class PacketHelper {
             wasSuccessful,
             reason
         };
+    }
+
+    public static makeMarkTeamPacket(teamId: string, mark: boolean): IMarkTeamPacket {
+        return {
+            packetType: EPacketTypes.MARK_TEAM,
+            teamId,
+            mark
+        };
+    }
+
+    public static makeUnmarkAllTeamsPacket(): IMarkTeamPacket {
+        const p: IMarkTeamPacket = this.makeMarkTeamPacket(null, null);
+        p.unmarkAll = true
+        return p;
     }
 }

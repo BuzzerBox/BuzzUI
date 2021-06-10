@@ -1,3 +1,7 @@
 .team-card {
   margin: 0.25em;
 }
+
+.marked {
+  background-color: aqua;
+}

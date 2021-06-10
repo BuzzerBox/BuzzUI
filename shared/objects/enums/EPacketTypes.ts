@@ -17,5 +17,7 @@ export enum EPacketTypes {
     SET_QUESTION,
     END_GAME,
     DATA_FOR_SCREEN,
-    RESET_SERVER
+    RESET_SERVER,
+    KEYPRESS_ON_SCREEN,
+    MARK_TEAM
 }
