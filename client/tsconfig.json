@@ -21,5 +21,10 @@
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false
-  }
+  },
+  "references": [
+    {
+      "path": "../shared/*"
+    }
+  ]
 }
