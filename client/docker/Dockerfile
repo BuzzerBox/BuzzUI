@@ -4,16 +4,13 @@
 # CAUTION: The build context is set to the parent directoy in order to be able to work with the shared/ directory.
 #          Thus, we need to explicitly enter the client's directory
 ######
-
-LABEL version="0.0.1"
-LABEL description="Image for the buzzer web UI frontend"
-
 ARG dirClient=client
 ARG workDir=/usr/buzzerWebUI/$dirClient
 
 # build angular app
 FROM node:current-alpine3.13 as node
-#if you change this, also change this in the next stage
+LABEL version="0.0.1"
+LABEL description="Image for the buzzer web UI frontend"
 # leaving it without a value to have it inherit the globally set value
 ARG workDir
 ARG dirClient
@@ -24,7 +21,7 @@ COPY $dirClient/package.json ./
 COPY $dirClient/package-lock.json ./
 COPY shared ../shared/
 # then run npm install to install all dependencies of the project
-RUN npm i --production
+RUN npm i
 # we copy the rest of the project into the image
 COPY $dirClient/ .
 COPY config.json ../
@@ -42,4 +39,6 @@ RUN rm -f /usr/share/nginx/html/*
 # copy ng build's output to html folder to be served
 COPY --from=node $workDir/dist/$dirClient /usr/share/nginx/html
 # copy nginx config file
-COPY $dirClient/nginx.conf /etc/nginx/conf.d/default.conf
+COPY $dirClient/docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
