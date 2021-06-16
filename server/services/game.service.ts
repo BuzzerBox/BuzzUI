@@ -50,8 +50,12 @@ export class GameService {
     private keyCodesInUse: string[] = [];
     private ignoredKeypresses: string[] = [];
     private lastKeyPressed: string;
+    private configInvalidReason: string;
 
     private constructor() {
+        if (!this.validateConfig()) {
+            throw new Error(this.configInvalidReason);
+        }
         this.webSocketConnectionsScreens = new Map<string, WebSocketConnection>();
         this.newConnectionEstablished$ = WebSocketService.get().start();
         this.newConnectionEstablishedSubscription = this.newConnectionEstablished$.subscribe(this.onNewConnection.bind(this))
@@ -395,5 +399,21 @@ export class GameService {
         // we conclude that only the master can send such a package
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(packet);
         this.sendToAllScreens<IMarkTeamPacket>(packet);
+    }
+
+    private validateConfig(): boolean {
+        // check that buzzers are present
+        if (config.buzzers == null) {
+            this.configInvalidReason = "No buzzers are configured";
+            return false;
+        }
+
+        // check that at least 2 buzzers are present
+        if (config.buzzers.length < 2) {
+            this.configInvalidReason = "Less than two buzzers are configured";
+            return false;
+        }
+
+        return true;
     }
 }
