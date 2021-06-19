@@ -136,7 +136,6 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         });
       } else if (this.isMaster) {
         // if there are correct answers left, manually release the buzzer lock
-        // TODO TEST THIS!
         this.game.sendUnmarkAllTeamsPacket();
         this.game.setBuzzerLock(false);
       }

@@ -265,6 +265,8 @@ export class GameService implements OnDestroy {
   public setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState, dotNotMergeBuzzerIds: boolean = false): void {
     if (!dotNotMergeBuzzerIds) {
       this.teams = this.mergeBuzzerIdsFromPresetupDataWithSetTeams(teams);
+    } else {
+      this.teams = teams;
     }
     for (const team of this.teams) {
       if (team.points == null) {
