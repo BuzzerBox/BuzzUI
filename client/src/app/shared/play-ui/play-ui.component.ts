@@ -9,8 +9,6 @@ import {
 import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialog} from '@angular/material/dialog';
 import {Subscription} from 'rxjs';
-import {jsDocComment} from '@angular/compiler';
-import {keyframes} from '@angular/animations';
 import {SubscriptionsHelper} from '../../helper/subscriptions.helper';
 
 @Component({
