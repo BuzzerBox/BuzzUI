@@ -26,12 +26,13 @@ import {
     IResetServerPacket,
     IKeypressOnScreenPacket,
     IMarkTeamPacket,
-    EAnswerStates
-} from "../../shared/objects/shared";
+    EAnswerStates,
+    ISetBuzzerLockPacket,
+    PacketHelper
+} from "../../shared/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
 import {LoggerService} from "./logger.service";
-import {PacketHelper} from "../helpers/packet.helper";
 
 export class GameService {
     private static instance: GameService;
@@ -106,6 +107,8 @@ export class GameService {
                 this.onKeypressOnScreenPacket(packet as IKeypressOnScreenPacket);
             } else if (packet.packetType === EPacketTypes.MARK_TEAM) {
                 this.onMarkTeamPacket(packet as IMarkTeamPacket);
+            } else if (packet.packetType === EPacketTypes.SET_BUZZER_LOCK) {
+                this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
             }
         })
     }
@@ -342,10 +345,12 @@ export class GameService {
     private resetServerData(): void {
         this.teams = [];
         this.questions = [];
+        this.setKeypressLocked(false)
         this.currentGameState = {
             currentQuestionNumber: 0,
             markedTeamIds: [],
-            loggedAnswers: []
+            loggedAnswers: [],
+            setBuzzerLock: this.keypressLocked
         };
     }
 
@@ -354,13 +359,16 @@ export class GameService {
         if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
             const team: ITeam = this.getTeamForKeyCode(packet.keyCode);
             if (team == null) {
-                return
+                return;
             }
             this.setKeypressLocked(true);
             this.lastKeyPressed = packet.keyCode;
             const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
             this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+            let buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
+            this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
             this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
+            this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
         }
     }
 
@@ -415,5 +423,11 @@ export class GameService {
         }
 
         return true;
+    }
+
+    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket): void {
+        this.setKeypressLocked(packet.setLock);
+        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(packet);
+        this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
     }
 }

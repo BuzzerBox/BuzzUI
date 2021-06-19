@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
-import {ITeam, IQuestion, IBuzzer, IAnswer} from '../../../../../shared/objects/shared';
+import {ITeam, IQuestion, IBuzzer, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {File} from '@angular/compiler-cli/src/ngtsc/file_system/testing/src/mock_file_system';
 

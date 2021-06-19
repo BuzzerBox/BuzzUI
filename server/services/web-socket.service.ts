@@ -3,7 +3,7 @@ import {Server} from "ws";
 import {HttpServerService} from "./http-server.service";
 import {Observable, Subject} from "rxjs";
 import {WebSocketConnection} from "../objects/web-socket-connection";
-import {IWebSocketMessage} from '../../shared/objects/shared';
+import {IWebSocketMessage} from '../../shared/shared';
 import {LoggerService} from "./logger.service";
 
 export class WebSocketService {

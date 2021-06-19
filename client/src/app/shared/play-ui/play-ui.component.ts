@@ -5,7 +5,7 @@ import {
   IQuestion,
   IEndGamePacket,
   IMarkTeamPacket
-} from '../../../../../shared/objects/shared';
+} from '../../../../../shared/shared';
 import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialog} from '@angular/material/dialog';
 import {Subscription} from 'rxjs';
