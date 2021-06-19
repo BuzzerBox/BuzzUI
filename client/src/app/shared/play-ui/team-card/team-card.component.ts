@@ -1,5 +1,5 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {ITeam, IMarkTeamPacket} from '../../../../../../shared/objects/shared';
+import {ITeam, IMarkTeamPacket} from '../../../../../../shared/shared';
 import {GameService} from '../../../services/game.service';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {Subscription} from 'rxjs';

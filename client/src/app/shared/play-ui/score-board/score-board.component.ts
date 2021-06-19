@@ -1,6 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {ITeam} from '../../../../../../shared/objects/shared';
+import {ITeam} from '../../../../../../shared/shared';
 
 @Component({
   selector: 'app-score-board',

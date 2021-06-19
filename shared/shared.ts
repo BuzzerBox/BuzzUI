@@ -24,6 +24,8 @@ import {IDataForScreenPacket} from './interfaces/IDataForScreenPacket';
 import {IResetServerPacket} from './interfaces/IResetServerPacket';
 import {IKeypressOnScreenPacket} from './interfaces/IKeypressOnScreenPacket';
 import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
+import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
+import {PacketHelper} from './helper/packet.helper'
 
 export {
     IGamePacket,
@@ -52,5 +54,7 @@ export {
     IResetServerPacket,
     IKeypressOnScreenPacket,
     IMarkTeamPacket,
-    CURRENT_SAVEGAME_VERSION
+    CURRENT_SAVEGAME_VERSION,
+    ISetBuzzerLockPacket,
+    PacketHelper
 }

@@ -1,8 +1,10 @@
 ARG DIR_SERVER=server
 ARG WORK_DIR=/usr/buzzerWebUI/$DIR_SERVER
+ARG ARCH=amd64
 
 # In this image, we transpile the typescript to javascript
-FROM node:current-alpine3.13 as node
+FROM $ARCH/node:current-alpine3.13 as node
+ARG ARCH
 LABEL version="0.0.1"
 LABEL description="Image for the buzzer web UI backend server"
 ARG WORK_DIR
@@ -21,7 +23,7 @@ COPY config.json ../
 # finally transpile the source
 RUN npx tsc --outDir ./dist
 RUN echo $(ls)
-#RUN npx tsc
+# RUN npx tsc
 # RUN the server
 CMD ["node","./dist/server/main.js"]
 # Expose the port to make communication with the API from the outside world possible

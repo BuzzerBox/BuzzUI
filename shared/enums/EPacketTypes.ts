@@ -19,5 +19,6 @@ export enum EPacketTypes {
     DATA_FOR_SCREEN,
     RESET_SERVER,
     KEYPRESS_ON_SCREEN,
-    MARK_TEAM
+    MARK_TEAM,
+    SET_BUZZER_LOCK
 }

@@ -1,5 +1,6 @@
-import {ITeam} from '../../../../shared/objects/shared';
+import {ITeam} from '../../../../shared/shared';
 
+// TODO what is still needed?
 export class TeamHelper {
   private constructor(props) {
     // avoid instantiation

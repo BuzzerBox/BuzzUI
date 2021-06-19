@@ -15,6 +15,7 @@ import {MatListModule} from '@angular/material/list';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import { ScoreBoardComponent } from './play-ui/score-board/score-board.component';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import { BuzzerLockComponent } from './play-ui/buzzer-lock/buzzer-lock.component';
 
 
 
@@ -25,7 +26,8 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
     QuestionPaneComponent,
     AnswerOptionsComponent,
     DialogConfirmEndingGameComponent,
-    ScoreBoardComponent
+    ScoreBoardComponent,
+    BuzzerLockComponent
   ],
   imports: [
     CommonModule,

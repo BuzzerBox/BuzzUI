@@ -1,6 +1,6 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates} from '../../../../../../shared/objects/shared';
+import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates} from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
   AnswerOptionsComponent,
@@ -134,6 +134,11 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
           sub.unsubscribe();
           this.allCorrectAnswersFoundSnackBar = null;
         });
+      } else if (this.isMaster) {
+        // if there are correct answers left, manually release the buzzer lock
+        // TODO TEST THIS!
+        this.game.sendUnmarkAllTeamsPacket();
+        this.game.setBuzzerLock(false);
       }
     } else {
       style = this.STYLE_CLASS_ANSWER_WRONG;

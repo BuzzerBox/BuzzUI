@@ -2,7 +2,7 @@ import {Injectable, OnDestroy} from '@angular/core';
 import {webSocket, WebSocketSubject} from 'rxjs/webSocket';
 import config from '../../../../config.json';
 import {Subscription} from 'rxjs';
-import {IWebSocketMessage, IResponsePacket} from '../../../../shared/objects/shared';
+import {IWebSocketMessage, IResponsePacket} from '../../../../shared/shared';
 
 /**
  * Followed https://rxjs-dev.firebaseapp.com/api/webSocket/webSocket

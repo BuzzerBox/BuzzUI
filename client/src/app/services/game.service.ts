@@ -23,8 +23,10 @@ import {
   ITeamSetPointsPacket,
   IKeypressOnScreenPacket,
   IMarkTeamPacket,
-  CURRENT_SAVEGAME_VERSION
-} from '../../../../shared/objects/shared';
+  CURRENT_SAVEGAME_VERSION,
+  ISetBuzzerLockPacket,
+  PacketHelper
+} from '../../../../shared/shared';
 import {BehaviorSubject, Observable, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
@@ -33,7 +35,6 @@ import {baseUrlMaster, pathsMaster} from '../master/paths-master';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import config from '../../../../config.json';
 import {TeamHelper} from '../helper/team.helper';
-import {PacketsHelper} from '../helper/packets.helper';
 import * as Uuid from 'uuid';
 import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
 
@@ -70,14 +71,10 @@ export class GameService implements OnDestroy {
   private cbUpdateCurrentQuestion: ZeroVoidCallback;
   private cbEndGame: ZeroVoidCallback;
   private markTeamSubject: Subject<IMarkTeamPacket>;
+  private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
 
 
   constructor(private webSocketService: WebSocketService, private router: Router, private sanitizer: DomSanitizer) {
-    /*this.joinedRunningGame = false;
-    this.teams = [];
-    this.setNewGameState(EGameStatesMaster.STARTING);
-    this.webSocketListenSubscription = webSocketService.listen(this.onMessage.bind(this));
-    this.registerMaster();*/
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
     this.markTeamSubject = new Subject<IMarkTeamPacket>();
     this.teams = [];
@@ -146,6 +143,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.MARK_TEAM:
         this.handleMarkTeamPacket(message as IMarkTeamPacket);
+        break;
+      case EPacketTypes.SET_BUZZER_LOCK:
+        this.handleSetBuzzerLockPacket(message as ISetBuzzerLockPacket);
         break;
       default:
         break;
@@ -276,7 +276,9 @@ export class GameService implements OnDestroy {
       this.currentGameState = {
         currentQuestionNumber: 0,
         loggedAnswers: [],
-        markedTeamIds: []
+        markedTeamIds: [],
+        // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
+        setBuzzerLock: false
       };
     } else {
       this.currentGameState = gameState;
@@ -346,25 +348,25 @@ export class GameService implements OnDestroy {
    * This one is just to mark an answer as given, without revealing if it is true
    */
   public logInAnswer(answer: IAnswer): void {
-    this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_IN, answer));
+    this.webSocketService.send<IAnswerSetStatePacket>(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_IN, answer));
   }
 
   /**
    * This one activates a given answer, revealing if it was true
    */
   public activateAnswer(answer: IAnswer): void {
-    this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer));
+    this.webSocketService.send<IAnswerSetStatePacket>(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer));
   }
 
   public logOutAnswer(answer: IAnswer): void {
-    this.webSocketService.send<IAnswerSetStatePacket>(PacketsHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_OUT, answer));
+    this.webSocketService.send<IAnswerSetStatePacket>(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_OUT, answer));
   }
 
   public getPreviousQuestion(): IQuestion {
     if (this.hasPreviousQuestion()) {
       this.currentGameState.currentQuestionNumber--;
       this.sendUnmarkAllTeamsPacket();
-      this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
+      this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
     return this.getCurrentQuestion();
   }
@@ -373,7 +375,7 @@ export class GameService implements OnDestroy {
     if (this.hasNextQuestion()) {
       this.currentGameState.currentQuestionNumber++;
       this.sendUnmarkAllTeamsPacket();
-      this.webSocketService.send<ISetQuestionPacket>(PacketsHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
+      this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
     return this.getCurrentQuestion();
   }
@@ -388,7 +390,7 @@ export class GameService implements OnDestroy {
 
   public endGame(): void {
     this.setNewGameState(EGameStatesMaster.END);
-    this.webSocketService.send<IEndGamePacket>(PacketsHelper.makeEndGamePacket());
+    this.webSocketService.send<IEndGamePacket>(PacketHelper.makeEndGamePacket());
   }
 
   /**
@@ -485,7 +487,7 @@ export class GameService implements OnDestroy {
   }
 
   public sendKeypress(keyCode: string): void {
-    this.webSocketService.send<IKeypressOnScreenPacket>(PacketsHelper.makeKeypressOnScreenPacket(keyCode));
+    this.webSocketService.send<IKeypressOnScreenPacket>(PacketHelper.makeKeypressOnScreenPacket(keyCode));
   }
 
   private mergeBuzzerIdsFromPresetupDataWithSetTeams(teams: ITeam[]): ITeam[] {
@@ -509,10 +511,10 @@ export class GameService implements OnDestroy {
   }
 
   public setMarkTeam(teamId: string, marked: boolean = true): void {
-    this.webSocketService.send<IMarkTeamPacket>(PacketsHelper.makeMarkTeamPacket(teamId, marked));
+    this.webSocketService.send<IMarkTeamPacket>(PacketHelper.makeMarkTeamPacket(teamId, marked));
   }
 
-  private sendUnmarkAllTeamsPacket(): void {
+  public sendUnmarkAllTeamsPacket(): void {
     this.webSocketService.send<IMarkTeamPacket>({
       packetType: EPacketTypes.MARK_TEAM,
       teamId: null,
@@ -521,4 +523,22 @@ export class GameService implements OnDestroy {
     });
   }
 
+  public observeBuzzerLockPackets(): Observable<ISetBuzzerLockPacket> {
+    if (this.setBuzzerLockSubject == null) {
+      this.setBuzzerLockSubject = new Subject<ISetBuzzerLockPacket>();
+    }
+    return this.setBuzzerLockSubject.asObservable();
+  }
+
+  private handleSetBuzzerLockPacket(packet: ISetBuzzerLockPacket): void {
+    if (this.setBuzzerLockSubject != null) {
+      this.setBuzzerLockSubject.next(packet);
+    }
+  }
+
+  public setBuzzerLock(setState: boolean): void {
+    this.currentGameState.setBuzzerLock = setState;
+    const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(setState);
+    this.webSocketService.send<ISetBuzzerLockPacket>(buzzerLockPacket);
+  }
 }

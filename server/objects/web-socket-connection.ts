@@ -3,7 +3,7 @@ import {WebSocketService} from "../services/web-socket.service";
 import * as Uuid from 'uuid';
 import {Observable, Subject} from "rxjs";
 import {LoggerService} from "../services/logger.service";
-import {IGamePacket, IWebSocketMessage, IResponsePacket, EPacketTypes} from "../../shared/objects/shared";
+import {IGamePacket, IWebSocketMessage, IResponsePacket, EPacketTypes} from "../../shared/shared";
 
 type onDestroyCallback = () => void;
 

@@ -6,9 +6,10 @@
 ######
 ARG dirClient=client
 ARG workDir=/usr/buzzerWebUI/$dirClient
+ARG ARCH=amd64
 
 # build angular app
-FROM node:current-alpine3.13 as node
+FROM $ARCH/node:current-alpine3.13 as node
 LABEL version="0.0.1"
 LABEL description="Image for the buzzer web UI frontend"
 # leaving it without a value to have it inherit the globally set value
@@ -30,7 +31,7 @@ RUN npm run build
 
 
 # serve built angular app
-FROM nginx:1.21.0-alpine
+FROM $ARCH/nginx:1.21.0-alpine
 # leaving them without a value to have them inherit the globally set values
 ARG dirClient
 ARG workDir
