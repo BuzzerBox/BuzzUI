@@ -6,3 +6,4 @@ import {I2cService} from "./services/i2c.service";
 HttpServerService.get().start(config.server.port);
 GameService.startGame();
 I2cService.get().test();
+// I2cService.get().test2();
