@@ -1,8 +1,8 @@
-import {open, openPromisified, PromisifiedBus} from "i2c-bus";
+import {BytesRead, openPromisified, PromisifiedBus} from "i2c-bus";
+import {ByteHelper} from "../../shared/helper/byte.helper";
 
 export class I2cService {
 	private static instance: I2cService;
-	private readonly BUS_NUMBER: number = 1;
 
 	private constructor() {
 		//
@@ -15,33 +15,22 @@ export class I2cService {
 		return this.instance;
 	}
 
-	public test(): void {
-		const rbuf = Buffer.alloc(1);
-
-		const i2c1 = open(1, err => {
-			if (err) throw err;
-			i2c1.i2cRead(0x19,rbuf.length, rbuf, res => {
-				console.log(rbuf.toString('hex'));
-			});
-		});
-	}
-
 	public test2(): void {
-		this.read(0x19, 0x01).then(console.log);
+		this.read(1,0x19).then(console.log).catch(console.log);
 	}
 
-	private open(action: ((b: PromisifiedBus) => Promise<void>)): void {
-		openPromisified(this.BUS_NUMBER)
-			.then(i2c1 => action(i2c1)
-				.then(() => i2c1.close()))
-			.catch(console.log);
+	public async read(busNumber: number, address: number): Promise<number> {
+		ByteHelper.assureBytes(busNumber, address);
+		const resultBuffer: Buffer = Buffer.alloc(1);
+		const promisifiedBus: PromisifiedBus = await openPromisified(busNumber);
+		const readBytes: BytesRead = await promisifiedBus.i2cRead(address, resultBuffer.length, resultBuffer);
+		console.log("plain", parseInt(readBytes.buffer.toString('hex'), 16));
+		return parseInt(readBytes.buffer.toString('hex'), 16);
 	}
 
-	public read(address: number, command: number): Promise<number> {
-		return new Promise<number>(resolve => {
-			this.open(async (b: PromisifiedBus) => {
-				resolve(b.readWord(address, command));
-			})
-		});
+	public async write(busNumber: number, address: number, command: number, byte: number): Promise<void> {
+		ByteHelper.assureBytes(busNumber, address, command, byte);
+		const promisifiedBus: PromisifiedBus = await openPromisified(busNumber);
+		await promisifiedBus.writeByte(address, command, byte);
 	}
 }
