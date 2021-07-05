@@ -18,7 +18,16 @@ WebApp for the BuzzerBox
       "name": "Buzzer 5",
       "key": "Numpad4"
     }
-  ]
+  ],
+  "i2c": {
+    "addresses": {
+     "microController": "25"
+    },
+    "commands": {
+     "softRelease": "1",
+     "setBuzzer": "2"
+   }
+  }
 }
 ```
 The following key-bindings are available so far: `NUMPAD_0`, `NUMPAD_1`, `NUMPAD_2`, `NUMPAD_3`, `NUMPAD_4`, `NUMPAD_5`, `NUMPAD_6`, `NUMPAD_7`, `NUMPAD_8`, `NUMPAD_9`.

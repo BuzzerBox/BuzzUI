@@ -4,21 +4,33 @@
   "screenName": "Screen",
   "server": {
     "port": 4201,
-    "address": "localhost",
+    "address": "192.168.178.49",
     "webSocketProtocol": "ws"
   },
+  "softReleaseKey": "KeyQ",
   "buzzers": [
     {
+      "name": "Buzzer 0",
+      "key": "Digit0"
+    },
+    {
       "name": "Buzzer 1",
-      "key": "Numpad0"
+      "key": "Digit1"
     },
     {
       "name": "Buzzer 2",
-      "key": "Numpad1"
-    },
-    {
-      "name": "Buzzer 3",
-      "key": "Numpad2"
+      "key": "Digit2"
     }
-  ]
+  ],
+  "i2c": {
+    "pollingInMS": "150",
+    "busNumber": "1",
+    "addresses": {
+      "microController": "25"
+    },
+    "commands": {
+      "softRelease": "1",
+      "setBuzzer": "2"
+    }
+  }
 }

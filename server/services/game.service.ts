@@ -33,6 +33,7 @@ import {
 import config from '../../config.json';
 import * as Uuid from 'uuid';
 import {LoggerService} from "./logger.service";
+import {MicroControllerI2CAdapter} from "../objects/adapters/MicroControllerI2C.adapter";
 
 export class GameService {
     private static instance: GameService;
@@ -64,6 +65,7 @@ export class GameService {
         this.setNewState(EGameStates.WAITING_FOR_MASTER);
         // call this once to read config and create necessary variables
         this.getBuzzerConfig();
+        // this.startMicroControllerI2CPolling();
     }
 
     public static get(): GameService {
@@ -115,7 +117,7 @@ export class GameService {
 
     private onMasterConnectionDestroy(): void {
         this.webSocketConnectionMaster = null;
-        if (this.currentStateInAutomaton == EGameStates.WAITING_FOR_SETUP) {
+        if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_SETUP) {
             this.setNewState(EGameStates.WAITING_FOR_MASTER);
         } else if (this.currentStateInAutomaton === EGameStates.END) {
             this.resetServerData();
@@ -136,20 +138,20 @@ export class GameService {
         if (this.buzzerConfig == null) {
             this.buzzerConfig = [];
             // check if no key was used more than once
-            let keys: string[] = [];
-            for (let buzzConf of config.buzzers) {
-                let eKeyBind = buzzConf.key;
+            const keys: string[] = [];
+            for (const buzzConf of config.buzzers) {
+                const eKeyBind = buzzConf.key;
                 if (keys.includes(eKeyBind))
                 {
                     throw new Error("Cannot used the same key bind more than once");
                 }
                 keys.push(eKeyBind);
             }
-            for (let buzzConf of config.buzzers) {
-                let id: string = Uuid.v4();
-                let c: IBuzzer = {
+            for (const buzzConf of config.buzzers) {
+                const id: string = Uuid.v4();
+                const c: IBuzzer = {
                     name: buzzConf.name,
-                    id: id,
+                    id,
                     keyBind: buzzConf.key
                     // TODO remove EKeyBind
                 }
@@ -161,7 +163,7 @@ export class GameService {
     }
 
     private onSetupGamePackage(packet: ISetupPacket): void {
-        if (this.currentStateInAutomaton != EGameStates.WAITING_FOR_SETUP) {
+        if (this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP) {
             return;
         }
         let packetOk = true;
@@ -193,14 +195,14 @@ export class GameService {
         if (this.webSocketConnectionMaster == null) {
             this.webSocketConnectionMaster = con;
             // TODO: maybe also allow EGameStates.END as state for this one?
-            if (this.currentStateInAutomaton == EGameStates.WAITING_FOR_MASTER) {
+            if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_MASTER) {
                 this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
                 this.setNewState(EGameStates.WAITING_FOR_SETUP);
                 this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
                     packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
                     availableBuzzers: this.getBuzzerConfig()
                 })
-            } else if (this.currentStateInAutomaton == EGameStates.LOST_MASTER) {
+            } else if (this.currentStateInAutomaton === EGameStates.LOST_MASTER) {
                 if (this.previousStateInAutomaton === EGameStates.WAITING_FOR_START || this.previousStateInAutomaton === EGameStates.PLAYING) {
                     this.setNewState(EGameStates.WAITING_FOR_START);
                     this.webSocketConnectionMaster.send<INewMasterAccepted>({
@@ -223,7 +225,7 @@ export class GameService {
     }
 
     private onStartGamePacket(packet: IStartGamePacket): void {
-        let isLegal = this.currentStateInAutomaton === EGameStates.WAITING_FOR_START;
+        const isLegal = this.currentStateInAutomaton === EGameStates.WAITING_FOR_START;
         if (isLegal) {
             this.setNewState(EGameStates.PLAYING);
         }
@@ -262,11 +264,13 @@ export class GameService {
     }
 
     private onSetQuestionPacket(packet: ISetQuestionPacket): void {
-        let value: number = packet.set;
+        const value: number = packet.set;
         if (value >= 0 && value <= this.questions.length - 1) {
             this.currentGameState.currentQuestionNumber = value;
         }
-        this.setKeypressLocked(false);
+        // this.setKeypressLocked(false);
+        const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
+        this.onSetBuzzerLockPacket(null, lockPacket);
         this.ignoredKeypresses = [];
         this.sendToAllScreens(packet);
     }
@@ -291,7 +295,7 @@ export class GameService {
     }
 
     private getIdOfAnswer(answer: IAnswer): number {
-        let answers = this.getCurrentQuestion().answers;
+        const answers = this.getCurrentQuestion().answers;
         for (let i = 0; i < answers.length; i++) {
             if (answers[i] === answer) {
                 return i;
@@ -354,18 +358,29 @@ export class GameService {
         };
     }
 
+    // TODO: create method to send to all screens AND master
 
+    /**
+     * @deprecated Will probably be removed
+     */
     private onKeypressOnScreenPacket(packet: IKeypressOnScreenPacket): void {
-        if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
+        console.log("onKeypressOnScreenPacket", packet);
+        if (packet.keyCode === config.softReleaseKey) {
+            const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
+            // this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(lockPacket);
+            // this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
+            this.onSetBuzzerLockPacket(null, lockPacket, false);
+        } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
             const team: ITeam = this.getTeamForKeyCode(packet.keyCode);
             if (team == null) {
+                console.log("no team found for keycode " + packet.keyCode)
                 return;
             }
             this.setKeypressLocked(true);
             this.lastKeyPressed = packet.keyCode;
             const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
             this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
-            let buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
+            const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
             this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
             this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
             this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
@@ -391,12 +406,15 @@ export class GameService {
                 b = buzzer;
             }
         }
+        console.log("found buzzer: ", b);
         if (b == null) {
             return null;
         }
         for (const team of this.teams) {
             console.log(team)
             if (b.id === team.buzzerId) {
+                console.log("found team " + team.name + " to match keypress " + keyCode)
+
                 return team;
             }
         }
@@ -425,9 +443,58 @@ export class GameService {
         return true;
     }
 
-    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket): void {
+    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendI2C: boolean = true): void {
         this.setKeypressLocked(packet.setLock);
         this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(packet);
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
+        // release the lock via i2c if necessary
+        if (sendI2C && !packet.setLock) {
+            MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
+        }
+    }
+
+    private startMicroControllerI2CPolling(): void {
+        setInterval(this.handleMicroControllerI2CRead.bind(this), parseInt(config.i2c.pollingInMS, 10));
+    }
+
+    private async handleMicroControllerI2CRead(): Promise<void> {
+        if (await MicroControllerI2CAdapter.isBuzzerLockActive()) {
+            const buzzerNumber: number = await MicroControllerI2CAdapter.getPressedBuzzer();
+            console.log("got number " + buzzerNumber);
+            if (0 <= buzzerNumber && buzzerNumber <= 9) {
+                this.handlePressedBuzzer(buzzerNumber);
+            }
+        } else {
+            // console.log("no buzzer lock active");
+            const buzzerNumber: number = await MicroControllerI2CAdapter.getPressedBuzzer();
+            console.log("got number " + buzzerNumber);
+            if (0 <= buzzerNumber && buzzerNumber <= 9) {
+                this.handlePressedBuzzer(buzzerNumber);
+            } else if (buzzerNumber === 127) {
+                this.handleIdleSituation();
+            }
+        }
+    }
+
+    private handleI2CError(e): void {
+        console.log("I2C error occured", e);
+    }
+
+    private handlePressedBuzzer(buzzerNumber: number): void {
+        const lockPacket: ISetBuzzerLockPacket =  PacketHelper.makeBuzzerLockPacket(true);
+        const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(this.teams[buzzerNumber].teamId, true);
+        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(lockPacket);
+        this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+        this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
+        this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
+    }
+
+    private handleIdleSituation(): void {
+        const lockPacket: ISetBuzzerLockPacket =  PacketHelper.makeBuzzerLockPacket(false);
+        const markTeamPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
+        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(lockPacket);
+        this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+        this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
+        this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
     }
 }
