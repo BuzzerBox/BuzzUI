@@ -21,6 +21,7 @@ import {MatCardModule} from '@angular/material/card';
 import {SharedModule} from '../shared/shared.module';
 import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 
 
 
@@ -34,22 +35,23 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
     StartGameComponent,
     PlayComponent
   ],
-  imports: [
-    CommonModule,
-    MasterRoutingModule,
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonModule,
-    ReactiveFormsModule,
-    MatStepperModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckboxModule,
-    FlexModule,
-    MatCardModule,
-    SharedModule,
-    MatBottomSheetModule
-  ],
+	imports: [
+		CommonModule,
+		MasterRoutingModule,
+		MatToolbarModule,
+		MatIconModule,
+		MatButtonModule,
+		ReactiveFormsModule,
+		MatStepperModule,
+		MatFormFieldModule,
+		MatInputModule,
+		MatCheckboxModule,
+		FlexModule,
+		MatCardModule,
+		SharedModule,
+		MatBottomSheetModule,
+		MatProgressSpinnerModule
+	],
   exports: [
     StartComponent
   ]

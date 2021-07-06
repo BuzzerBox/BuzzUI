@@ -8,4 +8,12 @@ export class LoggerService {
             console.dir(obj)
         }
     }
+
+    public static error(...errors): void {
+        if (environment.isDebug || this.forceOverEnvironmentSetting) {
+            for(const error of errors) {
+                console.error(error)
+            }
+        }
+    }
 }

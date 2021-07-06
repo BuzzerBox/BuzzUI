@@ -1,4 +1,7 @@
 <div class="container">
-  <p class="center-center">Warte auf Spielaufbau!</p>
-  <mat-spinner diameter="400" class="center-center">Test</mat-spinner>
+  <p class="center-center">
+    <ng-template [ngIf]="isWebsocketConnected" [ngIfElse]="notConnected">Warte auf Spielaufbau!</ng-template>
+    <ng-template #notConnected>Warte auf Verbindung zu Server!</ng-template>
+  </p>
+  <mat-spinner diameter="400" class="center-center"></mat-spinner>
 </div>
