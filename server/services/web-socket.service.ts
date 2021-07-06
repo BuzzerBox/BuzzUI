@@ -3,7 +3,7 @@ import {Server} from "ws";
 import {HttpServerService} from "./http-server.service";
 import {Observable, Subject} from "rxjs";
 import {WebSocketConnection} from "../objects/web-socket-connection";
-import {IWebSocketMessage} from '../../shared/shared';
+import {EPacketTypes, IGamePacket, IWebSocketMessage} from '../../shared/shared';
 import {LoggerService} from "./logger.service";
 
 export class WebSocketService {
@@ -34,12 +34,15 @@ export class WebSocketService {
         if (this.isStarted) {
             this.webSocketServer.on('connection', (ws: WebSocket) => {
                 const wsc: WebSocketConnection = new WebSocketConnection(ws);
+                // send some arbitrary message such that the connecting device knows that the connection was successful
+                // ws.send('lorem ipsum');
+                wsc.send<IGamePacket>({packetType: EPacketTypes.WEBSOCKET_CONNECTION_SUCCESSFUL})
                 this.newConnectionEstablishedSubject.next(wsc);
                 this.connections.set(ws, wsc);
 
 
 
-                //connection is up, let's add a simple simple event
+                // connection is up, let's add a simple simple event
                 // ws.on('message', this.onMessage.bind(this));
 
                 // When the connection is closed, remove it from the held array

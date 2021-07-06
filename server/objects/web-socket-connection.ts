@@ -18,7 +18,7 @@ export class WebSocketConnection {
         this.webSocketConnection = ws;
         this.wss = WebSocketService.get();
         this.onMessageSubject = new Subject<IGamePacket>();
-        //connection is up, let's add a simple simple event
+        // connection is up, let's add a simple simple event
         ws.on('message', m => {
             LoggerService.log(`Received packet: ${m}`);
             this.onMessageSubject.next(JSON.parse(m as string));

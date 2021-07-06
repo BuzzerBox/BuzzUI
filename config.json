@@ -4,8 +4,9 @@
   "screenName": "Screen",
   "server": {
     "port": 4201,
-    "address": "192.168.178.49",
-    "webSocketProtocol": "ws"
+    "address": "192.168.178.66",
+    "webSocketProtocol": "ws",
+    "retryIntervalInMS": "500"
   },
   "softReleaseKey": "KeyQ",
   "buzzers": [
