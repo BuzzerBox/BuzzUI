@@ -1,10 +1,9 @@
-import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {GameService} from '../../services/game.service';
 import {
   ITeam,
   IQuestion,
-  IEndGamePacket,
-  IMarkTeamPacket
+  IEndGamePacket
 } from '../../../../../shared/shared';
 import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialog} from '@angular/material/dialog';

@@ -20,5 +20,6 @@ export enum EPacketTypes {
     RESET_SERVER,
     KEYPRESS_ON_SCREEN,
     MARK_TEAM,
-    SET_BUZZER_LOCK
+    SET_BUZZER_LOCK,
+    WEBSOCKET_CONNECTION_SUCCESSFUL// no interface exists for this one!
 }

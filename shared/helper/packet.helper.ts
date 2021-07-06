@@ -2,16 +2,16 @@ import {
     IGamePacket,
     IWebSocketMessage,
     IResponsePacket,
-    EPacketTypes,
     IMarkTeamPacket,
     ISetBuzzerLockPacket,
-    EAnswerStates,
     IAnswer,
     IAnswerSetStatePacket,
     ISetQuestionPacket,
     IEndGamePacket,
     IKeypressOnScreenPacket
-} from "../shared";
+} from "../interfaces";
+
+import {EPacketTypes, EAnswerStates} from '../enums';
 
 export class PacketHelper {
     private constructor() {

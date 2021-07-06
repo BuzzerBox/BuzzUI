@@ -27,11 +27,11 @@ import {
   ISetBuzzerLockPacket,
   PacketHelper
 } from '../../../../shared/shared';
-import {BehaviorSubject, Observable, Subject, Subscription} from 'rxjs';
+import {Observable, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
-import {baseUrlMaster, pathsMaster} from '../master/paths-master';
+import {pathsMaster} from '../master/paths-master';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import config from '../../../../config.json';
 import {TeamHelper} from '../helper/team.helper';
@@ -55,6 +55,7 @@ export type ZeroVoidCallback = () => void;
 })
 export class GameService implements OnDestroy {
   // private webSocketService: WebSocketService;
+//   private webSocketListenSubscription: Promise<Subscription>;
   private webSocketListenSubscription: Subscription;
   private currentGameStateInAutomaton: EGameStatesMaster;
   private previousGameStateInAutomaton: EGameStatesMaster;
@@ -152,9 +153,13 @@ export class GameService implements OnDestroy {
     }
   }
 
+//   async ngOnDestroy(): Promise<void> {
   ngOnDestroy(): void {
+    // if (this.webSocketListenSubscription != null && (await this.webSocketListenSubscription) != null) {
+    //  (await this.webSocketListenSubscription).unsubscribe();
+    // }
     if (this.webSocketListenSubscription != null) {
-      this.webSocketListenSubscription.unsubscribe();
+      this.webSocketListenSubscription.unsubscribe(); //
     }
   }
 
