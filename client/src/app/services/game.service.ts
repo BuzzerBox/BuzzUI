@@ -153,13 +153,9 @@ export class GameService implements OnDestroy {
   }
 
   async ngOnDestroy(): Promise<void> {
-  // ngOnDestroy(): void {
     if (this.webSocketListenSubscription != null && (await this.webSocketListenSubscription) != null) {
      (await this.webSocketListenSubscription).unsubscribe();
     }
-    // if (this.webSocketListenSubscription != null) {
-    //   this.webSocketListenSubscription.unsubscribe(); //
-    // }
   }
 
   private handlePresetupAvailableInfo(packet: IPresetupAvailableInfoPacket): void {
@@ -343,6 +339,7 @@ export class GameService implements OnDestroy {
       return;
     }
     this.currentGameState = gameState.gameState;
+    gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
     this.setupGame(gameState.teams, gameState.question, gameState.gameState);
   }
 
@@ -470,7 +467,6 @@ export class GameService implements OnDestroy {
       if (this.cbUpdateCurrentQuestion != null) {
         this.cbUpdateCurrentQuestion();
       }
-      // this.currentQuestionSubject.next(this.getCurrentQuestion());
     }
   }
 
@@ -552,5 +548,19 @@ export class GameService implements OnDestroy {
     return new Observable<boolean>(subscriber => {
       this.webSocketListenSubscription.then(_ => subscriber.next(true));
     });
+  }
+
+  private setCurrentBuzzerIdsToTeams(teams: ITeam[]): ITeam[] {
+    if (this.presetupData.availableBuzzers.length < teams.length) {
+      throw new Error('Can\'t set buzzer IDs to teams since there are more teams than buzzers!');
+    }
+
+    for (let i = 0; i < teams.length; i++) {
+      const team = teams[i];
+      team.teamId = this.presetupData.availableBuzzers[i].id;
+      team.buzzerId = this.presetupData.availableBuzzers[i].id;
+    }
+
+    return teams;
   }
 }

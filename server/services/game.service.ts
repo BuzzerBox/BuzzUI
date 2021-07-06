@@ -82,7 +82,6 @@ export class GameService {
 
     private onNewConnection(con: WebSocketConnection) {
         console.dir("new connection");
-        // console.dir(con);
 
         // wait until the first packet to determine whether it is a master or a screen
         const sub = con.onMessage().subscribe((packet: IGamePacket) => {
@@ -116,6 +115,7 @@ export class GameService {
     }
 
     private onMasterConnectionDestroy(): void {
+        LoggerService.log('Connection to master was closed');
         this.webSocketConnectionMaster = null;
         if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_SETUP) {
             this.setNewState(EGameStates.WAITING_FOR_MASTER);
@@ -359,21 +359,14 @@ export class GameService {
     }
 
     // TODO: create method to send to all screens AND master
-
-    /**
-     * @deprecated Will probably be removed
-     */
     private onKeypressOnScreenPacket(packet: IKeypressOnScreenPacket): void {
-        console.log("onKeypressOnScreenPacket", packet);
         if (packet.keyCode === config.softReleaseKey) {
             const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
-            // this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(lockPacket);
-            // this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
             this.onSetBuzzerLockPacket(null, lockPacket, false);
         } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
             const team: ITeam = this.getTeamForKeyCode(packet.keyCode);
             if (team == null) {
-                console.log("no team found for keycode " + packet.keyCode)
+                LoggerService.log("no team found for keycode " + packet.keyCode)
                 return;
             }
             this.setKeypressLocked(true);
@@ -396,7 +389,6 @@ export class GameService {
     }
 
     private getTeamForKeyCode(keyCode: string): ITeam {
-        console.log(this.keyCodesInUse)
         if (!this.keyCodesInUse.includes(keyCode)) {
             return null;
         }
@@ -406,15 +398,12 @@ export class GameService {
                 b = buzzer;
             }
         }
-        console.log("found buzzer: ", b);
         if (b == null) {
             return null;
         }
         for (const team of this.teams) {
-            console.log(team)
             if (b.id === team.buzzerId) {
-                console.log("found team " + team.name + " to match keypress " + keyCode)
-
+                LoggerService.log("found team " + team.name + " to match keypress " + keyCode);
                 return team;
             }
         }
