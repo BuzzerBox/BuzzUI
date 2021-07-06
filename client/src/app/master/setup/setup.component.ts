@@ -46,7 +46,7 @@ export class SetupComponent implements OnInit {
     this.teamNameSuggestions = [];
     this.teamFormControlNames = [];
     const presetupData = this.game.getPresetupData();
-    console.log("presetupData");
+    console.log('presetupData');
     console.log(presetupData);
     const teamFormControls: {
       [key: string]: AbstractControl;
@@ -201,5 +201,7 @@ export class SetupComponent implements OnInit {
       this.game.importGameStateFromJson(importedState);
     };
   }
+
+
 
 }
