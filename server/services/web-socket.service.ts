@@ -1,5 +1,4 @@
 import * as WebSocket from "ws";
-import {Server} from "ws";
 import {HttpServerService} from "./http-server.service";
 import {Observable, Subject} from "rxjs";
 import {WebSocketConnection} from "../objects/web-socket-connection";
@@ -8,14 +7,14 @@ import {LoggerService} from "./logger.service";
 
 export class WebSocketService {
     private static instance: WebSocketService;
-    private webSocketServer: Server;
+    private webSocketServer: WebSocket.Server;
     private newConnectionEstablishedSubject: Subject<WebSocketConnection>;
     private connections: Map<WebSocket, WebSocketConnection>;
     private isStarted: boolean;
 
     private constructor() {
-        //initialize the WebSocket server instance
-        let server = HttpServerService.get().getServer();
+        // initialize the WebSocket server instance
+        const server = HttpServerService.get().getServer();
         this.webSocketServer = new WebSocket.Server({ server });
         this.isStarted = true;
         this.connections = new Map<WebSocket, WebSocketConnection>();
@@ -35,28 +34,16 @@ export class WebSocketService {
             this.webSocketServer.on('connection', (ws: WebSocket) => {
                 const wsc: WebSocketConnection = new WebSocketConnection(ws);
                 // send some arbitrary message such that the connecting device knows that the connection was successful
-                // ws.send('lorem ipsum');
                 wsc.send<IGamePacket>({packetType: EPacketTypes.WEBSOCKET_CONNECTION_SUCCESSFUL})
                 this.newConnectionEstablishedSubject.next(wsc);
                 this.connections.set(ws, wsc);
 
-
-
-                // connection is up, let's add a simple simple event
-                // ws.on('message', this.onMessage.bind(this));
-
                 // When the connection is closed, remove it from the held array
                 ws.on('close', this.onConnectionClose.bind(this));
-                // ws.on('error', () => this.removeConnection(ws));
             });
         }
         return this.newConnectionEstablishedSubject.asObservable();
     }
-
-    /*private onMessage(message: string): void {
-        //log the received message and send it back to the client
-        console.log('received via web socket: %s', message);
-    }*/
 
     public send(con: WebSocket, message: IWebSocketMessage): void {
         if (con != null) {

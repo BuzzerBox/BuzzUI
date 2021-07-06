@@ -3,7 +3,7 @@ import {WebSocketService} from "../services/web-socket.service";
 import * as Uuid from 'uuid';
 import {Observable, Subject} from "rxjs";
 import {LoggerService} from "../services/logger.service";
-import {IGamePacket, IWebSocketMessage, IResponsePacket, EPacketTypes} from "../../shared/shared";
+import {IGamePacket, IWebSocketMessage} from "../../shared/shared";
 
 type onDestroyCallback = () => void;
 
@@ -45,7 +45,7 @@ export class WebSocketConnection {
     }
 
     private onClose(): void {
-        for (let cb of this.onCloseCallbacks) {
+        for (const cb of this.onCloseCallbacks) {
             cb();
         }
         this.onCloseCallbacks = null;

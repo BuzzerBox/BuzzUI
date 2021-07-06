@@ -55,8 +55,8 @@ export type ZeroVoidCallback = () => void;
 })
 export class GameService implements OnDestroy {
   // private webSocketService: WebSocketService;
-//   private webSocketListenSubscription: Promise<Subscription>;
-  private webSocketListenSubscription: Subscription;
+  private webSocketListenSubscription: Promise<Subscription>;
+  // private webSocketListenSubscription: Subscription;
   private currentGameStateInAutomaton: EGameStatesMaster;
   private previousGameStateInAutomaton: EGameStatesMaster;
   private teams: ITeam[];
@@ -85,7 +85,6 @@ export class GameService implements OnDestroy {
     if (!this.initedAsMaster && !this.initedAsScreen) {
       this.joinedRunningGame = false;
       this.setNewGameState(EGameStatesMaster.STARTING);
-      // this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
       this.registerMaster();
       this.initedAsMaster = true;
     }
@@ -153,14 +152,14 @@ export class GameService implements OnDestroy {
     }
   }
 
-//   async ngOnDestroy(): Promise<void> {
-  ngOnDestroy(): void {
-    // if (this.webSocketListenSubscription != null && (await this.webSocketListenSubscription) != null) {
-    //  (await this.webSocketListenSubscription).unsubscribe();
-    // }
-    if (this.webSocketListenSubscription != null) {
-      this.webSocketListenSubscription.unsubscribe(); //
+  async ngOnDestroy(): Promise<void> {
+  // ngOnDestroy(): void {
+    if (this.webSocketListenSubscription != null && (await this.webSocketListenSubscription) != null) {
+     (await this.webSocketListenSubscription).unsubscribe();
     }
+    // if (this.webSocketListenSubscription != null) {
+    //   this.webSocketListenSubscription.unsubscribe(); //
+    // }
   }
 
   private handlePresetupAvailableInfo(packet: IPresetupAvailableInfoPacket): void {
@@ -547,5 +546,11 @@ export class GameService implements OnDestroy {
     this.currentGameState.setBuzzerLock = setState;
     const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(setState);
     this.webSocketService.send<ISetBuzzerLockPacket>(buzzerLockPacket);
+  }
+
+  public observeIsWebsocketConnected(): Observable<boolean> {
+    return new Observable<boolean>(subscriber => {
+      this.webSocketListenSubscription.then(_ => subscriber.next(true));
+    });
   }
 }
