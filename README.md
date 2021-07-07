@@ -36,8 +36,12 @@ The following key-bindings are available so far: `NUMPAD_0`, `NUMPAD_1`, `NUMPAD
 # Autostart
 To auto start all the required stuff, make sure the following lines are present in  `/etc/xdg/lxsession/LXDE-pi/autostart`
 ```
+# hide the mouse cursor when idle
 unclutter -idle 0
-/usr/bin/chromium-browser --kiosk --disable-restore-session-state http://localh$
+# open the page in kiosk mode: system's notifications are disabled as well as some other stuff
+/usr/bin/chromium-browser --kiosk --disable-restore-session-state http://localhost/screen/
+# start the server
 node /home/pi/buzzer/server/dist/server/main.js
+# create the ad-hoc network to connect to the pi
 sudo sh /home/pi/buzzer/scripts/createAdHocNetwork.sh
 ```
