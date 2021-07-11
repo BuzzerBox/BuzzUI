@@ -60,3 +60,7 @@ Additionally, configure /etc/dnsmasq.conf to resolve local DNS queries from the 
 ```
 local=/local/
 ```
+
+
+# WiFi
+WiFi name's `BuzzerBoxNetwrok` and the password is `12TheBuzzerBox_IncredibleNetwork34`
