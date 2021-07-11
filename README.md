@@ -48,3 +48,15 @@ sudo sh /home/pi/buzzer/scripts/createAdHocNetwork.sh
 
 # Splash Screen
 To enable the custom splash screen, follow this tutorial: https://web.archive.org/web/20210308001512/https://scribles.net/customizing-boot-up-screen-on-raspberry-pi/
+
+# DNS 
+To make the UI accessible via a domain name from the PiFi, configure /etc/hosts and add the line 
+``` 
+10.0.0.5      buzzer.box
+10.0.0.5      buzzerbox.local
+```
+
+Additionally, configure /etc/dnsmasq.conf to resolve local DNS queries from the hosts file. 
+```
+local=/local/
+```
