@@ -45,3 +45,6 @@ node /home/pi/buzzer/server/dist/server/main.js
 # create the ad-hoc network to connect to the pi
 sudo sh /home/pi/buzzer/scripts/createAdHocNetwork.sh
 ```
+
+# Splash Screen
+To enable the custom splash screen, follow this tutorial: https://web.archive.org/web/20210308001512/https://scribles.net/customizing-boot-up-screen-on-raspberry-pi/
