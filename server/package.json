@@ -7,7 +7,9 @@
     "url": "https://github.com/BuzzerBox/BuzzUI"
   },
   "scripts": {
-    "start": "tsc && node dist/server/main.js",
+    "transpile": "tsc",
+    "start": "node dist/server/main.js",
+    "startDev": "npm run transpile && npm run start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

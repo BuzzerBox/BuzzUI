@@ -4,7 +4,7 @@
   "screenName": "Screen",
   "server": {
     "port": 4201,
-    "address": "192.168.178.49",
+    "address": "10.0.0.5",
     "webSocketProtocol": "ws",
     "retryIntervalInMS": "500"
   },
@@ -21,6 +21,34 @@
     {
       "name": "Buzzer 2",
       "key": "Digit2"
+    },
+    {
+      "name": "Buzzer 3",
+      "key": "Digit3"
+    },
+    {
+      "name": "Buzzer 4",
+      "key": "Digit4"
+    },
+    {
+      "name": "Buzzer 5",
+      "key": "Digit5"
+    },
+    {
+      "name": "Buzzer 6",
+      "key": "Digit6"
+    },
+    {
+      "name": "Buzzer 7",
+      "key": "Digit7"
+    },
+    {
+      "name": "Buzzer 8",
+      "key": "Digit8"
+    },
+    {
+      "name": "Buzzer 9",
+      "key": "Digit9"
     }
   ],
   "i2c": {

@@ -147,6 +147,9 @@ export class GameService implements OnDestroy {
       case EPacketTypes.SET_BUZZER_LOCK:
         this.handleSetBuzzerLockPacket(message as ISetBuzzerLockPacket);
         break;
+      case EPacketTypes.RESET_SERVER:
+        this.handleResetServerPacket(message as IResetServerPacket);
+        break;
       default:
         break;
     }
@@ -262,29 +265,31 @@ export class GameService implements OnDestroy {
     return this.questions;
   }
 
-  public setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState, dotNotMergeBuzzerIds: boolean = false): void {
-    if (!dotNotMergeBuzzerIds) {
-      this.teams = this.mergeBuzzerIdsFromPresetupDataWithSetTeams(teams);
-    } else {
-      this.teams = teams;
-    }
-    for (const team of this.teams) {
-      if (team.points == null) {
-        team.points = 0;
+  public async setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState, dotNotMergeBuzzerIds: boolean = false): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!dotNotMergeBuzzerIds) {
+        this.teams = this.mergeBuzzerIdsFromPresetupDataWithSetTeams(teams);
+      } else {
+        this.teams = teams;
       }
-    }
-    this.questions = questions;
-    if (gameState == null) {
-      this.currentGameState = {
-        currentQuestionNumber: 0,
-        loggedAnswers: [],
-        markedTeamIds: [],
-        // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
-        setBuzzerLock: false
-      };
-    } else {
-      this.currentGameState = gameState;
-    }
+      for (const team of this.teams) {
+        if (team.points == null) {
+          team.points = 0;
+        }
+      }
+      this.questions = questions;
+      if (gameState == null) {
+        this.currentGameState = {
+          currentQuestionNumber: 0,
+          loggedAnswers: [],
+          markedTeamIds: [],
+          // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
+          setBuzzerLock: false
+        };
+      } else {
+        this.currentGameState = gameState;
+      }
+    });
   }
 
   public getQuestion(i: number): IQuestion {
@@ -333,14 +338,14 @@ export class GameService implements OnDestroy {
     return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
-  public importGameStateFromJson(gameState: IGameStateAsJson): void {
+  public importGameStateFromJson(gameState: IGameStateAsJson, sendPacketImmediately: boolean = true): void {
     if (gameState.version !== CURRENT_SAVEGAME_VERSION) {
       alert('savegame version is not okay');
       return;
     }
     this.currentGameState = gameState.gameState;
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
-    this.setupGame(gameState.teams, gameState.question, gameState.gameState);
+    this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
   }
 
   public getGameName(): string {
@@ -562,5 +567,9 @@ export class GameService implements OnDestroy {
     }
 
     return teams;
+  }
+
+  private handleResetServerPacket(packet: IResetServerPacket): void {
+    window.location.reload();
   }
 }

@@ -43,27 +43,39 @@ export class SetupComponent implements OnInit {
   }
 
   private initTeamsFormControls(): void {
-    this.teamNameSuggestions = [];
     this.teamFormControlNames = [];
-    const presetupData = this.game.getPresetupData();
-    console.log('presetupData');
-    console.log(presetupData);
     const teamFormControls: {
       [key: string]: AbstractControl;
     } = {};
-    for (let i = 0; i < presetupData.availableBuzzers.length; i++) {
-      const teamNameSuggestion = 'Team ' + (i + 1);
-      this.teamNameSuggestions.push(teamNameSuggestion);
-      const formControlName = 'team' + (i + 1);
-      this.teamFormControlNames.push(formControlName);
-      this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
-      const formControlForTeam = new FormControl(teamNameSuggestion);
-      // const formControlForTeam = new FormControl();
-      if (i >= 2) {
-        // since two teams are mandatory, only all up from the third one get disabled
-        formControlForTeam.disable();
+    const presetupData = this.game.getPresetupData();
+    if (this.game.getTeams() != null) {
+      for (let i = 0; i < this.game.getTeams().length; i++) {
+        const formControlName = 'team' + (i + 1);
+        this.teamFormControlNames.push(formControlName);
+        this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
+        const formControlForTeam = new FormControl(this.game.getTeams()[i].name);
+        teamFormControls[formControlName] = formControlForTeam;
       }
-      teamFormControls[formControlName] = formControlForTeam;
+    } else {
+      this.teamNameSuggestions = [];
+      // const presetupData = this.game.getPresetupData();
+      console.log('presetupData');
+      console.log(presetupData);
+      for (let i = 0; i < presetupData.availableBuzzers.length; i++) {
+        const teamNameSuggestion = 'Team ' + (i + 1);
+        this.teamNameSuggestions.push(teamNameSuggestion);
+        const formControlName = 'team' + (i + 1);
+        this.teamFormControlNames.push(formControlName);
+        this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
+        const formControlForTeam = new FormControl(teamNameSuggestion);
+        // const formControlForTeam = new FormControl();
+        if (i >= 2) {
+          // since two teams are mandatory, only all up from the third one get disabled
+          formControlForTeam.disable();
+        }
+        teamFormControls[formControlName] = formControlForTeam;
+    }
+
     }
 
     this.teamsFormGroup = new FormGroup(teamFormControls);
@@ -191,17 +203,19 @@ export class SetupComponent implements OnInit {
 
   // TODO: check that there are not more teams in the savegame as there are buzzers now. If there are, show some dialog to choose
   //  teams to be kept
-  public onFileSelected(uploadEvent): void {
+  public onSaveGameFileSelected(uploadEvent): void {
     // if typed as File, the fileReader.readAsText complains
     const configFile: any = uploadEvent.target.files[0];
     const fileReader = new FileReader();
     fileReader.readAsText(configFile as Blob, 'UTF-8');
     fileReader.onload = () => {
       const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
+      // this.game.importGameStateFromJson(importedState, false);
+
       this.game.importGameStateFromJson(importedState);
+
+      // this.initTeamsFormControls();
+      // this.initQuestionsFormControls();
     };
   }
-
-
-
 }
