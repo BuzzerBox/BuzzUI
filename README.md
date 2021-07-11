@@ -64,3 +64,6 @@ local=/local/
 
 # WiFi
 WiFi name's `BuzzerBoxNetwrok` and the password is `12TheBuzzerBox_IncredibleNetwork34`
+
+# Disable Screen Saver
+To disable the screen saver, use the `raspi-config` and disable the screen blanking
