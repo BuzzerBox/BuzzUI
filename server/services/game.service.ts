@@ -343,6 +343,7 @@ export class GameService {
             packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
             availableBuzzers: this.getBuzzerConfig()
         });
+        this.sendToAllScreens(packet);
         this.resetServerData();
     }
 
@@ -363,6 +364,9 @@ export class GameService {
         if (packet.keyCode === config.softReleaseKey) {
             const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
             this.onSetBuzzerLockPacket(null, lockPacket, false);
+            const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
+            this.webSocketConnectionMaster.send<IMarkTeamPacket>(unmarkTeamsPacket);
+            this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
         } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
             const team: ITeam = this.getTeamForKeyCode(packet.keyCode);
             if (team == null) {

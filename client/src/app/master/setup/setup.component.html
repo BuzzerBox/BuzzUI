@@ -4,98 +4,104 @@
     <ng-template matStepLabel>Hallo!</ng-template>
     <p>Hallo und herzlichen willkommen zum Setup von <b>{{getGameName()}}</b>!</p>
     <p>Wenn du ein Vorbereitetes Quiz oder einen alten Spielstand importieren willst, nutze die <em>Importieren</em> Schaltfläche.</p>
-    <p><button mat-raised-button>Importieren</button><input type="file" (change)="onFileSelected($event)"></p>
+    <p><button mat-raised-button>Importieren</button><input type="file" (change)="onSaveGameFileSelected($event)"></p>
     <p>Wenn du ein neues Spiel vorbereiten willst, klicke unten auf <em>Weiter</em>.</p>
     <div>
       <button mat-button matStepperNext>Weiter</button>
     </div>
   </mat-step>
   <mat-step [stepControl]="teamsFormGroup">
-    <form [formGroup]="teamsFormGroup">
-      <ng-template matStepLabel>Teams</ng-template>
-      <div *ngFor="let teamFormControlName of teamFormControlNames; let i = index">
-        <div fxLayout="row" fxLayoutAlign="start none" class="team-form-group">
-          <mat-form-field >
-            <mat-label>{{teamNameSuggestions[i]}}</mat-label>
-            <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
-          </mat-form-field>
-          <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="false" *ngIf="i >= 2">Aktivieren</mat-checkbox>
+    <ng-template matStepLabel>Teams</ng-template>
+    <ng-template matStepContent>
+      <form [formGroup]="teamsFormGroup">
+        <div *ngFor="let teamFormControlName of teamFormControlNames; let i = index">
+          <div fxLayout="row" fxLayoutAlign="start none" class="team-form-group">
+            <mat-form-field >
+              <mat-label>{{teamNameSuggestions[i]}}</mat-label>
+              <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
+            </mat-form-field>
+            <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="false" *ngIf="i >= 2">Aktivieren</mat-checkbox>
+          </div>
+
         </div>
 
-      </div>
-
-      <div>
-        <button mat-button matStepperPrevious>Zurück</button>
-        <button mat-button matStepperNext [disabled]="!teamsFormGroup.valid">Weiter</button>
-      </div>
-    </form>
+        <div>
+          <button mat-button matStepperPrevious>Zurück</button>
+          <button mat-button matStepperNext [disabled]="!teamsFormGroup.valid">Weiter</button>
+        </div>
+      </form>
+    </ng-template>
   </mat-step>
   <mat-step [stepControl]="questionsFormGroup" label="Fragen">
-    <form [formGroup]="questionsFormGroup">
-      <div *ngFor="let questionFormGroupName of questionFormGroupNames; let i = index" fxLayout="column" fxLayoutAlign="center start">
+    <ng-template matStepContent>
+      <form [formGroup]="questionsFormGroup">
+        <div *ngFor="let questionFormGroupName of questionFormGroupNames; let i = index" fxLayout="column" fxLayoutAlign="center start">
 
-        <div fxLayout="row" fxLayoutAlign="start none">
-          <mat-form-field [formGroupName]="questionFormGroupName">
-            <mat-label>Frage {{i + 1}}</mat-label>
-            <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
-          </mat-form-field>
+          <div fxLayout="row" fxLayoutAlign="start none">
+            <mat-form-field [formGroupName]="questionFormGroupName">
+              <mat-label>Frage {{i + 1}}</mat-label>
+              <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
+            </mat-form-field>
 
-<!--          <button mat-raised-button>Frage entfernen</button>-->
-        </div>
+            <!--          <button mat-raised-button>Frage entfernen</button>-->
+          </div>
 
-        <div class="answers" fxLayout="column" fxLayoutAlign="center start" [formGroupName]="questionFormGroupName">
-          <div formGroupName="answers">
-            <!--            first answer-->
-            <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer0">
-              <mat-form-field>
-                <mat-label>Antwort 1</mat-label>
-                <input matInput formControlName="text">
-              </mat-form-field>
-              <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-            </div>
-            <!--            second answer-->
-            <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer1">
-              <mat-form-field>
-                <mat-label>Antwort 2</mat-label>
-                <input matInput formControlName="text">
-              </mat-form-field>
-              <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-            </div>
-            <!--            third answer-->
-            <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer2">
-              <mat-form-field>
-                <mat-label>Antwort 3</mat-label>
-                <input matInput formControlName="text">
-              </mat-form-field>
-              <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-            </div>
-            <!--            fourth answer-->
-            <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer3">
-              <mat-form-field>
-                <mat-label>Antwort 4</mat-label>
-                <input matInput formControlName="text">
-              </mat-form-field>
-              <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+          <div class="answers" fxLayout="column" fxLayoutAlign="center start" [formGroupName]="questionFormGroupName">
+            <div formGroupName="answers">
+              <!--            first answer-->
+              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer0">
+                <mat-form-field>
+                  <mat-label>Antwort 1</mat-label>
+                  <input matInput formControlName="text">
+                </mat-form-field>
+                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+              </div>
+              <!--            second answer-->
+              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer1">
+                <mat-form-field>
+                  <mat-label>Antwort 2</mat-label>
+                  <input matInput formControlName="text">
+                </mat-form-field>
+                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+              </div>
+              <!--            third answer-->
+              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer2">
+                <mat-form-field>
+                  <mat-label>Antwort 3</mat-label>
+                  <input matInput formControlName="text">
+                </mat-form-field>
+                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+              </div>
+              <!--            fourth answer-->
+              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer3">
+                <mat-form-field>
+                  <mat-label>Antwort 4</mat-label>
+                  <input matInput formControlName="text">
+                </mat-form-field>
+                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>
+        <button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>
 
-      <div>
-        <button mat-button matStepperPrevious>Zurück</button>
-        <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">Weiter</button>
-      </div>
-    </form>
+        <div>
+          <button mat-button matStepperPrevious>Zurück</button>
+          <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">Weiter</button>
+        </div>
+      </form>
+    </ng-template>
   </mat-step>
   <mat-step>
     <ng-template matStepLabel>Fertig</ng-template>
-    <p>Das Spiel wurde konfiguriert. Es spielen <b>{{getNumberOfActiveTeams()}} Team(s)</b> und es gibt <b>{{getNumberOfQuestions()}} Frage(n)</b>.</p>
-    <div>
-      <button mat-button matStepperPrevious>Zurück</button>
-      <a mat-button (click)="hasReachedLastStep = true" [href]="downloadSetupAsJson()" download="buzzer-game-setup.json">Konfiguration Herunterladen</a>
-      <button mat-button (click)="startGame()">Spiel starten</button>
-    </div>
+    <ng-template matStepContent>
+      <p>Das Spiel wurde konfiguriert. Es spielen <b>{{getNumberOfActiveTeams()}} Team(s)</b> und es gibt <b>{{getNumberOfQuestions()}} Frage(n)</b>.</p>
+      <div>
+        <button mat-button matStepperPrevious>Zurück</button>
+        <a mat-button (click)="hasReachedLastStep = true" [href]="downloadSetupAsJson()" download="buzzer-game-setup.json">Konfiguration Herunterladen</a>
+        <button mat-button (click)="startGame()">Spiel starten</button>
+      </div>
+    </ng-template>
   </mat-step>
 </mat-horizontal-stepper>
 
