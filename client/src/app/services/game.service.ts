@@ -207,8 +207,8 @@ export class GameService implements OnDestroy {
     return this.presetupData;
   }
 
-  public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true): void {
-    this.setGameData(teams, questions, currentGameState, true);
+  public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true): Promise<void> {
+    const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
     if (sendPacket) {
       this.webSocketService.send<ISetupPacket>({
         packetType: EPacketTypes.SETUP_GAME,
@@ -217,6 +217,8 @@ export class GameService implements OnDestroy {
         currentGameState
       });
     }
+    console.log("venus");
+    return promise;
   }
 
   private handleGameSetupResponse(packet: IResponsePacket): void {
@@ -289,6 +291,7 @@ export class GameService implements OnDestroy {
       } else {
         this.currentGameState = gameState;
       }
+      resolve();
     });
   }
 
@@ -338,14 +341,15 @@ export class GameService implements OnDestroy {
     return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
-  public importGameStateFromJson(gameState: IGameStateAsJson, sendPacketImmediately: boolean = true): void {
+  public importGameStateFromJson(gameState: IGameStateAsJson, sendPacketImmediately: boolean = true): Promise<void> {
     if (gameState.version !== CURRENT_SAVEGAME_VERSION) {
       alert('savegame version is not okay');
       return;
     }
     this.currentGameState = gameState.gameState;
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
-    this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
+    console.log("mars");
+    return this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
   }
 
   public getGameName(): string {
@@ -500,7 +504,9 @@ export class GameService implements OnDestroy {
   private mergeBuzzerIdsFromPresetupDataWithSetTeams(teams: ITeam[]): ITeam[] {
     if (this.presetupData != null) {
     const availableBuzzers = this.presetupData.availableBuzzers;
-    for (let i = 0; i < availableBuzzers.length; i++) {
+      console.log("teams", teams);
+    for (let i = 0; i < Math.min(availableBuzzers.length, teams.length); i++) {
+      console.log("i", i);
       const buzzerId: string = availableBuzzers[i].id;
       teams[i].buzzerId = buzzerId;
       teams[i].teamId = buzzerId;
