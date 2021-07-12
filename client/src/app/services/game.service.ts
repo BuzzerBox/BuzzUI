@@ -209,6 +209,10 @@ export class GameService implements OnDestroy {
 
   public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true): Promise<void> {
     const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
+    // console.log("current 2", currentGameState);
+    // if (currentGameState == null) {
+    //   throw new Error("grrrr");
+    // }
     if (sendPacket) {
       this.webSocketService.send<ISetupPacket>({
         packetType: EPacketTypes.SETUP_GAME,
@@ -217,7 +221,6 @@ export class GameService implements OnDestroy {
         currentGameState
       });
     }
-    console.log("venus");
     return promise;
   }
 
@@ -347,8 +350,8 @@ export class GameService implements OnDestroy {
       return;
     }
     this.currentGameState = gameState.gameState;
+    console.log("gamestate", gameState.gameState);
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
-    console.log("mars");
     return this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
   }
 
@@ -504,9 +507,7 @@ export class GameService implements OnDestroy {
   private mergeBuzzerIdsFromPresetupDataWithSetTeams(teams: ITeam[]): ITeam[] {
     if (this.presetupData != null) {
     const availableBuzzers = this.presetupData.availableBuzzers;
-      console.log("teams", teams);
     for (let i = 0; i < Math.min(availableBuzzers.length, teams.length); i++) {
-      console.log("i", i);
       const buzzerId: string = availableBuzzers[i].id;
       teams[i].buzzerId = buzzerId;
       teams[i].teamId = buzzerId;
@@ -577,5 +578,13 @@ export class GameService implements OnDestroy {
 
   private handleResetServerPacket(packet: IResetServerPacket): void {
     window.location.reload();
+  }
+
+  public releaseBuzzerLock(): void {
+    this.webSocketService.send<ISetBuzzerLockPacket>(PacketHelper.makeBuzzerLockPacket(false));
+  }
+
+  public getGameStateData(): IGameState {
+    return this.currentGameState;
   }
 }

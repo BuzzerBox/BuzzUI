@@ -10,6 +10,7 @@ import {SafeUrl} from '@angular/platform-browser';
 })
 export class ToolbarMasterComponent implements OnInit {
   @Input() showSaveIcon = false;
+  @Input() showReleaseBuzzerLockIcon = false;
 
   constructor(private game: GameService) { }
 
@@ -30,7 +31,12 @@ export class ToolbarMasterComponent implements OnInit {
 
   public resetServer(): void {
     this.game.resetServer();
-    window.location.reload();
+    setTimeout(window.location.reload, 250);
+    // ();
+  }
+
+  public releaseBuzzerLock(): void {
+    this.game.releaseBuzzerLock();
   }
 
 }

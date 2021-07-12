@@ -22,7 +22,7 @@
               <mat-label>{{teamNameSuggestions[i]}}</mat-label>
               <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
             </mat-form-field>
-            <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="false" *ngIf="i >= 2">Aktivieren</mat-checkbox>
+            <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="true" *ngIf="i >= 2">Aktivieren</mat-checkbox>
           </div>
 
         </div>
@@ -34,17 +34,20 @@
       </form>
 <!--    </ng-template>-->
   </mat-step>
-  <mat-step [stepControl]="questionsFormGroup" label="Fragen">
-<!--    <ng-template [ngIf]="questionFormGroupNames != null">-->
+<!--  <mat-step [stepControl]="questionsFormGroup" label="Fragen">-->
+  <mat-step [stepControl]="testObs | async" label="Fragen">
+<!--    <ng-template [ngIf]="showQuestions">-->
 <!--    <ng-template>-->
-      <form [formGroup]="questionsFormGroup">
+      <form #questionForm [formGroup]="questionsFormGroup" id="questionForm">
+<!--    <form #questionForm [formGroup]="testObs | async" id="questionForm">-->
         <div *ngFor="let questionFormGroupName of questionFormGroupNames; let i = index" fxLayout="column" fxLayoutAlign="center start">
 
-          <div fxLayout="row" fxLayoutAlign="start none">
-            <mat-form-field [formGroupName]="questionFormGroupName">
+          <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
+            <mat-form-field >
               <mat-label>Frage {{i + 1}}</mat-label>
               <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
             </mat-form-field>
+            <mat-checkbox formControlName="answersVisible" #self (click)="toggleShowAnswers(self, questionFormGroupName)">Zeige Antwortmöglichkeiten</mat-checkbox>
 
             <!--          <button mat-raised-button>Frage entfernen</button>-->
           </div>

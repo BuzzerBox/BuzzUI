@@ -179,4 +179,12 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  public isShowAnswers(): boolean {
+    return this.question.show as boolean;
+  }
+
+  public isQuestionExisting(): boolean {
+    return this.question != null;
+  }
+
 }

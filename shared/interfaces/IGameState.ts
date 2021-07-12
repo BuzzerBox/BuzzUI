@@ -6,7 +6,7 @@ import {IGamePacket, EPacketTypes, IAnswer} from '../shared';
  * 0 -> 1:
  *  added setBuzzerLock: boolean;
  */
-export const CURRENT_SAVEGAME_VERSION = 1;
+export const CURRENT_SAVEGAME_VERSION = 2;
 
 export interface IGameState {
     currentQuestionNumber: number;
