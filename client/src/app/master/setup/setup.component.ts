@@ -42,18 +42,22 @@ export class SetupComponent implements OnInit {
     }
   }
 
-  private initTeamsFormControls(): void {
+  private initTeamsFormControls(loadedFromFile: boolean = false): void {
+    // TODO refine such that there is no duplicated code
     this.teamFormControlNames = [];
+    this.teamNameSuggestions = [];
     const teamFormControls: {
       [key: string]: AbstractControl;
     } = {};
     const presetupData = this.game.getPresetupData();
-    if (this.game.getTeams() != null) {
+    if (loadedFromFile && this.game.getTeams() != null) {
       for (let i = 0; i < this.game.getTeams().length; i++) {
         const formControlName = 'team' + (i + 1);
         this.teamFormControlNames.push(formControlName);
         this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
-        const formControlForTeam = new FormControl(this.game.getTeams()[i].name);
+        const name: string = this.game.getTeams()[i].name;
+        this.teamNameSuggestions.push(name);
+        const formControlForTeam = new FormControl(name);
         teamFormControls[formControlName] = formControlForTeam;
       }
     } else {
@@ -74,16 +78,44 @@ export class SetupComponent implements OnInit {
           formControlForTeam.disable();
         }
         teamFormControls[formControlName] = formControlForTeam;
+      }
     }
-
-    }
-
     this.teamsFormGroup = new FormGroup(teamFormControls);
+    console.log(this.teamsFormGroup);
   }
 
   private initQuestionsFormControls(): void {
-    this.questionsFormGroup = new FormGroup({});
-    this.questionFormGroupNames = [];
+    if (this.game.getQuestions() != null) {
+      const questionsFormGroup = new FormGroup({});
+      for (let i = 0; i < this.game.getQuestions().length; i++) {
+        const q: IQuestion = this.game.getQuestions()[i];
+        this.questionsFormGroup.addControl('question' + i, new FormGroup({
+          text: new FormControl(q.text),
+          answers: new FormGroup({
+            answer0: new FormGroup({
+              text: new FormControl(q.answers[0].text),
+              isCorrect: new FormControl(q.answers[0].isCorrect)
+            }),
+            answer1: new FormGroup({
+              text: new FormControl(q.answers[1].text),
+              isCorrect: new FormControl(q.answers[1].isCorrect)
+            }),
+            answer2: new FormGroup({
+              text: new FormControl(q.answers[2].text),
+              isCorrect: new FormControl(q.answers[2].isCorrect)
+            }),
+            answer3: new FormGroup({
+              text: new FormControl(q.answers[3].text),
+              isCorrect: new FormControl(q.answers[3].isCorrect)
+            })
+          })
+        }));
+        // this.questionsFormGroup.updateValueAndValidity();
+      }
+    } else {
+      this.questionsFormGroup = new FormGroup({});
+      this.questionFormGroupNames = [];
+    }
   }
 
   public addQuestionToFormGroup(): void {
@@ -208,14 +240,21 @@ export class SetupComponent implements OnInit {
     const configFile: any = uploadEvent.target.files[0];
     const fileReader = new FileReader();
     fileReader.readAsText(configFile as Blob, 'UTF-8');
-    fileReader.onload = () => {
+    fileReader.onload = async () => {
       const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
-      // this.game.importGameStateFromJson(importedState, false);
+      // await this.game.importGameStateFromJson(importedState, false);
 
       this.game.importGameStateFromJson(importedState);
 
       // this.initTeamsFormControls();
       // this.initQuestionsFormControls();
     };
+  }
+
+  public test(): string {
+    // alert("test");
+    console.log(this.questionFormGroupNames);
+    console.log(this.questionsFormGroup);
+    return "teee";
   }
 }

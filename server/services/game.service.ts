@@ -251,13 +251,16 @@ export class GameService {
     }
 
     private onAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
-        if (packet.state === EAnswerStates.ACTIVATE && !packet.answer.isCorrect) {
-            this.webSocketConnectionMaster.send<IMarkTeamPacket>(PacketHelper.makeUnmarkAllTeamsPacket());
-            this.sendToAllScreens<IMarkTeamPacket>(PacketHelper.makeUnmarkAllTeamsPacket());
+        if (packet.state === EAnswerStates.ACTIVATE) {
+            const p = PacketHelper.makeUnmarkAllTeamsPacket();
+            this.webSocketConnectionMaster.send<IMarkTeamPacket>(p);
+            this.sendToAllScreens<IMarkTeamPacket>(p);
             this.setKeypressLocked(false);
+            this.releaseHardwareBuzzerLock(true);
             if (this.lastKeyPressed != null) {
                 // if the answer is wrong an there is a last key press, then ignore it for this round
-                this.ignoredKeypresses.push(this.lastKeyPressed);
+                // TODO: shall be configurable, will be done somewhat later
+                // this.ignoredKeypresses.push(this.lastKeyPressed);
             }
         }
         this.sendToAllScreens(packet);
@@ -351,6 +354,9 @@ export class GameService {
         this.teams = [];
         this.questions = [];
         this.setKeypressLocked(false)
+        this.releaseHardwareBuzzerLock(true);
+        this.ignoredKeypresses = [];
+        this.lastKeyPressed = null;
         this.currentGameState = {
             currentQuestionNumber: 0,
             markedTeamIds: [],
@@ -362,8 +368,7 @@ export class GameService {
     // TODO: create method to send to all screens AND master
     private onKeypressOnScreenPacket(packet: IKeypressOnScreenPacket): void {
         if (packet.keyCode === config.softReleaseKey) {
-            const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
-            this.onSetBuzzerLockPacket(null, lockPacket, false);
+            this.releaseHardwareBuzzerLock();
             const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
             this.webSocketConnectionMaster.send<IMarkTeamPacket>(unmarkTeamsPacket);
             this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
@@ -382,6 +387,11 @@ export class GameService {
             this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
             this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
         }
+    }
+
+    private releaseHardwareBuzzerLock(sendI2C: boolean = false) {
+        const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
+        this.onSetBuzzerLockPacket(null, lockPacket, sendI2C);
     }
 
     private setKeypressLocked(locked: boolean): void {

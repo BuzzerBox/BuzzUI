@@ -12,7 +12,9 @@
   </mat-step>
   <mat-step [stepControl]="teamsFormGroup">
     <ng-template matStepLabel>Teams</ng-template>
-    <ng-template matStepContent>
+<!--    <ng-template matStepContent>-->
+<!--    <ng-template [ngIf]="teamFormControlNames != null">-->
+<!--    <ng-template>-->
       <form [formGroup]="teamsFormGroup">
         <div *ngFor="let teamFormControlName of teamFormControlNames; let i = index">
           <div fxLayout="row" fxLayoutAlign="start none" class="team-form-group">
@@ -30,10 +32,11 @@
           <button mat-button matStepperNext [disabled]="!teamsFormGroup.valid">Weiter</button>
         </div>
       </form>
-    </ng-template>
+<!--    </ng-template>-->
   </mat-step>
   <mat-step [stepControl]="questionsFormGroup" label="Fragen">
-    <ng-template matStepContent>
+<!--    <ng-template [ngIf]="questionFormGroupNames != null">-->
+<!--    <ng-template>-->
       <form [formGroup]="questionsFormGroup">
         <div *ngFor="let questionFormGroupName of questionFormGroupNames; let i = index" fxLayout="column" fxLayoutAlign="center start">
 
@@ -90,18 +93,18 @@
           <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">Weiter</button>
         </div>
       </form>
-    </ng-template>
+<!--    </ng-template>-->
   </mat-step>
   <mat-step>
     <ng-template matStepLabel>Fertig</ng-template>
-    <ng-template matStepContent>
+    <!-- <ng-template matStepContent> -->
       <p>Das Spiel wurde konfiguriert. Es spielen <b>{{getNumberOfActiveTeams()}} Team(s)</b> und es gibt <b>{{getNumberOfQuestions()}} Frage(n)</b>.</p>
       <div>
         <button mat-button matStepperPrevious>Zurück</button>
         <a mat-button (click)="hasReachedLastStep = true" [href]="downloadSetupAsJson()" download="buzzer-game-setup.json">Konfiguration Herunterladen</a>
         <button mat-button (click)="startGame()">Spiel starten</button>
       </div>
-    </ng-template>
+    <!-- </ng-template> -->
   </mat-step>
 </mat-horizontal-stepper>
 
