@@ -189,6 +189,7 @@ export class GameService {
         this.webSocketConnectionMaster.send<IResponsePacket>(responsePacket);
 
         this.sendToAllScreens<IDataForScreenPacket>(this.makeInitDataForScreen())
+        console.log("current game state", this.currentGameState, packet.currentGameState);
     }
 
     private onRegisterMasterPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterMasterPacket): void {
@@ -448,7 +449,10 @@ export class GameService {
 
     private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendI2C: boolean = true): void {
         this.setKeypressLocked(packet.setLock);
-        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(packet);
+        // it is very likely, that the master already reloaded the page, thus this is null
+        if (this.webSocketConnectionMaster != null) {
+            this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(packet);
+        }
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
         // release the lock via i2c if necessary
         if (sendI2C && !packet.setLock) {

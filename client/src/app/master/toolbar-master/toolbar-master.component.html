@@ -4,12 +4,15 @@
   </button>-->
   <span>{{getName()}}</span>
   <span class="example-spacer"></span>
+  <button mat-icon-button *ngIf="showReleaseBuzzerLockIcon">
+    <a mat-icon-button (click)="releaseBuzzerLock()" title="Buzzerlock freigeben"><mat-icon>lock_open</mat-icon></a>
+  </button>
   <button mat-icon-button>
-    <a mat-icon-button (click)="resetServer()" ><mat-icon>restart_alt</mat-icon></a>
+    <a mat-icon-button (click)="resetServer()" title="Server zurücksetzen"><mat-icon>restart_alt</mat-icon></a>
   </button>
   <ng-container *ngIf="showSaveIcon">
     <button mat-icon-button>
-      <a mat-icon-button [href]="exportGameState()" [download]="getDownloadFileName()"><mat-icon>save</mat-icon></a>
+      <a mat-icon-button [href]="exportGameState()" [download]="getDownloadFileName()" title="Spielstand speichern"><mat-icon>save</mat-icon></a>
     </button>
   </ng-container>
 </mat-toolbar>

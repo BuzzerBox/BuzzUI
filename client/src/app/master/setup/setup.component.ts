@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {ITeam, IQuestion, IBuzzer, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {File} from '@angular/compiler-cli/src/ngtsc/file_system/testing/src/mock_file_system';
+import {Observable, Subject} from "rxjs";
 
 @Component({
   selector: 'app-setup',
@@ -15,6 +16,11 @@ export class SetupComponent implements OnInit {
   public readonly FORM_GROUP_NAME_TEAMS = 'teamsFormGroup';
   public readonly ANSWER_FORM_GROUP_BASE_NAME = 'answer';
 
+  @ViewChild('questionForm') questionForm;
+
+  public testSub: Subject<FormGroup> = new Subject<FormGroup>();
+  public testObs: Observable<FormGroup> = this.testSub.asObservable();
+
   public teamsFormGroup: FormGroup;
   public questionsFormGroup: FormGroup;
   public teamNameSuggestions: string[];
@@ -22,8 +28,9 @@ export class SetupComponent implements OnInit {
   public questionFormGroupNames: string[];
   private mapTeamFormControlNameToBuzzerId: Map<string, string>;
   public hasReachedLastStep = false;
+  // public showQuestions = true;
 
-  constructor(private game: GameService) {
+  constructor(private game: GameService, private cd: ChangeDetectorRef) {
     game.useAsMaster();
   }
 
@@ -75,21 +82,22 @@ export class SetupComponent implements OnInit {
         // const formControlForTeam = new FormControl();
         if (i >= 2) {
           // since two teams are mandatory, only all up from the third one get disabled
-          formControlForTeam.disable();
+          // formControlForTeam.disable();
         }
         teamFormControls[formControlName] = formControlForTeam;
       }
     }
     this.teamsFormGroup = new FormGroup(teamFormControls);
-    console.log(this.teamsFormGroup);
   }
 
-  private initQuestionsFormControls(): void {
-    if (this.game.getQuestions() != null) {
-      const questionsFormGroup = new FormGroup({});
+  private initQuestionsFormControls(loadedFile: boolean = false): void {
+    if (loadedFile) {
+      // this.showQuestions = false;
+      // const questionsFormGroup = new FormGroup({});
       for (let i = 0; i < this.game.getQuestions().length; i++) {
         const q: IQuestion = this.game.getQuestions()[i];
-        this.questionsFormGroup.addControl('question' + i, new FormGroup({
+        const fgn = 'question' + i;
+        this.questionsFormGroup.addControl(fgn, new FormGroup({
           text: new FormControl(q.text),
           answers: new FormGroup({
             answer0: new FormGroup({
@@ -108,9 +116,13 @@ export class SetupComponent implements OnInit {
               text: new FormControl(q.answers[3].text),
               isCorrect: new FormControl(q.answers[3].isCorrect)
             })
-          })
+          }),
+          answersVisible: new FormControl(q.show)
         }));
-        // this.questionsFormGroup.updateValueAndValidity();
+        if (!q.show) {
+          this.applyShowAnswersState(fgn, false);
+        }
+        this.addQuestionToFormGroup();
       }
     } else {
       this.questionsFormGroup = new FormGroup({});
@@ -123,6 +135,7 @@ export class SetupComponent implements OnInit {
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
     this.questionsFormGroup.addControl(formGroupName, qfc);
+    // this.testSub.next(this.questionsFormGroup);
   }
 
   private createQuestionFormGroup(): FormGroup {
@@ -133,7 +146,8 @@ export class SetupComponent implements OnInit {
         answer1: this.createFormGroupForAnswer(),
         answer2: this.createFormGroupForAnswer(),
         answer3: this.createFormGroupForAnswer()
-      }, {validators: this.atLeastOneCorrectAnswerValidator()})
+      }, {validators: this.atLeastOneCorrectAnswer()}),
+      answersVisible: new FormControl(true)
     });
   }
 
@@ -152,12 +166,16 @@ export class SetupComponent implements OnInit {
     return this.getQuestionFormGroup(questionName).get('answers') as FormGroup;
   }
 
-  private atLeastOneCorrectAnswerValidator(): ValidatorFn {
+  private atLeastOneCorrectAnswer(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
-      const a0 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('isCorrect');
-      const a1 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('isCorrect');
-      const a2 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('isCorrect');
-      const a3 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('isCorrect');
+      const ac0 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0');
+      const ac1 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1');
+      const ac2 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2');
+      const ac3 = control.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3');
+      const a0 = ac0.get('isCorrect');
+      const a1 = ac1.get('isCorrect');
+      const a2 = ac2.get('isCorrect');
+      const a3 = ac3.get('isCorrect');
       const atLeastOneCorrectAnswer = a0.value || a1.value || a2.value || a3.value;
       return atLeastOneCorrectAnswer ? null : {error: 'needs at least one correct answer'};
     };
@@ -180,7 +198,7 @@ export class SetupComponent implements OnInit {
   public startGame(): void {
     const teams: ITeam[] = this.buildSetupTeamsObject();
     const questions: IQuestion[] = this.buildSetupQuestionsObject();
-    this.game.setupGame(teams, questions);
+    this.game.setupGame(teams, questions, this.game.getGameStateData());
   }
 
   private buildSetupTeamsObject(): ITeam[] {
@@ -213,7 +231,8 @@ export class SetupComponent implements OnInit {
       }
       ret.push({
         text: questionText,
-        answers
+        answers,
+        show: questionFormGroup.get('answersVisible').value as boolean
       });
     }
     return ret;
@@ -242,12 +261,12 @@ export class SetupComponent implements OnInit {
     fileReader.readAsText(configFile as Blob, 'UTF-8');
     fileReader.onload = async () => {
       const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
-      // await this.game.importGameStateFromJson(importedState, false);
+      await this.game.importGameStateFromJson(importedState, false);
 
-      this.game.importGameStateFromJson(importedState);
+      // this.game.importGameStateFromJson(importedState);
 
-      // this.initTeamsFormControls();
-      // this.initQuestionsFormControls();
+      this.initTeamsFormControls(true);
+      this.initQuestionsFormControls(true);
     };
   }
 
@@ -256,5 +275,41 @@ export class SetupComponent implements OnInit {
     console.log(this.questionFormGroupNames);
     console.log(this.questionsFormGroup);
     return "teee";
+  }
+
+  // TODO: implement it in a correct way, this is just because of the haste
+  public toggleShowAnswers(cb: MatCheckbox, fgn: string): void {
+    const showAnswers = !cb.checked; // it shows the state before the click, so we need to invert it
+    this.applyShowAnswersState(fgn, showAnswers);
+  }
+
+
+  private applyShowAnswersState(fgn: string, showAnswers: boolean): void {
+    const fgq = this.questionsFormGroup.get(fgn);
+    const fga = fgq.get('answers');
+    let text = 'bla';
+    if (showAnswers) {
+      text = '';
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').enable();
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').enable();
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').enable();
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').enable();
+    } else {
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').disable();
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').disable();
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').disable();
+      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').disable();
+    }
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('text').setValue(text);
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('isCorrect').setValue(!showAnswers);
+
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('text').setValue(text);
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('isCorrect').setValue(!showAnswers);
+
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('text').setValue(text);
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('isCorrect').setValue(!showAnswers);
+
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('text').setValue(text);
+    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('isCorrect').setValue(!showAnswers);
   }
 }
