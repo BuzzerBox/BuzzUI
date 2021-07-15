@@ -6,6 +6,7 @@ import {ITeam, IQuestion, IBuzzer, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {File} from '@angular/compiler-cli/src/ngtsc/file_system/testing/src/mock_file_system';
 import {Observable, Subject} from "rxjs";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-setup',
@@ -30,7 +31,7 @@ export class SetupComponent implements OnInit {
   public hasReachedLastStep = false;
   // public showQuestions = true;
 
-  constructor(private game: GameService, private cd: ChangeDetectorRef) {
+  constructor(private game: GameService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
     game.useAsMaster();
   }
 
@@ -255,6 +256,7 @@ export class SetupComponent implements OnInit {
   // TODO: check that there are not more teams in the savegame as there are buzzers now. If there are, show some dialog to choose
   //  teams to be kept
   public onSaveGameFileSelected(uploadEvent): void {
+    this.snackBar.open('Datei wird importiert, bitte warten...');
     // if typed as File, the fileReader.readAsText complains
     const configFile: any = uploadEvent.target.files[0];
     const fileReader = new FileReader();
@@ -267,6 +269,9 @@ export class SetupComponent implements OnInit {
 
       this.initTeamsFormControls(true);
       this.initQuestionsFormControls(true);
+      this.snackBar.open('Datei erfolgreich importiert', 'OK', {
+        duration: 5000
+      });
     };
   }
 

@@ -4,7 +4,7 @@
     <ng-template matStepLabel>Hallo!</ng-template>
     <p>Hallo und herzlichen willkommen zum Setup von <b>{{getGameName()}}</b>!</p>
     <p>Wenn du ein Vorbereitetes Quiz oder einen alten Spielstand importieren willst, nutze die <em>Importieren</em> Schaltfläche.</p>
-    <p><button mat-raised-button>Importieren</button><input type="file" (change)="onSaveGameFileSelected($event)"></p>
+    <p><input type="file" (change)="onSaveGameFileSelected($event)"></p>
     <p>Wenn du ein neues Spiel vorbereiten willst, klicke unten auf <em>Weiter</em>.</p>
     <div>
       <button mat-button matStepperNext>Weiter</button>
