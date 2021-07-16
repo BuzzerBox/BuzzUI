@@ -20,6 +20,7 @@ button {
   box-sizing: content-box;
   font-size: xx-large;
   transition: background-color 500ms ease-in;
+  white-space: normal;
 }
 
 .logged-in {
