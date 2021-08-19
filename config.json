@@ -4,7 +4,7 @@
   "screenName": "Screen",
   "server": {
     "port": 4201,
-    "address": "10.0.0.5",
+    "address": "localhost",
     "webSocketProtocol": "ws",
     "retryIntervalInMS": "500"
   },

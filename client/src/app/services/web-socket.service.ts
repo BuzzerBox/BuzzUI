@@ -1,9 +1,9 @@
 import {Injectable, OnDestroy} from '@angular/core';
 import {webSocket, WebSocketSubject} from 'rxjs/webSocket';
-import config from '../../../../config.json';
 import {Subscription} from 'rxjs';
 import {IWebSocketMessage} from '../../../../shared/shared';
 import {LoggerService} from '../../../../server/services/logger.service';
+import {ConfigService} from './config.service';
 
 /**
  * Followed https://rxjs-dev.firebaseapp.com/api/webSocket/webSocket
@@ -18,7 +18,9 @@ export class WebSocketService implements OnDestroy {
   // since no connection was established!
   private mandatorySubscription: Subscription;
 
-  constructor() {
+  constructor(
+    private config: ConfigService
+  ) {
     this.subject = this.establishConnection();
   }
 
@@ -40,12 +42,12 @@ export class WebSocketService implements OnDestroy {
 
     return new Promise((resolve, reject) => {
       // tslint:disable-next-line:max-line-length
-      const websocketAddress = config.server.webSocketProtocol + '://' + config.server.address + ':' + config.server.port;
+      const websocketAddress = this.config.get().server.webSocketProtocol + '://' + this.config.get().server.address + ':' + this.config.get().server.port;
       const tmpWebSocketSubject: WebSocketSubject<IWebSocketMessage> = webSocket(websocketAddress);
       tmpWebSocketSubject.subscribe(_ => {
         resolve(tmpWebSocketSubject);
       }, error => {
-        const websocketRetryDelay = parseInt(config.server.retryIntervalInMS, 10);
+        const websocketRetryDelay = parseInt(this.config.get().server.retryIntervalInMS, 10);
         LoggerService.error(`Websocket connection to '${websocketAddress}' failed. Retry in ${websocketRetryDelay} milliseconds.`, error);
         setTimeout(() => {
           resolve(this.establishConnection());
