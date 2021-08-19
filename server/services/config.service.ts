@@ -1,4 +1,3 @@
-import {Server} from 'http';
 import config from '../../config.json';
 import configDev from '../../config.dev.json';
 import {EProcessArguments, ProcessArgumentsService} from './process-arguments.service';
@@ -7,7 +6,9 @@ import * as _ from 'lodash';
 export class ConfigService {
 	private static instance: ConfigService;
 
-	private constructor() {}
+	private constructor() {
+		// hide public constructor
+	}
 
 	private static getInstance(): ConfigService {
 		if (this.instance == null) {
@@ -36,7 +37,6 @@ export class ConfigService {
 	}
 
 	public isDevMode(): boolean {
-		console.log("dev mdoe: " + ProcessArgumentsService.getArgVal(EProcessArguments.ENABLE_DEV_MODE) === '1');
 		return ProcessArgumentsService.getArgVal(EProcessArguments.ENABLE_DEV_MODE) === '1';
 	}
 
