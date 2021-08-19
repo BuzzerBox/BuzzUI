@@ -1,5 +1,4 @@
 import {LoggerService} from './logger.service';
-import {stringify} from 'uuid';
 
 export class ProcessArgumentsService {
 	private static readonly prefixArguments = '--';
@@ -10,9 +9,10 @@ export class ProcessArgumentsService {
 
 	private constructor() {
 		this.passedArgumentsMap = new Map<EProcessArguments, string>();
-		process.argv.forEach((args, index) => {
-			if (args != null && args.substr(0, ProcessArgumentsService.prefixArguments.length) === ProcessArgumentsService.prefixArguments) {
-				const tmpArg: string = args.substr(ProcessArgumentsService.prefixArguments.length);
+		process.argv.forEach((rawArgToProcess) => {
+			LoggerService.log("Got raw argument for server process:", rawArgToProcess)
+			if (rawArgToProcess != null && rawArgToProcess.substr(0, ProcessArgumentsService.prefixArguments.length) === ProcessArgumentsService.prefixArguments) {
+				const tmpArg: string = rawArgToProcess.substr(ProcessArgumentsService.prefixArguments.length);
 				if (tmpArg.includes('=')) {
 					// in this case, the arg passed was something like "--dev=0"
 					const split: string[] = tmpArg.split('=');
@@ -20,6 +20,7 @@ export class ProcessArgumentsService {
 					if (arg != null) {
 						const value: string = split[1];
 						this.passedArgumentsMap.set(arg, value);
+						LoggerService.log(`Found process arg '${arg}' with value '${value}' that is supported`)
 					}
 				} else {
 					// in this case, the arg passed was something like "--dev" which will be interpreted as true since it is explicitly passed
@@ -27,7 +28,7 @@ export class ProcessArgumentsService {
 					if (arg != null && EProcessArguments.isArgumentWithoutValueSupported(arg)) {
 						this.passedArgumentsMap.set(arg, '1');
 					} else {
-						LoggerService.log(`Found process arg ${tmpArg} that is either unknown or needs a value assigned to it!`);
+						LoggerService.warn(`Found process arg ${tmpArg} that is either unknown or needs a value assigned to it!`);
 					}
 				}
 			}
