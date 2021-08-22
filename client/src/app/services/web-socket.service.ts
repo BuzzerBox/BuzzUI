@@ -2,7 +2,7 @@ import {Injectable, OnDestroy} from '@angular/core';
 import {webSocket, WebSocketSubject} from 'rxjs/webSocket';
 import {Subscription} from 'rxjs';
 import {IWebSocketMessage} from '../../../../shared/shared';
-import {LoggerService} from '../../../../server/services/logger.service';
+import {AbstractLoggerService} from '../../../../shared/services/abstract-logger.service';
 import {ConfigService} from './config.service';
 
 /**
@@ -42,13 +42,13 @@ export class WebSocketService implements OnDestroy {
 
     return new Promise((resolve, reject) => {
       // tslint:disable-next-line:max-line-length
-      const websocketAddress = this.config.get().server.webSocketProtocol + '://' + this.config.get().server.address + ':' + this.config.get().server.port;
+      const websocketAddress = ConfigService.get().server.webSocketProtocol + '://' + ConfigService.get().server.address + ':' + ConfigService.get().server.port;
       const tmpWebSocketSubject: WebSocketSubject<IWebSocketMessage> = webSocket(websocketAddress);
       tmpWebSocketSubject.subscribe(_ => {
         resolve(tmpWebSocketSubject);
       }, error => {
-        const websocketRetryDelay = parseInt(this.config.get().server.retryIntervalInMS, 10);
-        LoggerService.error(`Websocket connection to '${websocketAddress}' failed. Retry in ${websocketRetryDelay} milliseconds.`, error);
+        const websocketRetryDelay = parseInt(ConfigService.get().server.retryIntervalInMS, 10);
+        AbstractLoggerService.error(`Websocket connection to '${websocketAddress}' failed. Retry in ${websocketRetryDelay} milliseconds.`, error);
         setTimeout(() => {
           resolve(this.establishConnection());
         }, websocketRetryDelay);

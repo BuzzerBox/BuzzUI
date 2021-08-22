@@ -1,6 +1,6 @@
+import {EProcessArguments, ProcessArgumentsService} from './process-arguments.service';
 import config from '../../config.json';
 import configDev from '../../config.dev.json';
-import {EProcessArguments, ProcessArgumentsService} from './process-arguments.service';
 import * as _ from 'lodash';
 
 export class ConfigService {
@@ -37,7 +37,12 @@ export class ConfigService {
 	}
 
 	public isDevMode(): boolean {
+		console.log("asdasdasd");
 		return ProcessArgumentsService.getArgVal(EProcessArguments.ENABLE_DEV_MODE) === '1';
+	}
+
+	public static isDevMode(): boolean {
+		return this.getInstance().isDevMode();
 	}
 
 

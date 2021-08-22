@@ -10,8 +10,8 @@ import {ConfigService} from '../../services/config.service';
 })
 export class StartComponent implements OnInit {
 
-  constructor(private gs: GameService, private titleService: Title, private config: ConfigService) {
-    titleService.setTitle(config.get().gameName + ' ' + config.get().masterName);
+  constructor(private gs: GameService, private titleService: Title) {
+    titleService.setTitle(ConfigService.get().gameName + ' ' + ConfigService.get().masterName);
     gs.useAsMaster();
   }
 

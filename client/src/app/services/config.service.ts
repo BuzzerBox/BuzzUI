@@ -13,7 +13,7 @@ export class ConfigService {
   /**
    * Get the config dependent on the running mode
    */
-  public getConfig(): typeof config {
+  public static getConfig(): typeof config {
     if (isDevMode()) {
       return _.defaultsDeep(configDev, config);
     } else {
@@ -25,7 +25,11 @@ export class ConfigService {
    * An alias for getConfig()
    * @see getConfig
    */
-  public get(): typeof config {
+  public static get(): typeof config {
     return this.getConfig();
+  }
+
+  public static isDevMode(): boolean {
+    return isDevMode();
   }
 }
