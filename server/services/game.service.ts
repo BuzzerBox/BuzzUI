@@ -32,7 +32,7 @@ import {
 } from "../../shared/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
-import {LoggerService} from "./logger.service";
+import {LoggerService} from './logger.service';
 // import {MicroControllerI2CAdapter} from "../objects/adapters/MicroControllerI2C.adapter";
 
 export class GameService {

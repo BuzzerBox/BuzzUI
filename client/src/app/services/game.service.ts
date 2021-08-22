@@ -355,13 +355,12 @@ export class GameService implements OnDestroy {
       return;
     }
     this.currentGameState = gameState.gameState;
-    console.log('gamestate', gameState.gameState);
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
     return this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
   }
 
   public getGameName(): string {
-    return this.config.get().gameName + ' ' + this.config.get().masterName;
+    return ConfigService.get().gameName + ' ' + ConfigService.get().masterName;
   }
 
   /**

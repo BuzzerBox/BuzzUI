@@ -1,12 +1,11 @@
 import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
-import {AbstractControl, FormArray, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
+import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
-import {ITeam, IQuestion, IBuzzer, IAnswer} from '../../../../../shared/shared';
+import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
-import {File} from '@angular/compiler-cli/src/ngtsc/file_system/testing/src/mock_file_system';
-import {Observable, Subject} from "rxjs";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {Observable, Subject} from 'rxjs';
+import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-setup',
@@ -70,9 +69,6 @@ export class SetupComponent implements OnInit {
       }
     } else {
       this.teamNameSuggestions = [];
-      // const presetupData = this.game.getPresetupData();
-      console.log('presetupData');
-      console.log(presetupData);
       for (let i = 0; i < presetupData.availableBuzzers.length; i++) {
         const teamNameSuggestion = 'Team ' + (i + 1);
         this.teamNameSuggestions.push(teamNameSuggestion);
@@ -93,8 +89,6 @@ export class SetupComponent implements OnInit {
 
   private initQuestionsFormControls(loadedFile: boolean = false): void {
     if (loadedFile) {
-      // this.showQuestions = false;
-      // const questionsFormGroup = new FormGroup({});
       for (let i = 0; i < this.game.getQuestions().length; i++) {
         const q: IQuestion = this.game.getQuestions()[i];
         const fgn = 'question' + i;
@@ -136,7 +130,6 @@ export class SetupComponent implements OnInit {
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
     this.questionsFormGroup.addControl(formGroupName, qfc);
-    // this.testSub.next(this.questionsFormGroup);
   }
 
   private createQuestionFormGroup(): FormGroup {
@@ -273,13 +266,6 @@ export class SetupComponent implements OnInit {
         duration: 5000
       });
     };
-  }
-
-  public test(): string {
-    // alert("test");
-    console.log(this.questionFormGroupNames);
-    console.log(this.questionsFormGroup);
-    return "teee";
   }
 
   // TODO: implement it in a correct way, this is just because of the haste
