@@ -32,8 +32,8 @@ import {
 } from "../../shared/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
-import {LoggerService} from "./logger.service";
-import {MicroControllerI2CAdapter} from "../objects/adapters/MicroControllerI2C.adapter";
+import {LoggerService} from './logger.service';
+// import {MicroControllerI2CAdapter} from "../objects/adapters/MicroControllerI2C.adapter";
 
 export class GameService {
     private static instance: GameService;
@@ -456,15 +456,15 @@ export class GameService {
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
         // release the lock via i2c if necessary
         if (sendI2C && !packet.setLock) {
-            MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
+            // MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
         }
     }
 
     private startMicroControllerI2CPolling(): void {
-        setInterval(this.handleMicroControllerI2CRead.bind(this), parseInt(config.i2c.pollingInMS, 10));
+        // setInterval(this.handleMicroControllerI2CRead.bind(this), parseInt(config.i2c.pollingInMS, 10));
     }
 
-    private async handleMicroControllerI2CRead(): Promise<void> {
+    /*private async handleMicroControllerI2CRead(): Promise<void> {
         if (await MicroControllerI2CAdapter.isBuzzerLockActive()) {
             const buzzerNumber: number = await MicroControllerI2CAdapter.getPressedBuzzer();
             console.log("got number " + buzzerNumber);
@@ -481,7 +481,7 @@ export class GameService {
                 this.handleIdleSituation();
             }
         }
-    }
+    }*/
 
     private handleI2CError(e): void {
         console.log("I2C error occured", e);
