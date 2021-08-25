@@ -61,5 +61,14 @@
       "softRelease": "1",
       "setBuzzer": "2"
     }
+  },
+  "serial": {
+    "enabled": true,
+    "address": "/dev/tty-usbserial1",
+    "commands": {
+      "softRelease": "1",
+      "setBuzzer": "2"
+    },
+    "eol": "255"
   }
 }
