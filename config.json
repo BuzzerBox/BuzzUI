@@ -9,46 +9,57 @@
     "retryIntervalInMS": "500"
   },
   "softReleaseKey": "KeyQ",
+  "softReleaseByte": 113,
   "buzzers": [
     {
       "name": "Buzzer 0",
-      "key": "Digit0"
+      "key": "Digit0",
+      "byte": 48
     },
     {
       "name": "Buzzer 1",
-      "key": "Digit1"
+      "key": "Digit1",
+      "byte": 49
     },
     {
       "name": "Buzzer 2",
-      "key": "Digit2"
+      "key": "Digit2",
+      "byte": 50
     },
     {
       "name": "Buzzer 3",
-      "key": "Digit3"
+      "key": "Digit3",
+      "byte": 51
     },
     {
       "name": "Buzzer 4",
-      "key": "Digit4"
+      "key": "Digit4",
+      "byte": 52
     },
     {
       "name": "Buzzer 5",
-      "key": "Digit5"
+      "key": "Digit5",
+      "byte": 53
     },
     {
       "name": "Buzzer 6",
-      "key": "Digit6"
+      "key": "Digit6",
+      "byte": 54
     },
     {
       "name": "Buzzer 7",
-      "key": "Digit7"
+      "key": "Digit7",
+      "byte": 55
     },
     {
       "name": "Buzzer 8",
-      "key": "Digit8"
+      "key": "Digit8",
+      "byte": 56
     },
     {
       "name": "Buzzer 9",
-      "key": "Digit9"
+      "key": "Digit9",
+      "byte": 57
     }
   ],
   "i2c": {
@@ -63,12 +74,15 @@
     }
   },
   "serial": {
+    "baudRate": 9600,
     "enabled": true,
     "address": "/dev/tty-usbserial1",
     "commands": {
-      "softRelease": "1",
-      "setBuzzer": "2"
+      "softRelease": 1,
+      "setBuzzer": 2
     },
-    "eol": "255"
-  }
+    "stuffingBit": 0,
+    "eol": 255
+  },
+  "enableBrowserKeypressEvents": false
 }
