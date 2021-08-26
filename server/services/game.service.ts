@@ -33,7 +33,9 @@ import {
 import config from '../../config.json';
 import * as Uuid from 'uuid';
 import {LoggerService} from './logger.service';
-// import {MicroControllerI2CAdapter} from "../objects/adapters/MicroControllerI2C.adapter";
+import {MicroControllerSerialAdapter} from '../objects/adapters/MicroControllerSerialAdapter';
+import {Buffer} from 'buffer';
+import {SerialPortService} from './serial-port.service';
 
 export class GameService {
     private static instance: GameService;
@@ -65,7 +67,8 @@ export class GameService {
         this.setNewState(EGameStates.WAITING_FOR_MASTER);
         // call this once to read config and create necessary variables
         this.getBuzzerConfig();
-        // this.startMicroControllerI2CPolling();
+        SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
+        SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
     }
 
     public static get(): GameService {
@@ -447,7 +450,7 @@ export class GameService {
         return true;
     }
 
-    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendI2C: boolean = true): void {
+    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendSerial: boolean = true): void {
         this.setKeypressLocked(packet.setLock);
         // it is very likely, that the master already reloaded the page, thus this is null
         if (this.webSocketConnectionMaster != null) {
@@ -455,8 +458,9 @@ export class GameService {
         }
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
         // release the lock via i2c if necessary
-        if (sendI2C && !packet.setLock) {
+        if (sendSerial && !packet.setLock) {
             // MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
+            MicroControllerSerialAdapter.sendSerialCommandReleaseLock();
         }
     }
 
@@ -503,5 +507,13 @@ export class GameService {
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
+    }
+
+    private onSerialDataIn(data: Buffer): void {
+        console.log("got new data on serial: ", data);
+    }
+
+    private onSerialError(err): void {
+        // TODO
     }
 }
