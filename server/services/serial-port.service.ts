@@ -17,6 +17,7 @@ export class SerialPortService {
 
     private constructor() {
         this.onDataInCallbacks = [];
+        this.onErrorCallbacks = [];
         this.serialPortConnection = new SerialPort(ConfigService.get().serial.address, {
             baudRate: ConfigService.get().serial.baudRate
         });
