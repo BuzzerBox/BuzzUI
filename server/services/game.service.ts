@@ -169,7 +169,7 @@ export class GameService {
                     // TODO remove EKeyBind
                 }
                 this.buzzerConfig.push(c);
-                this.keyOrByteCodesInUse.push(c.keyBind);
+                this.keyOrByteCodesInUse.push(c.byteBind);
             }
         }
         return this.buzzerConfig;
@@ -464,11 +464,13 @@ export class GameService {
     }
 
     private getTeamForByteOrKeyPressCode(code: string, mode: LOOKUP_TEAM_CODE): ITeam {
+        console.log("keycodes", this.keyOrByteCodesInUse, code)
         if (!this.keyOrByteCodesInUse.includes(code)) {
             return null;
         }
         let b: IBuzzer;
         for (const buzzer of this.getBuzzerConfig()) {
+            console.log("buzzer", buzzer)
             if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
                 if (buzzer.byteBind === code) {
                     b = buzzer;
@@ -482,9 +484,11 @@ export class GameService {
             }
         }
         if (b == null) {
+            console.log("b null")
             return null;
         }
         for (const team of this.teams) {
+            console.log("team", b.id, team.buzzerId)
             if (b.id === team.buzzerId) {
                 if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
                     LoggerService.log("found team " + team.name + " to match keypress " + code);
@@ -587,6 +591,7 @@ export class GameService {
         console.log("got new data on serial: ", data);
         const c: typeof config = ConfigService.get();
         const input: number = toInteger(data.toString('hex'));
+        console.log("inputnumber", input);
         if (input === c.softReleaseByte) {
             const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
             this.webSocketConnectionMaster.send<IMarkTeamPacket>(unmarkTeamsPacket);
@@ -595,6 +600,7 @@ export class GameService {
             this.releaseHardwareBuzzerLock(false);
         } else {
             const inputAsString = input.toString(10);
+            console.log("inputAsString", inputAsString);
             if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(inputAsString)) {
                 const team: ITeam = this.getTeamForByteCode(inputAsString);
                 if (team == null) {
