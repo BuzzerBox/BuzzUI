@@ -37,7 +37,6 @@ export class ConfigService {
 	}
 
 	public isDevMode(): boolean {
-		console.log("asdasdasd");
 		return ProcessArgumentsService.getArgVal(EProcessArguments.ENABLE_DEV_MODE) === '1';
 	}
 
