@@ -4,11 +4,13 @@
 
 # TODO RUN AS ROOT!
 
-# some configs
+# DEFAULT
+# TODO replace these by env vars
 assetsRoot="../../.assets"
 installDir="/home/pi/BuzzerBox"
 
-echo "Updating packe list..."
+exit
+echo "Updating package list..."
 # update the package list
 sudo apt-get update
 
