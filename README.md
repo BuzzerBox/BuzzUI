@@ -1,7 +1,25 @@
 # BuzzUI
 WebApp for the BuzzerBox
 
-## Config
+## Installation
+How to install the BuzzerBox web app onto a platform. Currently, only the Raspberry Pi 4 with the OS `Buster` is
+supported. Various things can be set in the `setup.env` file in the installation directory root.
+The supported settings are shown below:
+
+- `INSTALL_DIR`: Sets the target location the BuzzerBox web app is to be installed to. Defaults to `/home/pi/BuzzerBox`.
+- `WIFI_SSID`: Sets the Pi's ad-hoc WiFi network's SSID. Defaults to `BuzzerBoxNetwork`.
+- `WIFI_COUNTRY_CODE`: Sets the Pi's ad-hoc WiFi network's country code. Defaults to `DE`.
+- `WIFI_PASSPHRASE`: Sets the Pi's ad-hoc WiFi network's passphrase. Defaults to `12TheBuzzerBox_IncredibleNetwork34`.
+- `SERVER_IP_ADDRESS`: Sets the Pi's own IP address within its ad-hoc WiFi network. Defaults to `10.0.0.5`.
+- `HOSTNAMES`: Sets the hostnames under which the Pi can be found. Multiple values are supported by concatenating them with a `;`. Defaults to `buzzer.box;buzzerbox.local`.
+- `SPLASH_IMAGE_TARGET_LOCATION`: Sets the location where is splash image that is used during boot-up and as desktop wallpaper will be saved to. Defaults to `/home/pi/Pictures/splash.png`.
+
+
+
+### Raspberry Pi 4 `Buster`
+
+## Configuration of the web app
+TODO probably needs to be updated
 ```json
 {
   "gameName": <NAME>,
@@ -32,40 +50,9 @@ WebApp for the BuzzerBox
 ```
 The following key-bindings are available so far: `NUMPAD_0`, `NUMPAD_1`, `NUMPAD_2`, `NUMPAD_3`, `NUMPAD_4`, `NUMPAD_5`, `NUMPAD_6`, `NUMPAD_7`, `NUMPAD_8`, `NUMPAD_9`.
 
+## WiFi
+WiFi default name's `BuzzerBoxNetwork` and the default password is `12TheBuzzerBox_IncredibleNetwork34`, but these can
+be set in `setup.env`.
 
-# Autostart
-To auto start all the required stuff, make sure the following lines are present in  `/etc/xdg/lxsession/LXDE-pi/autostart`
-```
-# hide the mouse cursor when idle
-unclutter -idle 5
-# open the page in kiosk mode: system's notifications are disabled as well as some other stuff
-/usr/bin/chromium-browser --kiosk --disable-restore-session-state --disk-cache-dir=/dev/null --disk-cache-size=1  http://localhost/screen/
-# start the server and write to logfile
-# the following line should only be active while developing since it writes data to the card
-# node /home/pi/buzzer/server/dist/server/main.js &>> server.log
-node /home/pi/buzzer/server/dist/server/main.js
-# create the ad-hoc network to connect to the pi
-sudo sh /home/pi/buzzer/scripts/createAdHocNetwork.sh
-```
-
-# Splash Screen
-To enable the custom splash screen, follow this tutorial: https://web.archive.org/web/20210308001512/https://scribles.net/customizing-boot-up-screen-on-raspberry-pi/
-
-# DNS 
-To make the UI accessible via a domain name from the PiFi, configure /etc/hosts and add the line 
-``` 
-10.0.0.5      buzzer.box
-10.0.0.5      buzzerbox.local
-```
-
-Additionally, configure /etc/dnsmasq.conf to resolve local DNS queries from the hosts file. 
-```
-local=/local/
-```
-
-
-# WiFi
-WiFi name's `BuzzerBoxNetwork` and the password is `12TheBuzzerBox_IncredibleNetwork34`
-
-# Disable Screen Saver
+## Disable Screen Saver
 To disable the screen saver, use the `raspi-config` and disable the screen blanking
