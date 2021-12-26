@@ -76,7 +76,7 @@
   "serial": {
     "baudRate": 115200,
     "enabled": true,
-    "address": "/dev/tty-usbserial1",
+    "address": "/dev/serial0",
     "commands": {
       "softRelease": 1,
       "setBuzzer": 2
