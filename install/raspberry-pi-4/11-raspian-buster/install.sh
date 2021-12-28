@@ -52,6 +52,29 @@ echo "Copying BuzzerBox Frontend's files to nginx's serve folder..."
 mkdir -p "${INSTALL_DIR}/frontend"
 cp -r "${ASSETS_DIR}/compilations/frontend" "${INSTALL_DIR}"
 
+echo "Copying BuzzerBox Server's files ..."
+#mkdir -p /usr/local/buzzerbox
+sudo mkdir -p "${INSTALL_DIR}/backend"
+cp -r "${ASSETS_DIR}/compilations/backend" "${INSTALL_DIR}"
+#cp "${ASSETS_DIR}/raw/backend/server/package.json" "${INSTALL_DIR}/backend/server/package.json"
+sudo npm --prefix "${INSTALL_DIR}/backend/server" i
+#cd "../../"
+
+#echo "Transpiling BuzzerBox Server's files to /usr/local/buzzerbox/backend..."
+##mkdir -p /usr/local/buzzerbox/backend
+#mkdir -p "${INSTALL_DIR}/backend"
+#cd "${ASSETS_DIR}/raw/backend/server"
+#npm i
+##npx tsc --outDir "/usr/local/buzzerbox/backend"
+#npx tsc --outDir "${INSTALL_DIR}/backend"
+#cd "../../../../raspberry-pi-4/11-raspian-buster"
+
+#cp -r "${ASSETS_DIR}/compilations/backend" /usr/local/buzzerbox
+
+# TODO for dev purposes
+#sudo reboot
+#exit
+
 echo "Installing and configuring hostapd and dnsmasq"
 sudo apt-get install hostapd -y
 sudo apt-get install dnsmasq -y
@@ -154,25 +177,6 @@ echo "Cleaning up desktop by hiding unnecessary icons..."
 # TODO use replaceInFile
 sudo sed -i 's/show_trash=0/show_trash=1/' /home/pi/.config/pcmanfm/LXDE-pi/desktopps -items-0.conf
 sudo sed -i 's/show_mounts=0/show_mounts=1/' /home/pi/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
-
-echo "Copying BuzzerBox Server's files to /usr/local/buzzerbox/backend..."
-#mkdir -p /usr/local/buzzerbox
-mkdir -p "${INSTALL_DIR}/backend"
-cp -r "${ASSETS_DIR}/compilations/backend" "${INSTALL_DIR}"
-#cp "${ASSETS_DIR}/raw/backend/server/package.json" "${INSTALL_DIR}/backend/server/package.json"
-#npm --prefix "${INSTALL_DIR}/backend/server" i
-#cd "../../"
-
-#echo "Transpiling BuzzerBox Server's files to /usr/local/buzzerbox/backend..."
-##mkdir -p /usr/local/buzzerbox/backend
-#mkdir -p "${INSTALL_DIR}/backend"
-#cd "${ASSETS_DIR}/raw/backend/server"
-#npm i
-##npx tsc --outDir "/usr/local/buzzerbox/backend"
-#npx tsc --outDir "${INSTALL_DIR}/backend"
-#cd "../../../../raspberry-pi-4/11-raspian-buster"
-
-#cp -r "${ASSETS_DIR}/compilations/backend" /usr/local/buzzerbox
 
 
 # install unclutter, to be able to hide mouse
