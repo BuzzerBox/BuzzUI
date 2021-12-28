@@ -28,7 +28,8 @@
     "material-icons-font": "^2.1.0",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
-    "zone.js": "~0.11.3"
+    "zone.js": "~0.11.3",
+    "@videogular/ngx-videogular": "^3.0.1"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.1102.12",

@@ -1,5 +1,7 @@
 import http, {Server} from "http";
 import {MainExpressService} from "./main-express.service";
+import express from "express";
+import path from "path";
 
 export class HttpServerService {
     private static instance: HttpServerService;
@@ -9,6 +11,9 @@ export class HttpServerService {
 
     private constructor() {
         this.server = http.createServer(MainExpressService.get().getMain);
+        const pathv = path.join(__dirname, 'media');
+        console.log('path', pathv)
+        MainExpressService.get().getMain().use('/media', express.static(pathv))
         this.isStarted = false;
     }
 
