@@ -1,0 +1,14 @@
+<vg-player>
+  <vg-controls vgFor="my-video" [vgAutohide]="true" [vgAutohideTime]="0">
+    <vg-play-pause vgFor="my-video"></vg-play-pause>
+  </vg-controls>
+
+  <video #myMedia
+         [vgMedia]="myMedia"
+         id="my-video"
+         preload="auto"
+         autoplay="true"
+         src="http://localhost:3031/media/videogular.mp4"
+         type="video/mp4">
+  </video>
+</vg-player>
