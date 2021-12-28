@@ -2,5 +2,8 @@
   "server": {
     "address": "localhost"
   },
-  "enableBrowserKeypressEvents": true
+  "enableBrowserKeypressEvents": true,
+  "serial": {
+    "address": "COM5"
+  }
 }
