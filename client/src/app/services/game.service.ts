@@ -33,10 +33,10 @@ import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
 import {pathsMaster} from '../master/paths-master';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
-import config from '../../../../config.json';
 import {TeamHelper} from '../helper/team.helper';
 import * as Uuid from 'uuid';
 import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
+import {ConfigService} from './config.service';
 
 export interface IGameStateAsJson {
   /**
@@ -75,7 +75,12 @@ export class GameService implements OnDestroy {
   private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
 
 
-  constructor(private webSocketService: WebSocketService, private router: Router, private sanitizer: DomSanitizer) {
+  constructor(
+    private webSocketService: WebSocketService,
+    private router: Router,
+    private sanitizer: DomSanitizer,
+    private config: ConfigService
+  ) {
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
     this.markTeamSubject = new Subject<IMarkTeamPacket>();
     this.teams = [];
@@ -350,13 +355,12 @@ export class GameService implements OnDestroy {
       return;
     }
     this.currentGameState = gameState.gameState;
-    console.log("gamestate", gameState.gameState);
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
     return this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
   }
 
   public getGameName(): string {
-    return config.gameName + ' ' + config.masterName;
+    return ConfigService.get().gameName + ' ' + ConfigService.get().masterName;
   }
 
   /**

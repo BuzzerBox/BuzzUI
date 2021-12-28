@@ -32,8 +32,18 @@ import {
 } from "../../shared/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
-import {LoggerService} from "./logger.service";
-import {MicroControllerI2CAdapter} from "../objects/adapters/MicroControllerI2C.adapter";
+import {LoggerService} from './logger.service';
+import {MicroControllerSerialAdapter} from '../objects/adapters/MicroControllerSerialAdapter';
+import {Buffer} from 'buffer';
+import {SerialPortService} from './serial-port.service';
+import {ConfigService} from './config.service';
+import {toInteger} from 'lodash';
+import {ObjectHelper} from '../../shared/helper/object.helper';
+
+enum LOOKUP_TEAM_CODE {
+    BY_KEYPRESS,
+    BY_BYTE
+}
 
 export class GameService {
     private static instance: GameService;
@@ -49,8 +59,9 @@ export class GameService {
     private questions: IQuestion[];
     private currentGameState: IGameState;
     private keypressLocked = false;
-    private keyCodesInUse: string[] = [];
+    private keyOrByteCodesInUse: string[] = [];
     private ignoredKeypresses: string[] = [];
+    // TODO: maybe rename it to lastBuzzerPressed to reflect an upcoming change in behavior for this field
     private lastKeyPressed: string;
     private configInvalidReason: string;
 
@@ -65,7 +76,8 @@ export class GameService {
         this.setNewState(EGameStates.WAITING_FOR_MASTER);
         // call this once to read config and create necessary variables
         this.getBuzzerConfig();
-        // this.startMicroControllerI2CPolling();
+        SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
+        SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
     }
 
     public static get(): GameService {
@@ -152,11 +164,12 @@ export class GameService {
                 const c: IBuzzer = {
                     name: buzzConf.name,
                     id,
-                    keyBind: buzzConf.key
+                    keyBind: buzzConf.key,
+                    byteBind: buzzConf.byte.toString(10)
                     // TODO remove EKeyBind
                 }
                 this.buzzerConfig.push(c);
-                this.keyCodesInUse.push(c.keyBind);
+                this.keyOrByteCodesInUse.push(c.byteBind);
             }
         }
         return this.buzzerConfig;
@@ -369,30 +382,24 @@ export class GameService {
     // TODO: create method to send to all screens AND master
     private onKeypressOnScreenPacket(packet: IKeypressOnScreenPacket): void {
         if (packet.keyCode === config.softReleaseKey) {
-            this.releaseHardwareBuzzerLock();
+            this.releaseHardwareBuzzerLock(true);
             const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
             this.webSocketConnectionMaster.send<IMarkTeamPacket>(unmarkTeamsPacket);
             this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
         } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
-            const team: ITeam = this.getTeamForKeyCode(packet.keyCode);
+            const team: ITeam = this.getTeamForKeyPressCode(packet.keyCode);
             if (team == null) {
                 LoggerService.log("no team found for keycode " + packet.keyCode)
                 return;
             }
-            this.setKeypressLocked(true);
             this.lastKeyPressed = packet.keyCode;
-            const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
-            this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
-            const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
-            this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
-            this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
-            this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
+            this.lockOnTeam(team);
         }
     }
 
-    private releaseHardwareBuzzerLock(sendI2C: boolean = false) {
+    private releaseHardwareBuzzerLock(sendSerial: boolean = false) {
         const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
-        this.onSetBuzzerLockPacket(null, lockPacket, sendI2C);
+        this.onSetBuzzerLockPacket(null, lockPacket, sendSerial);
     }
 
     private setKeypressLocked(locked: boolean): void {
@@ -403,8 +410,14 @@ export class GameService {
         return this.keypressLocked;
     }
 
-    private getTeamForKeyCode(keyCode: string): ITeam {
-        if (!this.keyCodesInUse.includes(keyCode)) {
+    /**
+     * This is the look-up function for keypress codes (e.g. from the browser)
+     * @param keyCode
+     * @private
+     */
+    private getTeamForKeyPressCode(keyCode: string): ITeam {
+        // TODO: remove once tested
+        /*if (!this.keyOrByteCodesInUse.includes(keyCode)) {
             return null;
         }
         let b: IBuzzer;
@@ -421,6 +434,74 @@ export class GameService {
                 LoggerService.log("found team " + team.name + " to match keypress " + keyCode);
                 return team;
             }
+        }
+        return null;*/
+        return this.getTeamForByteOrKeyPressCode(keyCode, LOOKUP_TEAM_CODE.BY_KEYPRESS);
+    }
+
+    private getTeamForByteCode(byteCode: string): ITeam {
+        // TODO: remove once tested
+        /*if (!this.keyOrByteCodesInUse.includes(byteCode)) {
+            return null;
+        }
+        let b: IBuzzer;
+        for (const buzzer of this.getBuzzerConfig()) {
+            if (buzzer.byteBind === byteCode) {
+                b = buzzer;
+            }
+        }
+        if (b == null) {
+            return null;
+        }
+        for (const team of this.teams) {
+            if (b.id === team.buzzerId) {
+                LoggerService.log("found team " + team.name + " to match byte " + byteCode);
+                return team;
+            }
+        }
+        return null;*/
+        return this.getTeamForByteOrKeyPressCode(byteCode, LOOKUP_TEAM_CODE.BY_BYTE);
+    }
+
+    private getTeamForByteOrKeyPressCode(code: string, mode: LOOKUP_TEAM_CODE): ITeam {
+        console.log("keycodes", this.keyOrByteCodesInUse, code)
+        if (!this.keyOrByteCodesInUse.includes(code)) {
+            return null;
+        }
+        let b: IBuzzer;
+        for (const buzzer of this.getBuzzerConfig()) {
+            console.log("buzzer", buzzer)
+            if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
+                if (buzzer.byteBind === code) {
+                    b = buzzer;
+                }
+            } else if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
+                if (buzzer.keyBind === code) {
+                    b = buzzer;
+                }
+            } else {
+                return null;
+            }
+        }
+        if (b == null) {
+            console.log("b null")
+            return null;
+        }
+        for (const team of this.teams) {
+            console.log("team", b.id, team.buzzerId)
+            if (b.id === team.buzzerId) {
+                if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
+                    LoggerService.log("found team " + team.name + " to match keypress " + code);
+                } else if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
+                    LoggerService.log("found team " + team.name + " to match byte " + code);
+                }
+                return team;
+            }
+        }
+        if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
+            LoggerService.warn("No team found for keypress " + code);
+        } else if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
+            LoggerService.warn("No team found for byte " + code);
         }
         return null;
     }
@@ -447,7 +528,7 @@ export class GameService {
         return true;
     }
 
-    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendI2C: boolean = true): void {
+    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendSerial: boolean = true): void {
         this.setKeypressLocked(packet.setLock);
         // it is very likely, that the master already reloaded the page, thus this is null
         if (this.webSocketConnectionMaster != null) {
@@ -455,16 +536,17 @@ export class GameService {
         }
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
         // release the lock via i2c if necessary
-        if (sendI2C && !packet.setLock) {
-            MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
+        if (sendSerial && !packet.setLock) {
+            // MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
+            MicroControllerSerialAdapter.sendSerialCommandReleaseLock();
         }
     }
 
     private startMicroControllerI2CPolling(): void {
-        setInterval(this.handleMicroControllerI2CRead.bind(this), parseInt(config.i2c.pollingInMS, 10));
+        // setInterval(this.handleMicroControllerI2CRead.bind(this), parseInt(config.i2c.pollingInMS, 10));
     }
 
-    private async handleMicroControllerI2CRead(): Promise<void> {
+    /*private async handleMicroControllerI2CRead(): Promise<void> {
         if (await MicroControllerI2CAdapter.isBuzzerLockActive()) {
             const buzzerNumber: number = await MicroControllerI2CAdapter.getPressedBuzzer();
             console.log("got number " + buzzerNumber);
@@ -481,7 +563,7 @@ export class GameService {
                 this.handleIdleSituation();
             }
         }
-    }
+    }*/
 
     private handleI2CError(e): void {
         console.log("I2C error occured", e);
@@ -503,5 +585,45 @@ export class GameService {
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
+    }
+
+    private onSerialDataIn(data: Buffer): void {
+        console.log("got new data on serial: ", data);
+        const c: typeof config = ConfigService.get();
+        const input: number = toInteger(data.toString('hex'));
+        console.log("inputnumber", input);
+        if (input === c.softReleaseByte) {
+            const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
+            this.webSocketConnectionMaster.send<IMarkTeamPacket>(unmarkTeamsPacket);
+            this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
+            this.setKeypressLocked(false);
+            this.releaseHardwareBuzzerLock(false);
+        } else {
+            const inputAsString = input.toString(10);
+            console.log("inputAsString", inputAsString);
+            if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(inputAsString)) {
+                const team: ITeam = this.getTeamForByteCode(inputAsString);
+                if (team == null) {
+                    LoggerService.error("no team found for byte code " + inputAsString)
+                    return;
+                }
+                this.lockOnTeam(team);
+            }
+        }
+    }
+
+    private lockOnTeam(team: ITeam) {
+        ObjectHelper.ensureNotNull(team);
+        this.setKeypressLocked(true);
+        const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
+        this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+        const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
+        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
+        this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
+        this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
+    }
+
+    private onSerialError(err): void {
+        // TODO
     }
 }
