@@ -13,7 +13,8 @@ export class HttpServerService {
         this.server = http.createServer(MainExpressService.get().getMain);
         const pathv = path.join(__dirname, 'media');
         console.log('path', pathv)
-        MainExpressService.get().getMain().use('/media', express.static(pathv))
+        MainExpressService.get().getMain().use('/media', express.static("C:\\Users\\Liam\\Desktop\\BuzzUI\\server\\media"))
+        MainExpressService.get().getMain().listen(3031);
         this.isStarted = false;
     }
 

@@ -18,11 +18,6 @@ import {MatListModule} from '@angular/material/list';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import { DialogConfirmEndingGameComponent } from './shared/play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialogModule} from '@angular/material/dialog';
-import {VgCoreModule} from '@videogular/ngx-videogular/core';
-import {VgControlsModule} from '@videogular/ngx-videogular/controls';
-import {VgOverlayPlayModule} from '@videogular/ngx-videogular/overlay-play';
-import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
-
 
 @NgModule({
   declarations: [
@@ -42,10 +37,6 @@ import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
     // MatListModule,
     MatSnackBarModule,
     MatDialogModule,
-    VgCoreModule,
-    VgControlsModule,
-    VgOverlayPlayModule,
-    VgBufferingModule
   ],
   providers: [],
   bootstrap: [AppComponent],
