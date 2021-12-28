@@ -3,7 +3,8 @@ import {HttpServerService} from "./http-server.service";
 import {Observable, Subject} from "rxjs";
 import {WebSocketConnection} from "../objects/web-socket-connection";
 import {EPacketTypes, IGamePacket, IWebSocketMessage} from '../../shared/shared';
-import {LoggerService} from "./logger.service";
+import {AbstractLoggerService} from "../../shared/services/abstract-logger.service";
+import {LoggerService} from './logger.service';
 
 export class WebSocketService {
     private static instance: WebSocketService;

@@ -1,5 +1,4 @@
 import {Component, Input, OnInit} from '@angular/core';
-import config from '../../../../../config.json';
 import {GameService} from '../../services/game.service';
 import {SafeUrl} from '@angular/platform-browser';
 

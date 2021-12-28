@@ -1,25 +1,12 @@
-import {environment} from "../env";
+import {AbstractLoggerService} from '../../shared/services/abstract-logger.service';
+import {ConfigService} from './config.service';
 
-export class LoggerService {
-    private static forceOverEnvironmentSetting = false;
+export class LoggerService extends AbstractLoggerService {
+  private constructor() {
+    super();
+  }
 
-    public static log(...obj): void {
-        this.printTime();
-        if (environment.isDebug || this.forceOverEnvironmentSetting) {
-            console.dir(obj)
-        }
-    }
-
-    public static error(...errors): void {
-        this.printTime();
-        if (environment.isDebug || this.forceOverEnvironmentSetting) {
-            for(const error of errors) {
-                console.error(error)
-            }
-        }
-    }
-
-    private static printTime(): void {
-        console.log(new Date(Date.now()));
-    }
+  public static isDebug(): boolean {
+    return ConfigService.isDevMode();
+  }
 }

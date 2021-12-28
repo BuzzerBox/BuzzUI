@@ -3,7 +3,7 @@ import {MainExpressService} from "./main-express.service";
 
 export class HttpServerService {
     private static instance: HttpServerService;
-    //initialize a simple http server
+    // initialize a simple http server
     private server: Server;
     private isStarted: boolean;
 
@@ -24,7 +24,7 @@ export class HttpServerService {
     }
 
     public start(port: number): void {
-        //start our server
+        // start our server
         if (!this.isStarted) {
             this.server.listen(port, () => {
                 console.log(`Server started on port ${port}!`);

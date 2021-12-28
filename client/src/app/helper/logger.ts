@@ -1,9 +1,12 @@
-import {environment} from '../../environments/environment';
+import {AbstractLoggerService} from '../../../../shared/services/abstract-logger.service';
+import {ConfigService} from '../services/config.service';
 
-export class Logger {
-  public static log(...obj): void {
-    if (!environment.production) {
-        console.dir(obj);
-    }
+export class Logger extends AbstractLoggerService {
+  private constructor() {
+    super();
+  }
+
+  public static isDebug(): boolean {
+    return ConfigService.isDevMode();
   }
 }
