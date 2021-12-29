@@ -48,7 +48,13 @@
               <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
             </mat-form-field>
             <mat-checkbox formControlName="answersVisible" #self (click)="toggleShowAnswers(self, questionFormGroupName)">Zeige Antwortmöglichkeiten</mat-checkbox>
-
+            <!--          <button mat-raised-button>Frage entfernen</button>-->
+          </div>
+          <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
+            <mat-form-field >
+              <mat-label>Media Source</mat-label>
+              <textarea matInput formControlName="mediaSrc" cdkTextareaAutosize class="question"></textarea>
+            </mat-form-field>
             <!--          <button mat-raised-button>Frage entfernen</button>-->
           </div>
 
