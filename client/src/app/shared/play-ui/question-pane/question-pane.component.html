@@ -12,6 +12,8 @@
 
       </mat-grid-tile>
     </mat-grid-list>
-    <app-media-question></app-media-question>
+    <ng-template [ngIf]="question.mediaDetails">
+      <app-media-question [media]="question.mediaDetails"></app-media-question>
+    </ng-template>
   </mat-card-content>
 </ng-template>

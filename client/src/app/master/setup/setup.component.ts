@@ -92,8 +92,13 @@ export class SetupComponent implements OnInit {
       for (let i = 0; i < this.game.getQuestions().length; i++) {
         const q: IQuestion = this.game.getQuestions()[i];
         const fgn = 'question' + i;
+        let mediaSrc = '';
+        if (q.mediaDetails) {
+          mediaSrc = q.mediaDetails.fileSrc;
+        }
         this.questionsFormGroup.addControl(fgn, new FormGroup({
           text: new FormControl(q.text),
+          mediaSrc: new FormControl(mediaSrc),
           answers: new FormGroup({
             answer0: new FormGroup({
               text: new FormControl(q.answers[0].text),
@@ -135,6 +140,7 @@ export class SetupComponent implements OnInit {
   private createQuestionFormGroup(): FormGroup {
     return new FormGroup({
       text: new FormControl(null, Validators.required),
+      mediaSrc: new FormControl(''),
       answers: new FormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),
@@ -215,6 +221,7 @@ export class SetupComponent implements OnInit {
     for (const name of this.questionFormGroupNames) {
       const questionFormGroup: FormGroup = this.questionsFormGroup.get(name) as FormGroup;
       const questionText: string = questionFormGroup.get('text').value.toString();
+      const mediaSrc: string = questionFormGroup.get('mediaSrc').value.toString();
       const answers: IAnswer[] = [];
       for (let i = 0; i < 4; i++) {
         const answerFormGroup: FormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as FormGroup;
@@ -223,11 +230,17 @@ export class SetupComponent implements OnInit {
           isCorrect: answerFormGroup.get('isCorrect').value
         });
       }
-      ret.push({
+      const question: IQuestion = {
         text: questionText,
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
-      });
+      };
+      if (mediaSrc) {
+        question.mediaDetails = {
+          fileSrc: mediaSrc
+        };
+      }
+      ret.push(question);
     }
     return ret;
   }

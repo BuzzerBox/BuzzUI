@@ -10,7 +10,7 @@
   },
   "fileServer": {
     "port": 4202,
-    "localPath": "/home/liam/Projects/server/media"
+    "localPath": "/home/liam/Projects/BuzzerBox/BuzzUI/server/media"
   },
   "softReleaseKey": "KeyQ",
   "softReleaseByte": 71,

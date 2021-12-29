@@ -6,6 +6,7 @@ import {ITeam} from './interfaces/ITeam';
 import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {IQuestion} from './interfaces/IQuestion';
+import {IMediaDetails} from './interfaces/IMediaDetails';
 import {ISetupPacket} from './interfaces/ISetupPacket';
 import {IAnswer} from './interfaces/IAnswer';
 import {INewMasterAccepted} from './interfaces/INewMasterAccepted';
@@ -31,6 +32,7 @@ export {
 	IRegisterMasterPacket,
 	IBuzzer,
 	IQuestion,
+	IMediaDetails,
 	ISetupPacket,
 	IAnswer,
 	INewMasterAccepted,
