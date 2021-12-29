@@ -22,6 +22,7 @@ import {IResetServerPacket} from './interfaces/IResetServerPacket';
 import {IKeypressOnScreenPacket} from './interfaces/IKeypressOnScreenPacket';
 import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
 import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
+import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
 
 export {
 	IGamePacket,
@@ -33,6 +34,7 @@ export {
 	IBuzzer,
 	IQuestion,
 	IMediaDetails,
+	IUpdateMediaStatePacket,
 	ISetupPacket,
 	IAnswer,
 	INewMasterAccepted,

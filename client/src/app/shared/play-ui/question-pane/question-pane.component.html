@@ -12,8 +12,9 @@
 
       </mat-grid-tile>
     </mat-grid-list>
-    <ng-template [ngIf]="question.mediaDetails">
+    <ng-template [ngIf]="question.mediaDetails && !isMaster">
       <app-media-question [media]="question.mediaDetails"></app-media-question>
     </ng-template>
+    <app-media-remote *ngIf="isMaster"></app-media-remote>
   </mat-card-content>
 </ng-template>
