@@ -1,14 +1,18 @@
 import {Injectable, OnDestroy} from '@angular/core';
 import {WebSocketService} from './web-socket.service';
 import {
+  CURRENT_SAVEGAME_VERSION,
   EAnswerStates,
   EPacketTypes,
+  EVideoStates,
   IAnswer,
   IAnswerSetStatePacket,
   IDataForScreenPacket,
   IEndGamePacket,
   IGamePacket,
   IGameState,
+  IKeypressOnScreenPacket,
+  IMarkTeamPacket,
   INewMasterAccepted,
   IPresetupAvailableInfoPacket,
   IQuestion,
@@ -16,15 +20,13 @@ import {
   IRegisterScreenPacket,
   IResetServerPacket,
   IResponsePacket,
+  ISetBuzzerLockPacket,
   ISetQuestionPacket,
   ISetupPacket,
   IStartGamePacket,
   ITeam,
   ITeamSetPointsPacket,
-  IKeypressOnScreenPacket,
-  IMarkTeamPacket,
-  CURRENT_SAVEGAME_VERSION,
-  ISetBuzzerLockPacket,
+  IUpdateMediaStatePacket,
   PacketHelper
 } from '../../../../shared/shared';
 import {Observable, Subject, Subscription} from 'rxjs';
@@ -73,7 +75,7 @@ export class GameService implements OnDestroy {
   private cbEndGame: ZeroVoidCallback;
   private markTeamSubject: Subject<IMarkTeamPacket>;
   private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
-
+  private updateMediaStateSubject: Subject<IUpdateMediaStatePacket>;
 
   constructor(
     private webSocketService: WebSocketService,
@@ -154,6 +156,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.RESET_SERVER:
         this.handleResetServerPacket(message as IResetServerPacket);
+        break;
+      case EPacketTypes.UPDATE_MEDIA_STATE:
+        this.handleMediaStateUpdate(message as IUpdateMediaStatePacket);
         break;
       default:
         break;
@@ -294,7 +299,8 @@ export class GameService implements OnDestroy {
           loggedAnswers: [],
           markedTeamIds: [],
           // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
-          setBuzzerLock: false
+          setBuzzerLock: false,
+          mediaState: EVideoStates.NO_VIDEO
         };
       } else {
         this.currentGameState = gameState;
@@ -590,5 +596,24 @@ export class GameService implements OnDestroy {
 
   public getGameStateData(): IGameState {
     return this.currentGameState;
+  }
+  public observeMediaStateUpdates(): Observable<IUpdateMediaStatePacket> {
+    if (this.updateMediaStateSubject == null) {
+      this.updateMediaStateSubject = new Subject<IUpdateMediaStatePacket>();
+    }
+    return this.updateMediaStateSubject.asObservable();
+  }
+
+  public updateMediaState(state: EVideoStates, timestamp?: number): void {
+    this.currentGameState.mediaState = state;
+    const mediaPacket = PacketHelper.makeMediaStatePacket(state, timestamp);
+    this.webSocketService.send<IUpdateMediaStatePacket>(mediaPacket);
+  }
+
+  private handleMediaStateUpdate(packet: IUpdateMediaStatePacket): void {
+    if (this.updateMediaStateSubject != null) {
+      this.updateMediaStateSubject.next(packet);
+    }
+
   }
 }

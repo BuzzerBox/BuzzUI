@@ -1,4 +1,4 @@
-import {IGamePacket, EPacketTypes, IAnswer} from '../shared';
+import {IGamePacket, EPacketTypes, IAnswer, EVideoStates} from '../shared';
 
 /**
  * ALYWAYS UPDATE THIS NUMBER IF SOMETHING CHANGED AND KEEP TRACK OF CHANGES
@@ -14,4 +14,5 @@ export interface IGameState {
     loggedAnswers: IAnswer[];
     activatedAnswer?: IAnswer;
     setBuzzerLock: boolean;
+    mediaState: EVideoStates;
 }

@@ -21,6 +21,8 @@ import {VgCoreModule} from '@videogular/ngx-videogular/core';
 import {VgControlsModule} from '@videogular/ngx-videogular/controls';
 import {VgOverlayPlayModule} from '@videogular/ngx-videogular/overlay-play';
 import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
+import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.component';
+import {MatIconModule} from '@angular/material/icon';
 
 @NgModule({
   declarations: [
@@ -31,7 +33,8 @@ import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
     DialogConfirmEndingGameComponent,
     ScoreBoardComponent,
     BuzzerLockComponent,
-    MediaQuestionComponent
+    MediaQuestionComponent,
+    MediaRemoteComponent
   ],
   imports: [
     CommonModule,
@@ -46,7 +49,8 @@ import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
     VgCoreModule,
     VgControlsModule,
     VgOverlayPlayModule,
-    VgBufferingModule
+    VgBufferingModule,
+    MatIconModule
   ],
   exports: [
     PlayUiComponent,
@@ -54,7 +58,8 @@ import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
     QuestionPaneComponent,
     AnswerOptionsComponent,
     DialogConfirmEndingGameComponent,
-    MediaQuestionComponent
+    MediaQuestionComponent,
+    MediaRemoteComponent
   ],
   entryComponents: [
     DialogConfirmEndingGameComponent
