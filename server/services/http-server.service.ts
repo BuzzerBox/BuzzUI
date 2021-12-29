@@ -1,7 +1,5 @@
 import http, {Server} from "http";
 import {MainExpressService} from "./main-express.service";
-import express from "express";
-import path from "path";
 
 export class HttpServerService {
     private static instance: HttpServerService;
@@ -11,10 +9,6 @@ export class HttpServerService {
 
     private constructor() {
         this.server = http.createServer(MainExpressService.get().getMain);
-        const pathv = path.join(__dirname, 'media');
-        console.log('path', pathv)
-        MainExpressService.get().getMain().use('/media', express.static("C:\\Users\\Liam\\Desktop\\BuzzUI\\server\\media"))
-        MainExpressService.get().getMain().listen(3031);
         this.isStarted = false;
     }
 
@@ -33,7 +27,7 @@ export class HttpServerService {
         // start our server
         if (!this.isStarted) {
             this.server.listen(port, () => {
-                console.log(`Server started on port ${port}!`);
+                console.log(`Gameserver started on port ${port}!`);
             });
             this.isStarted = true;
         }

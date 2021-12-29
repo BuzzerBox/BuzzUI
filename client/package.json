@@ -24,12 +24,12 @@
     "@angular/platform-browser-dynamic": "~11.2.13",
     "@angular/router": "~11.2.13",
     "@types/lodash": "^4.14.171",
+    "@videogular/ngx-videogular": "^3.0.1",
     "lodash": "^4.17.21",
     "material-icons-font": "^2.1.0",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
-    "zone.js": "~0.11.3",
-    "@videogular/ngx-videogular": "^3.0.1"
+    "zone.js": "~0.11.3"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.1102.12",
