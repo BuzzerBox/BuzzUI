@@ -8,6 +8,10 @@
     "webSocketProtocol": "ws",
     "retryIntervalInMS": "500"
   },
+  "fileServer": {
+    "port": 4202,
+    "localPath": "/home/liam/Projects/server/media"
+  },
   "softReleaseKey": "KeyQ",
   "softReleaseByte": 71,
   "buzzers": [
