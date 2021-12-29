@@ -1,12 +1,11 @@
-<div class="example-button-row">
-  <div class="example-flex-container">
-    <button mat-icon-button aria-label="Play" (click)="play()">
-      <mat-icon>play_arrow</mat-icon>
-    </button>
-    <button mat-icon-button aria-label="Pause" (click)="pause()">
-      <mat-icon>pause</mat-icon>
-    </button>
-    <button mat-icon-button aria-label="Replay" (click)="replay()">
-      <mat-icon>replay</mat-icon>
-    </button>
-  </div>
+<div class="media-control-button-row">
+  <button mat-icon-button aria-label="Play" (click)="play()" *ngIf="!isPlaying()" title="Video auf allen Anzeigegeraeten fortsetzen">
+    <mat-icon>play_arrow</mat-icon>
+  </button>
+  <button mat-icon-button aria-label="Pause" (click)="pause()" *ngIf="isPlaying()" title="Video auf allen Anzeigegeraeten pausieren">
+    <mat-icon>pause</mat-icon>
+  </button>
+  <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video auf allen Anzeigegeraeten von vorne beginnen">
+    <mat-icon>replay</mat-icon>
+  </button>
+</div>

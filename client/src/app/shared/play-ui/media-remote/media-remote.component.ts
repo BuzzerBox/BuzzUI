@@ -8,6 +8,8 @@ import {EVideoStates} from '../../../../../../shared/shared';
   styleUrls: ['./media-remote.component.css']
 })
 export class MediaRemoteComponent implements OnInit {
+  public state: EVideoStates = EVideoStates.VIDEO_LOADED;
+  EVideoStates: EVideoStates;
 
   constructor(private game: GameService) { }
 
@@ -16,14 +18,20 @@ export class MediaRemoteComponent implements OnInit {
 
   play(): void {
     this.game.updateMediaState(EVideoStates.PLAYING);
+    this.state = EVideoStates.PLAYING;
   }
 
   pause(): void {
     this.game.updateMediaState(EVideoStates.STOPPED);
+    this.state = EVideoStates.STOPPED;
   }
 
   replay(): void {
     this.game.updateMediaState(EVideoStates.RESET);
+    this.state = EVideoStates.PLAYING;
   }
 
+  isPlaying(): boolean {
+    return this.state === EVideoStates.PLAYING;
+  }
 }
