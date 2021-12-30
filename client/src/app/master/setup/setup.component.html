@@ -15,17 +15,18 @@
 <!--    <ng-template matStepContent>-->
 <!--    <ng-template [ngIf]="teamFormControlNames != null">-->
 <!--    <ng-template>-->
+      <p>Waehle die Teams</p>
       <form [formGroup]="teamsFormGroup">
-        <div *ngFor="let teamFormControlName of teamFormControlNames; let i = index">
-          <div fxLayout="row" fxLayoutAlign="start none" class="team-form-group">
-            <mat-form-field >
+        <mat-list role="list">
+          <mat-list-item role="listitem" *ngFor="let teamFormControlName of teamFormControlNames; let i = index">
+            <mat-icon mat-list-icon>people</mat-icon>
+            <mat-form-field>
               <mat-label>{{teamNameSuggestions[i]}}</mat-label>
               <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
             </mat-form-field>
             <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="true" *ngIf="i >= 2">Aktivieren</mat-checkbox>
-          </div>
-
-        </div>
+          </mat-list-item>
+        </mat-list>
 
         <div>
           <button mat-button matStepperPrevious>Zurück</button>
@@ -40,62 +41,77 @@
 <!--    <ng-template>-->
       <form #questionForm [formGroup]="questionsFormGroup" id="questionForm">
 <!--    <form #questionForm [formGroup]="testObs | async" id="questionForm">-->
-        <div *ngFor="let questionFormGroupName of questionFormGroupNames; let i = index" fxLayout="column" fxLayoutAlign="center start">
+        <mat-accordion class="example-headers-align">
+          <mat-expansion-panel hideToggle *ngFor="let questionFormGroupName of questionFormGroupNames; let i = index" [expanded]="step === i" (opened)="setStep(i)">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                Frage {{i + 1}}
+              </mat-panel-title>
+              <mat-panel-description>
+                fd
+                <mat-icon *ngIf="questionsFormGroup.controls['question' + i] && questionsFormGroup.controls['question' + i].valid">check_circle</mat-icon>
+              </mat-panel-description>
 
-          <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
-            <mat-form-field >
-              <mat-label>Frage {{i + 1}}</mat-label>
-              <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
-            </mat-form-field>
-            <mat-checkbox formControlName="answersVisible" #self (click)="toggleShowAnswers(self, questionFormGroupName)">Zeige Antwortmöglichkeiten</mat-checkbox>
-            <!--          <button mat-raised-button>Frage entfernen</button>-->
-          </div>
-          <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
-            <mat-form-field >
-              <mat-label>Media Source</mat-label>
-              <textarea matInput formControlName="mediaSrc" cdkTextareaAutosize class="question"></textarea>
-            </mat-form-field>
-            <!--          <button mat-raised-button>Frage entfernen</button>-->
-          </div>
+            </mat-expansion-panel-header>
 
-          <div class="answers" fxLayout="column" fxLayoutAlign="center start" [formGroupName]="questionFormGroupName">
-            <div formGroupName="answers">
-              <!--            first answer-->
-              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer0">
-                <mat-form-field>
-                  <mat-label>Antwort 1</mat-label>
-                  <input matInput formControlName="text">
-                </mat-form-field>
-                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-              </div>
-              <!--            second answer-->
-              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer1">
-                <mat-form-field>
-                  <mat-label>Antwort 2</mat-label>
-                  <input matInput formControlName="text">
-                </mat-form-field>
-                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-              </div>
-              <!--            third answer-->
-              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer2">
-                <mat-form-field>
-                  <mat-label>Antwort 3</mat-label>
-                  <input matInput formControlName="text">
-                </mat-form-field>
-                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-              </div>
-              <!--            fourth answer-->
-              <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer3">
-                <mat-form-field>
-                  <mat-label>Antwort 4</mat-label>
-                  <input matInput formControlName="text">
-                </mat-form-field>
-                <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+            <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
+              <mat-form-field >
+                <mat-label>Fragetext</mat-label>
+                <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
+              </mat-form-field>
+              <mat-checkbox formControlName="answersVisible" #self (click)="toggleShowAnswers(self, questionFormGroupName)">Zeige Antwortmöglichkeiten</mat-checkbox>
+              <!--          <button mat-raised-button>Frage entfernen</button>-->
+            </div>
+            <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
+              <mat-form-field >
+                <mat-label>Media Source</mat-label>
+                <textarea matInput formControlName="mediaSrc" cdkTextareaAutosize class="question"></textarea>
+              </mat-form-field>
+              <!--          <button mat-raised-button>Frage entfernen</button>-->
+            </div>
+
+            <div class="answers" fxLayout="column" fxLayoutAlign="center start" [formGroupName]="questionFormGroupName">
+              <div formGroupName="answers">
+                <!--            first answer-->
+                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer0">
+                  <mat-form-field>
+                    <mat-label>Antwort 1</mat-label>
+                    <input matInput formControlName="text">
+                  </mat-form-field>
+                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+                </div>
+                <!--            second answer-->
+                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer1">
+                  <mat-form-field>
+                    <mat-label>Antwort 2</mat-label>
+                    <input matInput formControlName="text">
+                  </mat-form-field>
+                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+                </div>
+                <!--            third answer-->
+                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer2">
+                  <mat-form-field>
+                    <mat-label>Antwort 3</mat-label>
+                    <input matInput formControlName="text">
+                  </mat-form-field>
+                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+                </div>
+                <!--            fourth answer-->
+                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer3">
+                  <mat-form-field>
+                    <mat-label>Antwort 4</mat-label>
+                    <input matInput formControlName="text">
+                  </mat-form-field>
+                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-        <button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>
+            <mat-action-row>
+              <button mat-button color="primary" (click)="addQuestionToFormGroup()">Add Question</button>
+            </mat-action-row>
+          </mat-expansion-panel>
+        </mat-accordion>
+        <!--<button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>-->
 
         <div>
           <button mat-button matStepperPrevious>Zurück</button>
