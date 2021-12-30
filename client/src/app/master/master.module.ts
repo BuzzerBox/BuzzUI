@@ -23,6 +23,8 @@ import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {MatTooltipModule} from "@angular/material/tooltip";
+import {MatListModule} from "@angular/material/list";
+import {MatExpansionModule} from "@angular/material/expansion";
 
 
 
@@ -52,7 +54,9 @@ import {MatTooltipModule} from "@angular/material/tooltip";
     SharedModule,
     MatBottomSheetModule,
     MatProgressSpinnerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatListModule,
+    MatExpansionModule
   ],
   exports: [
     StartComponent

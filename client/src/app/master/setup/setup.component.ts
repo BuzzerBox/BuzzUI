@@ -30,6 +30,9 @@ export class SetupComponent implements OnInit {
   public hasReachedLastStep = false;
   // public showQuestions = true;
 
+  step = 0;
+
+
   constructor(private game: GameService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
     game.useAsMaster();
   }
@@ -127,6 +130,7 @@ export class SetupComponent implements OnInit {
     } else {
       this.questionsFormGroup = new FormGroup({});
       this.questionFormGroupNames = [];
+      this.addQuestionToFormGroup();
     }
   }
 
@@ -135,6 +139,7 @@ export class SetupComponent implements OnInit {
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
     this.questionsFormGroup.addControl(formGroupName, qfc);
+    this.setStep(this.questionFormGroupNames.length - 1);
   }
 
   private createQuestionFormGroup(): FormGroup {
@@ -316,4 +321,9 @@ export class SetupComponent implements OnInit {
     fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('text').setValue(text);
     fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('isCorrect').setValue(!showAnswers);
   }
+
+  setStep(index: number): void {
+    this.step = index;
+  }
+
 }
