@@ -1,4 +1,4 @@
-// import SerialPort from 'serialport';
+import SerialPort from 'serialport';
 import {ConfigService} from './config.service';
 import {LoggerService} from './logger.service';
 import {Buffer} from 'buffer';
@@ -13,16 +13,16 @@ export class SerialPortService {
     private static instance: SerialPortService;
     private onDataInCallbacks: SerialPortDataInCallback[];
     private onErrorCallbacks: SerialPortErrorCallback[];
-    // private serialPortConnection;
+    private serialPortConnection;
 
     private constructor() {
         this.onDataInCallbacks = [];
         this.onErrorCallbacks = [];
-        // this.serialPortConnection = new SerialPort(ConfigService.get().serial.address, {
-        //     baudRate: ConfigService.get().serial.baudRate
-        // });
-        // this.serialPortConnection.on('error', this.onError.bind(this));
-        // this.serialPortConnection.on('data', this.onDataIn.bind(this))
+        this.serialPortConnection = new SerialPort(ConfigService.get().serial.address, {
+            baudRate: ConfigService.get().serial.baudRate
+        });
+        this.serialPortConnection.on('error', this.onError.bind(this));
+        this.serialPortConnection.on('data', this.onDataIn.bind(this))
     }
 
     public static get(): SerialPortService {
@@ -62,7 +62,7 @@ export class SerialPortService {
     }
 
     public write(buffer: Buffer): void {
-        // this.serialPortConnection.write(buffer);
+        this.serialPortConnection.write(buffer);
     }
 
 }
