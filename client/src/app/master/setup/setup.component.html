@@ -63,6 +63,7 @@
               <!--          <button mat-raised-button>Frage entfernen</button>-->
             </div>
             <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
+              <app-select-media></app-select-media>
               <mat-form-field >
                 <mat-label>Media Source</mat-label>
                 <textarea matInput formControlName="mediaSrc" cdkTextareaAutosize class="question"></textarea>

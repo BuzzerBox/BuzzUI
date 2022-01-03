@@ -25,8 +25,8 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatListModule} from "@angular/material/list";
 import {MatExpansionModule} from "@angular/material/expansion";
-
-
+import {SelectMediaComponent} from './select-media/select-media.component';
+import {MatTreeModule} from "@angular/material/tree";
 
 @NgModule({
   declarations: [
@@ -36,7 +36,8 @@ import {MatExpansionModule} from "@angular/material/expansion";
     ToolbarMasterComponent,
     ErrorPageComponent,
     StartGameComponent,
-    PlayComponent
+    PlayComponent,
+    SelectMediaComponent
   ],
   imports: [
     CommonModule,
@@ -56,7 +57,8 @@ import {MatExpansionModule} from "@angular/material/expansion";
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatListModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatTreeModule,
   ],
   exports: [
     StartComponent
