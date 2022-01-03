@@ -23,8 +23,10 @@ import {IKeypressOnScreenPacket} from './interfaces/IKeypressOnScreenPacket';
 import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
 import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
 import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
+import {IDirectoryTree} from './interfaces/IDirectoryTree';
 
 export {
+	IDirectoryTree,
 	IGamePacket,
 	IResponsePacket,
 	IWebSocketMessage,
