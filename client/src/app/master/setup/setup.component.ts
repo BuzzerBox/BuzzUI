@@ -7,6 +7,7 @@ import {SafeUrl} from '@angular/platform-browser';
 import {Observable, Subject} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
+import {ConfigService} from '../../services/config.service';
 
 @Component({
   selector: 'app-setup',
@@ -102,7 +103,7 @@ export class SetupComponent implements OnInit {
         }
         this.questionsFormGroup.addControl(fgn, new FormGroup({
           text: new FormControl(q.text),
-          mediaSrc: new FormControl(mediaSrc),
+          mediaSrc: new FormControl({value: mediaSrc, disable: true}),
           answers: new FormGroup({
             answer0: new FormGroup({
               text: new FormControl(q.answers[0].text),
@@ -146,7 +147,7 @@ export class SetupComponent implements OnInit {
   private createQuestionFormGroup(): FormGroup {
     return new FormGroup({
       text: new FormControl(null, Validators.required),
-      mediaSrc: new FormControl(''),
+      mediaSrc: new FormControl({value: '', disabled: true}),
       answers: new FormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),
@@ -332,6 +333,11 @@ export class SetupComponent implements OnInit {
 
   setStep(index: number): void {
     this.step = index;
+  }
+
+  changeMediaSelection(event: { path: string; question: number }): void {
+    const prefix = 'http://' + ConfigService.get().server.address + ':' + ConfigService.get().fileServer.port + '/media';
+    this.questionsFormGroup.controls['question' + event.question].get('mediaSrc').setValue(prefix + event.path);
   }
 
 }
