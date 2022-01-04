@@ -6,6 +6,7 @@ import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {Observable, Subject} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {IUploadFormData} from '../interfaces/IUploadFormData';
 
 @Component({
   selector: 'app-setup',
@@ -266,24 +267,31 @@ export class SetupComponent implements OnInit {
 
   // TODO: check that there are not more teams in the savegame as there are buzzers now. If there are, show some dialog to choose
   //  teams to be kept
-  public onSaveGameFileSelected(uploadEvent): void {
-    this.snackBar.open('Datei wird importiert, bitte warten...');
-    // if typed as File, the fileReader.readAsText complains
-    const configFile: any = uploadEvent.target.files[0];
-    const fileReader = new FileReader();
-    fileReader.readAsText(configFile as Blob, 'UTF-8');
-    fileReader.onload = async () => {
-      const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
-      await this.game.importGameStateFromJson(importedState, false);
+  public onSaveGameFileSelected(uploadEvent: IUploadFormData): void {
+    if (uploadEvent.data) {
+      this.snackBar.open('Datei wird importiert, bitte warten...');
+      // if typed as File, the fileReader.readAsText complains
+      const configFile: any = uploadEvent.data;
+      const fileReader = new FileReader();
+      fileReader.readAsText(configFile as Blob, 'UTF-8');
+      fileReader.onload = async () => {
+        const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
+        await this.game.importGameStateFromJson(importedState, false);
 
-      // this.game.importGameStateFromJson(importedState);
+        // this.game.importGameStateFromJson(importedState);
 
-      this.initTeamsFormControls(true);
-      this.initQuestionsFormControls(true);
-      this.snackBar.open('Datei erfolgreich importiert', 'OK', {
+        this.initTeamsFormControls(true);
+        this.initQuestionsFormControls(true);
+        this.snackBar.open('Datei erfolgreich importiert', 'OK', {
+          duration: 5000
+        });
+      };
+    } else {
+      // TODO Reset Gamestate to empty game?
+      this.snackBar.open('TODO: Leeres Spiel laden', 'OK', {
         duration: 5000
       });
-    };
+    }
   }
 
   // TODO: implement it in a correct way, this is just because of the haste

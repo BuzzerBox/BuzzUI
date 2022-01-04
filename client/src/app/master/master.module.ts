@@ -20,13 +20,14 @@ import { PlayComponent } from './play/play.component';
 import {MatCardModule} from '@angular/material/card';
 import {SharedModule} from '../shared/shared.module';
 import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
-import {MatSnackBarModule} from '@angular/material/snack-bar';
-import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
-import {MatTooltipModule} from "@angular/material/tooltip";
-import {MatListModule} from "@angular/material/list";
-import {MatExpansionModule} from "@angular/material/expansion";
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatListModule} from '@angular/material/list';
+import {MatExpansionModule} from '@angular/material/expansion';
 import {SelectMediaComponent} from './select-media/select-media.component';
-import {MatTreeModule} from "@angular/material/tree";
+import {FileUploadFormComponent} from './file-upload-form/file-upload-form.component';
+import {MatTreeModule} from '@angular/material/tree';
+import { FileDropEventsDirective } from './file-drop-events.directive';
 
 @NgModule({
   declarations: [
@@ -37,7 +38,9 @@ import {MatTreeModule} from "@angular/material/tree";
     ErrorPageComponent,
     StartGameComponent,
     PlayComponent,
-    SelectMediaComponent
+    SelectMediaComponent,
+    FileUploadFormComponent,
+    FileDropEventsDirective
   ],
   imports: [
     CommonModule,
