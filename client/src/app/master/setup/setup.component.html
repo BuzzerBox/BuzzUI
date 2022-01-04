@@ -63,14 +63,14 @@
               <!--          <button mat-raised-button>Frage entfernen</button>-->
             </div>
             <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
-              <app-select-media></app-select-media>
-              <mat-form-field >
-                <mat-label>Media Source</mat-label>
-                <textarea matInput formControlName="mediaSrc" cdkTextareaAutosize class="question"></textarea>
-              </mat-form-field>
+<!--                <button mat-stroked-button color="primary" (click)="selectData()">Medium hinzufuegen</button>-->
+              <app-select-media (location)="changeMediaSelection({path: $event, question: i})"></app-select-media>
+                <mat-form-field>
+                  <mat-label>Media Source</mat-label>
+                  <textarea matInput formControlName="mediaSrc" cdkTextareaAutosize class="question"></textarea>
+                </mat-form-field>
+              </div>
               <!--          <button mat-raised-button>Frage entfernen</button>-->
-            </div>
-
             <div class="answers" fxLayout="column" fxLayoutAlign="center start" [formGroupName]="questionFormGroupName">
               <div formGroupName="answers">
                 <!--            first answer-->

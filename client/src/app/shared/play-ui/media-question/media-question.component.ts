@@ -49,6 +49,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
     this.api = api;
     this.api.getDefaultMedia().subscriptions.ended.subscribe(
       () => {
+        this.disableFullscreen();
       }
     );
   }
@@ -56,6 +57,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   startPlayback(): void {
     if (this.api) {
       this.api.getDefaultMedia().play();
+      this.enableFullscreen();
     }
   }
 
@@ -66,5 +68,17 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   restartPlayback(): void {
     this.api.getDefaultMedia().currentTime = 0;
     this.api.getDefaultMedia().play();
+  }
+
+  enableFullscreen(): void {
+    if (!this.api.fsAPI.isFullscreen) {
+      this.api.fsAPI.toggleFullscreen();
+    }
+  }
+
+  disableFullscreen(): void {
+    if (this.api.fsAPI.isFullscreen) {
+      this.api.fsAPI.toggleFullscreen();
+    }
   }
 }

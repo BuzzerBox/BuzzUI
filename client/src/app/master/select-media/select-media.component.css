@@ -24,3 +24,6 @@
 .example-tree div[role=group] > .mat-tree-node {
   padding-left: 40px;
 }
+.background-highlight {
+  background-color: whitesmoke;
+}
