@@ -27,3 +27,7 @@
 .example-headers-align .mat-form-field + .mat-form-field {
   margin-left: 8px;
 }
+
+.green-icon {
+  color: #4caf50;
+}
