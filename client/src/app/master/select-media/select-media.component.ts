@@ -1,9 +1,8 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {FileService} from '../../services/file.service';
 import {IDirectoryTree} from '../../../../../shared/shared';
-import {CdkNestedTreeNode, NestedTreeControl} from '@angular/cdk/tree';
+import {NestedTreeControl} from '@angular/cdk/tree';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
-import {IQuestionMediaResult} from '../interfaces/IQuestionMediaResult';
 
 @Component({
   selector: 'app-select-media',
@@ -13,7 +12,7 @@ import {IQuestionMediaResult} from '../interfaces/IQuestionMediaResult';
 export class SelectMediaComponent implements OnInit {
   treeControl = new NestedTreeControl<IDirectoryTree>(node => node.children);
   dataSource = new MatTreeNestedDataSource<IDirectoryTree>();
-  activeNode: object;
+  activeNode: IDirectoryTree;
   @Output() location: EventEmitter<string> = new EventEmitter<string>();
 
 
@@ -30,8 +29,12 @@ export class SelectMediaComponent implements OnInit {
   }
 
   changeSelection(node: IDirectoryTree): void {
-    this.activeNode = node;
-    this.location.emit(node.path);
+    if (node === this.activeNode) {
+      this.activeNode = undefined;
+    } else {
+      this.activeNode = node;
+      this.location.emit(node.path);
+    }
   }
 
   hasChild = (_: number, node: IDirectoryTree) => !!node.children && node.children.length > 0;

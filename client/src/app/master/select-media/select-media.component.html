@@ -1,8 +1,18 @@
+<h3>Media Selection :</h3>
+<div *ngIf="activeNode !== undefined">
+  Die Datei {{activeNode.name}} ist ausgewaehlt.
+</div>
+<div *ngIf="activeNode === undefined">
+  Zu dieser Frage ist kein Medium ausgewaehlt.
+</div>
+
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
   <!-- This is the tree node template for leaf nodes -->
   <!-- There is inline padding applied to this node using styles.
     This padding value depends on the mat-icon-button width. -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle (click)="changeSelection(node)" [ngClass]="{'background-highlight': activeNode === node}">
+    <mat-icon *ngIf="activeNode !== node" mat-list-icon>insert_drive_file</mat-icon>
+    <mat-icon *ngIf="activeNode === node" mat-list-icon>check</mat-icon>
     {{node.name}}
   </mat-tree-node>
   <!-- This is the tree node template for expandable nodes -->
@@ -14,6 +24,7 @@
           {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
         </mat-icon>
       </button>
+      <mat-icon mat-list-icon>folder</mat-icon>
       {{node.name}}
     </div>
     <!-- There is inline padding applied to this div using styles.
@@ -24,3 +35,10 @@
     </div>
   </mat-nested-tree-node>
 </mat-tree>
+
+<div *ngIf="activeNode !== undefined">
+  <button mat-icon-button (click)="changeSelection(undefined)">
+    <mat-icon>remove_circle_outline</mat-icon>
+  </button>
+  {{activeNode.name}}
+</div>
