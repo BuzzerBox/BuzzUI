@@ -124,7 +124,7 @@ export class GameService {
             } else if (packet.packetType === EPacketTypes.SET_BUZZER_LOCK) {
                 this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
             } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
-                this.onUpdateMediaStatePacket(con, packet as IUpdateMediaStatePacket);
+                this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
             }
         })
     }
@@ -546,7 +546,7 @@ export class GameService {
         }
     }
 
-    private onUpdateMediaStatePacket(con: WebSocketConnection, packet: IUpdateMediaStatePacket): void {
+    private onUpdateMediaStatePacket(packet: IUpdateMediaStatePacket): void {
         if (this.webSocketConnectionMaster != null) {
             this.webSocketConnectionMaster.send<IUpdateMediaStatePacket>(packet);
         }
@@ -630,6 +630,8 @@ export class GameService {
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
+        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
+        this.onUpdateMediaStatePacket(mediaStateUpdatePacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
     }

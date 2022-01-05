@@ -25,7 +25,6 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
-        console.log('Media Change', packet);
         switch (packet.newState) {
           case EVideoStates.STOPPED:
             this.pausePlayback();
