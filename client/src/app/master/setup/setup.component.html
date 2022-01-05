@@ -3,7 +3,7 @@
   <mat-step>
     <ng-template matStepLabel>Hallo!</ng-template>
     <p>Hallo und herzlichen willkommen zum Setup von <b>{{getGameName()}}</b>!</p>
-    <p>Wenn du ein Vorbereitetes Quiz oder einen alten Spielstand importieren willst, nutze die <em>Importieren</em> Schaltfläche.</p>
+    <p>Hier kannst du ein vorbereitetes Quiz oder einen alten Spielstand importieren.
     <app-file-upload-form (data)="onSaveGameFileSelected($event)"></app-file-upload-form>
     <p>Wenn du ein neues Spiel vorbereiten willst, klicke unten auf <em>Weiter</em>.</p>
     <div>
@@ -48,8 +48,8 @@
                 Frage {{i + 1}}
               </mat-panel-title>
               <mat-panel-description>
-                fd
-                <mat-icon *ngIf="questionsFormGroup.controls['question' + i] && questionsFormGroup.controls['question' + i].valid">check_circle</mat-icon>
+                &nbsp;
+                <mat-icon *ngIf="questionsFormGroup.controls['question' + i] && questionsFormGroup.controls['question' + i].valid" class="green-icon">check_circle</mat-icon>
               </mat-panel-description>
 
             </mat-expansion-panel-header>
