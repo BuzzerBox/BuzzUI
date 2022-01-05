@@ -29,8 +29,9 @@ export class SelectMediaComponent implements OnInit {
   }
 
   changeSelection(node: IDirectoryTree): void {
-    if (node === this.activeNode) {
+    if (!node || node === this.activeNode) {
       this.activeNode = undefined;
+      this.location.emit('');
     } else {
       this.activeNode = node;
       this.location.emit(node.path);
