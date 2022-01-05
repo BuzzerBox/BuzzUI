@@ -15,6 +15,6 @@
     <ng-template [ngIf]="question.mediaDetails && !isMaster">
       <app-media-question [media]="question.mediaDetails"></app-media-question>
     </ng-template>
-    <app-media-remote *ngIf="isMaster"></app-media-remote>
+    <app-media-remote *ngIf="isMaster && question.mediaDetails"></app-media-remote>
   </mat-card-content>
 </ng-template>

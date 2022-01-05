@@ -283,13 +283,14 @@ export class SetupComponent implements OnInit {
 
         this.initTeamsFormControls(true);
         this.initQuestionsFormControls(true);
-        this.snackBar.open('Datei erfolgreich importiert', 'OK', {
+        this.snackBar.open('Datei erfolgreich importiert.', 'OK', {
           duration: 5000
         });
       };
     } else {
-      // TODO Reset Gamestate to empty game?
-      this.snackBar.open('TODO: Leeres Spiel laden', 'OK', {
+      this.initTeamsFormControls();
+      this.initQuestionsFormControls();
+      this.snackBar.open('Konfiguration zurueckgesetzt.', 'OK', {
         duration: 5000
       });
     }
@@ -337,7 +338,12 @@ export class SetupComponent implements OnInit {
 
   changeMediaSelection(event: { path: string; question: number }): void {
     const prefix = 'http://' + ConfigService.get().server.address + ':' + ConfigService.get().fileServer.port + '/media';
-    this.questionsFormGroup.controls['question' + event.question].get('mediaSrc').setValue(prefix + event.path);
+    const mediaSrcControl = this.questionsFormGroup.controls['question' + event.question].get('mediaSrc');
+    if (event && event.path) {
+      mediaSrcControl.setValue(prefix + event.path);
+    } else {
+      mediaSrcControl.setValue('');
+    }
   }
 
 }
