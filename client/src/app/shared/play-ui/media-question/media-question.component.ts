@@ -12,9 +12,7 @@ import {GameService} from '../../../services/game.service';
 })
 export class MediaQuestionComponent implements OnInit, OnDestroy {
   @Input() media: IMediaDetails;
-
   api: VgApiService;
-  videoSrc;
 
   private mediaUpdateSubscription: Subscription;
 
@@ -70,14 +68,14 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   }
 
   enableFullscreen(): void {
-    if (!this.api.fsAPI.isFullscreen) {
-      this.api.fsAPI.toggleFullscreen();
-    }
+    // if (!this.api.fsAPI.isFullscreen) {
+    //   this.api.fsAPI.toggleFullscreen();
+    // }
   }
 
   disableFullscreen(): void {
-    if (this.api.fsAPI.isFullscreen) {
-      this.api.fsAPI.toggleFullscreen();
-    }
+    // if (this.api.fsAPI.isFullscreen) {
+    //   this.api.fsAPI.toggleFullscreen();
+    // }
   }
 }
