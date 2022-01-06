@@ -1,0 +1,7 @@
+.player {
+  justify-content: center;
+}
+video {
+  width: 100% !important;
+  height: auto !important;
+}
