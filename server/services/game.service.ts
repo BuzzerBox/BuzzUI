@@ -550,7 +550,6 @@ export class GameService {
         if (this.webSocketConnectionMaster != null) {
             this.webSocketConnectionMaster.send<IUpdateMediaStatePacket>(packet);
         }
-        this.currentGameState.mediaState = packet.newState;
         this.sendToAllScreens<IUpdateMediaStatePacket>(packet);
     }
 
@@ -630,7 +629,6 @@ export class GameService {
         const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
-        this.currentGameState.mediaState = EVideoStates.STOPPED;
         this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
         const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
         this.onUpdateMediaStatePacket(mediaStateUpdatePacket);

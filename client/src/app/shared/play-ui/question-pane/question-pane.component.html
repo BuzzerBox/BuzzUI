@@ -9,7 +9,7 @@
         <app-media-question [media]="question.mediaDetails"></app-media-question>
       </div>
       <div class="top">
-        <mat-grid-list cols="2" rowHeight="2:1" *ngIf="isShowAnswers()">
+        <mat-grid-list cols="2" rowHeight="2:1" *ngIf="showAnswers">
           <mat-grid-tile *ngFor="let answer of getAnswers(); let i = index">
             <button id="button{{i}}" mat-raised-button (click)="onClickAnswer(answer, button._getHostElement())" #button>
               {{answer.text}}

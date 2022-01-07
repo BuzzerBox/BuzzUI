@@ -32,6 +32,11 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
             break;
           case EVideoStates.RESET:
             this.restartPlayback();
+            break;
+          case EVideoStates.FINISHED:
+            this.pausePlayback();
+            this.api.getDefaultMedia().currentTime = 0;
+            break;
         }
       }
     );
@@ -46,7 +51,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
     this.api = api;
     this.api.getDefaultMedia().subscriptions.ended.subscribe(
       () => {
-        this.disableFullscreen();
+        this.game.updateMediaState(EVideoStates.FINISHED);
       }
     );
   }

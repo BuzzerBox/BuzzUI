@@ -38,7 +38,15 @@ export class MediaRemoteComponent implements OnInit {
     this.game.updateMediaState(EVideoStates.RESET);
   }
 
+  skip(): void {
+    this.game.updateMediaState(EVideoStates.FINISHED);
+  }
+
   isPlaying(): boolean {
     return this.state === EVideoStates.PLAYING;
+  }
+
+  isNotFinished(): boolean {
+    return this.state !== EVideoStates.FINISHED;
   }
 }

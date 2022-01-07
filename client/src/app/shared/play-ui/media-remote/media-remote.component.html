@@ -8,4 +8,7 @@
   <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video auf allen Anzeigegeraeten von vorne beginnen">
     <mat-icon>replay</mat-icon>
   </button>
+  <button mat-icon-button aria-label="Skip" (click)="skip()" *ngIf="isNotFinished()" title="Zum Ende springen">
+    <mat-icon>skip_next</mat-icon>
+  </button>
 </div>
