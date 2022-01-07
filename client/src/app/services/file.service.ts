@@ -10,7 +10,10 @@ export class FileService {
   constructor(private http: HttpClient) { }
 
   getMediaList(): Promise<IDirectoryTree> {
-    const path = 'http://' + ConfigService.get().server.address + ':' + ConfigService.get().fileServer.port + '/media';
+    const path = 'http://' +
+      ConfigService.get().server.address + ':' +
+      ConfigService.get().fileServer.port +
+      ConfigService.get().fileServer.publicPath;
     return this.http.get<IDirectoryTree>(path).toPromise();
   }
 }

@@ -7,15 +7,13 @@
 </div>
 
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
-  <!-- This is the tree node template for leaf nodes -->
-  <!-- There is inline padding applied to this node using styles.
-    This padding value depends on the mat-icon-button width. -->
+  <!-- This is the tree node template for files -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle (click)="changeSelection(node)" [ngClass]="{'background-highlight': activeNode === node}">
     <mat-icon *ngIf="activeNode !== node" mat-list-icon>insert_drive_file</mat-icon>
     <mat-icon *ngIf="activeNode === node" mat-list-icon>check</mat-icon>
     {{node.name}}
   </mat-tree-node>
-  <!-- This is the tree node template for expandable nodes -->
+  <!-- This is the tree node template for directories -->
   <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild" >
     <div class="mat-tree-node">
       <button mat-icon-button matTreeNodeToggle
@@ -27,8 +25,6 @@
       <mat-icon mat-list-icon>folder</mat-icon>
       {{node.name}}
     </div>
-    <!-- There is inline padding applied to this div using styles.
-        This padding value depends on the mat-icon-button width.  -->
     <div [class.example-tree-invisible]="!treeControl.isExpanded(node)"
          role="group">
       <ng-container matTreeNodeOutlet></ng-container>
