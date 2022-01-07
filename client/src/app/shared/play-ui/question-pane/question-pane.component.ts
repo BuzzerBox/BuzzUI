@@ -1,6 +1,6 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates} from '../../../../../../shared/shared';
+import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates, EVideoStates} from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
   AnswerOptionsComponent,
@@ -29,6 +29,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private correctAnswersThatAreLeft: number;
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
+  public showAnswers: boolean;
 
   constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
 
@@ -37,6 +38,18 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.isMaster) {
       this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
     }
+    this.showAnswers = !this.question.mediaDetails  && this.question.show as boolean;
+    this.game.observeMediaStateUpdates().subscribe(
+      (packet) => {
+        switch (packet.newState) {
+          case EVideoStates.FINISHED:
+            this.showAnswers = this.question.show as boolean;
+            break;
+          default:
+            this.showAnswers = !this.question.mediaDetails && this.question.show as boolean;
+        }
+      }
+    );
   }
 
   public reset(): void {
@@ -177,10 +190,6 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (this.answerSetStatePacketSubscription != null) {
       this.answerSetStatePacketSubscription.unsubscribe();
     }
-  }
-
-  public isShowAnswers(): boolean {
-    return this.question.show as boolean;
   }
 
   public isQuestionExisting(): boolean {
