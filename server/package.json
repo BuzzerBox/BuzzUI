@@ -9,7 +9,7 @@
   "scripts": {
     "transpile": "tsc",
     "start": "node dist/server/main.js",
-    "startDev": "npm run transpile && npm run start -- --dev=1",
+    "startDev": "../scripts/open_serial.sh & npm run transpile && npm run start -- --dev=1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
