@@ -337,7 +337,10 @@ export class SetupComponent implements OnInit {
   }
 
   changeMediaSelection(event: { path: string; question: number }): void {
-    const prefix = 'http://' + ConfigService.get().server.address + ':' + ConfigService.get().fileServer.port + '/media';
+    const prefix = 'http://' +
+      ConfigService.get().server.address + ':' +
+      ConfigService.get().fileServer.port +
+      ConfigService.get().fileServer.publicPath;
     const mediaSrcControl = this.questionsFormGroup.controls['question' + event.question].get('mediaSrc');
     if (event && event.path) {
       mediaSrcControl.setValue(prefix + event.path);
