@@ -22,6 +22,7 @@ fi
 mkdir -p "$COMPILATIONS_DIR"
 
 # create server files
+npm --prefix "$SERVER_DIR" i
 npm --prefix "$SERVER_DIR" run "$NPM_BACKEND_TRANSPILE_SCRIPT_NAME"
 mv "$SERVER_DIST_DIR" "$COMPILATIONS_BACKEND_DIR"
 # copy the package.json so we can "npm i" during installation procedure
@@ -29,6 +30,7 @@ cp "$SERVER_DIR/package.json" "$COMPILATIONS_BACKEND_DIR/server/"
 
 # create frontend files
 # create server files
+npm --prefix "$CLIENT_DIR" i
 npm --prefix "$CLIENT_DIR" run "$NPM_FRONTEND_TRANSPILE_SCRIPT_NAME"
 mv "$CLIENT_DIST_DIR" "$COMPILATIONS_FRONTEND_DIR"
 

@@ -105,17 +105,10 @@ appendTextToFile "hdmi_force_hotplug=1" "${BOOT_CONFIG_FILE}";
 appendTextToFile "hdmi_group=1" "${BOOT_CONFIG_FILE}";
 appendTextToFile "hdmi_mode=16" "${BOOT_CONFIG_FILE}";
 
-# Disable screen saver
-# https://stackoverflow.com/a/49405686/7618184
-echo "Disabling screen saver/blanking..."
-#echo "xserver-command=X -s 0 -p 0 -dpms" | sudo tee -a /etc/lightdm/lightdm.conf
-appendTextToFile "xserver-command=X -s 0 -p 0 -dpms" "/etc/lightdm/lightdm.conf";
-
 # Add custom boot logo
 echo "Adding custom boot logo/splash screen..."
 # see https://shop.sb-components.co.uk/blogs/posts/customising-splash-screen-on-your-raspberry-pi
 # http://web.archive.org/web/20210925090045/https://shop.sb-components.co.uk/blogs/posts/customising-splash-screen-on-your-raspberry-pi
-#echo "disable_splash=1" | sudo tee -a "${BOOT_CONFIG_FILE}"
 appendTextToFile "disable_splash=1" "${BOOT_CONFIG_FILE}";
 # todo is it ok to skip step with cmdline?
 sudo apt install fbi -y
@@ -134,7 +127,6 @@ pcmanfm --set-wallpaper "${SPLASH_IMAGE_TARGET_LOCATION}"
 
 # hiding the panel/taskbar if not in use
 echo "Hiding the lxpanel..."
-#sudo sed -i 's/autohide=0/autohide=1/' /home/pi/.config/lxpanel/LXDE-pi/panels/panel
 replaceInFile "/home/pi/.config/lxpanel/LXDE-pi/panels/panel" "autohide=0" "autohide=1";
 
 # thanks to mleffler @ https://www.raspberrypi.org/forums/viewtopic.php?t=137124#p1546958
