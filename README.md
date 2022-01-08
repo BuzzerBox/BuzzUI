@@ -13,7 +13,7 @@ The supported settings are shown below:
 - `SERVER_IP_ADDRESS`: Sets the Pi's own IP address within its ad-hoc WiFi network. Defaults to `10.0.0.5`.
 - `HOSTNAMES`: Sets the hostnames under which the Pi can be found. Multiple values are supported by concatenating them with a `;`. Defaults to `buzzer.box;buzzerbox.local`.
 - `SPLASH_IMAGE_TARGET_LOCATION`: Sets the location where is splash image that is used during boot-up and as desktop wallpaper will be saved to. Defaults to `/home/pi/Pictures/splash.png`.
-- `ACTIVATE_OVERLAY_FS`: Whether the overlay FS should automatically get enabled by the installation procedure. Defaults to `true`
+- ⚠NOT YET IMPLEMENTED⚠ `ACTIVATE_OVERLAY_FS`: Whether the overlay FS should automatically get enabled by the installation procedure. Defaults to `true`
 
 
 
