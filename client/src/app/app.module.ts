@@ -18,6 +18,7 @@ import {MatListModule} from '@angular/material/list';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import { DialogConfirmEndingGameComponent } from './shared/play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialogModule} from '@angular/material/dialog';
+import {HttpClientModule} from "@angular/common/http";
 
 @NgModule({
   declarations: [
@@ -25,6 +26,7 @@ import {MatDialogModule} from '@angular/material/dialog';
     ChooseComponent
   ],
   imports: [
+    HttpClientModule,
     BrowserModule,
     BrowserAnimationsModule,
     AppRoutingModule,
@@ -36,7 +38,7 @@ import {MatDialogModule} from '@angular/material/dialog';
     MatBottomSheetModule,
     // MatListModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
   ],
   providers: [],
   bootstrap: [AppComponent],

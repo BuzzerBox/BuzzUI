@@ -8,6 +8,11 @@
     "webSocketProtocol": "ws",
     "retryIntervalInMS": "500"
   },
+  "fileServer": {
+    "port": 4202,
+    "localPath": "/home/liam/Projects/BuzzerBox/BuzzUI/server/media",
+    "publicPath": "/media"
+  },
   "softReleaseKey": "KeyQ",
   "softReleaseByte": 71,
   "buzzers": [
@@ -76,7 +81,7 @@
   "serial": {
     "baudRate": 115200,
     "enabled": true,
-    "address": "/dev/tty-usbserial1",
+    "address": "/dev/serial0",
     "commands": {
       "softRelease": 1,
       "setBuzzer": 2

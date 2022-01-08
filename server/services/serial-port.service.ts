@@ -21,6 +21,7 @@ export class SerialPortService {
         this.serialPortConnection = new SerialPort(ConfigService.get().serial.address, {
             baudRate: ConfigService.get().serial.baudRate
         });
+        console.log(this.serialPortConnection);
         this.serialPortConnection.on('error', this.onError.bind(this));
         this.serialPortConnection.on('data', this.onDataIn.bind(this))
     }
