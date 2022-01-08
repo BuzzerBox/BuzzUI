@@ -27,7 +27,7 @@ export class HttpServerService {
         // start our server
         if (!this.isStarted) {
             this.server.listen(port, () => {
-                console.log(`Server started on port ${port}!`);
+                console.log(`Gameserver started on port ${port}!`);
             });
             this.isStarted = true;
         }
