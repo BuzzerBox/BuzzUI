@@ -6,6 +6,8 @@ import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {Observable, Subject} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {IUploadFormData} from '../interfaces/IUploadFormData';
+import {ConfigService} from '../../services/config.service';
 
 @Component({
   selector: 'app-setup',
@@ -29,6 +31,9 @@ export class SetupComponent implements OnInit {
   private mapTeamFormControlNameToBuzzerId: Map<string, string>;
   public hasReachedLastStep = false;
   // public showQuestions = true;
+
+  step = 0;
+
 
   constructor(private game: GameService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
     game.useAsMaster();
@@ -92,8 +97,13 @@ export class SetupComponent implements OnInit {
       for (let i = 0; i < this.game.getQuestions().length; i++) {
         const q: IQuestion = this.game.getQuestions()[i];
         const fgn = 'question' + i;
+        let mediaSrc = '';
+        if (q.mediaDetails) {
+          mediaSrc = q.mediaDetails.fileSrc;
+        }
         this.questionsFormGroup.addControl(fgn, new FormGroup({
           text: new FormControl(q.text),
+          mediaSrc: new FormControl({value: mediaSrc, disable: true}),
           answers: new FormGroup({
             answer0: new FormGroup({
               text: new FormControl(q.answers[0].text),
@@ -122,6 +132,7 @@ export class SetupComponent implements OnInit {
     } else {
       this.questionsFormGroup = new FormGroup({});
       this.questionFormGroupNames = [];
+      this.addQuestionToFormGroup();
     }
   }
 
@@ -130,11 +141,13 @@ export class SetupComponent implements OnInit {
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
     this.questionsFormGroup.addControl(formGroupName, qfc);
+    this.setStep(this.questionFormGroupNames.length - 1);
   }
 
   private createQuestionFormGroup(): FormGroup {
     return new FormGroup({
       text: new FormControl(null, Validators.required),
+      mediaSrc: new FormControl({value: '', disabled: true}),
       answers: new FormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),
@@ -215,6 +228,7 @@ export class SetupComponent implements OnInit {
     for (const name of this.questionFormGroupNames) {
       const questionFormGroup: FormGroup = this.questionsFormGroup.get(name) as FormGroup;
       const questionText: string = questionFormGroup.get('text').value.toString();
+      const mediaSrc: string = questionFormGroup.get('mediaSrc').value.toString();
       const answers: IAnswer[] = [];
       for (let i = 0; i < 4; i++) {
         const answerFormGroup: FormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as FormGroup;
@@ -223,11 +237,17 @@ export class SetupComponent implements OnInit {
           isCorrect: answerFormGroup.get('isCorrect').value
         });
       }
-      ret.push({
+      const question: IQuestion = {
         text: questionText,
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
-      });
+      };
+      if (mediaSrc) {
+        question.mediaDetails = {
+          fileSrc: mediaSrc
+        };
+      }
+      ret.push(question);
     }
     return ret;
   }
@@ -248,24 +268,32 @@ export class SetupComponent implements OnInit {
 
   // TODO: check that there are not more teams in the savegame as there are buzzers now. If there are, show some dialog to choose
   //  teams to be kept
-  public onSaveGameFileSelected(uploadEvent): void {
-    this.snackBar.open('Datei wird importiert, bitte warten...');
-    // if typed as File, the fileReader.readAsText complains
-    const configFile: any = uploadEvent.target.files[0];
-    const fileReader = new FileReader();
-    fileReader.readAsText(configFile as Blob, 'UTF-8');
-    fileReader.onload = async () => {
-      const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
-      await this.game.importGameStateFromJson(importedState, false);
+  public onSaveGameFileSelected(uploadEvent: IUploadFormData): void {
+    if (uploadEvent.data) {
+      this.snackBar.open('Datei wird importiert, bitte warten...');
+      // if typed as File, the fileReader.readAsText complains
+      const configFile: any = uploadEvent.data;
+      const fileReader = new FileReader();
+      fileReader.readAsText(configFile as Blob, 'UTF-8');
+      fileReader.onload = async () => {
+        const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
+        await this.game.importGameStateFromJson(importedState, false);
 
-      // this.game.importGameStateFromJson(importedState);
+        // this.game.importGameStateFromJson(importedState);
 
-      this.initTeamsFormControls(true);
-      this.initQuestionsFormControls(true);
-      this.snackBar.open('Datei erfolgreich importiert', 'OK', {
+        this.initTeamsFormControls(true);
+        this.initQuestionsFormControls(true);
+        this.snackBar.open('Datei erfolgreich importiert.', 'OK', {
+          duration: 5000
+        });
+      };
+    } else {
+      this.initTeamsFormControls();
+      this.initQuestionsFormControls();
+      this.snackBar.open('Konfiguration zurueckgesetzt.', 'OK', {
         duration: 5000
       });
-    };
+    }
   }
 
   // TODO: implement it in a correct way, this is just because of the haste
@@ -303,4 +331,22 @@ export class SetupComponent implements OnInit {
     fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('text').setValue(text);
     fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('isCorrect').setValue(!showAnswers);
   }
+
+  setStep(index: number): void {
+    this.step = index;
+  }
+
+  changeMediaSelection(event: { path: string; question: number }): void {
+    const prefix = 'http://' +
+      ConfigService.get().server.address + ':' +
+      ConfigService.get().fileServer.port +
+      ConfigService.get().fileServer.publicPath;
+    const mediaSrcControl = this.questionsFormGroup.controls['question' + event.question].get('mediaSrc');
+    if (event && event.path) {
+      mediaSrcControl.setValue(prefix + event.path);
+    } else {
+      mediaSrcControl.setValue('');
+    }
+  }
+
 }
