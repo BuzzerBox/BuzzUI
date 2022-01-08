@@ -16,8 +16,13 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import { ScoreBoardComponent } from './play-ui/score-board/score-board.component';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import { BuzzerLockComponent } from './play-ui/buzzer-lock/buzzer-lock.component';
-
-
+import { MediaQuestionComponent } from './play-ui/media-question/media-question.component';
+import {VgCoreModule} from '@videogular/ngx-videogular/core';
+import {VgControlsModule} from '@videogular/ngx-videogular/controls';
+import {VgOverlayPlayModule} from '@videogular/ngx-videogular/overlay-play';
+import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
+import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.component';
+import {MatIconModule} from '@angular/material/icon';
 
 @NgModule({
   declarations: [
@@ -27,7 +32,9 @@ import { BuzzerLockComponent } from './play-ui/buzzer-lock/buzzer-lock.component
     AnswerOptionsComponent,
     DialogConfirmEndingGameComponent,
     ScoreBoardComponent,
-    BuzzerLockComponent
+    BuzzerLockComponent,
+    MediaQuestionComponent,
+    MediaRemoteComponent
   ],
   imports: [
     CommonModule,
@@ -38,14 +45,21 @@ import { BuzzerLockComponent } from './play-ui/buzzer-lock/buzzer-lock.component
     MatDialogModule,
     MatBottomSheetModule,
     MatListModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    VgCoreModule,
+    VgControlsModule,
+    VgOverlayPlayModule,
+    VgBufferingModule,
+    MatIconModule
   ],
   exports: [
     PlayUiComponent,
     TeamCardComponent,
     QuestionPaneComponent,
     AnswerOptionsComponent,
-    DialogConfirmEndingGameComponent
+    DialogConfirmEndingGameComponent,
+    MediaQuestionComponent,
+    MediaRemoteComponent
   ],
   entryComponents: [
     DialogConfirmEndingGameComponent

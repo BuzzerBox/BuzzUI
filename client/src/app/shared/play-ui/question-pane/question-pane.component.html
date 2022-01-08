@@ -4,13 +4,21 @@
   </mat-card-header>
   <mat-card-content>
     {{getQuestionText()}}
-    <mat-grid-list cols="2" rowHeight="2:1" *ngIf="isShowAnswers()">
-      <mat-grid-tile *ngFor="let answer of getAnswers(); let i = index">
-        <button id="button{{i}}" mat-raised-button (click)="onClickAnswer(answer, button._getHostElement())" #button>
-            {{answer.text}}
-        </button>
+    <div class="videooptions">
+      <div *ngIf="question.mediaDetails && !isMaster" class="bottom">
+        <app-media-question [media]="question.mediaDetails"></app-media-question>
+      </div>
+      <div class="top">
+        <mat-grid-list cols="2" rowHeight="2:1" *ngIf="showAnswers">
+          <mat-grid-tile *ngFor="let answer of getAnswers(); let i = index">
+            <button id="button{{i}}" mat-raised-button (click)="onClickAnswer(answer, button._getHostElement())" #button>
+              {{answer.text}}
+            </button>
 
-      </mat-grid-tile>
-    </mat-grid-list>
+          </mat-grid-tile>
+        </mat-grid-list>
+      </div>
+    </div>
+    <app-media-remote *ngIf="isMaster && question.mediaDetails"></app-media-remote>
   </mat-card-content>
 </ng-template>

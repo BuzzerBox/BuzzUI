@@ -34,3 +34,16 @@ button {
 .correct {
   background-color: forestgreen;
 }
+
+
+.videooptions {
+  display: grid;
+}
+
+.top, .bottom {
+  grid-area: 1 / 1;
+}
+
+.top {
+  /*opacity: 0.5;*/
+}

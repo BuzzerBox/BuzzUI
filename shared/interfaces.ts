@@ -6,6 +6,7 @@ import {ITeam} from './interfaces/ITeam';
 import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {IQuestion} from './interfaces/IQuestion';
+import {IMediaDetails} from './interfaces/IMediaDetails';
 import {ISetupPacket} from './interfaces/ISetupPacket';
 import {IAnswer} from './interfaces/IAnswer';
 import {INewMasterAccepted} from './interfaces/INewMasterAccepted';
@@ -21,8 +22,11 @@ import {IResetServerPacket} from './interfaces/IResetServerPacket';
 import {IKeypressOnScreenPacket} from './interfaces/IKeypressOnScreenPacket';
 import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
 import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
+import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
+import {IDirectoryTree} from './interfaces/IDirectoryTree';
 
 export {
+	IDirectoryTree,
 	IGamePacket,
 	IResponsePacket,
 	IWebSocketMessage,
@@ -31,6 +35,8 @@ export {
 	IRegisterMasterPacket,
 	IBuzzer,
 	IQuestion,
+	IMediaDetails,
+	IUpdateMediaStatePacket,
 	ISetupPacket,
 	IAnswer,
 	INewMasterAccepted,

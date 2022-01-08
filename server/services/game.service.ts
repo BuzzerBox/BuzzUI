@@ -2,32 +2,33 @@ import {WebSocketConnection} from "../objects/web-socket-connection";
 import {WebSocketService} from "./web-socket.service";
 import {Observable, Subscription} from "rxjs";
 import {
+    EAnswerStates,
     EGameStates,
     EPacketTypes,
-    IPresetupAvailableInfoPacket,
-    IGamePacket,
-    IResponsePacket,
-    IBuzzer,
-    EKeyBinds,
-    ISetupPacket,
-    ITeam,
-    IQuestion,
-    IRegisterMasterPacket,
-    INewMasterAccepted,
-    IGameState,
-    IStartGamePacket,
-    ITeamSetPointsPacket,
-    IAnswerSetStatePacket,
-    ISetQuestionPacket,
+    EVideoStates,
     IAnswer,
-    IEndGamePacket,
-    IRegisterScreenPacket,
+    IAnswerSetStatePacket,
+    IBuzzer,
     IDataForScreenPacket,
-    IResetServerPacket,
+    IEndGamePacket,
+    IGamePacket,
+    IGameState,
     IKeypressOnScreenPacket,
     IMarkTeamPacket,
-    EAnswerStates,
+    INewMasterAccepted,
+    IPresetupAvailableInfoPacket,
+    IQuestion,
+    IRegisterMasterPacket,
+    IRegisterScreenPacket,
+    IResetServerPacket,
+    IResponsePacket,
     ISetBuzzerLockPacket,
+    ISetQuestionPacket,
+    ISetupPacket,
+    IStartGamePacket,
+    ITeam,
+    ITeamSetPointsPacket,
+    IUpdateMediaStatePacket,
     PacketHelper
 } from "../../shared/shared";
 import config from '../../config.json';
@@ -122,6 +123,8 @@ export class GameService {
                 this.onMarkTeamPacket(packet as IMarkTeamPacket);
             } else if (packet.packetType === EPacketTypes.SET_BUZZER_LOCK) {
                 this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
+            } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
+                this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
             }
         })
     }
@@ -372,6 +375,7 @@ export class GameService {
         this.ignoredKeypresses = [];
         this.lastKeyPressed = null;
         this.currentGameState = {
+            mediaState: EVideoStates.NO_VIDEO,
             currentQuestionNumber: 0,
             markedTeamIds: [],
             loggedAnswers: [],
@@ -542,6 +546,13 @@ export class GameService {
         }
     }
 
+    private onUpdateMediaStatePacket(packet: IUpdateMediaStatePacket): void {
+        if (this.webSocketConnectionMaster != null) {
+            this.webSocketConnectionMaster.send<IUpdateMediaStatePacket>(packet);
+        }
+        this.sendToAllScreens<IUpdateMediaStatePacket>(packet);
+    }
+
     private startMicroControllerI2CPolling(): void {
         // setInterval(this.handleMicroControllerI2CRead.bind(this), parseInt(config.i2c.pollingInMS, 10));
     }
@@ -619,6 +630,8 @@ export class GameService {
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
+        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
+        this.onUpdateMediaStatePacket(mediaStateUpdatePacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
     }

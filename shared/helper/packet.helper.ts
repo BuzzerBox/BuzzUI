@@ -8,10 +8,10 @@ import {
     IAnswerSetStatePacket,
     ISetQuestionPacket,
     IEndGamePacket,
-    IKeypressOnScreenPacket
+    IKeypressOnScreenPacket, IUpdateMediaStatePacket
 } from "../interfaces";
 
-import {EPacketTypes, EAnswerStates} from '../enums';
+import {EPacketTypes, EAnswerStates, EVideoStates} from '../enums';
 
 export class PacketHelper {
     private constructor() {
@@ -45,6 +45,14 @@ export class PacketHelper {
         return {
             packetType: EPacketTypes.SET_BUZZER_LOCK,
             setLock
+        }
+    }
+
+    public static makeMediaStatePacket(state: EVideoStates, timestamp: number | undefined): IUpdateMediaStatePacket {
+        return {
+            newState: state,
+            timeStamp: timestamp,
+            packetType: EPacketTypes.UPDATE_MEDIA_STATE,
         }
     }
 

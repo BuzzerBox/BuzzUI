@@ -4,6 +4,6 @@
   },
   "enableBrowserKeypressEvents": true,
   "serial": {
-    "address": "COM5"
+    "address": "/dev/pts/3"
   }
 }
