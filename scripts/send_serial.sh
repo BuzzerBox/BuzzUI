@@ -1,47 +1,49 @@
 #!/bin/bash
 
 prompt="Select Option: "
-options=("Buzzer 1" "Buzzer 2" "Buzzer 3" "Buzzer 4" "Buzzer 5" "Buzzer 6" "Buzzer 7" "Buzzer 8" "Buzzer 9" "Release" "Quit")
+options=("Buzzer 1" "Buzzer 2" "Buzzer 3" "Buzzer 4" "Buzzer 5" "Buzzer 6" "Buzzer 7" "Buzzer 8" "Buzzer 9" "Buzzer 10" "Release" "Quit")
+bytes=('\x31' '\x32' '\x33' '\x34' '\x35' '\x36' '\x37' '\x38' '\x39' '\x40' '\x71')
 
+port=/tmp/ttyV1
 
 PS3="$prompt "
 select opt in "${options[@]}"
 do
     case $opt in
-        "Buzzer 1")
-            echo -en '\x31' > /tmp/ttyV1
+        "${options[0]}")
+            echo -en  "${bytes[0]}" > $port
             ;;
-        "Buzzer 2")
-            echo -en '\x32' > /tmp/ttyV1
+        "${options[1]}")
+            echo -en "${bytes[1]}" > $port
             ;;
-        "Buzzer 3")
-            echo -en '\x33' > /tmp/ttyV1
+        "${options[2]}")
+            echo -en "${bytes[2]}" > $port
             ;;
-        "Buzzer 4")
-            echo -en '\x34' > /tmp/ttyV1
+        "${options[3]}")
+            echo -en "${bytes[3]}" > $port
             ;;
-        "Buzzer 5")
-            echo -en '\x35' > /tmp/ttyV1
+        "${options[4]}")
+            echo -en "${bytes[4]}" > $port
             ;;
-        "Buzzer 6")
-            echo -en '\x36' > /tmp/ttyV1
+        "${options[5]}")
+            echo -en "${bytes[5]}" > $port
             ;;
-        "Buzzer 7")
-            echo -en '\x37' > /tmp/ttyV1
+        "${options[6]}")
+            echo -en "${bytes[6]}" > $port
             ;;
-        "Buzzer 8")
-            echo -en '\x38' > /tmp/ttyV1
+        "${options[7]}")
+            echo -en "${bytes[7]}" > $port
             ;;
-        "Buzzer 9")
-            echo -en '\x39' > /tmp/ttyV1
+        "${options[8]}")
+            echo -en "${bytes[8]}" > $port
             ;;
-        "Buzzer 10")
-            echo -en '\x30' > /tmp/ttyV1
+        "${options[9]}")
+            echo -en "${bytes[9]}" > $port
             ;;
-        "Release")
-            echo -en '\x71' > /tmp/ttyV1
+        "${options[10]}")
+            echo -en "${bytes[10]}" > $port
             ;;
-        "Quit")
+        "${options[11]}")
             break
             ;;
         *) echo "invalid option $REPLY";;
