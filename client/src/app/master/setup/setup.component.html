@@ -48,8 +48,8 @@
                 Frage {{i + 1}}
               </mat-panel-title>
               <mat-panel-description>
-                &nbsp;
-                <mat-icon *ngIf="questionsFormGroup.controls['question' + i] && questionsFormGroup.controls['question' + i].valid" class="green-icon">check_circle</mat-icon>
+<!--                &nbsp;TODO I'm sure there is a cleaner way to check this-->
+                <mat-icon *ngIf="questionsFormGroup.controls[questionFormGroupName] && questionsFormGroup.controls[questionFormGroupName].valid" class="green-icon">check_circle</mat-icon>
               </mat-panel-description>
 
             </mat-expansion-panel-header>
@@ -102,7 +102,7 @@
                 </div>
               </div>
             </div>
-            <app-select-media (location)="changeMediaSelection({path: $event, question: i})"></app-select-media>
+            <app-select-media [location]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({path: $event, question: i})"></app-select-media>
             <mat-action-row>
               <button mat-button color="primary" (click)="addQuestionToFormGroup()">Add Question</button>
             </mat-action-row>

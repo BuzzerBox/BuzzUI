@@ -7,7 +7,7 @@ import {SafeUrl} from '@angular/platform-browser';
 import {Observable, Subject} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
-import {ConfigService} from '../../services/config.service';
+import {FileService} from '../../services/file.service';
 
 @Component({
   selector: 'app-setup',
@@ -30,7 +30,6 @@ export class SetupComponent implements OnInit {
   public questionFormGroupNames: string[];
   private mapTeamFormControlNameToBuzzerId: Map<string, string>;
   public hasReachedLastStep = false;
-  // public showQuestions = true;
 
   step = 0;
 
@@ -94,16 +93,23 @@ export class SetupComponent implements OnInit {
 
   private initQuestionsFormControls(loadedFile: boolean = false): void {
     if (loadedFile) {
+      // reset everything
+      this.questionsFormGroup = new FormGroup({});
+      this.questionFormGroupNames = [];
+
       for (let i = 0; i < this.game.getQuestions().length; i++) {
         const q: IQuestion = this.game.getQuestions()[i];
         const fgn = 'question' + i;
+        this.questionFormGroupNames.push(fgn);
         let mediaSrc = '';
+
         if (q.mediaDetails) {
           mediaSrc = q.mediaDetails.fileSrc;
         }
-        this.questionsFormGroup.addControl(fgn, new FormGroup({
+
+        this.questionsFormGroup.setControl(fgn, new FormGroup({
           text: new FormControl(q.text),
-          mediaSrc: new FormControl({value: mediaSrc, disable: true}),
+          mediaSrc: new FormControl(mediaSrc),
           answers: new FormGroup({
             answer0: new FormGroup({
               text: new FormControl(q.answers[0].text),
@@ -124,10 +130,11 @@ export class SetupComponent implements OnInit {
           }),
           answersVisible: new FormControl(q.show)
         }));
+        console.log("this.questionsFormGroup", this.questionsFormGroup);
         if (!q.show) {
           this.applyShowAnswersState(fgn, false);
         }
-        this.addQuestionToFormGroup();
+        // this.addQuestionToFormGroup();
       }
     } else {
       this.questionsFormGroup = new FormGroup({});
@@ -276,7 +283,9 @@ export class SetupComponent implements OnInit {
       const fileReader = new FileReader();
       fileReader.readAsText(configFile as Blob, 'UTF-8');
       fileReader.onload = async () => {
+
         const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
+        console.dir(importedState);
         await this.game.importGameStateFromJson(importedState, false);
 
         // this.game.importGameStateFromJson(importedState);
@@ -290,7 +299,7 @@ export class SetupComponent implements OnInit {
     } else {
       this.initTeamsFormControls();
       this.initQuestionsFormControls();
-      this.snackBar.open('Konfiguration zurueckgesetzt.', 'OK', {
+      this.snackBar.open('Konfiguration zurückgesetzt.', 'OK', {
         duration: 5000
       });
     }
@@ -336,14 +345,11 @@ export class SetupComponent implements OnInit {
     this.step = index;
   }
 
-  changeMediaSelection(event: { path: string; question: number }): void {
-    const prefix = 'http://' +
-      ConfigService.get().server.address + ':' +
-      ConfigService.get().fileServer.port +
-      ConfigService.get().fileServer.publicPath;
+  changeMediaSelection(event: { path: string; question: number }, prependPrefix: boolean = true): void {
     const mediaSrcControl = this.questionsFormGroup.controls['question' + event.question].get('mediaSrc');
     if (event && event.path) {
-      mediaSrcControl.setValue(prefix + event.path);
+      const path = event.path;
+      mediaSrcControl.setValue(FileService.buildFullPathString(path));
     } else {
       mediaSrcControl.setValue('');
     }
