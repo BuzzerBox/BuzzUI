@@ -15,7 +15,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   dataSource = new MatTreeNestedDataSource<IDirectoryTree>();
   activeNode: IDirectoryTree;
   @Output() locationChange: EventEmitter<string> = new EventEmitter<string>();
-  @Input() location: string;
+  @Input() fileLocation: string;
 
   private hasFetchedData = false;
 
@@ -25,14 +25,15 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   }
 
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
-    const locationVarName = 'location';
+    const locationVarName = 'fileLocation';
     // if the change comes from the 'location' property and neither null nor empty
     if (
       changes.hasOwnProperty(locationVarName) && changes[locationVarName] != null
       && !StringHelper.isEmpty(changes[locationVarName].currentValue as string)
     ) {
       const locChangeObject: SimpleChange = changes[locationVarName];
-      const node: IDirectoryTree | null = await this.getNodeByFilePath(locChangeObject.currentValue);
+      const data = await this.getData();
+      const node: IDirectoryTree | null = await this.getNodeByFilePath(locChangeObject.currentValue, data);
       if (node != null) {
         this.activeNode = node;
       }
@@ -44,7 +45,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
 
   async getMediaDirectory(): Promise<void> {
     const result = await this.fileService.getMediaList();
-    this.dataSource.data = result.children;
+    this.dataSource.data = [result];
     this.hasFetchedData = true;
   }
 
@@ -60,17 +61,23 @@ export class SelectMediaComponent implements OnInit, OnChanges {
 
   hasChild = (_: number, node: IDirectoryTree) => !!node.children && node.children.length > 0;
 
-  private async getData(): Promise<IDirectoryTree[]> {
+  private async getData(): Promise<IDirectoryTree> {
     if (!this.hasFetchedData) {
       await this.getMediaDirectory();
     }
-    return Promise.resolve(this.dataSource.data);
+    return Promise.resolve(this.dataSource.data[0]);
   }
 
-  public async getNodeByFilePath(filePath: string): Promise<IDirectoryTree | null> {
-    for (const node of (await this.getData())) {
-      if (FileService.buildFullPathString(node.path) === filePath) {
-        return node;
+  public async getNodeByFilePath(filePath: string, root: IDirectoryTree): Promise<IDirectoryTree | null> {
+    if (FileService.buildFullPathString(root.path) === filePath) {
+      return root;
+    } else if (root.type === 'directory') {
+      for (const child of root.children) {
+        const result =  this.getNodeByFilePath(filePath, child);
+        if (await result !== null) {
+          console.log(result, root);
+          return result;
+        }
       }
     }
     return null;
