@@ -1,6 +1,6 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
-import {EVideoStates, IMediaDetails} from '../../../../../../shared/shared';
+import {EVideoStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
@@ -69,5 +69,18 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   restartPlayback(): void {
     this.api.getDefaultMedia().currentTime = 0;
     this.api.getDefaultMedia().play();
+  }
+
+  public getExtension(path: string): string {
+    return '.' + path.split('.').pop();
+  }
+
+  public isVideo(): boolean {
+    return FileExtensionsService.getVideoExtensions().includes(this.getExtension(this.media.fileSrc));
+  }
+
+  public isImage(): boolean {
+    console.log(FileExtensionsService.getImageExtensions(), this.media.fileSrc, this.getExtension(this.media.fileSrc));
+    return FileExtensionsService.getImageExtensions().includes(this.getExtension(this.media.fileSrc));
   }
 }
