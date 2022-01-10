@@ -3,6 +3,7 @@ import express from "express";
 import dirTree from "directory-tree";
 import {IDirectoryTree} from "../../shared/shared";
 import cors from "cors";
+import {FileExtensionsService} from "../../shared/shared";
 
 export class FileServerService {
     private static instance: FileServerService;
@@ -43,17 +44,22 @@ export class FileServerService {
             tree.path = tree.path.replace(localPath, "");
         }
         const children = [];
-        if (tree.children) {
-            if (tree.children.length > 0) {
-                for (const child of tree.children) {
-                    const subtree = this.cleanPath(child, localPath);
-                    if (subtree) {
-                        children.push(subtree);
-                    }
+        if (tree.children && tree.children.length > 0) {
+            for (const child of tree.children) {
+                const subtree = this.cleanPath(child, localPath);
+                if (subtree) {
+                    children.push(subtree);
                 }
-                tree.children = children;
-                return tree;
-            } else if (tree.type === 'file') {
+            }
+            tree.children = children;
+            if (tree.children.every(el => el === undefined)) {
+                return undefined;
+            }
+            return tree;
+        } else if (tree.children && tree.children.length === 0) {
+            return undefined;
+        } else if (tree.type === 'file') {
+            if (FileExtensionsService.getExtensions().includes(tree.extension)) {
                 return tree;
             } else {
                 return undefined;

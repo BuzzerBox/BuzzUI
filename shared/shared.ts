@@ -3,6 +3,7 @@ import {PacketHelper} from './helper/packet.helper';
 export {StringHelper} from './helper/string.helper';
 export * from './interfaces';
 export * from './services/abstract-logger.service'
+export {FileExtensionsService} from './services/file-extensions.service';
 
 export {
     PacketHelper

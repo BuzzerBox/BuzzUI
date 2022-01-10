@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges} from '@angular/core';
 import {FileService} from '../../services/file.service';
-import {IDirectoryTree, StringHelper} from '../../../../../shared/shared';
+import {IDirectoryTree, StringHelper, FileExtensionsService} from '../../../../../shared/shared';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
 import {addWarning} from '@angular-devkit/build-angular/src/utils/webpack-diagnostics';
@@ -83,6 +83,12 @@ export class SelectMediaComponent implements OnInit, OnChanges {
     return null;
   }
 
+  public isImage(node: IDirectoryTree): boolean {
+    return !!FileExtensionsService.getImageExtensions().includes(node.extension);
+  }
 
+  public isVideo(node: IDirectoryTree): boolean {
+    return !!FileExtensionsService.getVideoExtensions().includes(node.extension);
+  }
 
 }
