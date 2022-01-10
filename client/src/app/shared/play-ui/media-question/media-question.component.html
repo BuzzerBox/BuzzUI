@@ -1,4 +1,4 @@
-<vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
+<vg-player (onPlayerReady)="onPlayerReady($event)" class="player" *ngIf="isVideo()">
   <vg-controls vgFor="my-video" [vgAutohide]="true" [vgAutohideTime]="0">
   </vg-controls>
 
@@ -6,8 +6,10 @@
          [vgMedia]="myMedia"
          id="my-video"
          preload="auto"
-         [src]="media.fileSrc"
-         type="video/mp4">
+         [src]="media.fileSrc">
   </video>
 </vg-player>
 
+<div class="player" *ngIf="isImage()">
+  <img [src]="media.fileSrc" alt="The image for this question">
+</div>
