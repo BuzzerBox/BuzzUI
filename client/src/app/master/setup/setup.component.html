@@ -102,7 +102,7 @@
                 </div>
               </div>
             </div>
-            <app-select-media [location]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({path: $event, question: i})"></app-select-media>
+            <app-select-media [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({path: $event, question: i})"></app-select-media>
             <mat-action-row>
               <button mat-button color="primary" (click)="addQuestionToFormGroup()">Add Question</button>
             </mat-action-row>
