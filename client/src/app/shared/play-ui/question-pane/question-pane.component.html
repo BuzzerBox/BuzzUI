@@ -19,6 +19,6 @@
         </mat-grid-list>
       </div>
     </div>
-    <app-media-remote *ngIf="isMaster && question.mediaDetails"></app-media-remote>
+    <app-media-remote *ngIf="isMaster && question.mediaDetails" [media]="question.mediaDetails"></app-media-remote>
   </mat-card-content>
 </ng-template>

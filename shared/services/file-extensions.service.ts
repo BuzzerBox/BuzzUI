@@ -13,4 +13,16 @@ export class FileExtensionsService {
     public static getExtensions(): string[] {
         return this.videoExtensions.concat(this.imageExtenions);
     }
+
+    public static getExtension(path: string): string {
+        return '.' + path.split('.').pop();
+    }
+
+    public static isVideo(path: string): boolean {
+        return FileExtensionsService.getVideoExtensions().includes(this.getExtension(path));
+    }
+
+    public static isImage(path: string): boolean {
+        return FileExtensionsService.getImageExtensions().includes(this.getExtension(path));
+    }
 }
