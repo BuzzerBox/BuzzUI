@@ -10,6 +10,6 @@
   </video>
 </vg-player>
 
-<div class="player" *ngIf="isImage()">
+<div class="player" *ngIf="isImage() && mediaVisible">
   <img [src]="media.fileSrc" alt="The image for this question">
 </div>

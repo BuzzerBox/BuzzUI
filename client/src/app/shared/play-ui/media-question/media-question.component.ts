@@ -15,6 +15,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   api: VgApiService;
 
   private mediaUpdateSubscription: Subscription;
+  public mediaVisible = false;
 
 
   constructor(private game: GameService) {
@@ -35,7 +36,9 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
             break;
           case EVideoStates.FINISHED:
             this.pausePlayback();
-            this.api.getDefaultMedia().currentTime = 0;
+            if (this.api) {
+              this.api.getDefaultMedia().currentTime = 0;
+            }
             break;
         }
       }
@@ -60,15 +63,23 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
     if (this.api) {
       this.api.getDefaultMedia().play();
     }
+    this.mediaVisible = true;
   }
 
   pausePlayback(): void {
-    this.api.getDefaultMedia().pause();
+    if (this.api) {
+      this.api.getDefaultMedia().pause();
+    }
+    this.mediaVisible = false;
   }
 
   restartPlayback(): void {
-    this.api.getDefaultMedia().currentTime = 0;
-    this.api.getDefaultMedia().play();
+    if (this.api) {
+      this.api.getDefaultMedia().currentTime = 0;
+      this.api.getDefaultMedia().play();
+    }
+    this.mediaVisible = true;
+
   }
 
   public getExtension(path: string): string {
@@ -76,11 +87,10 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   }
 
   public isVideo(): boolean {
-    return FileExtensionsService.getVideoExtensions().includes(this.getExtension(this.media.fileSrc));
+    return FileExtensionsService.isVideo(this.media.fileSrc);
   }
 
   public isImage(): boolean {
-    console.log(FileExtensionsService.getImageExtensions(), this.media.fileSrc, this.getExtension(this.media.fileSrc));
-    return FileExtensionsService.getImageExtensions().includes(this.getExtension(this.media.fileSrc));
+    return FileExtensionsService.isImage(this.media.fileSrc);
   }
 }

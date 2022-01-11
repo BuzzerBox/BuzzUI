@@ -75,7 +75,6 @@ export class SelectMediaComponent implements OnInit, OnChanges {
       for (const child of root.children) {
         const result =  this.getNodeByFilePath(filePath, child);
         if (await result !== null) {
-          console.log(result, root);
           return result;
         }
       }

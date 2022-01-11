@@ -13,13 +13,13 @@
 }
 
 mat-card.question {
-  width: 95%;
-  /*margin: 0 auto;*/
-  position: absolute;
+  /*width: 95%;*/
+  margin: 5px auto;
+  /*position: absolute;*/
   /*bottom: 1em;*/
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, 8%);
+  /*left: 50%;*/
+  /*top: 50%;*/
+  /*transform: translate(-50%, 8%);*/
 }
 
 .parent {
