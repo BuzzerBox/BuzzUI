@@ -4,8 +4,9 @@ import {Observable, Subscription} from "rxjs";
 import {
     EAnswerStates,
     EGameStates,
+    EMediaStates,
     EPacketTypes,
-    EVideoStates,
+    EQuestionAnswerStates,
     IAnswer,
     IAnswerSetStatePacket,
     IBuzzer,
@@ -294,7 +295,7 @@ export class GameService {
         this.onSetBuzzerLockPacket(null, lockPacket);
         this.ignoredKeypresses = [];
         this.sendToAllScreens(packet);
-        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
+        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(EMediaStates.PAUSED);
         this.onUpdateMediaStatePacket(mediaPacket);
     }
 
@@ -378,7 +379,11 @@ export class GameService {
         this.ignoredKeypresses = [];
         this.lastKeyPressed = null;
         this.currentGameState = {
-            mediaState: EVideoStates.NO_VIDEO,
+            mediaQuestionState: {
+                mediaState: EMediaStates.NO_MEDIA,
+                questionState: EQuestionAnswerStates.SHOWN,
+                answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+            },
             currentQuestionNumber: 0,
             markedTeamIds: [],
             loggedAnswers: [],
@@ -633,7 +638,7 @@ export class GameService {
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
-        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
+        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacket(EMediaStates.PAUSED);
         this.onUpdateMediaStatePacket(mediaStateUpdatePacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);

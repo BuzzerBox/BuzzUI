@@ -1,6 +1,12 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {EVideoStates, FileExtensionsService, IMediaDetails} from '../../../../../../shared/shared';
+import {
+  EMediaStates,
+  EQuestionAnswerStates,
+  FileExtensionsService,
+  IMediaDetails,
+  IMediaQuestionState
+} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 
 @Component({
@@ -11,8 +17,12 @@ import {Subscription} from 'rxjs';
 })
 export class MediaRemoteComponent implements OnInit {
   @Input() media: IMediaDetails;
-  public state: EVideoStates = EVideoStates.VIDEO_LOADED;
-  EVideoStates: EVideoStates;
+  public state: IMediaQuestionState = {
+    mediaState: EMediaStates.NO_MEDIA,
+    questionState: EQuestionAnswerStates.SHOWN,
+    answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+  };
+  EVideoStates: EMediaStates;
   private mediaUpdateSubscription: Subscription;
 
   constructor(private game: GameService) { }
@@ -20,36 +30,36 @@ export class MediaRemoteComponent implements OnInit {
   ngOnInit(): void {
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
-        this.state = packet.newState;
-        if (packet.newState === EVideoStates.RESET) {
-          this.state = EVideoStates.PLAYING;
+        this.state = packet.mediaQuestionState;
+        if (packet.mediaQuestionState.mediaState === EMediaStates.RESET) {
+          this.state.mediaState = EMediaStates.PLAYING;
         }
       }
     );
   }
 
   play(): void {
-    this.game.updateMediaState(EVideoStates.PLAYING);
+    this.game.updateMediaState(EMediaStates.PLAYING);
   }
 
   pause(): void {
-    this.game.updateMediaState(EVideoStates.STOPPED);
+    this.game.updateMediaState(EMediaStates.PAUSED);
   }
 
   replay(): void {
-    this.game.updateMediaState(EVideoStates.RESET);
+    this.game.updateMediaState(EMediaStates.RESET);
   }
 
   skip(): void {
-    this.game.updateMediaState(EVideoStates.FINISHED);
+    this.game.updateMediaState(EMediaStates.FINISHED);
   }
 
   isPlaying(): boolean {
-    return this.state === EVideoStates.PLAYING;
+    return this.state.mediaState === EMediaStates.PLAYING;
   }
 
   isNotFinished(): boolean {
-    return this.state !== EVideoStates.FINISHED;
+    return this.state.mediaState !== EMediaStates.FINISHED;
   }
 
   public isVideo(): boolean {

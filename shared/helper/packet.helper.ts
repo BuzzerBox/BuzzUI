@@ -11,7 +11,8 @@ import {
     IKeypressOnScreenPacket, IUpdateMediaStatePacket
 } from "../interfaces";
 
-import {EPacketTypes, EAnswerStates, EVideoStates} from '../enums';
+import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates} from '../enums';
+import {IMediaQuestionState} from "../interfaces/IMediaQuestionState";
 
 export class PacketHelper {
     private constructor() {
@@ -48,11 +49,19 @@ export class PacketHelper {
         }
     }
 
-    public static makeMediaStatePacket(state: EVideoStates, timestamp: number | undefined): IUpdateMediaStatePacket {
-        return {
-            newState: state,
-            timeStamp: timestamp,
-            packetType: EPacketTypes.UPDATE_MEDIA_STATE,
+    public static makeMediaStatePacket(mediaState: EMediaStates, questionState?: EQuestionAnswerStates, answerState?: EQuestionAnswerStates | undefined): IUpdateMediaStatePacket {
+        return this.makeMediaStatePacketFromQuestionState(
+            {
+                mediaState: mediaState,
+                questionState: questionState,
+                answerState: answerState
+            })
+    }
+
+    public static makeMediaStatePacketFromQuestionState(mediaQuestionState: IMediaQuestionState): IUpdateMediaStatePacket {
+        return <IUpdateMediaStatePacket>{
+            mediaQuestionState,
+            packetType: EPacketTypes.UPDATE_MEDIA_STATE
         }
     }
 

@@ -3,8 +3,9 @@ import {WebSocketService} from './web-socket.service';
 import {
   CURRENT_SAVEGAME_VERSION,
   EAnswerStates,
+  EMediaStates,
   EPacketTypes,
-  EVideoStates,
+  EQuestionAnswerStates,
   IAnswer,
   IAnswerSetStatePacket,
   IDataForScreenPacket,
@@ -13,6 +14,7 @@ import {
   IGameState,
   IKeypressOnScreenPacket,
   IMarkTeamPacket,
+  IMediaQuestionState,
   INewMasterAccepted,
   IPresetupAvailableInfoPacket,
   IQuestion,
@@ -301,7 +303,11 @@ export class GameService implements OnDestroy {
           markedTeamIds: [],
           // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
           setBuzzerLock: false,
-          mediaState: EVideoStates.NO_VIDEO
+          mediaQuestionState: {
+            mediaState: EMediaStates.NO_MEDIA,
+            questionState: EQuestionAnswerStates.SHOWN,
+            answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+          }
         };
       } else {
         this.currentGameState = gameState;
@@ -607,9 +613,14 @@ export class GameService implements OnDestroy {
     return this.updateMediaStateSubject.asObservable();
   }
 
-  public updateMediaState(state: EVideoStates, timestamp?: number): void {
-    this.currentGameState.mediaState = state;
-    const mediaPacket = PacketHelper.makeMediaStatePacket(state, timestamp);
+  public updateMediaState(mediaState: EMediaStates, questionState?: EQuestionAnswerStates, answerState?: EQuestionAnswerStates): void {
+    const mediaQuestionState: IMediaQuestionState = {
+      mediaState,
+      answerState,
+      questionState
+    };
+    this.currentGameState.mediaQuestionState = mediaQuestionState;
+    const mediaPacket = PacketHelper.makeMediaStatePacketFromQuestionState(mediaQuestionState);
     this.webSocketService.send<IUpdateMediaStatePacket>(mediaPacket);
   }
 

@@ -1,6 +1,6 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates, EVideoStates} from '../../../../../../shared/shared';
+import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates, EMediaStates} from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
   AnswerOptionsComponent,
@@ -42,9 +42,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
     this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
-        switch (packet.newState) {
-          case EVideoStates.FINISHED:
-            this.showAnswers = this.question?.show as boolean;
+        switch (packet.mediaQuestionState.mediaState) {
+          case EMediaStates.FINISHED:
+            this.showAnswers = this.question.show as boolean;
             break;
           default:
             this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;

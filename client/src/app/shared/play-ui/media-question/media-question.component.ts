@@ -1,6 +1,6 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
-import {EVideoStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
+import {EMediaStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
@@ -25,17 +25,17 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
-        switch (packet.newState) {
-          case EVideoStates.STOPPED:
+        switch (packet.mediaQuestionState.mediaState) {
+          case EMediaStates.PAUSED:
             this.pausePlayback();
             break;
-          case EVideoStates.PLAYING:
+          case EMediaStates.PLAYING:
             this.startPlayback();
             break;
-          case EVideoStates.RESET:
+          case EMediaStates.RESET:
             this.restartPlayback();
             break;
-          case EVideoStates.FINISHED:
+          case EMediaStates.FINISHED:
             this.pausePlayback();
             if (this.api && this.api.getDefaultMedia()) {
               this.api.getDefaultMedia().currentTime = 0;
@@ -55,7 +55,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
     this.api = api;
     this.api.getDefaultMedia().subscriptions.ended.subscribe(
       () => {
-        this.game.updateMediaState(EVideoStates.FINISHED);
+        this.game.updateMediaState(EMediaStates.FINISHED);
       }
     );
   }
