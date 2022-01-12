@@ -1,6 +1,6 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {EVideoStates} from '../../../../../../shared/shared';
+import {EVideoStates, FileExtensionsService, IMediaDetails} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 
 @Component({
@@ -9,6 +9,7 @@ import {Subscription} from 'rxjs';
   styleUrls: ['./media-remote.component.css']
 })
 export class MediaRemoteComponent implements OnInit {
+  @Input() media: IMediaDetails;
   public state: EVideoStates = EVideoStates.VIDEO_LOADED;
   EVideoStates: EVideoStates;
   private mediaUpdateSubscription: Subscription;
@@ -49,4 +50,14 @@ export class MediaRemoteComponent implements OnInit {
   isNotFinished(): boolean {
     return this.state !== EVideoStates.FINISHED;
   }
+
+  public isVideo(): boolean {
+    return FileExtensionsService.isVideo(this.media.fileSrc);
+  }
+
+  public isImage(): boolean {
+    return FileExtensionsService.isImage(this.media.fileSrc);
+  }
+
+
 }

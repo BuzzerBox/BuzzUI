@@ -1,7 +1,10 @@
 .player {
   justify-content: center;
+  display: flex;
 }
-video {
-  width: 100% !important;
-  height: auto !important;
+video, img{
+  width: auto;
+  height: auto;
+  max-width:100%;
+  max-height:80vh;
 }

@@ -293,6 +293,8 @@ export class GameService {
         this.onSetBuzzerLockPacket(null, lockPacket);
         this.ignoredKeypresses = [];
         this.sendToAllScreens(packet);
+        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
+        this.onUpdateMediaStatePacket(mediaPacket);
     }
 
     // TODO move it to some shared class/helper since it is used in the frontend as well

@@ -4,6 +4,7 @@
   </mat-card-header>
   <mat-card-content>
     {{getQuestionText()}}
+    <app-media-remote *ngIf="isMaster && question.mediaDetails" [media]="question.mediaDetails"></app-media-remote>
     <div class="videooptions">
       <div *ngIf="question.mediaDetails && !isMaster" class="bottom">
         <app-media-question [media]="question.mediaDetails"></app-media-question>
@@ -19,6 +20,5 @@
         </mat-grid-list>
       </div>
     </div>
-    <app-media-remote *ngIf="isMaster && question.mediaDetails"></app-media-remote>
   </mat-card-content>
 </ng-template>

@@ -9,7 +9,8 @@
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
   <!-- This is the tree node template for files -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle (click)="changeSelection(node)" [ngClass]="{'background-highlight': activeNode === node}">
-    <mat-icon *ngIf="activeNode !== node" mat-list-icon>insert_drive_file</mat-icon>
+    <mat-icon *ngIf="activeNode !== node && isImage(node)" mat-list-icon>image</mat-icon>
+    <mat-icon *ngIf="activeNode !== node && isVideo(node)" mat-list-icon>movie</mat-icon>
     <mat-icon *ngIf="activeNode === node" mat-list-icon>check</mat-icon>
     {{node.name}}
   </mat-tree-node>

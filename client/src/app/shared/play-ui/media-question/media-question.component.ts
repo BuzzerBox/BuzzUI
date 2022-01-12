@@ -1,6 +1,6 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
-import {EVideoStates, IMediaDetails} from '../../../../../../shared/shared';
+import {EVideoStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
@@ -15,6 +15,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   api: VgApiService;
 
   private mediaUpdateSubscription: Subscription;
+  public mediaVisible = false;
 
 
   constructor(private game: GameService) {
@@ -35,7 +36,9 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
             break;
           case EVideoStates.FINISHED:
             this.pausePlayback();
-            this.api.getDefaultMedia().currentTime = 0;
+            if (this.api && this.api.getDefaultMedia()) {
+              this.api.getDefaultMedia().currentTime = 0;
+            }
             break;
         }
       }
@@ -57,17 +60,37 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   }
 
   startPlayback(): void {
-    if (this.api) {
+    if (this.api && this.api.getDefaultMedia()) {
       this.api.getDefaultMedia().play();
     }
+    this.mediaVisible = true;
   }
 
   pausePlayback(): void {
-    this.api.getDefaultMedia().pause();
+    if (this.api && this.api.getDefaultMedia()) {
+      this.api.getDefaultMedia().pause();
+    }
+    this.mediaVisible = false;
   }
 
   restartPlayback(): void {
-    this.api.getDefaultMedia().currentTime = 0;
-    this.api.getDefaultMedia().play();
+    if (this.api && this.api.getDefaultMedia()) {
+      this.api.getDefaultMedia().currentTime = 0;
+      this.api.getDefaultMedia().play();
+    }
+    this.mediaVisible = true;
+
+  }
+
+  public getExtension(path: string): string {
+    return '.' + path.split('.').pop();
+  }
+
+  public isVideo(): boolean {
+    return FileExtensionsService.isVideo(this.media.fileSrc);
+  }
+
+  public isImage(): boolean {
+    return FileExtensionsService.isImage(this.media.fileSrc);
   }
 }
