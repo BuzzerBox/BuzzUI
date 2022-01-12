@@ -36,7 +36,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
             break;
           case EVideoStates.FINISHED:
             this.pausePlayback();
-            if (this.api) {
+            if (this.api && this.api.getDefaultMedia()) {
               this.api.getDefaultMedia().currentTime = 0;
             }
             break;
@@ -60,21 +60,21 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   }
 
   startPlayback(): void {
-    if (this.api) {
+    if (this.api && this.api.getDefaultMedia()) {
       this.api.getDefaultMedia().play();
     }
     this.mediaVisible = true;
   }
 
   pausePlayback(): void {
-    if (this.api) {
+    if (this.api && this.api.getDefaultMedia()) {
       this.api.getDefaultMedia().pause();
     }
     this.mediaVisible = false;
   }
 
   restartPlayback(): void {
-    if (this.api) {
+    if (this.api && this.api.getDefaultMedia()) {
       this.api.getDefaultMedia().currentTime = 0;
       this.api.getDefaultMedia().play();
     }
