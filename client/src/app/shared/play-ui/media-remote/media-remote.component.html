@@ -22,18 +22,28 @@
 }
 @if (!isVideo()) {
   <div class="media-control-button-row">
+    @if (isQuestionHidden()) {
+      <button mat-icon-button (click)="showQuestion()" title="Frage zeigen">
+        <mat-icon svgIcon="show_question"></mat-icon>
+      </button>
+    }
+    @if (!isQuestionHidden()) {
+      <button mat-icon-button (click)="hideQuestion()" title="Frage verbergen">
+        <mat-icon svgIcon="hide_question"></mat-icon>
+      </button>
+    }
     @if (!isPlaying()) {
-      <button mat-icon-button aria-label="Play" (click)="play()" title="Bild verbergen">
+      <button mat-icon-button aria-label="Play" (click)="play()" title="Bild zeigen">
         <mat-icon>image</mat-icon>
       </button>
     }
     @if (isPlaying()) {
-      <button mat-icon-button aria-label="Pause" (click)="pause()" title="Bild verberben">
+      <button mat-icon-button aria-label="Pause" (click)="pause()" title="Bild verbergen">
         <mat-icon>hide_image</mat-icon>
       </button>
     }
     @if (isNotFinished()) {
-      <button mat-icon-button aria-label="Skip" (click)="skip()" title="Zum Ende springen">
+      <button mat-icon-button aria-label="Skip" (click)="skip()" title="Antworten zeigen">
         <mat-icon svgIcon="show_answers"></mat-icon>
       </button>
     }

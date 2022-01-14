@@ -3,7 +3,8 @@
     <mat-card-title>Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}</mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    {{getQuestionText()}}
+    @if (showQuestion) { {{getQuestionText()}} }
+    @if (!showQuestion) { ??? }
     @if (isMaster && question.mediaDetails) {
       <app-media-remote [media]="question.mediaDetails"></app-media-remote>
     }

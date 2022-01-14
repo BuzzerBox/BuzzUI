@@ -39,19 +39,19 @@ export class MediaRemoteComponent implements OnInit {
   }
 
   play(): void {
-    this.game.updateMediaState(EMediaStates.PLAYING);
+    this.game.updateMediaState(EMediaStates.PLAYING, this.state.questionState);
   }
 
   pause(): void {
-    this.game.updateMediaState(EMediaStates.PAUSED);
+    this.game.updateMediaState(EMediaStates.PAUSED, this.state.questionState);
   }
 
   replay(): void {
-    this.game.updateMediaState(EMediaStates.RESET);
+    this.game.updateMediaState(EMediaStates.RESET, this.state.questionState);
   }
 
   skip(): void {
-    this.game.updateMediaState(EMediaStates.FINISHED);
+    this.game.updateMediaState(EMediaStates.FINISHED, this.state.questionState);
   }
 
   isPlaying(): boolean {
@@ -60,6 +60,20 @@ export class MediaRemoteComponent implements OnInit {
 
   isNotFinished(): boolean {
     return this.state.mediaState !== EMediaStates.FINISHED;
+  }
+
+  showQuestion(): void {
+    this.state.questionState = EQuestionAnswerStates.SHOWN;
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState);
+  }
+
+  hideQuestion(): void {
+    this.state.questionState = EQuestionAnswerStates.HIDDEN;
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState);
+  }
+
+  isQuestionHidden(): boolean {
+    return this.state.questionState === EQuestionAnswerStates.HIDDEN;
   }
 
   public isVideo(): boolean {

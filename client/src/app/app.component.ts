@@ -19,6 +19,14 @@ export class AppComponent {
       `show_answers`,
       this.domSanitizer.bypassSecurityTrustResourceUrl('../assets/show_answers.svg')
     );
+    this.matIconRegistry.addSvgIcon(
+      `hide_question`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl('../assets/hide_question.svg')
+    );
+    this.matIconRegistry.addSvgIcon(
+      `show_question`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl('../assets/show_question.svg')
+    );
   }
 
 }

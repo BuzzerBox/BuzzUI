@@ -1,13 +1,20 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates, EMediaStates} from '../../../../../../shared/shared';
+import {
+  EAnswerStates,
+  EMediaStates,
+  EQuestionAnswerStates,
+  IAnswer,
+  IAnswerSetStatePacket,
+  IQuestion
+} from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
   AnswerOptionsComponent,
   EDecisionBottomSheetAnswerOptions,
   IBottomSheetsAnswerOptionsData
 } from '../bottom-sheets/answer-options/answer-options.component';
-import {Observable, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
 import {ArraysHelper} from '../../../helper/arrays.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
 
@@ -31,6 +38,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
   public showAnswers: boolean;
+  public showQuestion = true;
 
   constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
 
@@ -42,6 +50,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
     this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
+        this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
         switch (packet.mediaQuestionState.mediaState) {
           case EMediaStates.FINISHED:
             this.showAnswers = this.question.show as boolean;
