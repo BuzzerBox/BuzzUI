@@ -295,7 +295,7 @@ export class GameService {
         this.onSetBuzzerLockPacket(null, lockPacket);
         this.ignoredKeypresses = [];
         this.sendToAllScreens(packet);
-        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(EMediaStates.PAUSED);
+        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(EMediaStates.PAUSED, EQuestionAnswerStates.SHOWN, EQuestionAnswerStates.HIDDEN);
         this.onUpdateMediaStatePacket(mediaPacket);
     }
 
