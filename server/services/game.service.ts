@@ -640,5 +640,6 @@ export class GameService {
 
     private onSerialError(err): void {
         // TODO
+        console.log('Serial Error', err);
     }
 }
