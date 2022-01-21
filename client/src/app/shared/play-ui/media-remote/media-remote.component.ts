@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {GameService} from '../../../services/game.service';
 import {
   EMediaStates,
@@ -15,14 +15,13 @@ import {Subscription} from 'rxjs';
     styleUrls: ['./media-remote.component.css'],
     standalone: false
 })
-export class MediaRemoteComponent implements OnInit {
+export class MediaRemoteComponent implements OnInit, OnDestroy {
   @Input() media: IMediaDetails;
   public state: IMediaQuestionState = {
     mediaState: EMediaStates.NO_MEDIA,
     questionState: EQuestionAnswerStates.SHOWN,
     answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
   };
-  EVideoStates: EMediaStates;
   private mediaUpdateSubscription: Subscription;
 
   constructor(private game: GameService) { }
@@ -38,6 +37,10 @@ export class MediaRemoteComponent implements OnInit {
     );
   }
 
+  ngOnDestroy(): void {
+    this.mediaUpdateSubscription.unsubscribe();
+  }
+
   play(): void {
     this.game.updateMediaState(EMediaStates.PLAYING, this.state.questionState);
   }
@@ -50,8 +53,14 @@ export class MediaRemoteComponent implements OnInit {
     this.game.updateMediaState(EMediaStates.RESET, this.state.questionState);
   }
 
-  skip(): void {
-    this.game.updateMediaState(EMediaStates.FINISHED, this.state.questionState);
+  showAnswers(): void {
+    this.state.answerState = EQuestionAnswerStates.SHOWN;
+    this.game.updateMediaState(EMediaStates.PAUSED, this.state.questionState, this.state.answerState);
+  }
+
+  hideAnswers(): void {
+    this.state.answerState = EQuestionAnswerStates.SHOWN;
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState);
   }
 
   isPlaying(): boolean {
@@ -74,6 +83,10 @@ export class MediaRemoteComponent implements OnInit {
 
   isQuestionHidden(): boolean {
     return this.state.questionState === EQuestionAnswerStates.HIDDEN;
+  }
+
+  isAnswersShown(): boolean {
+    return this.state.answerState === EQuestionAnswerStates.SHOWN;
   }
 
   public isVideo(): boolean {

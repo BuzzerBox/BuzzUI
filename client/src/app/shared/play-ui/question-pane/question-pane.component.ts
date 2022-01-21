@@ -51,9 +51,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
-        switch (packet.mediaQuestionState.mediaState) {
-          case EMediaStates.FINISHED:
-            this.showAnswers = this.question.show as boolean;
+        switch (packet.mediaQuestionState.answerState) {
+          case EQuestionAnswerStates.SHOWN:
+            this.showAnswers = true;
             break;
           default:
             this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;

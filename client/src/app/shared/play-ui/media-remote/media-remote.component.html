@@ -1,51 +1,39 @@
-@if (isVideo()) {
-  <div class="media-control-button-row">
-    @if (!isPlaying()) {
-      <button mat-icon-button aria-label="Play" (click)="play()" title="Video auf allen Anzeigegeraeten fortsetzen">
-        <mat-icon>play_arrow</mat-icon>
-      </button>
-    }
-    @if (isPlaying()) {
-      <button mat-icon-button aria-label="Pause" (click)="pause()" title="Video auf allen Anzeigegeraeten pausieren">
-        <mat-icon>pause</mat-icon>
-      </button>
-    }
-    <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video auf allen Anzeigegeraeten von vorne beginnen">
+<div class="media-control-button-row">
+  @if (isQuestionHidden()) {
+    <button mat-icon-button (click)="showQuestion()" title="Frage zeigen">
+      <mat-icon svgIcon="show_question"></mat-icon>
+    </button>
+  }
+  @if (!isQuestionHidden()) {
+    <button mat-icon-button (click)="hideQuestion()" title="Frage verbergen">
+      <mat-icon svgIcon="hide_question"></mat-icon>
+    </button>
+  }
+  @if (!isPlaying()) {
+    <button mat-icon-button aria-label="Play" (click)="play()" title="Medium anzeigen / abspielen">
+      @if (isVideo()) { <mat-icon>play_arrow</mat-icon> }
+      @if (!isVideo()) { <mat-icon>image</mat-icon> }
+    </button>
+  }
+  @if (isPlaying()) {
+    <button mat-icon-button aria-label="Pause" (click)="pause()" title="Medium verbergen / pausieren">
+      @if (isVideo()) { <mat-icon>pause</mat-icon> }
+      @if (!isVideo()) { <mat-icon>hide_image</mat-icon> }
+    </button>
+  }
+  @if (isVideo()) {
+    <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video von vorne beginnen">
       <mat-icon>replay</mat-icon>
     </button>
-    @if (isNotFinished()) {
-      <button mat-icon-button aria-label="Skip" (click)="skip()" title="Zum Ende springen">
-        <mat-icon>skip_next</mat-icon>
-      </button>
-    }
-  </div>
-}
-@if (!isVideo()) {
-  <div class="media-control-button-row">
-    @if (isQuestionHidden()) {
-      <button mat-icon-button (click)="showQuestion()" title="Frage zeigen">
-        <mat-icon svgIcon="show_question"></mat-icon>
-      </button>
-    }
-    @if (!isQuestionHidden()) {
-      <button mat-icon-button (click)="hideQuestion()" title="Frage verbergen">
-        <mat-icon svgIcon="hide_question"></mat-icon>
-      </button>
-    }
-    @if (!isPlaying()) {
-      <button mat-icon-button aria-label="Play" (click)="play()" title="Bild zeigen">
-        <mat-icon>image</mat-icon>
-      </button>
-    }
-    @if (isPlaying()) {
-      <button mat-icon-button aria-label="Pause" (click)="pause()" title="Bild verbergen">
-        <mat-icon>hide_image</mat-icon>
-      </button>
-    }
-    @if (isNotFinished()) {
-      <button mat-icon-button aria-label="Skip" (click)="skip()" title="Antworten zeigen">
-        <mat-icon svgIcon="show_answers"></mat-icon>
-      </button>
-    }
-  </div>
-}
+  }
+  @if (!isAnswersShown()) {
+    <button mat-icon-button aria-label="Show Answers" (click)="showAnswers()" title="Antworten zeigen">
+      <mat-icon svgIcon="show_answers"></mat-icon>
+    </button>
+  }
+  @if (isAnswersShown()) {
+    <button mat-icon-button aria-label="Hide Answers" (click)="hideAnswers()" title="Antworten verbergen">
+      <mat-icon svgIcon="hide_answers"></mat-icon>
+    </button>
+  }
+</div>
