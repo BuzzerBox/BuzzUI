@@ -1,19 +1,18 @@
-<h3>Initial Question State</h3>
-<mat-button-toggle-group name="favoriteColor" aria-label="Question State">
-  <mat-button-toggle value="show">Show</mat-button-toggle>
-  <mat-button-toggle value="hide">Hide</mat-button-toggle>
-  <mat-button-toggle value="after">Hide, reveal after Media</mat-button-toggle>
-</mat-button-toggle-group>
+<form [formGroup]="questionConfig">
+  <h3>Initial Question State</h3>
+  <mat-button-toggle-group name="questionState" aria-label="Question State" formControlName="questionState">
+    <mat-button-toggle *ngFor="let option of questionAnswerOptions" [value]="option.key">{{option.label}}</mat-button-toggle>
+  </mat-button-toggle-group>
 
-<h3>Initial Media State</h3>
-<mat-button-toggle-group name="favoriteColor" aria-label="Media State">
-  <mat-button-toggle value="show">Show</mat-button-toggle>
-  <mat-button-toggle value="hide">Hide</mat-button-toggle>
-</mat-button-toggle-group>
+  <h3>Initial Media State</h3>
+  <mat-button-toggle-group name="mediaState" aria-label="Media State" formControlName="mediaState">
+    <mat-button-toggle *ngFor="let option of mediaOptions" [value]="option.key">{{option.label}}</mat-button-toggle>
+  </mat-button-toggle-group>
 
-<h3>Initial Answer State</h3>
-<mat-button-toggle-group name="favoriteColor" aria-label="Answers State">
-  <mat-button-toggle value="show">Shown</mat-button-toggle>
-  <mat-button-toggle value="hide">Hide</mat-button-toggle>
-  <mat-button-toggle value="after">Hide, reveal after Media</mat-button-toggle>
-</mat-button-toggle-group>
+  <h3>Initial Answer State</h3>
+  <mat-button-toggle-group name="answerState" aria-label="Answers State" formControlName="answerState">
+    <mat-button-toggle *ngFor="let option of questionAnswerOptions" [value]="option.key">{{option.label}}</mat-button-toggle>
+  </mat-button-toggle-group>
+</form>
+
+

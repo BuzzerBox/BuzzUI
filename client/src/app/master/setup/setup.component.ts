@@ -3,7 +3,7 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
-import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
+import {ITeam, IQuestion, IAnswer, IMediaQuestionState} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
@@ -28,6 +28,7 @@ export class SetupComponent implements OnInit {
   public questionFormGroupNames: string[];
   private mapTeamFormControlNameToBuzzerId: Map<string, string>;
   public hasReachedLastStep = false;
+  public questionInitialConfig: IMediaQuestionState[];
 
   step = 0;
 
@@ -94,13 +95,20 @@ export class SetupComponent implements OnInit {
       // reset everything
       this.questionsFormGroup = new UntypedFormGroup({});
       this.questionFormGroupNames = [];
+      this.questionInitialConfig = [];
 
       for (let i = 0; i < this.game.getQuestions().length; i++) {
         const q: IQuestion = this.game.getQuestions()[i];
         const fgn = 'question' + i;
         this.questionFormGroupNames.push(fgn);
-        let mediaSrc = '';
 
+        if (q.initialConfig) {
+          this.questionInitialConfig.push(q.initialConfig);
+        } else {
+          this.questionInitialConfig.push(undefined);
+        }
+
+        let mediaSrc = '';
         if (q.mediaDetails) {
           mediaSrc = q.mediaDetails.fileSrc;
         }
@@ -137,6 +145,7 @@ export class SetupComponent implements OnInit {
     } else {
       this.questionsFormGroup = new UntypedFormGroup({});
       this.questionFormGroupNames = [];
+      this.questionInitialConfig = [];
       this.addQuestionToFormGroup();
     }
   }
@@ -202,6 +211,7 @@ export class SetupComponent implements OnInit {
     const qfc: UntypedFormGroup = this.createQuestionFormGroup();
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
+    this.questionInitialConfig.push(undefined);
     this.questionsFormGroup.addControl(formGroupName, qfc);
     this.setStep(this.questionFormGroupNames.length - 1);
   }
@@ -287,7 +297,7 @@ export class SetupComponent implements OnInit {
 
   private buildSetupQuestionsObject(): IQuestion[] {
     const ret: IQuestion[] = [];
-    for (const name of this.questionFormGroupNames) {
+    this.questionFormGroupNames.forEach((name, index) => {
       const questionFormGroup: UntypedFormGroup = this.questionsFormGroup.get(name) as UntypedFormGroup;
       const questionText: string = questionFormGroup.get('text').value.toString();
       const mediaSrc: string = questionFormGroup.get('mediaSrc').value.toString();
@@ -308,9 +318,10 @@ export class SetupComponent implements OnInit {
         question.mediaDetails = {
           fileSrc: mediaSrc
         };
+        question.initialConfig = this.questionInitialConfig[index];
       }
       ret.push(question);
-    }
+    });
     return ret;
   }
 
@@ -409,5 +420,10 @@ export class SetupComponent implements OnInit {
       mediaSrcControl.setValue('');
     }
   }
+
+  changeQuestionConfig(event: { config: IMediaQuestionState; question: number }): void {
+    this.questionInitialConfig[event.question] = event.config;
+  }
+
 
 }

@@ -113,7 +113,7 @@
               </div>
             </div>
             <app-select-media [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({path: $event, question: i})"></app-select-media>
-            <app-media-question-display-order-configuration *ngIf="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()"></app-media-question-display-order-configuration>
+            <app-media-question-display-order-configuration *ngIf="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" [initialConfig]="questionInitialConfig[i]" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
             <mat-action-row>
               <button mat-button color="primary" (click)="addQuestionToFormGroup()">Add Question</button>
             </mat-action-row>
