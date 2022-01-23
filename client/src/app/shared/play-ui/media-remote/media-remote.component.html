@@ -26,12 +26,12 @@
       <mat-icon>replay</mat-icon>
     </button>
   }
-  @if (!isAnswersShown()) {
+  @if (!isAnswersShown() && question.show) {
     <button mat-icon-button aria-label="Show Answers" (click)="showAnswers()" title="Antworten zeigen">
       <mat-icon svgIcon="show_answers"></mat-icon>
     </button>
   }
-  @if (isAnswersShown()) {
+  @if (isAnswersShown() && question.show) {
     <button mat-icon-button aria-label="Hide Answers" (click)="hideAnswers()" title="Antworten verbergen">
       <mat-icon svgIcon="hide_answers"></mat-icon>
     </button>

@@ -6,7 +6,7 @@
     @if (showQuestion) { {{getQuestionText()}} }
     @if (!showQuestion) { ??? }
     @if (isMaster && question.mediaDetails) {
-      <app-media-remote [media]="question.mediaDetails"></app-media-remote>
+      <app-media-remote [question]="question"></app-media-remote>
     }
     <div class="videooptions">
       @if (question.mediaDetails && !isMaster) {

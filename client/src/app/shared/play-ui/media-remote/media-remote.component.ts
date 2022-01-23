@@ -5,7 +5,7 @@ import {
   EQuestionAnswerStates,
   FileExtensionsService,
   IMediaDetails,
-  IMediaQuestionState
+  IMediaQuestionState, IQuestion, PacketHelper
 } from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 
@@ -16,17 +16,17 @@ import {Subscription} from 'rxjs';
     standalone: false
 })
 export class MediaRemoteComponent implements OnInit, OnDestroy {
-  @Input() media: IMediaDetails;
-  public state: IMediaQuestionState = {
-    mediaState: EMediaStates.NO_MEDIA,
-    questionState: EQuestionAnswerStates.SHOWN,
-    answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
-  };
+  @Input() question: IQuestion;
+  public state: IMediaQuestionState;
   private mediaUpdateSubscription: Subscription;
 
   constructor(private game: GameService) { }
 
   ngOnInit(): void {
+    this.state = PacketHelper.getDefaultMediaState();
+    if (this.question.initialConfig) {
+      this.state = this.question.initialConfig;
+    }
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.state = packet.mediaQuestionState;
@@ -90,11 +90,11 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
   }
 
   public isVideo(): boolean {
-    return FileExtensionsService.isVideo(this.media.fileSrc);
+    return FileExtensionsService.isVideo(this.question.mediaDetails.fileSrc);
   }
 
   public isImage(): boolean {
-    return FileExtensionsService.isImage(this.media.fileSrc);
+    return FileExtensionsService.isImage(this.question.mediaDetails.fileSrc);
   }
 
 

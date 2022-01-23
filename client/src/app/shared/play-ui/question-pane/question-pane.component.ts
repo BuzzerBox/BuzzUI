@@ -37,7 +37,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private correctAnswersThatAreLeft: number;
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
-  public showAnswers: boolean;
+  public showAnswers = true;
   public showQuestion = true;
 
   constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
@@ -47,9 +47,10 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.isMaster) {
       this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
     }
-    this.showAnswers = this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean;
-    this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
-
+    if (this.question.initialConfig) {
+      this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
+      this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
+    }
     this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;

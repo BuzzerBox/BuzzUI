@@ -58,6 +58,14 @@ export class PacketHelper {
             })
     }
 
+    public static getDefaultMediaState(): IMediaQuestionState {
+        return {
+            mediaState: EMediaStates.NO_MEDIA,
+            questionState: EQuestionAnswerStates.SHOWN,
+            answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+        };
+    }
+
     public static makeMediaStatePacketFromQuestionState(mediaQuestionState: IMediaQuestionState): IUpdateMediaStatePacket {
         return <IUpdateMediaStatePacket>{
             mediaQuestionState,

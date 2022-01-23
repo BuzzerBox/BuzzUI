@@ -295,7 +295,12 @@ export class GameService {
         this.onSetBuzzerLockPacket(null, lockPacket);
         this.ignoredKeypresses = [];
         this.sendToAllScreens(packet);
-        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(EMediaStates.PAUSED, EQuestionAnswerStates.SHOWN, EQuestionAnswerStates.HIDDEN);
+        let questionConfig = PacketHelper.getDefaultMediaState();
+        if (this.getCurrentQuestion().initialConfig) {
+            questionConfig = this.getCurrentQuestion().initialConfig;
+        }
+        this.currentGameState.mediaQuestionState = questionConfig;
+        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(questionConfig.mediaState, questionConfig.questionState, questionConfig.answerState);
         this.onUpdateMediaStatePacket(mediaPacket);
     }
 
