@@ -29,5 +29,3 @@ then
 else
   npm run "build+run:server"
 fi
-
-echo "${choice}"
