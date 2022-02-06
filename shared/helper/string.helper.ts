@@ -30,7 +30,7 @@ export class StringHelper {
     }
 
     public static isEmpty = function (s: string): boolean {
-        return StringHelper.equals(s.trim(), "");
+        return StringHelper.equals(s.toString().trim(), "");
     }
 
     public static append = function (s: string, appendix: string): string {
@@ -62,5 +62,22 @@ export class StringHelper {
             tmp = tmp.slice(0, tmp.length - atEnd);
         }
         return tmp;
+    }
+
+    public static isBlank(s: string): boolean {
+        s = s.toString();
+        return s == null || this.isEmpty(s);
+    }
+
+    public static isNotBlank(s: string): boolean {
+        return !this.isBlank(s);
+    }
+
+    public static isNumber(s: string): boolean {
+        return this.isNotBlank(s) && !isNaN(Number(s));
+    }
+
+    public static isString(s: any, avoidNumber: boolean = false): boolean {
+        return (!avoidNumber || !this.isNumber(s)) && typeof s == 'string';
     }
 }

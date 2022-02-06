@@ -24,6 +24,7 @@ import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
 import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
 import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
 import {IDirectoryTree} from './interfaces/IDirectoryTree';
+export * from './interfaces/IWebsocket';
 
 export {
 	IDirectoryTree,

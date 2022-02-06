@@ -1,0 +1,27 @@
+{
+  "name": "websocket-test-app",
+  "version": "0.0.1",
+  "description": "test app for testing websocket packages and actions",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:client": "tsc-watch -p tsconfig.main.json --onSuccess \"node main.js\"",
+    "build+run:client": "tsc -p tsconfig.main.json && node main.js",
+    "run client": "node main.js",
+    "dev:server": "tsc-watch -p tsconfig.standalone-ws-server.json --onSuccess \"node standalone-websocket-server.js\"",
+    "build+run:server": "tsc -p tsconfig.standalone-ws-server.json && node standalone-websocket-server.js",
+    "run server": "node standalone-websocket-server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/inquirer": "^8.2.0",
+    "colors": "^1.4.0",
+    "inquirer": "^8.2.0",
+    "ws": "^8.4.2"
+  },
+  "devDependencies": {
+    "@types/colors": "^1.2.1",
+    "@types/ws": "^8.2.2",
+    "tsc-watch": "^4.6.0"
+  }
+}

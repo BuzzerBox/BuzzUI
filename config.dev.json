@@ -4,6 +4,6 @@
   },
   "enableBrowserKeypressEvents": true,
   "serial": {
-    "address": "/tmp/ttyV0"
+    "address": "COM6"
   }
 }

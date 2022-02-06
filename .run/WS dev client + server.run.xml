@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="WS dev client + server" type="CompoundRunConfigurationType">
+    <toRun name="WS client dev:run" type="js.build_tools.npm" />
+    <toRun name="WS server dev:run" type="js.build_tools.npm" />
+    <method v="2" />
+  </configuration>
+</component>
