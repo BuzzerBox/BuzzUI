@@ -1,25 +1,7 @@
 import {StringHelper} from './string.helper';
-import inquirer, {Answers} from 'inquirer';
+import {Answers} from 'inquirer';
 import Separator = require('inquirer/lib/objects/separator');
-
-// TODO this should be passed or something
-enum EPossibleGamePackets {
-    "IGamePacket",
-    "IRegisterScreenPacket",
-    "IKeypressOnScreenPacket",
-    "ISetBuzzerLockPacket",
-    "IResponsePacket",
-    "IRegisterMasterPacket",
-    "IAnswerSetStatePacket",
-    "IMarkTeamPacket (mark or unmark a team)",
-    "IMarkTeamPacket (unmark all teams)",
-    "ISetQuestionPacket",
-    "IStartGamePacket",
-    "IResetServerPacket",
-    "IEndGamePacket",
-    "ITeamSetPointsPacket",
-    "IUpdateMediaStatePacket"
-}
+import * as inquirer from 'inquirer';
 
 enum EQuestionTypes {
     NUMBER,

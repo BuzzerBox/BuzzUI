@@ -1,2 +1,3 @@
 .idea
 /install/.assets/compilations/
+**/node_modules/**
