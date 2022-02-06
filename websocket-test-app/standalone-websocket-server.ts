@@ -28,7 +28,13 @@ class StandaloneWebsocketServer {
     }
 
     private async createWebsocketServer(): Promise<void> {
-        ServerConsoleHelper.prompt(ServerConsoleHelper.QuestionsMaker.number(
+        ServerConsoleHelper.prompt(
+          ServerConsoleHelper.QuestionsMaker.input(
+            "hostname",
+            "which hostname shall be bound to?",
+            "127.0.0.1"
+            ),
+          ServerConsoleHelper.QuestionsMaker.number(
           'port',
           "What port shall the websocket server listen on? (>= 0 and < 65536)",
           6666,
@@ -42,10 +48,11 @@ class StandaloneWebsocketServer {
             'broadcastIncomingMessages',
             'Do you want incoming messages to be broadcasted to all clients (except the one that sent it)?',
             false
-          )).then(answer => {
+          )
+        ).then(answer => {
               this.broadcastIncomingMessages = answer.broadcastIncomingMessages as boolean;
             if (this.webSocketServer == null) {
-                this.webSocketServer = new BasicWebsocketServer(answer.port);
+                this.webSocketServer = new BasicWebsocketServer(answer.hostname, answer.port);
                 this.webSocketServer.onNewConnectionCb(this.onNewConnection.bind(this));
             }
         })

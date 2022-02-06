@@ -14,8 +14,8 @@ export class BasicWebsocketServer {
     private onConnectionCloseSubject: Subject<IOnConnectionCloseValues> = null;
     private onConnectionCloseSubscriptions: Subscription[] = [];
 
-    constructor(port: number) {
-        this._webSocketServer = new WebSocketServer({port});
+    constructor(host: string, port: number) {
+        this._webSocketServer = new WebSocketServer({port, host});
 
         this.onNewConnectionCb(socket => this.webSocketConnections.add(socket));
 
