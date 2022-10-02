@@ -1,5 +1,5 @@
 import {Injectable, OnDestroy} from '@angular/core';
-import {WebSocketService} from './web-socket.service';
+import {WebSocketService} from '../web-socket.service';
 import {
   CURRENT_SAVEGAME_VERSION,
   EAnswerStates,
@@ -9,9 +9,7 @@ import {
   IAnswerSetStatePacket,
   IDataForScreenPacket,
   IEndGamePacket,
-  IGamePacket,
   IGameState,
-  IKeypressOnScreenPacket,
   IMarkTeamPacket,
   INewMasterAccepted,
   IPresetupAvailableInfoPacket,
@@ -28,17 +26,18 @@ import {
   ITeamSetPointsPacket,
   IUpdateMediaStatePacket,
   PacketHelper
-} from '../../../../shared/shared';
+} from '../../../../../shared/shared';
 import {Observable, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
-import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
-import {Logger} from '../helper/logger';
-import {pathsMaster} from '../master/paths-master';
+import {EGameStatesMaster} from '../../master/enums/EGameStatesMaster';
+import {Logger} from '../../helper/logger';
+import {pathsMaster} from '../../master/paths-master';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
-import {TeamHelper} from '../helper/team.helper';
+import {TeamHelper} from '../../helper/team.helper';
 import * as Uuid from 'uuid';
-import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
-import {ConfigService} from './config.service';
+import {baseUrlScreen, pathsScreen} from '../../screen/paths-screen';
+import {ConfigService} from '../config.service';
+import {ClientGameBase} from './client-game-base';
 
 export interface IGameStateAsJson {
   /**
@@ -55,7 +54,7 @@ export type ZeroVoidCallback = () => void;
 @Injectable({
   providedIn: 'root'
 })
-export class GameService implements OnDestroy {
+export class ClientGameMasterAndScreenService extends ClientGameBase implements OnDestroy {
   // private webSocketService: WebSocketService;
   private webSocketListenSubscription: Promise<Subscription>;
   // private webSocketListenSubscription: Subscription;
@@ -78,11 +77,12 @@ export class GameService implements OnDestroy {
   private updateMediaStateSubject: Subject<IUpdateMediaStatePacket>;
 
   constructor(
-    private webSocketService: WebSocketService,
+    protected webSocketService: WebSocketService,
     private router: Router,
     private sanitizer: DomSanitizer,
     private config: ConfigService
   ) {
+    super(webSocketService);
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
     this.markTeamSubject = new Subject<IMarkTeamPacket>();
     this.teams = [];
@@ -117,61 +117,13 @@ export class GameService implements OnDestroy {
     this.webSocketService.send<IRegisterMasterPacket>({packetType: EPacketTypes.REGISTER_MASTER});
   }
 
-  private onMessage(message: IGamePacket): void {
-    Logger.log('Got new websocket message', message);
-    if (message == null) {
-      // ignore
-      return;
-    }
-    switch (message.packetType) {
-      case EPacketTypes.RESPONSE_PACKET:
-        this.handleResponsePackets(message as IResponsePacket);
-        break;
-      case EPacketTypes.PRESETUP_AVAILABLE_INFO:
-        this.handlePresetupAvailableInfo(message as IPresetupAvailableInfoPacket);
-        break;
-      case EPacketTypes.NEW_MASTER_ACCEPTED:
-        this.handleNewMasterAcceptedPacket(message as INewMasterAccepted);
-        break;
-      case EPacketTypes.DATA_FOR_SCREEN:
-        this.handleDataForScreenPacket(message as IDataForScreenPacket);
-        break;
-      case EPacketTypes.TEAM_SET_POINTS:
-        this.handleTeamSetPointsPacket(message as ITeamSetPointsPacket);
-        break;
-      case EPacketTypes.ANSWER_SET_STATE:
-        this.handleAnswerSetStatePacket(message as IAnswerSetStatePacket);
-        break;
-      case EPacketTypes.SET_QUESTION:
-        this.handleSetQuestionPacket(message as ISetQuestionPacket);
-        break;
-      case EPacketTypes.END_GAME:
-        this.handleEndGamePacket(message as IEndGamePacket);
-        break;
-      case EPacketTypes.MARK_TEAM:
-        this.handleMarkTeamPacket(message as IMarkTeamPacket);
-        break;
-      case EPacketTypes.SET_BUZZER_LOCK:
-        this.handleSetBuzzerLockPacket(message as ISetBuzzerLockPacket);
-        break;
-      case EPacketTypes.RESET_SERVER:
-        this.handleResetServerPacket(message as IResetServerPacket);
-        break;
-      case EPacketTypes.UPDATE_MEDIA_STATE:
-        this.handleMediaStateUpdate(message as IUpdateMediaStatePacket);
-        break;
-      default:
-        break;
-    }
-  }
-
   async ngOnDestroy(): Promise<void> {
     if (this.webSocketListenSubscription != null && (await this.webSocketListenSubscription) != null) {
      (await this.webSocketListenSubscription).unsubscribe();
     }
   }
 
-  private handlePresetupAvailableInfo(packet: IPresetupAvailableInfoPacket): void {
+  protected handlePresetupAvailableInfo(packet: IPresetupAvailableInfoPacket): void {
     // only accept this packet when the master was just accepted, hence no game is really started yet
     if (this.currentGameStateInAutomaton === EGameStatesMaster.MASTER_ACCEPTED) {
       this.setNewGameState(EGameStatesMaster.RECEIVED_PRESETUP_DATA);
@@ -186,7 +138,7 @@ export class GameService implements OnDestroy {
     this.currentGameStateInAutomaton = newState;
   }
 
-  private handleResponsePackets(packet: IResponsePacket): void {
+  protected handleResponsePackets(packet: IResponsePacket): void {
     if (packet.responseTo === EPacketTypes.REGISTER_MASTER && this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
       this.handleMasterRegistrationResponse(packet);
     } else if (packet.responseTo === EPacketTypes.SETUP_GAME && this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
@@ -219,10 +171,6 @@ export class GameService implements OnDestroy {
 
   public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true): Promise<void> {
     const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
-    // console.log("current 2", currentGameState);
-    // if (currentGameState == null) {
-    //   throw new Error("grrrr");
-    // }
     if (sendPacket) {
       this.webSocketService.send<ISetupPacket>({
         packetType: EPacketTypes.SETUP_GAME,
@@ -246,7 +194,7 @@ export class GameService implements OnDestroy {
     }
   }
 
-  private handleNewMasterAcceptedPacket(packet: INewMasterAccepted): void {
+  protected handleNewMasterAcceptedPacket(packet: INewMasterAccepted): void {
     if (this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
       this.joinedRunningGame = true;
       this.setGameData(packet.teams, packet.questions, packet.currentGameState);
@@ -441,7 +389,7 @@ export class GameService implements OnDestroy {
     });
   }
 
-  private handleDataForScreenPacket(packet: IDataForScreenPacket): void {
+  protected handleDataForScreenPacket(packet: IDataForScreenPacket): void {
     if (this.isUsedAsScreen()) {
       this.setGameData(packet.teams, packet.questions, packet.gameState);
       this.isScreenDataAvailable = true;
@@ -460,7 +408,7 @@ export class GameService implements OnDestroy {
     return this.initedAsScreen && !this.initedAsMaster;
   }
 
-  private handleTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {
+  protected handleTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {
     if (this.isUsedAsScreen()) {
       const team: ITeam = this.findTeam(packet.teamId);
       if (team != null) {
@@ -477,13 +425,13 @@ export class GameService implements OnDestroy {
     }
   }
 
-  private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
+  protected handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
     if (this.isUsedAsScreen()) {
       this.answerSetStatePacketSubject.next(packet);
     }
   }
 
-  private handleSetQuestionPacket(packet: ISetQuestionPacket): void {
+  protected handleSetQuestionPacket(packet: ISetQuestionPacket): void {
     if (this.isUsedAsScreen()) {
       this.currentGameState.currentQuestionNumber = packet.set;
       if (this.cbUpdateCurrentQuestion != null) {
@@ -500,7 +448,7 @@ export class GameService implements OnDestroy {
     this.cbUpdateCurrentQuestion = cb;
   }
 
-  private handleEndGamePacket(packet: IEndGamePacket): void {
+  protected handleEndGamePacket(packet: IEndGamePacket): void {
     if (this.isUsedAsScreen() && this.cbEndGame != null) {
       this.cbEndGame();
     }
@@ -510,9 +458,9 @@ export class GameService implements OnDestroy {
     this.cbEndGame = cb;
   }
 
-  public sendKeypress(keyCode: string): void {
-    this.webSocketService.send<IKeypressOnScreenPacket>(PacketHelper.makeKeypressOnScreenPacket(keyCode));
-  }
+  // public sendKeypress(keyCode: string): void {
+  //   this.webSocketService.send<IKeypressOnScreenPacket>(PacketHelper.makeKeypressOnScreenPacket(keyCode));
+  // }
 
   private mergeBuzzerIdsFromPresetupDataWithSetTeams(teams: ITeam[]): ITeam[] {
     if (this.presetupData != null) {
@@ -526,7 +474,7 @@ export class GameService implements OnDestroy {
     return teams;
   }
 
-  private handleMarkTeamPacket(packet: IMarkTeamPacket): void {
+  protected handleMarkTeamPacket(packet: IMarkTeamPacket): void {
     this.markTeamSubject.next(packet);
   }
 
@@ -554,7 +502,7 @@ export class GameService implements OnDestroy {
     return this.setBuzzerLockSubject.asObservable();
   }
 
-  private handleSetBuzzerLockPacket(packet: ISetBuzzerLockPacket): void {
+  protected handleSetBuzzerLockPacket(packet: ISetBuzzerLockPacket): void {
     if (this.setBuzzerLockSubject != null) {
       this.setBuzzerLockSubject.next(packet);
     }
@@ -586,7 +534,7 @@ export class GameService implements OnDestroy {
     return teams;
   }
 
-  private handleResetServerPacket(packet: IResetServerPacket): void {
+  protected handleResetServerPacket(packet: IResetServerPacket): void {
     window.location.reload();
   }
 
@@ -610,7 +558,7 @@ export class GameService implements OnDestroy {
     this.webSocketService.send<IUpdateMediaStatePacket>(mediaPacket);
   }
 
-  private handleMediaStateUpdate(packet: IUpdateMediaStatePacket): void {
+  protected handleMediaStateUpdate(packet: IUpdateMediaStatePacket): void {
     if (this.updateMediaStateSubject != null) {
       this.updateMediaStateSubject.next(packet);
     }

@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {GameService} from '../../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
 import {ITeam} from '../../../../../../shared/shared';
 
 @Component({
@@ -10,7 +10,7 @@ import {ITeam} from '../../../../../../shared/shared';
 export class ScoreBoardComponent implements OnInit {
   @Input() isMaster = false;
 
-  constructor(private game: GameService) { }
+  constructor(private game: ClientGameMasterAndScreenService) { }
 
   ngOnInit(): void {
   }

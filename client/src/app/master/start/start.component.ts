@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {GameService} from '../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../services/game-client/client-game-master-and-screen.service';
 import {Title} from '@angular/platform-browser';
 import {ConfigService} from '../../services/config.service';
 
@@ -10,7 +10,7 @@ import {ConfigService} from '../../services/config.service';
 })
 export class StartComponent implements OnInit {
 
-  constructor(private gs: GameService, private titleService: Title) {
+  constructor(private gs: ClientGameMasterAndScreenService, private titleService: Title) {
     titleService.setTitle(ConfigService.get().gameName + ' ' + ConfigService.get().masterName);
     gs.useAsMaster();
   }

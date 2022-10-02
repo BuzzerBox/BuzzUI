@@ -1,5 +1,5 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {GameService} from '../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../services/game-client/client-game-master-and-screen.service';
 import {
   ITeam,
   IQuestion,
@@ -22,7 +22,7 @@ export class PlayUiComponent implements OnInit, OnDestroy {
   public isGameOver = false;
   private setQuestionPacketSubscription: Subscription;
 
-  constructor(private game: GameService, private dialog: MatDialog) { }
+  constructor(private game: ClientGameMasterAndScreenService, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     this.currentQuestion = this.game.getCurrentQuestion();

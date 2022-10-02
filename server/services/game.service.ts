@@ -169,10 +169,10 @@ export class GameService {
                     id,
                     keyBind: buzzConf.key,
                     byteBind: buzzConf.byte.toString(10)
-                    // TODO remove EKeyBind
                 }
                 this.buzzerConfig.push(c);
                 this.keyOrByteCodesInUse.push(c.byteBind);
+                this.keyOrByteCodesInUse.push(c.keyBind);
             }
         }
         return this.buzzerConfig;
