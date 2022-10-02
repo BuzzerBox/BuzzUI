@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {GameService} from '../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../services/game-client/client-game-master-and-screen.service';
 import {SafeUrl} from '@angular/platform-browser';
 
 @Component({
@@ -11,7 +11,7 @@ export class ToolbarMasterComponent implements OnInit {
   @Input() showSaveIcon = false;
   @Input() showReleaseBuzzerLockIcon = false;
 
-  constructor(private game: GameService) { }
+  constructor(private game: ClientGameMasterAndScreenService) { }
 
   ngOnInit(): void {
   }

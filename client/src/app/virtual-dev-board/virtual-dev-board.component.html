@@ -1,18 +1,14 @@
 <div id="container" class="center-center" *ngIf="isConnected$ | async; else waitForConnectionLoader">
   <div id="buzzer-buttons-container">
-    <div id="buzzer-button-1" class="buzzer-button">1</div>
-    <div id="buzzer-button-2" class="buzzer-button">2</div>
-    <div id="buzzer-button-3" class="buzzer-button">3</div>
-    <div id="buzzer-button-4" class="buzzer-button">4</div>
-    <div id="buzzer-button-5" class="buzzer-button">5</div>
-    <div id="buzzer-button-6" class="buzzer-button">6</div>
-    <div id="buzzer-button-7" class="buzzer-button">7</div>
-    <div id="buzzer-button-8" class="buzzer-button">8</div>
-    <div id="buzzer-button-9" class="buzzer-button">9</div>
-    <div id="buzzer-button-10" class="buzzer-button">10</div>
+    <div
+      *ngFor="let item of [].constructor(NUMBER_OF_BUZZERS); let i = index;"
+      class="buzzer-button" (mousedown)="sendBuzzerPress(i)"
+    >
+      {{ i+1 }}
+    </div>
   </div>
   <div id="release-lock-button-container">
-    <mat-button-toggle id="release-lock-button">Release Lock</mat-button-toggle>
+    <mat-button-toggle id="release-lock-button" (mousedown)="sendReleaseLockButtonPress()">Release Lock</mat-button-toggle>
   </div>
 </div>
 

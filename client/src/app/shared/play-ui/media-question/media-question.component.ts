@@ -3,7 +3,7 @@ import {VgApiService} from '@videogular/ngx-videogular/core';
 import {EVideoStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
-import {GameService} from '../../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
 
 @Component({
   selector: 'app-media-question',
@@ -18,7 +18,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   public mediaVisible = false;
 
 
-  constructor(private game: GameService) {
+  constructor(private game: ClientGameMasterAndScreenService) {
   }
 
   ngOnInit(): void {

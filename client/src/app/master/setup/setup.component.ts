@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
 import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
-import {GameService, IGameStateAsJson} from '../../services/game.service';
+import {ClientGameMasterAndScreenService, IGameStateAsJson} from '../../services/game-client/client-game-master-and-screen.service';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
@@ -34,7 +34,7 @@ export class SetupComponent implements OnInit {
   step = 0;
 
 
-  constructor(private game: GameService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
+  constructor(private game: ClientGameMasterAndScreenService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
     game.useAsMaster();
   }
 

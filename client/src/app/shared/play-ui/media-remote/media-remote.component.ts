@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {GameService} from '../../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
 import {EVideoStates, FileExtensionsService, IMediaDetails} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 
@@ -14,7 +14,7 @@ export class MediaRemoteComponent implements OnInit {
   EVideoStates: EVideoStates;
   private mediaUpdateSubscription: Subscription;
 
-  constructor(private game: GameService) { }
+  constructor(private game: ClientGameMasterAndScreenService) { }
 
   ngOnInit(): void {
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
