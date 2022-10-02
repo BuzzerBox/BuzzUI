@@ -23,6 +23,7 @@ import {VgOverlayPlayModule} from '@videogular/ngx-videogular/overlay-play';
 import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
 import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.component';
 import {MatIconModule} from '@angular/material/icon';
+import { LoadingSpinnerComponent } from './loading-spinner/loading-spinner.component';
 
 @NgModule({
   declarations: [
@@ -34,24 +35,26 @@ import {MatIconModule} from '@angular/material/icon';
     ScoreBoardComponent,
     BuzzerLockComponent,
     MediaQuestionComponent,
-    MediaRemoteComponent
+    MediaRemoteComponent,
+    LoadingSpinnerComponent
   ],
-  imports: [
-    CommonModule,
-    FlexModule,
-    MatButtonModule,
-    MatCardModule,
-    MatGridListModule,
-    MatDialogModule,
-    MatBottomSheetModule,
-    MatListModule,
-    MatSnackBarModule,
-    VgCoreModule,
-    VgControlsModule,
-    VgOverlayPlayModule,
-    VgBufferingModule,
-    MatIconModule
-  ],
+    imports: [
+        CommonModule,
+        FlexModule,
+        MatButtonModule,
+        MatCardModule,
+        MatGridListModule,
+        MatDialogModule,
+        MatBottomSheetModule,
+        MatListModule,
+        MatSnackBarModule,
+        VgCoreModule,
+        VgControlsModule,
+        VgOverlayPlayModule,
+        VgBufferingModule,
+        MatIconModule,
+        MatProgressSpinnerModule
+    ],
   exports: [
     PlayUiComponent,
     TeamCardComponent,
@@ -59,7 +62,8 @@ import {MatIconModule} from '@angular/material/icon';
     AnswerOptionsComponent,
     DialogConfirmEndingGameComponent,
     MediaQuestionComponent,
-    MediaRemoteComponent
+    MediaRemoteComponent,
+    LoadingSpinnerComponent
   ],
   entryComponents: [
     DialogConfirmEndingGameComponent
