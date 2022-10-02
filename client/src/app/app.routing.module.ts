@@ -1,7 +1,5 @@
-import {ModuleWithProviders, NgModule} from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
-import {StartComponent} from './master/start/start.component';
 import {ChooseComponent} from './choose/choose.component';
 
 
@@ -15,7 +13,8 @@ export const routes: Routes = [
     loadChildren: () => import('./screen/screen.module').then(m => m.ScreenModule)
   },
   { path: 'choose', component: ChooseComponent },
-  { path: '', redirectTo: 'choose', pathMatch: 'full' }
+  { path: '', redirectTo: 'choose', pathMatch: 'full' },
+  { path: 'dev-board', loadChildren: () => import('./virtual-dev-board/virtual-dev-board.module').then(m => m.VirtualDevBoardModule) }
 ];
 
 
