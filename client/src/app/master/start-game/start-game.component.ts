@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {GameService} from '../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../services/game-client/client-game-master-and-screen.service';
 
 @Component({
   selector: 'app-start-game',
@@ -8,7 +8,7 @@ import {GameService} from '../../services/game.service';
 })
 export class StartGameComponent implements OnInit {
 
-  constructor(private game: GameService) {
+  constructor(private game: ClientGameMasterAndScreenService) {
     game.useAsMaster();
   }
 

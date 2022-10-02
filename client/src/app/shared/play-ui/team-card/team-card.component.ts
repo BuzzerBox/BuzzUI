@@ -1,6 +1,6 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {ITeam, IMarkTeamPacket} from '../../../../../../shared/shared';
-import {GameService} from '../../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {Subscription} from 'rxjs';
 
@@ -16,7 +16,7 @@ export class TeamCardComponent implements OnInit, OnDestroy {
   private markTeamPacketsSubscription: Subscription;
   public isMarked = false;
 
-  constructor(private game: GameService) { }
+  constructor(private game: ClientGameMasterAndScreenService) { }
 
   ngOnInit(): void {
     this.markTeamPacketsSubscription = this.game.observeMarkTeamPackets().subscribe(this.onMarkTeamPacket.bind(this));

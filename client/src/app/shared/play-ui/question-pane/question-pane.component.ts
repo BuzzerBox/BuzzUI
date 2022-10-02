@@ -1,5 +1,5 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
-import {GameService} from '../../../services/game.service';
+import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
 import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates, EVideoStates} from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
@@ -31,7 +31,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private answerSetStatePacketSubscription: Subscription;
   public showAnswers: boolean;
 
-  constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
+  constructor(private game: ClientGameMasterAndScreenService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
     // Not needed here since ngOnChange is fired even upon the first instantiation
