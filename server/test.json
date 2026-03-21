@@ -1,0 +1,3523 @@
+{
+  "data": {
+    "count": 6,
+    "pages": 1,
+    "items": [
+      {
+        "id": 16189,
+        "user": null,
+        "assignedBy": null,
+        "submission": {
+          "id": 4094,
+          "title": "Reducio: Data Aggregation and Stability Detection for Industry Using In-Network Computing",
+          "abstract": "Industrial networks are challenged by voluminous raw data streams of modern manufacturing environments.\nAnalyzing these streams can facilitate fault detection or process optimization but requires powerful processing hardware.\nIf latency requirements are strict or bandwidth is limited, the full raw data cannot always be sent to the cloud or even a locally centralized location.\nIn this paper, we show that in-network computing can effectively address this dilemma by dynamically adapting where and in which resolution data is forwarded.\nWe present Reducio, which monitors clocked manufacturing processes and leverages their semantics to aggregate raw data streams via characteristic values across multiple sensors and independent machines on a shop floor.\nBased on these values, Reducio detects anomalies, assesses process stability to switch between data resolutions, and identifies machine or sensor malfunctions.\nWe demonstrate Reducio’s potential with a Tofino-based prototype which we evaluate against the fineblanking process.\nWe show that Reducio can reliably and quickly detect instabilities while reducing data volumes by up to 90% without losing important information.",
+          "topics": [
+            {
+              "id": 3354,
+              "name": "Fog and Edge Networks",
+              "order": 6,
+              "createdAt": "2024-05-06T03:36:21.965344Z",
+              "updatedAt": "2024-05-06T03:36:52.814450Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3358,
+              "name": "Industrial Networks",
+              "order": 10,
+              "createdAt": "2024-05-06T03:36:22.072932Z",
+              "updatedAt": "2024-05-06T03:36:52.926091Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3412,
+              "name": "Control and Data Plane Programmability",
+              "order": 11,
+              "createdAt": "2024-05-06T03:36:23.439404Z",
+              "updatedAt": "2024-05-06T03:36:54.323468Z",
+              "active": true,
+              "event": 139,
+              "parent": 3400,
+              "children": []
+            },
+            {
+              "id": 3423,
+              "name": "Data Mining and (Big) Data Analysis",
+              "order": 8,
+              "createdAt": "2024-05-06T03:36:23.702421Z",
+              "updatedAt": "2024-05-06T03:36:54.621705Z",
+              "active": true,
+              "event": 139,
+              "parent": 3414,
+              "children": []
+            }
+          ],
+          "track": {
+            "id": 198,
+            "trackFiles": [
+              {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            ],
+            "name": "Full paper (8 pages excluding references)",
+            "openAt": "2024-06-04T10:00:10Z",
+            "closeAt": "2024-10-26T09:59:48Z",
+            "createdAt": "2024-05-06T06:36:53.414318Z",
+            "updatedAt": "2024-10-23T21:30:09.626786Z",
+            "editPendingSubmissions": false,
+            "editActiveSubmissions": false,
+            "editRejectedSubmissions": false,
+            "editAcceptedSubmissions": false,
+            "withdrawPendingSubmissions": true,
+            "withdrawActiveSubmissions": true,
+            "withdrawRejectedSubmissions": false,
+            "withdrawAcceptedSubmissions": true,
+            "withdrawUnderReviewSubmissions": false,
+            "event": 139
+          },
+          "authors": [
+            {
+              "order": 0,
+              "user": {
+                "id": 254388,
+                "firstName": "Liam",
+                "lastName": "Tirpitz",
+                "email": "tirpitz@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 1,
+              "user": {
+                "id": 248716,
+                "firstName": "Ike",
+                "lastName": "Kunze",
+                "email": "kunze@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 2,
+              "user": {
+                "id": 254408,
+                "firstName": "Philipp",
+                "lastName": "Niemietz",
+                "email": "p.niemietz@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 3,
+              "user": {
+                "id": 254409,
+                "firstName": "Kathrin",
+                "lastName": "Gerhardus",
+                "email": "k.gerhardus@iaw.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 4,
+              "user": {
+                "id": 248935,
+                "firstName": "Jan",
+                "lastName": "Pennekamp",
+                "email": "pennekamp@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 5,
+              "user": {
+                "id": 254410,
+                "firstName": "Thomas",
+                "lastName": "Bergs",
+                "email": "t.bergs@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 6,
+              "user": {
+                "id": 221144,
+                "firstName": "Klaus",
+                "lastName": "Wehrle",
+                "email": "wehrle@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 7,
+              "user": {
+                "id": 254411,
+                "firstName": "Sandra",
+                "lastName": "Geisler",
+                "email": "geisler@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            }
+          ],
+          "status": "ACTIVE",
+          "files": [
+            {
+              "id": 14523,
+              "active": true,
+              "file": "/core/submission/file/jems/media/content/2024/139/198/4094/4094_NOMS2025_TechSessionFullPaper_9uanq08.pdf",
+              "name": "4094_NOMS2025_TechSessionFullPaper.pdf",
+              "size": 1610098,
+              "contentType": "application/pdf",
+              "pageCount": 9,
+              "isUsingSbcTemplate": false,
+              "createdAt": "2024-09-04T15:36:44.796135Z",
+              "updatedAt": "2024-09-04T15:36:44.809657Z",
+              "submission": 4094,
+              "trackFile": {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            }
+          ],
+          "event": {
+            "id": 139,
+            "name": "38th IEEE/IFIP Network Operations and Management Symposium",
+            "acronym": "NOMS",
+            "year": 2025,
+            "formSubmission": null,
+            "formReview": 131,
+            "eventInfo": {
+              "city": "Honolulu",
+              "state": "HI",
+              "country": "USA",
+              "beginAt": "2025-05-12T03:00:00Z",
+              "endAt": "2025-05-16T03:00:00Z",
+              "makePublicAt": "2024-06-03T03:00:00Z"
+            },
+            "eventParent": null,
+            "uri": "noms2025"
+          },
+          "session": {
+            "title": "",
+            "subtitle": "",
+            "url": "",
+            "room": "",
+            "start": null,
+            "end": null,
+            "backgroundColor": "",
+            "event": null,
+            "chair": null
+          }
+        },
+        "createdAt": "2024-11-11T06:10:48.104384Z",
+        "updatedAt": "2024-12-11T12:23:38.249938Z",
+        "dueAt": "2024-12-09T09:59:40Z",
+        "isReviewerDistributor": false,
+        "anonymity": false,
+        "deletedCounter": 0,
+        "status": "COMPLETED",
+        "assignedAt": "2024-11-11T15:58:54.737661Z",
+        "confirmedAt": "2024-11-11T16:00:27.197702Z",
+        "completedAt": "2024-12-11T12:23:38.505472Z",
+        "form": {
+          "id": 131,
+          "name": "review form",
+          "createdAt": "2024-05-06T06:55:39.441781Z",
+          "updatedAt": "2024-11-11T04:42:09.901164Z",
+          "type": "REVIEW",
+          "fields": [
+            {
+              "id": 1533,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 6,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.053716Z",
+              "updatedAt": "2024-11-11T04:42:10.104776Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major strengths of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 936105,
+                  "value": "1) The paper is well-structured, presenting ideas in a clear and cohesive manner.\n2) The work is innovative in using programmable networking devices (PNDs) for real-time data aggregation and preprocessing, leveraging the fast processing capabilities of switches to efficiently manage data resolution based on process stability.\n3) The evaluations using real-world data demonstrates Reducio’s ability to reduce data volumes while effectively detecting anomalies",
+                  "createdAt": "2024-12-11T12:23:38.485733Z",
+                  "updatedAt": "2024-12-11T12:23:38.485757Z",
+                  "review": 16189,
+                  "submission": null,
+                  "formField": 1533,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1534,
+              "description": "-",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 7,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.071981Z",
+              "updatedAt": "2024-11-11T04:42:10.111619Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major shortcomings of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 936106,
+                  "value": "1) The paper mentions scalability to medium-sized shop floors, there is limited testing in larger, more complex environments. \n2) The system appears to require considerable manual tuning for configuring parameters like cycle detection and stability assessment, which could complicate its deployment, particularly in a more heterogeneous industrial setting.",
+                  "createdAt": "2024-12-11T12:23:38.490055Z",
+                  "updatedAt": "2024-12-11T12:23:38.490079Z",
+                  "review": 16189,
+                  "submission": null,
+                  "formField": 1534,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1535,
+              "description": "Please, make sure to provide a solid and constructive review for the authors to improve their paper. Include detailed comments and inform any missing related work, especially in regard to previous IM/NOMS editions.",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 8,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.090056Z",
+              "updatedAt": "2024-11-11T04:42:10.118797Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Detailed comments for the authors",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 936107,
+                  "value": "Areas for Improvement:\n1) Lack of Benchmarking: The paper would benefit from a comparison with other existing solutions (especially a comparison for detection rate) in industrial data aggregation and anomaly detection. This would highlight the advantages and disadvantages of Reducio more clearly.\n2) Handling Sensor Failures: The paper assumes sensor failure is binary (offline/online). It could be improved by addressing how the system handles sensors providing incorrect or faulty data, such as wrong values or partial failures.\n3) Details on the Data-Plane Algorithm: The paper provides limited insight into the algorithm used within the Tofino switch for these operations. It would be helpful to include more details on the data-plane implementation, such as the positioning of components (ingress/egress), the fields that are parsed and utilized, and how data is stored (eg in bitfields). Additionally, clarification on whether any real values are stored, particularly in relation to the computation of the mean, would enhance understanding of the approach.\n4) P4 Code Availability: It would be valuable to clarify whether the P4 code for Reducio will be released or at least a BMv2 version?\nComments/Avenues of exploration:\n1) In-network Real Value Computation: Consider exploring in-network computation for average values, possibly using lookup tables or leveraging the division operator in Tofino’s register unit to reduce back-and-forth communication with the controller.\n2) Potential Over-Simplification of Stability Assessment: The binary classification of process stability might be insufficient for more complex processes. For example, in a food production line, a binary classification might label the process as \"stable\" or \"unstable.\" A more detailed system could categorize it as \"slightly,\" \"moderately,\" or \"severely unstable,\" allowing operators to adjust speeds or stop the line based on the issue's severity.\n3) Tofino typically comes with 2 or 4 pipelines, each hardwired to a set of ports. Have you considered associating a subset of sensors with a specific set of ports and a pipeline? This way, you wouldn’t need to maintain redundant copies across all pipelines, which could help scale the system more effectively.",
+                  "createdAt": "2024-12-11T12:23:38.494440Z",
+                  "updatedAt": "2024-12-11T12:23:38.494464Z",
+                  "review": 16189,
+                  "submission": null,
+                  "formField": 1535,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1536,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 9,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.107587Z",
+              "updatedAt": "2024-11-11T04:42:10.125574Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Comments for the TPC (answer will not be sent to the authors)",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 936108,
+                  "value": "no comments",
+                  "createdAt": "2024-12-11T12:23:38.498871Z",
+                  "updatedAt": "2024-12-11T12:23:38.498894Z",
+                  "review": 16189,
+                  "submission": null,
+                  "formField": 1536,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1978,
+              "description": "If this paper was submitted to the Full paper track, and the recommendation is not to accept it, do you consider it suitable for a poster presentation?",
+              "placeholder": null,
+              "type": "RADIO",
+              "order": 10,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-11-11T04:26:27.422228Z",
+              "updatedAt": "2024-11-11T04:42:10.132813Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Full paper to be accepted as short",
+              "choices": [
+                {
+                  "id": 5310,
+                  "description": "N/A (this is a short paper)",
+                  "order": 0,
+                  "value": 1.0,
+                  "createdAt": "2024-11-11T04:26:27.431084Z",
+                  "updatedAt": "2024-11-11T04:42:10.139073Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5311,
+                  "description": "No",
+                  "order": 1,
+                  "value": 2.0,
+                  "createdAt": "2024-11-11T04:26:27.439429Z",
+                  "updatedAt": "2024-11-11T04:42:10.147764Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5312,
+                  "description": "No opinion",
+                  "order": 2,
+                  "value": 3.0,
+                  "createdAt": "2024-11-11T04:26:27.448321Z",
+                  "updatedAt": "2024-11-11T04:42:10.157085Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5313,
+                  "description": "Yes",
+                  "order": 3,
+                  "value": 4.0,
+                  "createdAt": "2024-11-11T04:26:27.455506Z",
+                  "updatedAt": "2024-11-11T04:42:10.164894Z",
+                  "formField": 1978
+                }
+              ],
+              "answers": [
+                {
+                  "id": 936109,
+                  "value": "5313",
+                  "createdAt": "2024-12-11T12:23:38.504040Z",
+                  "updatedAt": "2024-12-11T12:23:38.504064Z",
+                  "review": 16189,
+                  "submission": null,
+                  "formField": 1978,
+                  "fieldChoice": 5313
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 16190,
+        "user": null,
+        "assignedBy": null,
+        "submission": {
+          "id": 4094,
+          "title": "Reducio: Data Aggregation and Stability Detection for Industry Using In-Network Computing",
+          "abstract": "Industrial networks are challenged by voluminous raw data streams of modern manufacturing environments.\nAnalyzing these streams can facilitate fault detection or process optimization but requires powerful processing hardware.\nIf latency requirements are strict or bandwidth is limited, the full raw data cannot always be sent to the cloud or even a locally centralized location.\nIn this paper, we show that in-network computing can effectively address this dilemma by dynamically adapting where and in which resolution data is forwarded.\nWe present Reducio, which monitors clocked manufacturing processes and leverages their semantics to aggregate raw data streams via characteristic values across multiple sensors and independent machines on a shop floor.\nBased on these values, Reducio detects anomalies, assesses process stability to switch between data resolutions, and identifies machine or sensor malfunctions.\nWe demonstrate Reducio’s potential with a Tofino-based prototype which we evaluate against the fineblanking process.\nWe show that Reducio can reliably and quickly detect instabilities while reducing data volumes by up to 90% without losing important information.",
+          "topics": [
+            {
+              "id": 3354,
+              "name": "Fog and Edge Networks",
+              "order": 6,
+              "createdAt": "2024-05-06T03:36:21.965344Z",
+              "updatedAt": "2024-05-06T03:36:52.814450Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3358,
+              "name": "Industrial Networks",
+              "order": 10,
+              "createdAt": "2024-05-06T03:36:22.072932Z",
+              "updatedAt": "2024-05-06T03:36:52.926091Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3412,
+              "name": "Control and Data Plane Programmability",
+              "order": 11,
+              "createdAt": "2024-05-06T03:36:23.439404Z",
+              "updatedAt": "2024-05-06T03:36:54.323468Z",
+              "active": true,
+              "event": 139,
+              "parent": 3400,
+              "children": []
+            },
+            {
+              "id": 3423,
+              "name": "Data Mining and (Big) Data Analysis",
+              "order": 8,
+              "createdAt": "2024-05-06T03:36:23.702421Z",
+              "updatedAt": "2024-05-06T03:36:54.621705Z",
+              "active": true,
+              "event": 139,
+              "parent": 3414,
+              "children": []
+            }
+          ],
+          "track": {
+            "id": 198,
+            "trackFiles": [
+              {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            ],
+            "name": "Full paper (8 pages excluding references)",
+            "openAt": "2024-06-04T10:00:10Z",
+            "closeAt": "2024-10-26T09:59:48Z",
+            "createdAt": "2024-05-06T06:36:53.414318Z",
+            "updatedAt": "2024-10-23T21:30:09.626786Z",
+            "editPendingSubmissions": false,
+            "editActiveSubmissions": false,
+            "editRejectedSubmissions": false,
+            "editAcceptedSubmissions": false,
+            "withdrawPendingSubmissions": true,
+            "withdrawActiveSubmissions": true,
+            "withdrawRejectedSubmissions": false,
+            "withdrawAcceptedSubmissions": true,
+            "withdrawUnderReviewSubmissions": false,
+            "event": 139
+          },
+          "authors": [
+            {
+              "order": 0,
+              "user": {
+                "id": 254388,
+                "firstName": "Liam",
+                "lastName": "Tirpitz",
+                "email": "tirpitz@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 1,
+              "user": {
+                "id": 248716,
+                "firstName": "Ike",
+                "lastName": "Kunze",
+                "email": "kunze@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 2,
+              "user": {
+                "id": 254408,
+                "firstName": "Philipp",
+                "lastName": "Niemietz",
+                "email": "p.niemietz@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 3,
+              "user": {
+                "id": 254409,
+                "firstName": "Kathrin",
+                "lastName": "Gerhardus",
+                "email": "k.gerhardus@iaw.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 4,
+              "user": {
+                "id": 248935,
+                "firstName": "Jan",
+                "lastName": "Pennekamp",
+                "email": "pennekamp@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 5,
+              "user": {
+                "id": 254410,
+                "firstName": "Thomas",
+                "lastName": "Bergs",
+                "email": "t.bergs@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 6,
+              "user": {
+                "id": 221144,
+                "firstName": "Klaus",
+                "lastName": "Wehrle",
+                "email": "wehrle@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 7,
+              "user": {
+                "id": 254411,
+                "firstName": "Sandra",
+                "lastName": "Geisler",
+                "email": "geisler@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            }
+          ],
+          "status": "ACTIVE",
+          "files": [
+            {
+              "id": 14523,
+              "active": true,
+              "file": "/core/submission/file/jems/media/content/2024/139/198/4094/4094_NOMS2025_TechSessionFullPaper_9uanq08.pdf",
+              "name": "4094_NOMS2025_TechSessionFullPaper.pdf",
+              "size": 1610098,
+              "contentType": "application/pdf",
+              "pageCount": 9,
+              "isUsingSbcTemplate": false,
+              "createdAt": "2024-09-04T15:36:44.796135Z",
+              "updatedAt": "2024-09-04T15:36:44.809657Z",
+              "submission": 4094,
+              "trackFile": {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            }
+          ],
+          "event": {
+            "id": 139,
+            "name": "38th IEEE/IFIP Network Operations and Management Symposium",
+            "acronym": "NOMS",
+            "year": 2025,
+            "formSubmission": null,
+            "formReview": 131,
+            "eventInfo": {
+              "city": "Honolulu",
+              "state": "HI",
+              "country": "USA",
+              "beginAt": "2025-05-12T03:00:00Z",
+              "endAt": "2025-05-16T03:00:00Z",
+              "makePublicAt": "2024-06-03T03:00:00Z"
+            },
+            "eventParent": null,
+            "uri": "noms2025"
+          },
+          "session": {
+            "title": "",
+            "subtitle": "",
+            "url": "",
+            "room": "",
+            "start": null,
+            "end": null,
+            "backgroundColor": "",
+            "event": null,
+            "chair": null
+          }
+        },
+        "createdAt": "2024-11-11T06:10:48.111618Z",
+        "updatedAt": "2024-12-11T15:46:01.811195Z",
+        "dueAt": "2024-12-09T09:59:40Z",
+        "isReviewerDistributor": false,
+        "anonymity": false,
+        "deletedCounter": 0,
+        "status": "COMPLETED",
+        "assignedAt": "2024-11-11T06:10:48.175721Z",
+        "confirmedAt": "2024-11-11T07:13:50.290254Z",
+        "completedAt": "2024-12-11T15:46:01.970906Z",
+        "form": {
+          "id": 131,
+          "name": "review form",
+          "createdAt": "2024-05-06T06:55:39.441781Z",
+          "updatedAt": "2024-11-11T04:42:09.901164Z",
+          "type": "REVIEW",
+          "fields": [
+            {
+              "id": 1533,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 6,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.053716Z",
+              "updatedAt": "2024-11-11T04:42:10.104776Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major strengths of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 938440,
+                  "value": "Methodology for reduction of voluminous raw data streams of modern manufacturing environments is well described.",
+                  "createdAt": "2024-12-11T15:46:01.950804Z",
+                  "updatedAt": "2024-12-11T15:46:01.950829Z",
+                  "review": 16190,
+                  "submission": null,
+                  "formField": 1533,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1534,
+              "description": "-",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 7,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.071981Z",
+              "updatedAt": "2024-11-11T04:42:10.111619Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major shortcomings of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 938441,
+                  "value": "The role of INC or how INC capabilities or potential capabilities would be leveraged are not specified.  How Reducio leverages INC needs to be elaborated.  Capabilities of INC to support the voluminous raw data from enormous number of industrial sensors is not considered.",
+                  "createdAt": "2024-12-11T15:46:01.955080Z",
+                  "updatedAt": "2024-12-11T15:46:01.955104Z",
+                  "review": 16190,
+                  "submission": null,
+                  "formField": 1534,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1535,
+              "description": "Please, make sure to provide a solid and constructive review for the authors to improve their paper. Include detailed comments and inform any missing related work, especially in regard to previous IM/NOMS editions.",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 8,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.090056Z",
+              "updatedAt": "2024-11-11T04:42:10.118797Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Detailed comments for the authors",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 938442,
+                  "value": "How Reducio leverages INC needs to be elaborated.  Capabilities of INC to support the voluminous raw data from enormous number of industrial sensors needs to be considered.",
+                  "createdAt": "2024-12-11T15:46:01.959477Z",
+                  "updatedAt": "2024-12-11T15:46:01.959503Z",
+                  "review": 16190,
+                  "submission": null,
+                  "formField": 1535,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1536,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 9,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.107587Z",
+              "updatedAt": "2024-11-11T04:42:10.125574Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Comments for the TPC (answer will not be sent to the authors)",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 938443,
+                  "value": "There are several existing solutions similar to Reducio for data Aggregation in the Industrial environments.  How the INC could play role needs to be worked on.  This when explored might bring innovative solutions based on INC for data aggregation.",
+                  "createdAt": "2024-12-11T15:46:01.963901Z",
+                  "updatedAt": "2024-12-11T15:46:01.963927Z",
+                  "review": 16190,
+                  "submission": null,
+                  "formField": 1536,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1978,
+              "description": "If this paper was submitted to the Full paper track, and the recommendation is not to accept it, do you consider it suitable for a poster presentation?",
+              "placeholder": null,
+              "type": "RADIO",
+              "order": 10,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-11-11T04:26:27.422228Z",
+              "updatedAt": "2024-11-11T04:42:10.132813Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Full paper to be accepted as short",
+              "choices": [
+                {
+                  "id": 5310,
+                  "description": "N/A (this is a short paper)",
+                  "order": 0,
+                  "value": 1.0,
+                  "createdAt": "2024-11-11T04:26:27.431084Z",
+                  "updatedAt": "2024-11-11T04:42:10.139073Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5311,
+                  "description": "No",
+                  "order": 1,
+                  "value": 2.0,
+                  "createdAt": "2024-11-11T04:26:27.439429Z",
+                  "updatedAt": "2024-11-11T04:42:10.147764Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5312,
+                  "description": "No opinion",
+                  "order": 2,
+                  "value": 3.0,
+                  "createdAt": "2024-11-11T04:26:27.448321Z",
+                  "updatedAt": "2024-11-11T04:42:10.157085Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5313,
+                  "description": "Yes",
+                  "order": 3,
+                  "value": 4.0,
+                  "createdAt": "2024-11-11T04:26:27.455506Z",
+                  "updatedAt": "2024-11-11T04:42:10.164894Z",
+                  "formField": 1978
+                }
+              ],
+              "answers": [
+                {
+                  "id": 938444,
+                  "value": "5311",
+                  "createdAt": "2024-12-11T15:46:01.969633Z",
+                  "updatedAt": "2024-12-11T15:46:01.969657Z",
+                  "review": 16190,
+                  "submission": null,
+                  "formField": 1978,
+                  "fieldChoice": 5311
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 16191,
+        "user": null,
+        "assignedBy": null,
+        "submission": {
+          "id": 4094,
+          "title": "Reducio: Data Aggregation and Stability Detection for Industry Using In-Network Computing",
+          "abstract": "Industrial networks are challenged by voluminous raw data streams of modern manufacturing environments.\nAnalyzing these streams can facilitate fault detection or process optimization but requires powerful processing hardware.\nIf latency requirements are strict or bandwidth is limited, the full raw data cannot always be sent to the cloud or even a locally centralized location.\nIn this paper, we show that in-network computing can effectively address this dilemma by dynamically adapting where and in which resolution data is forwarded.\nWe present Reducio, which monitors clocked manufacturing processes and leverages their semantics to aggregate raw data streams via characteristic values across multiple sensors and independent machines on a shop floor.\nBased on these values, Reducio detects anomalies, assesses process stability to switch between data resolutions, and identifies machine or sensor malfunctions.\nWe demonstrate Reducio’s potential with a Tofino-based prototype which we evaluate against the fineblanking process.\nWe show that Reducio can reliably and quickly detect instabilities while reducing data volumes by up to 90% without losing important information.",
+          "topics": [
+            {
+              "id": 3354,
+              "name": "Fog and Edge Networks",
+              "order": 6,
+              "createdAt": "2024-05-06T03:36:21.965344Z",
+              "updatedAt": "2024-05-06T03:36:52.814450Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3358,
+              "name": "Industrial Networks",
+              "order": 10,
+              "createdAt": "2024-05-06T03:36:22.072932Z",
+              "updatedAt": "2024-05-06T03:36:52.926091Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3412,
+              "name": "Control and Data Plane Programmability",
+              "order": 11,
+              "createdAt": "2024-05-06T03:36:23.439404Z",
+              "updatedAt": "2024-05-06T03:36:54.323468Z",
+              "active": true,
+              "event": 139,
+              "parent": 3400,
+              "children": []
+            },
+            {
+              "id": 3423,
+              "name": "Data Mining and (Big) Data Analysis",
+              "order": 8,
+              "createdAt": "2024-05-06T03:36:23.702421Z",
+              "updatedAt": "2024-05-06T03:36:54.621705Z",
+              "active": true,
+              "event": 139,
+              "parent": 3414,
+              "children": []
+            }
+          ],
+          "track": {
+            "id": 198,
+            "trackFiles": [
+              {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            ],
+            "name": "Full paper (8 pages excluding references)",
+            "openAt": "2024-06-04T10:00:10Z",
+            "closeAt": "2024-10-26T09:59:48Z",
+            "createdAt": "2024-05-06T06:36:53.414318Z",
+            "updatedAt": "2024-10-23T21:30:09.626786Z",
+            "editPendingSubmissions": false,
+            "editActiveSubmissions": false,
+            "editRejectedSubmissions": false,
+            "editAcceptedSubmissions": false,
+            "withdrawPendingSubmissions": true,
+            "withdrawActiveSubmissions": true,
+            "withdrawRejectedSubmissions": false,
+            "withdrawAcceptedSubmissions": true,
+            "withdrawUnderReviewSubmissions": false,
+            "event": 139
+          },
+          "authors": [
+            {
+              "order": 0,
+              "user": {
+                "id": 254388,
+                "firstName": "Liam",
+                "lastName": "Tirpitz",
+                "email": "tirpitz@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 1,
+              "user": {
+                "id": 248716,
+                "firstName": "Ike",
+                "lastName": "Kunze",
+                "email": "kunze@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 2,
+              "user": {
+                "id": 254408,
+                "firstName": "Philipp",
+                "lastName": "Niemietz",
+                "email": "p.niemietz@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 3,
+              "user": {
+                "id": 254409,
+                "firstName": "Kathrin",
+                "lastName": "Gerhardus",
+                "email": "k.gerhardus@iaw.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 4,
+              "user": {
+                "id": 248935,
+                "firstName": "Jan",
+                "lastName": "Pennekamp",
+                "email": "pennekamp@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 5,
+              "user": {
+                "id": 254410,
+                "firstName": "Thomas",
+                "lastName": "Bergs",
+                "email": "t.bergs@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 6,
+              "user": {
+                "id": 221144,
+                "firstName": "Klaus",
+                "lastName": "Wehrle",
+                "email": "wehrle@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 7,
+              "user": {
+                "id": 254411,
+                "firstName": "Sandra",
+                "lastName": "Geisler",
+                "email": "geisler@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            }
+          ],
+          "status": "ACTIVE",
+          "files": [
+            {
+              "id": 14523,
+              "active": true,
+              "file": "/core/submission/file/jems/media/content/2024/139/198/4094/4094_NOMS2025_TechSessionFullPaper_9uanq08.pdf",
+              "name": "4094_NOMS2025_TechSessionFullPaper.pdf",
+              "size": 1610098,
+              "contentType": "application/pdf",
+              "pageCount": 9,
+              "isUsingSbcTemplate": false,
+              "createdAt": "2024-09-04T15:36:44.796135Z",
+              "updatedAt": "2024-09-04T15:36:44.809657Z",
+              "submission": 4094,
+              "trackFile": {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            }
+          ],
+          "event": {
+            "id": 139,
+            "name": "38th IEEE/IFIP Network Operations and Management Symposium",
+            "acronym": "NOMS",
+            "year": 2025,
+            "formSubmission": null,
+            "formReview": 131,
+            "eventInfo": {
+              "city": "Honolulu",
+              "state": "HI",
+              "country": "USA",
+              "beginAt": "2025-05-12T03:00:00Z",
+              "endAt": "2025-05-16T03:00:00Z",
+              "makePublicAt": "2024-06-03T03:00:00Z"
+            },
+            "eventParent": null,
+            "uri": "noms2025"
+          },
+          "session": {
+            "title": "",
+            "subtitle": "",
+            "url": "",
+            "room": "",
+            "start": null,
+            "end": null,
+            "backgroundColor": "",
+            "event": null,
+            "chair": null
+          }
+        },
+        "createdAt": "2024-11-11T06:10:48.150429Z",
+        "updatedAt": "2024-12-07T21:45:07.539671Z",
+        "dueAt": "2024-12-09T09:59:40Z",
+        "isReviewerDistributor": false,
+        "anonymity": false,
+        "deletedCounter": 0,
+        "status": "COMPLETED",
+        "assignedAt": "2024-11-11T06:10:48.177204Z",
+        "confirmedAt": "2024-11-12T08:10:47.673543Z",
+        "completedAt": "2024-12-07T21:45:07.720457Z",
+        "form": {
+          "id": 131,
+          "name": "review form",
+          "createdAt": "2024-05-06T06:55:39.441781Z",
+          "updatedAt": "2024-11-11T04:42:09.901164Z",
+          "type": "REVIEW",
+          "fields": [
+            {
+              "id": 1533,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 6,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.053716Z",
+              "updatedAt": "2024-11-11T04:42:10.104776Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major strengths of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923697,
+                  "value": "1- The authors include non-technical but relevant semantics for the reader to understand their choices. \n2- the result achieved is considerable and noteworthy.",
+                  "createdAt": "2024-12-07T21:45:07.698708Z",
+                  "updatedAt": "2024-12-07T21:45:07.698733Z",
+                  "review": 16191,
+                  "submission": null,
+                  "formField": 1533,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1534,
+              "description": "-",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 7,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.071981Z",
+              "updatedAt": "2024-11-11T04:42:10.111619Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major shortcomings of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923698,
+                  "value": "I suggest authors to consider the following in revising their work \n1- The delta between the previous work and the current work is not clear and appears small.  \n2- Duplication of information has make the paper bulky and not easy to read. \n3- Some figures can be improved.",
+                  "createdAt": "2024-12-07T21:45:07.703772Z",
+                  "updatedAt": "2024-12-07T21:45:07.703797Z",
+                  "review": 16191,
+                  "submission": null,
+                  "formField": 1534,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1535,
+              "description": "Please, make sure to provide a solid and constructive review for the authors to improve their paper. Include detailed comments and inform any missing related work, especially in regard to previous IM/NOMS editions.",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 8,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.090056Z",
+              "updatedAt": "2024-11-11T04:42:10.118797Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Detailed comments for the authors",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923699,
+                  "value": "I suggest authors to consider the following in revising their work \n1- Including a very clear comparison between the previous work [this paper is based off of ] and the current work. \n2- Avoiding multiple duplication and reiteration of the material. It makes reading the paper hard and results in a not well-organized content. \n3- Fig.5 is not black and white compatible and overall figures are very small. \n4-Some details about how the dataset has been split and the parameters decided seems missing.",
+                  "createdAt": "2024-12-07T21:45:07.708580Z",
+                  "updatedAt": "2024-12-07T21:45:07.708606Z",
+                  "review": 16191,
+                  "submission": null,
+                  "formField": 1535,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1536,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 9,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.107587Z",
+              "updatedAt": "2024-11-11T04:42:10.125574Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Comments for the TPC (answer will not be sent to the authors)",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923700,
+                  "value": "No comment",
+                  "createdAt": "2024-12-07T21:45:07.713348Z",
+                  "updatedAt": "2024-12-07T21:45:07.713373Z",
+                  "review": 16191,
+                  "submission": null,
+                  "formField": 1536,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1978,
+              "description": "If this paper was submitted to the Full paper track, and the recommendation is not to accept it, do you consider it suitable for a poster presentation?",
+              "placeholder": null,
+              "type": "RADIO",
+              "order": 10,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-11-11T04:26:27.422228Z",
+              "updatedAt": "2024-11-11T04:42:10.132813Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Full paper to be accepted as short",
+              "choices": [
+                {
+                  "id": 5310,
+                  "description": "N/A (this is a short paper)",
+                  "order": 0,
+                  "value": 1.0,
+                  "createdAt": "2024-11-11T04:26:27.431084Z",
+                  "updatedAt": "2024-11-11T04:42:10.139073Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5311,
+                  "description": "No",
+                  "order": 1,
+                  "value": 2.0,
+                  "createdAt": "2024-11-11T04:26:27.439429Z",
+                  "updatedAt": "2024-11-11T04:42:10.147764Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5312,
+                  "description": "No opinion",
+                  "order": 2,
+                  "value": 3.0,
+                  "createdAt": "2024-11-11T04:26:27.448321Z",
+                  "updatedAt": "2024-11-11T04:42:10.157085Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5313,
+                  "description": "Yes",
+                  "order": 3,
+                  "value": 4.0,
+                  "createdAt": "2024-11-11T04:26:27.455506Z",
+                  "updatedAt": "2024-11-11T04:42:10.164894Z",
+                  "formField": 1978
+                }
+              ],
+              "answers": [
+                {
+                  "id": 923701,
+                  "value": "5313",
+                  "createdAt": "2024-12-07T21:45:07.719046Z",
+                  "updatedAt": "2024-12-07T21:45:07.719073Z",
+                  "review": 16191,
+                  "submission": null,
+                  "formField": 1978,
+                  "fieldChoice": 5313
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 16192,
+        "user": null,
+        "assignedBy": null,
+        "submission": {
+          "id": 4094,
+          "title": "Reducio: Data Aggregation and Stability Detection for Industry Using In-Network Computing",
+          "abstract": "Industrial networks are challenged by voluminous raw data streams of modern manufacturing environments.\nAnalyzing these streams can facilitate fault detection or process optimization but requires powerful processing hardware.\nIf latency requirements are strict or bandwidth is limited, the full raw data cannot always be sent to the cloud or even a locally centralized location.\nIn this paper, we show that in-network computing can effectively address this dilemma by dynamically adapting where and in which resolution data is forwarded.\nWe present Reducio, which monitors clocked manufacturing processes and leverages their semantics to aggregate raw data streams via characteristic values across multiple sensors and independent machines on a shop floor.\nBased on these values, Reducio detects anomalies, assesses process stability to switch between data resolutions, and identifies machine or sensor malfunctions.\nWe demonstrate Reducio’s potential with a Tofino-based prototype which we evaluate against the fineblanking process.\nWe show that Reducio can reliably and quickly detect instabilities while reducing data volumes by up to 90% without losing important information.",
+          "topics": [
+            {
+              "id": 3354,
+              "name": "Fog and Edge Networks",
+              "order": 6,
+              "createdAt": "2024-05-06T03:36:21.965344Z",
+              "updatedAt": "2024-05-06T03:36:52.814450Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3358,
+              "name": "Industrial Networks",
+              "order": 10,
+              "createdAt": "2024-05-06T03:36:22.072932Z",
+              "updatedAt": "2024-05-06T03:36:52.926091Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3412,
+              "name": "Control and Data Plane Programmability",
+              "order": 11,
+              "createdAt": "2024-05-06T03:36:23.439404Z",
+              "updatedAt": "2024-05-06T03:36:54.323468Z",
+              "active": true,
+              "event": 139,
+              "parent": 3400,
+              "children": []
+            },
+            {
+              "id": 3423,
+              "name": "Data Mining and (Big) Data Analysis",
+              "order": 8,
+              "createdAt": "2024-05-06T03:36:23.702421Z",
+              "updatedAt": "2024-05-06T03:36:54.621705Z",
+              "active": true,
+              "event": 139,
+              "parent": 3414,
+              "children": []
+            }
+          ],
+          "track": {
+            "id": 198,
+            "trackFiles": [
+              {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            ],
+            "name": "Full paper (8 pages excluding references)",
+            "openAt": "2024-06-04T10:00:10Z",
+            "closeAt": "2024-10-26T09:59:48Z",
+            "createdAt": "2024-05-06T06:36:53.414318Z",
+            "updatedAt": "2024-10-23T21:30:09.626786Z",
+            "editPendingSubmissions": false,
+            "editActiveSubmissions": false,
+            "editRejectedSubmissions": false,
+            "editAcceptedSubmissions": false,
+            "withdrawPendingSubmissions": true,
+            "withdrawActiveSubmissions": true,
+            "withdrawRejectedSubmissions": false,
+            "withdrawAcceptedSubmissions": true,
+            "withdrawUnderReviewSubmissions": false,
+            "event": 139
+          },
+          "authors": [
+            {
+              "order": 0,
+              "user": {
+                "id": 254388,
+                "firstName": "Liam",
+                "lastName": "Tirpitz",
+                "email": "tirpitz@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 1,
+              "user": {
+                "id": 248716,
+                "firstName": "Ike",
+                "lastName": "Kunze",
+                "email": "kunze@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 2,
+              "user": {
+                "id": 254408,
+                "firstName": "Philipp",
+                "lastName": "Niemietz",
+                "email": "p.niemietz@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 3,
+              "user": {
+                "id": 254409,
+                "firstName": "Kathrin",
+                "lastName": "Gerhardus",
+                "email": "k.gerhardus@iaw.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 4,
+              "user": {
+                "id": 248935,
+                "firstName": "Jan",
+                "lastName": "Pennekamp",
+                "email": "pennekamp@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 5,
+              "user": {
+                "id": 254410,
+                "firstName": "Thomas",
+                "lastName": "Bergs",
+                "email": "t.bergs@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 6,
+              "user": {
+                "id": 221144,
+                "firstName": "Klaus",
+                "lastName": "Wehrle",
+                "email": "wehrle@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 7,
+              "user": {
+                "id": 254411,
+                "firstName": "Sandra",
+                "lastName": "Geisler",
+                "email": "geisler@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            }
+          ],
+          "status": "ACTIVE",
+          "files": [
+            {
+              "id": 14523,
+              "active": true,
+              "file": "/core/submission/file/jems/media/content/2024/139/198/4094/4094_NOMS2025_TechSessionFullPaper_9uanq08.pdf",
+              "name": "4094_NOMS2025_TechSessionFullPaper.pdf",
+              "size": 1610098,
+              "contentType": "application/pdf",
+              "pageCount": 9,
+              "isUsingSbcTemplate": false,
+              "createdAt": "2024-09-04T15:36:44.796135Z",
+              "updatedAt": "2024-09-04T15:36:44.809657Z",
+              "submission": 4094,
+              "trackFile": {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            }
+          ],
+          "event": {
+            "id": 139,
+            "name": "38th IEEE/IFIP Network Operations and Management Symposium",
+            "acronym": "NOMS",
+            "year": 2025,
+            "formSubmission": null,
+            "formReview": 131,
+            "eventInfo": {
+              "city": "Honolulu",
+              "state": "HI",
+              "country": "USA",
+              "beginAt": "2025-05-12T03:00:00Z",
+              "endAt": "2025-05-16T03:00:00Z",
+              "makePublicAt": "2024-06-03T03:00:00Z"
+            },
+            "eventParent": null,
+            "uri": "noms2025"
+          },
+          "session": {
+            "title": "",
+            "subtitle": "",
+            "url": "",
+            "room": "",
+            "start": null,
+            "end": null,
+            "backgroundColor": "",
+            "event": null,
+            "chair": null
+          }
+        },
+        "createdAt": "2024-11-11T06:10:48.151005Z",
+        "updatedAt": "2024-12-07T21:58:17.867997Z",
+        "dueAt": "2024-12-09T09:59:40Z",
+        "isReviewerDistributor": false,
+        "anonymity": false,
+        "deletedCounter": 0,
+        "status": "COMPLETED",
+        "assignedAt": "2024-11-11T06:10:48.178724Z",
+        "confirmedAt": "2024-11-11T09:04:57.290359Z",
+        "completedAt": "2024-12-07T21:58:18.034443Z",
+        "form": {
+          "id": 131,
+          "name": "review form",
+          "createdAt": "2024-05-06T06:55:39.441781Z",
+          "updatedAt": "2024-11-11T04:42:09.901164Z",
+          "type": "REVIEW",
+          "fields": [
+            {
+              "id": 1533,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 6,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.053716Z",
+              "updatedAt": "2024-11-11T04:42:10.104776Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major strengths of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923719,
+                  "value": "The paper discusses the usage of in network computing in industrial networks.",
+                  "createdAt": "2024-12-07T21:58:18.013854Z",
+                  "updatedAt": "2024-12-07T21:58:18.013879Z",
+                  "review": 16192,
+                  "submission": null,
+                  "formField": 1533,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1534,
+              "description": "-",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 7,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.071981Z",
+              "updatedAt": "2024-11-11T04:42:10.111619Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major shortcomings of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923720,
+                  "value": "The paper is mostly about signal processing.",
+                  "createdAt": "2024-12-07T21:58:18.018210Z",
+                  "updatedAt": "2024-12-07T21:58:18.018236Z",
+                  "review": 16192,
+                  "submission": null,
+                  "formField": 1534,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1535,
+              "description": "Please, make sure to provide a solid and constructive review for the authors to improve their paper. Include detailed comments and inform any missing related work, especially in regard to previous IM/NOMS editions.",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 8,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.090056Z",
+              "updatedAt": "2024-11-11T04:42:10.118797Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Detailed comments for the authors",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923721,
+                  "value": "The main contribution of this paper seems to be using a P4 switch as a signal processing box. Consequently, most of the paper is not about networking or network management, but about the signal processing resp. anomaly detection algorithm and how it was adapted to P4.\n\nI have no specific comments regarding the used algorithm. Concerning the networking aspects, I think that section 1  should give more network-related information about the problem. It would be useful to give examples of the bandwidth of the data streams to help the reader understand how \"massive\" they are.\n\nIn section 2.B, the arguments in favor of INC and against a \"traditional\" server at the edge are not convincing and should be better developed. Why the use of specialized INC equipment should be better for a company than more flexible servers is not clear.\n\nEexperts from the cyber community have been calling for data in OT networks to be encrypted or at least signed. How would the presented approach work with encrypted packets?",
+                  "createdAt": "2024-12-07T21:58:18.022787Z",
+                  "updatedAt": "2024-12-07T21:58:18.022813Z",
+                  "review": 16192,
+                  "submission": null,
+                  "formField": 1535,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1536,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 9,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.107587Z",
+              "updatedAt": "2024-11-11T04:42:10.125574Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Comments for the TPC (answer will not be sent to the authors)",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 923722,
+                  "value": "no specific comments",
+                  "createdAt": "2024-12-07T21:58:18.027298Z",
+                  "updatedAt": "2024-12-07T21:58:18.027323Z",
+                  "review": 16192,
+                  "submission": null,
+                  "formField": 1536,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1978,
+              "description": "If this paper was submitted to the Full paper track, and the recommendation is not to accept it, do you consider it suitable for a poster presentation?",
+              "placeholder": null,
+              "type": "RADIO",
+              "order": 10,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-11-11T04:26:27.422228Z",
+              "updatedAt": "2024-11-11T04:42:10.132813Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Full paper to be accepted as short",
+              "choices": [
+                {
+                  "id": 5310,
+                  "description": "N/A (this is a short paper)",
+                  "order": 0,
+                  "value": 1.0,
+                  "createdAt": "2024-11-11T04:26:27.431084Z",
+                  "updatedAt": "2024-11-11T04:42:10.139073Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5311,
+                  "description": "No",
+                  "order": 1,
+                  "value": 2.0,
+                  "createdAt": "2024-11-11T04:26:27.439429Z",
+                  "updatedAt": "2024-11-11T04:42:10.147764Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5312,
+                  "description": "No opinion",
+                  "order": 2,
+                  "value": 3.0,
+                  "createdAt": "2024-11-11T04:26:27.448321Z",
+                  "updatedAt": "2024-11-11T04:42:10.157085Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5313,
+                  "description": "Yes",
+                  "order": 3,
+                  "value": 4.0,
+                  "createdAt": "2024-11-11T04:26:27.455506Z",
+                  "updatedAt": "2024-11-11T04:42:10.164894Z",
+                  "formField": 1978
+                }
+              ],
+              "answers": [
+                {
+                  "id": 923723,
+                  "value": "5313",
+                  "createdAt": "2024-12-07T21:58:18.033065Z",
+                  "updatedAt": "2024-12-07T21:58:18.033090Z",
+                  "review": 16192,
+                  "submission": null,
+                  "formField": 1978,
+                  "fieldChoice": 5313
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 16193,
+        "user": null,
+        "assignedBy": null,
+        "submission": {
+          "id": 4094,
+          "title": "Reducio: Data Aggregation and Stability Detection for Industry Using In-Network Computing",
+          "abstract": "Industrial networks are challenged by voluminous raw data streams of modern manufacturing environments.\nAnalyzing these streams can facilitate fault detection or process optimization but requires powerful processing hardware.\nIf latency requirements are strict or bandwidth is limited, the full raw data cannot always be sent to the cloud or even a locally centralized location.\nIn this paper, we show that in-network computing can effectively address this dilemma by dynamically adapting where and in which resolution data is forwarded.\nWe present Reducio, which monitors clocked manufacturing processes and leverages their semantics to aggregate raw data streams via characteristic values across multiple sensors and independent machines on a shop floor.\nBased on these values, Reducio detects anomalies, assesses process stability to switch between data resolutions, and identifies machine or sensor malfunctions.\nWe demonstrate Reducio’s potential with a Tofino-based prototype which we evaluate against the fineblanking process.\nWe show that Reducio can reliably and quickly detect instabilities while reducing data volumes by up to 90% without losing important information.",
+          "topics": [
+            {
+              "id": 3354,
+              "name": "Fog and Edge Networks",
+              "order": 6,
+              "createdAt": "2024-05-06T03:36:21.965344Z",
+              "updatedAt": "2024-05-06T03:36:52.814450Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3358,
+              "name": "Industrial Networks",
+              "order": 10,
+              "createdAt": "2024-05-06T03:36:22.072932Z",
+              "updatedAt": "2024-05-06T03:36:52.926091Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3412,
+              "name": "Control and Data Plane Programmability",
+              "order": 11,
+              "createdAt": "2024-05-06T03:36:23.439404Z",
+              "updatedAt": "2024-05-06T03:36:54.323468Z",
+              "active": true,
+              "event": 139,
+              "parent": 3400,
+              "children": []
+            },
+            {
+              "id": 3423,
+              "name": "Data Mining and (Big) Data Analysis",
+              "order": 8,
+              "createdAt": "2024-05-06T03:36:23.702421Z",
+              "updatedAt": "2024-05-06T03:36:54.621705Z",
+              "active": true,
+              "event": 139,
+              "parent": 3414,
+              "children": []
+            }
+          ],
+          "track": {
+            "id": 198,
+            "trackFiles": [
+              {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            ],
+            "name": "Full paper (8 pages excluding references)",
+            "openAt": "2024-06-04T10:00:10Z",
+            "closeAt": "2024-10-26T09:59:48Z",
+            "createdAt": "2024-05-06T06:36:53.414318Z",
+            "updatedAt": "2024-10-23T21:30:09.626786Z",
+            "editPendingSubmissions": false,
+            "editActiveSubmissions": false,
+            "editRejectedSubmissions": false,
+            "editAcceptedSubmissions": false,
+            "withdrawPendingSubmissions": true,
+            "withdrawActiveSubmissions": true,
+            "withdrawRejectedSubmissions": false,
+            "withdrawAcceptedSubmissions": true,
+            "withdrawUnderReviewSubmissions": false,
+            "event": 139
+          },
+          "authors": [
+            {
+              "order": 0,
+              "user": {
+                "id": 254388,
+                "firstName": "Liam",
+                "lastName": "Tirpitz",
+                "email": "tirpitz@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 1,
+              "user": {
+                "id": 248716,
+                "firstName": "Ike",
+                "lastName": "Kunze",
+                "email": "kunze@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 2,
+              "user": {
+                "id": 254408,
+                "firstName": "Philipp",
+                "lastName": "Niemietz",
+                "email": "p.niemietz@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 3,
+              "user": {
+                "id": 254409,
+                "firstName": "Kathrin",
+                "lastName": "Gerhardus",
+                "email": "k.gerhardus@iaw.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 4,
+              "user": {
+                "id": 248935,
+                "firstName": "Jan",
+                "lastName": "Pennekamp",
+                "email": "pennekamp@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 5,
+              "user": {
+                "id": 254410,
+                "firstName": "Thomas",
+                "lastName": "Bergs",
+                "email": "t.bergs@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 6,
+              "user": {
+                "id": 221144,
+                "firstName": "Klaus",
+                "lastName": "Wehrle",
+                "email": "wehrle@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 7,
+              "user": {
+                "id": 254411,
+                "firstName": "Sandra",
+                "lastName": "Geisler",
+                "email": "geisler@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            }
+          ],
+          "status": "ACTIVE",
+          "files": [
+            {
+              "id": 14523,
+              "active": true,
+              "file": "/core/submission/file/jems/media/content/2024/139/198/4094/4094_NOMS2025_TechSessionFullPaper_9uanq08.pdf",
+              "name": "4094_NOMS2025_TechSessionFullPaper.pdf",
+              "size": 1610098,
+              "contentType": "application/pdf",
+              "pageCount": 9,
+              "isUsingSbcTemplate": false,
+              "createdAt": "2024-09-04T15:36:44.796135Z",
+              "updatedAt": "2024-09-04T15:36:44.809657Z",
+              "submission": 4094,
+              "trackFile": {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            }
+          ],
+          "event": {
+            "id": 139,
+            "name": "38th IEEE/IFIP Network Operations and Management Symposium",
+            "acronym": "NOMS",
+            "year": 2025,
+            "formSubmission": null,
+            "formReview": 131,
+            "eventInfo": {
+              "city": "Honolulu",
+              "state": "HI",
+              "country": "USA",
+              "beginAt": "2025-05-12T03:00:00Z",
+              "endAt": "2025-05-16T03:00:00Z",
+              "makePublicAt": "2024-06-03T03:00:00Z"
+            },
+            "eventParent": null,
+            "uri": "noms2025"
+          },
+          "session": {
+            "title": "",
+            "subtitle": "",
+            "url": "",
+            "room": "",
+            "start": null,
+            "end": null,
+            "backgroundColor": "",
+            "event": null,
+            "chair": null
+          }
+        },
+        "createdAt": "2024-11-11T06:10:48.154921Z",
+        "updatedAt": "2024-11-28T16:01:59.672805Z",
+        "dueAt": "2024-12-09T09:59:40Z",
+        "isReviewerDistributor": false,
+        "anonymity": false,
+        "deletedCounter": 0,
+        "status": "COMPLETED",
+        "assignedAt": "2024-11-11T06:10:48.180978Z",
+        "confirmedAt": "2024-11-11T06:53:08.243428Z",
+        "completedAt": "2024-11-28T16:01:59.854187Z",
+        "form": {
+          "id": 131,
+          "name": "review form",
+          "createdAt": "2024-05-06T06:55:39.441781Z",
+          "updatedAt": "2024-11-11T04:42:09.901164Z",
+          "type": "REVIEW",
+          "fields": [
+            {
+              "id": 1533,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 6,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.053716Z",
+              "updatedAt": "2024-11-11T04:42:10.104776Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major strengths of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 912367,
+                  "value": "1. The authors presented Reducio, which monitors clocked manufacturing processes and leverages their semantics to aggregate raw data streams via characteristic values across multiple sensors and independent machines on a shop floor. Based on these values, Reducio can detect anomalies, assess process stability, and switch between different data resolutions. It can also identify machine or sensor malfunctions.\n\n2. The authors designed and implemented their proposed scheme on a P4 hardware switch. Thus, the experimental results reported in the paper are trustworthy.",
+                  "createdAt": "2024-11-28T16:01:59.832178Z",
+                  "updatedAt": "2024-11-28T16:01:59.832204Z",
+                  "review": 16193,
+                  "submission": null,
+                  "formField": 1533,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1534,
+              "description": "-",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 7,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.071981Z",
+              "updatedAt": "2024-11-11T04:42:10.111619Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major shortcomings of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 912368,
+                  "value": "1. The work reported in the paper is a simple usage of a P4 hardware switch. That is, the reported work is a simple example of in-network computing. In their work, the P4 switch first detects the normal cycles of sensors. Then, during normal cycles, the P4 switch can aggregate a large volume of raw sensor data by summarizing them using their minimum, maximum, and mean values. Such an approach has been proposed decades ago with the \"data fusion\" name. Thus, this research idea is not novel. \n\n2. Although the proposed scheme can also detect system stability and failures of equipment, due to the clocked property of the studied equipment (whose behavior is very regular), the rules used for such detections are quite simple. There is not much technical depth in the proposed scheme.",
+                  "createdAt": "2024-11-28T16:01:59.836997Z",
+                  "updatedAt": "2024-11-28T16:01:59.837023Z",
+                  "review": 16193,
+                  "submission": null,
+                  "formField": 1534,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1535,
+              "description": "Please, make sure to provide a solid and constructive review for the authors to improve their paper. Include detailed comments and inform any missing related work, especially in regard to previous IM/NOMS editions.",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 8,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.090056Z",
+              "updatedAt": "2024-11-11T04:42:10.118797Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Detailed comments for the authors",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 912369,
+                  "value": "Overall speaking, this paper is well written and easy to follow. The organization of this paper is very structured, and the explanation of the reported work is very clear. The only problem is that the novelty and technical depth of the proposed scheme is not much.",
+                  "createdAt": "2024-11-28T16:01:59.841979Z",
+                  "updatedAt": "2024-11-28T16:01:59.842004Z",
+                  "review": 16193,
+                  "submission": null,
+                  "formField": 1535,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1536,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 9,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.107587Z",
+              "updatedAt": "2024-11-11T04:42:10.125574Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Comments for the TPC (answer will not be sent to the authors)",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 912370,
+                  "value": "The problem with this paper is that the novelty and technical depth of the proposed scheme is not much. Otherwise, this paper is well written and easy to follow.",
+                  "createdAt": "2024-11-28T16:01:59.846823Z",
+                  "updatedAt": "2024-11-28T16:01:59.846850Z",
+                  "review": 16193,
+                  "submission": null,
+                  "formField": 1536,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1978,
+              "description": "If this paper was submitted to the Full paper track, and the recommendation is not to accept it, do you consider it suitable for a poster presentation?",
+              "placeholder": null,
+              "type": "RADIO",
+              "order": 10,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-11-11T04:26:27.422228Z",
+              "updatedAt": "2024-11-11T04:42:10.132813Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Full paper to be accepted as short",
+              "choices": [
+                {
+                  "id": 5310,
+                  "description": "N/A (this is a short paper)",
+                  "order": 0,
+                  "value": 1.0,
+                  "createdAt": "2024-11-11T04:26:27.431084Z",
+                  "updatedAt": "2024-11-11T04:42:10.139073Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5311,
+                  "description": "No",
+                  "order": 1,
+                  "value": 2.0,
+                  "createdAt": "2024-11-11T04:26:27.439429Z",
+                  "updatedAt": "2024-11-11T04:42:10.147764Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5312,
+                  "description": "No opinion",
+                  "order": 2,
+                  "value": 3.0,
+                  "createdAt": "2024-11-11T04:26:27.448321Z",
+                  "updatedAt": "2024-11-11T04:42:10.157085Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5313,
+                  "description": "Yes",
+                  "order": 3,
+                  "value": 4.0,
+                  "createdAt": "2024-11-11T04:26:27.455506Z",
+                  "updatedAt": "2024-11-11T04:42:10.164894Z",
+                  "formField": 1978
+                }
+              ],
+              "answers": [
+                {
+                  "id": 912371,
+                  "value": "5311",
+                  "createdAt": "2024-11-28T16:01:59.852600Z",
+                  "updatedAt": "2024-11-28T16:01:59.852625Z",
+                  "review": 16193,
+                  "submission": null,
+                  "formField": 1978,
+                  "fieldChoice": 5311
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 16194,
+        "user": null,
+        "assignedBy": null,
+        "submission": {
+          "id": 4094,
+          "title": "Reducio: Data Aggregation and Stability Detection for Industry Using In-Network Computing",
+          "abstract": "Industrial networks are challenged by voluminous raw data streams of modern manufacturing environments.\nAnalyzing these streams can facilitate fault detection or process optimization but requires powerful processing hardware.\nIf latency requirements are strict or bandwidth is limited, the full raw data cannot always be sent to the cloud or even a locally centralized location.\nIn this paper, we show that in-network computing can effectively address this dilemma by dynamically adapting where and in which resolution data is forwarded.\nWe present Reducio, which monitors clocked manufacturing processes and leverages their semantics to aggregate raw data streams via characteristic values across multiple sensors and independent machines on a shop floor.\nBased on these values, Reducio detects anomalies, assesses process stability to switch between data resolutions, and identifies machine or sensor malfunctions.\nWe demonstrate Reducio’s potential with a Tofino-based prototype which we evaluate against the fineblanking process.\nWe show that Reducio can reliably and quickly detect instabilities while reducing data volumes by up to 90% without losing important information.",
+          "topics": [
+            {
+              "id": 3354,
+              "name": "Fog and Edge Networks",
+              "order": 6,
+              "createdAt": "2024-05-06T03:36:21.965344Z",
+              "updatedAt": "2024-05-06T03:36:52.814450Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3358,
+              "name": "Industrial Networks",
+              "order": 10,
+              "createdAt": "2024-05-06T03:36:22.072932Z",
+              "updatedAt": "2024-05-06T03:36:52.926091Z",
+              "active": true,
+              "event": 139,
+              "parent": 3347,
+              "children": []
+            },
+            {
+              "id": 3412,
+              "name": "Control and Data Plane Programmability",
+              "order": 11,
+              "createdAt": "2024-05-06T03:36:23.439404Z",
+              "updatedAt": "2024-05-06T03:36:54.323468Z",
+              "active": true,
+              "event": 139,
+              "parent": 3400,
+              "children": []
+            },
+            {
+              "id": 3423,
+              "name": "Data Mining and (Big) Data Analysis",
+              "order": 8,
+              "createdAt": "2024-05-06T03:36:23.702421Z",
+              "updatedAt": "2024-05-06T03:36:54.621705Z",
+              "active": true,
+              "event": 139,
+              "parent": 3414,
+              "children": []
+            }
+          ],
+          "track": {
+            "id": 198,
+            "trackFiles": [
+              {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            ],
+            "name": "Full paper (8 pages excluding references)",
+            "openAt": "2024-06-04T10:00:10Z",
+            "closeAt": "2024-10-26T09:59:48Z",
+            "createdAt": "2024-05-06T06:36:53.414318Z",
+            "updatedAt": "2024-10-23T21:30:09.626786Z",
+            "editPendingSubmissions": false,
+            "editActiveSubmissions": false,
+            "editRejectedSubmissions": false,
+            "editAcceptedSubmissions": false,
+            "withdrawPendingSubmissions": true,
+            "withdrawActiveSubmissions": true,
+            "withdrawRejectedSubmissions": false,
+            "withdrawAcceptedSubmissions": true,
+            "withdrawUnderReviewSubmissions": false,
+            "event": 139
+          },
+          "authors": [
+            {
+              "order": 0,
+              "user": {
+                "id": 254388,
+                "firstName": "Liam",
+                "lastName": "Tirpitz",
+                "email": "tirpitz@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 1,
+              "user": {
+                "id": 248716,
+                "firstName": "Ike",
+                "lastName": "Kunze",
+                "email": "kunze@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 2,
+              "user": {
+                "id": 254408,
+                "firstName": "Philipp",
+                "lastName": "Niemietz",
+                "email": "p.niemietz@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 3,
+              "user": {
+                "id": 254409,
+                "firstName": "Kathrin",
+                "lastName": "Gerhardus",
+                "email": "k.gerhardus@iaw.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 4,
+              "user": {
+                "id": 248935,
+                "firstName": "Jan",
+                "lastName": "Pennekamp",
+                "email": "pennekamp@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 7217,
+                    "name": "RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T20:27:42.285229Z",
+                    "updatedAt": "2020-12-08T20:27:42.285234Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 5,
+              "user": {
+                "id": 254410,
+                "firstName": "Thomas",
+                "lastName": "Bergs",
+                "email": "t.bergs@mti.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            },
+            {
+              "order": 6,
+              "user": {
+                "id": 221144,
+                "firstName": "Klaus",
+                "lastName": "Wehrle",
+                "email": "wehrle@comsys.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "id": 34708,
+                    "name": "Communication and Distributed Systems, RWTH Aachen University",
+                    "acronym": "undefined",
+                    "createdAt": "2020-12-08T22:30:44.897651Z",
+                    "updatedAt": "2020-12-08T22:30:44.897656Z"
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": "DEU",
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": true
+              }
+            },
+            {
+              "order": 7,
+              "user": {
+                "id": 254411,
+                "firstName": "Sandra",
+                "lastName": "Geisler",
+                "email": "geisler@dbis.rwth-aachen.de",
+                "profile": {
+                  "affiliation": {
+                    "name": "",
+                    "acronym": ""
+                  },
+                  "pic": null,
+                  "picAvatar": null,
+                  "language": "en",
+                  "country": null,
+                  "viewMode": "Default",
+                  "statusIcon": true,
+                  "statusColorAsBackgroundColor": false,
+                  "theme": "SYSTEM"
+                },
+                "isActive": false
+              }
+            }
+          ],
+          "status": "ACTIVE",
+          "files": [
+            {
+              "id": 14523,
+              "active": true,
+              "file": "/core/submission/file/jems/media/content/2024/139/198/4094/4094_NOMS2025_TechSessionFullPaper_9uanq08.pdf",
+              "name": "4094_NOMS2025_TechSessionFullPaper.pdf",
+              "size": 1610098,
+              "contentType": "application/pdf",
+              "pageCount": 9,
+              "isUsingSbcTemplate": false,
+              "createdAt": "2024-09-04T15:36:44.796135Z",
+              "updatedAt": "2024-09-04T15:36:44.809657Z",
+              "submission": 4094,
+              "trackFile": {
+                "id": 431,
+                "name": "NOMS2025_TechSessionFullPaper",
+                "required": true,
+                "visibleSessionChair": false,
+                "visibleReviewer": true,
+                "useOfSbcTemplate": false,
+                "allowPagesExceeded": true,
+                "maxPages": 9,
+                "maxSize": 0,
+                "mimetypes": [
+                  {
+                    "id": 1,
+                    "type": "PDF",
+                    "name": "application/pdf",
+                    "createdAt": "2019-02-13T14:20:54.353000Z",
+                    "updatedAt": "2019-02-13T14:20:54.353000Z"
+                  }
+                ],
+                "openAt": "2024-06-04T10:00:44Z",
+                "closeAt": "2024-10-26T09:59:44Z",
+                "createdAt": "2024-05-06T06:36:53.448313Z",
+                "updatedAt": "2024-10-23T21:30:09.631290Z",
+                "includedInProceedings": false,
+                "proceedingsOrder": null
+              }
+            }
+          ],
+          "event": {
+            "id": 139,
+            "name": "38th IEEE/IFIP Network Operations and Management Symposium",
+            "acronym": "NOMS",
+            "year": 2025,
+            "formSubmission": null,
+            "formReview": 131,
+            "eventInfo": {
+              "city": "Honolulu",
+              "state": "HI",
+              "country": "USA",
+              "beginAt": "2025-05-12T03:00:00Z",
+              "endAt": "2025-05-16T03:00:00Z",
+              "makePublicAt": "2024-06-03T03:00:00Z"
+            },
+            "eventParent": null,
+            "uri": "noms2025"
+          },
+          "session": {
+            "title": "",
+            "subtitle": "",
+            "url": "",
+            "room": "",
+            "start": null,
+            "end": null,
+            "backgroundColor": "",
+            "event": null,
+            "chair": null
+          }
+        },
+        "createdAt": "2024-11-11T06:10:48.157139Z",
+        "updatedAt": "2024-11-29T19:36:40.631460Z",
+        "dueAt": "2024-12-09T09:59:40Z",
+        "isReviewerDistributor": false,
+        "anonymity": false,
+        "deletedCounter": 0,
+        "status": "COMPLETED",
+        "assignedAt": "2024-11-12T15:26:53.261987Z",
+        "confirmedAt": "2024-11-12T23:49:55.441092Z",
+        "completedAt": "2024-11-29T19:36:40.818379Z",
+        "form": {
+          "id": 131,
+          "name": "review form",
+          "createdAt": "2024-05-06T06:55:39.441781Z",
+          "updatedAt": "2024-11-11T04:42:09.901164Z",
+          "type": "REVIEW",
+          "fields": [
+            {
+              "id": 1533,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 6,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.053716Z",
+              "updatedAt": "2024-11-11T04:42:10.104776Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major strengths of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 915213,
+                  "value": "The paper is well-organized and easy to follow. \n\nExperiments with real hardware point to the feasibility of the ideas. \n\nThe use case is novel and interesting.",
+                  "createdAt": "2024-11-29T19:36:40.798156Z",
+                  "updatedAt": "2024-11-29T19:36:40.798181Z",
+                  "review": 16194,
+                  "submission": null,
+                  "formField": 1533,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1534,
+              "description": "-",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 7,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.071981Z",
+              "updatedAt": "2024-11-11T04:42:10.111619Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "What are the major shortcomings of this paper?",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 915214,
+                  "value": "Not clear how the solution can read the signal amplitude and also no details about how to collect metrics. Is it really possible to do that in the switch? \n\nThere is only one use case. This makes it difficult to understand whether the solution is only \"plug-and-play\" with other use cases or whether a new protocol-specific solution is necessary.\n\nThere is little novelty in the techniques employed in the switch.",
+                  "createdAt": "2024-11-29T19:36:40.802612Z",
+                  "updatedAt": "2024-11-29T19:36:40.802638Z",
+                  "review": 16194,
+                  "submission": null,
+                  "formField": 1534,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1535,
+              "description": "Please, make sure to provide a solid and constructive review for the authors to improve their paper. Include detailed comments and inform any missing related work, especially in regard to previous IM/NOMS editions.",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 8,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": false,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.090056Z",
+              "updatedAt": "2024-11-11T04:42:10.118797Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Detailed comments for the authors",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 915215,
+                  "value": "This paper proposes Reducio, a system for data aggregation and stability detection in industrial scenarios. The authors demonstrate how the system identifies cycles in sensor signals and detects unstable phases based on sensor-specific metrics.\n\nOverall, the paper is well-organized, and the proposed use case is promising.\n\nHowever, I found the technical aspects difficult to understand because they lack specific details. It is not explained how the switch identifies a specific signal. Is it based on a particular packet header, or does it rely on the packet-in event only?\n\nAdditionally, the method for identifying the amplitude of the signal is not detailed. How is this achieved? Does it require modifications to the protocol stack? What happens if the data is encrypted?\nDo we need something in the sensor side? \n\nThe description of the collection phase can have potential concurrency issues. For instance, the paper mentions: “To generate and emit the summary packet immediately, we recirculate a single packet per cycle as we need to read state from multiple stages.” Could another signal overwrite the register before the recirculated packet is processed?\n\nThe hardware implementation appears sound, but the experiments with Fineblancking seem to be entirely simulated rather than conducted with real devices. Would it be possible to integrate a real device into this solution, or would that require a customized application to run on the device? I miss discussions related to how to process/parse sensor signal. \n\nLastly, the contributions of this paper are not clear to the reader. Aggregation and preprocessing are well-explored areas, so it would be helpful to clarify the novel aspects of this work. Being able to identify these signals on a switch may seem an interesting new contribution, but the protocol stack is not investigated in the paper.",
+                  "createdAt": "2024-11-29T19:36:40.806994Z",
+                  "updatedAt": "2024-11-29T19:36:40.807020Z",
+                  "review": 16194,
+                  "submission": null,
+                  "formField": 1535,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1536,
+              "description": " ",
+              "placeholder": null,
+              "type": "TEXT",
+              "order": 9,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-05-06T06:55:40.107587Z",
+              "updatedAt": "2024-11-11T04:42:10.125574Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Comments for the TPC (answer will not be sent to the authors)",
+              "choices": [],
+              "answers": [
+                {
+                  "id": 915216,
+                  "value": "This paper looks nice but the details are a bit weak. Prototype on real hardware sounds nice, but does not convince the solution is suitable in practice.",
+                  "createdAt": "2024-11-29T19:36:40.811783Z",
+                  "updatedAt": "2024-11-29T19:36:40.811808Z",
+                  "review": 16194,
+                  "submission": null,
+                  "formField": 1536,
+                  "fieldChoice": null
+                }
+              ]
+            },
+            {
+              "id": 1978,
+              "description": "If this paper was submitted to the Full paper track, and the recommendation is not to accept it, do you consider it suitable for a poster presentation?",
+              "placeholder": null,
+              "type": "RADIO",
+              "order": 10,
+              "min": 0,
+              "max": 7000,
+              "required": true,
+              "hidden": true,
+              "form": 131,
+              "createdAt": "2024-11-11T04:26:27.422228Z",
+              "updatedAt": "2024-11-11T04:42:10.132813Z",
+              "weight": 0.0,
+              "globalWeight": 0.0,
+              "shortLabel": "Full paper to be accepted as short",
+              "choices": [
+                {
+                  "id": 5310,
+                  "description": "N/A (this is a short paper)",
+                  "order": 0,
+                  "value": 1.0,
+                  "createdAt": "2024-11-11T04:26:27.431084Z",
+                  "updatedAt": "2024-11-11T04:42:10.139073Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5311,
+                  "description": "No",
+                  "order": 1,
+                  "value": 2.0,
+                  "createdAt": "2024-11-11T04:26:27.439429Z",
+                  "updatedAt": "2024-11-11T04:42:10.147764Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5312,
+                  "description": "No opinion",
+                  "order": 2,
+                  "value": 3.0,
+                  "createdAt": "2024-11-11T04:26:27.448321Z",
+                  "updatedAt": "2024-11-11T04:42:10.157085Z",
+                  "formField": 1978
+                },
+                {
+                  "id": 5313,
+                  "description": "Yes",
+                  "order": 3,
+                  "value": 4.0,
+                  "createdAt": "2024-11-11T04:26:27.455506Z",
+                  "updatedAt": "2024-11-11T04:42:10.164894Z",
+                  "formField": 1978
+                }
+              ],
+              "answers": [
+                {
+                  "id": 915217,
+                  "value": "5313",
+                  "createdAt": "2024-11-29T19:36:40.816996Z",
+                  "updatedAt": "2024-11-29T19:36:40.817021Z",
+                  "review": 16194,
+                  "submission": null,
+                  "formField": 1978,
+                  "fieldChoice": 5313
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "status": {
+    "code": 200,
+    "message": "errors.none",
+    "params": null
+  }
+}

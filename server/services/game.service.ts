@@ -173,6 +173,7 @@ export class GameService {
                 }
                 this.buzzerConfig.push(c);
                 this.keyOrByteCodesInUse.push(c.byteBind);
+                this.keyOrByteCodesInUse.push(c.keyBind);
             }
         }
         return this.buzzerConfig;

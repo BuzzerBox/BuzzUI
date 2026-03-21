@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
-import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
+import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
@@ -20,11 +20,11 @@ export class SetupComponent implements OnInit {
 
   @ViewChild('questionForm') questionForm;
 
-  public testSub: Subject<FormGroup> = new Subject<FormGroup>();
-  public testObs: Observable<FormGroup> = this.testSub.asObservable();
+  public testSub: Subject<UntypedFormGroup> = new Subject<UntypedFormGroup>();
+  public testObs: Observable<UntypedFormGroup> = this.testSub.asObservable();
 
-  public teamsFormGroup: FormGroup;
-  public questionsFormGroup: FormGroup;
+  public teamsFormGroup: UntypedFormGroup;
+  public questionsFormGroup: UntypedFormGroup;
   public teamNameSuggestions: string[];
   public teamFormControlNames: string[];
   public questionFormGroupNames: string[];
@@ -68,7 +68,7 @@ export class SetupComponent implements OnInit {
         this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
         const name: string = this.game.getTeams()[i].name;
         this.teamNameSuggestions.push(name);
-        const formControlForTeam = new FormControl(name);
+        const formControlForTeam = new UntypedFormControl(name);
         teamFormControls[formControlName] = formControlForTeam;
       }
     } else {
@@ -79,7 +79,7 @@ export class SetupComponent implements OnInit {
         const formControlName = 'team' + (i + 1);
         this.teamFormControlNames.push(formControlName);
         this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
-        const formControlForTeam = new FormControl(teamNameSuggestion);
+        const formControlForTeam = new UntypedFormControl(teamNameSuggestion);
         // const formControlForTeam = new FormControl();
         if (i >= 2) {
           // since two teams are mandatory, only all up from the third one get disabled
@@ -88,13 +88,13 @@ export class SetupComponent implements OnInit {
         teamFormControls[formControlName] = formControlForTeam;
       }
     }
-    this.teamsFormGroup = new FormGroup(teamFormControls);
+    this.teamsFormGroup = new UntypedFormGroup(teamFormControls);
   }
 
   private initQuestionsFormControls(loadedFile: boolean = false): void {
     if (loadedFile) {
       // reset everything
-      this.questionsFormGroup = new FormGroup({});
+      this.questionsFormGroup = new UntypedFormGroup({});
       this.questionFormGroupNames = [];
 
       for (let i = 0; i < this.game.getQuestions().length; i++) {
@@ -107,28 +107,28 @@ export class SetupComponent implements OnInit {
           mediaSrc = q.mediaDetails.fileSrc;
         }
 
-        this.questionsFormGroup.setControl(fgn, new FormGroup({
-          text: new FormControl(q.text),
-          mediaSrc: new FormControl(mediaSrc),
-          answers: new FormGroup({
-            answer0: new FormGroup({
-              text: new FormControl(q.answers[0].text),
-              isCorrect: new FormControl(q.answers[0].isCorrect)
+        this.questionsFormGroup.setControl(fgn, new UntypedFormGroup({
+          text: new UntypedFormControl(q.text),
+          mediaSrc: new UntypedFormControl(mediaSrc),
+          answers: new UntypedFormGroup({
+            answer0: new UntypedFormGroup({
+              text: new UntypedFormControl(q.answers[0].text),
+              isCorrect: new UntypedFormControl(q.answers[0].isCorrect)
             }),
-            answer1: new FormGroup({
-              text: new FormControl(q.answers[1].text),
-              isCorrect: new FormControl(q.answers[1].isCorrect)
+            answer1: new UntypedFormGroup({
+              text: new UntypedFormControl(q.answers[1].text),
+              isCorrect: new UntypedFormControl(q.answers[1].isCorrect)
             }),
-            answer2: new FormGroup({
-              text: new FormControl(q.answers[2].text),
-              isCorrect: new FormControl(q.answers[2].isCorrect)
+            answer2: new UntypedFormGroup({
+              text: new UntypedFormControl(q.answers[2].text),
+              isCorrect: new UntypedFormControl(q.answers[2].isCorrect)
             }),
-            answer3: new FormGroup({
-              text: new FormControl(q.answers[3].text),
-              isCorrect: new FormControl(q.answers[3].isCorrect)
+            answer3: new UntypedFormGroup({
+              text: new UntypedFormControl(q.answers[3].text),
+              isCorrect: new UntypedFormControl(q.answers[3].isCorrect)
             })
           }),
-          answersVisible: new FormControl(q.show)
+          answersVisible: new UntypedFormControl(q.show)
         }));
         console.log("this.questionsFormGroup", this.questionsFormGroup);
         if (!q.show) {
@@ -137,47 +137,47 @@ export class SetupComponent implements OnInit {
         // this.addQuestionToFormGroup();
       }
     } else {
-      this.questionsFormGroup = new FormGroup({});
+      this.questionsFormGroup = new UntypedFormGroup({});
       this.questionFormGroupNames = [];
       this.addQuestionToFormGroup();
     }
   }
 
   public addQuestionToFormGroup(): void {
-    const qfc: FormGroup = this.createQuestionFormGroup();
+    const qfc: UntypedFormGroup = this.createQuestionFormGroup();
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
     this.questionsFormGroup.addControl(formGroupName, qfc);
     this.setStep(this.questionFormGroupNames.length - 1);
   }
 
-  private createQuestionFormGroup(): FormGroup {
-    return new FormGroup({
-      text: new FormControl(null, Validators.required),
-      mediaSrc: new FormControl({value: '', disabled: true}),
-      answers: new FormGroup({
+  private createQuestionFormGroup(): UntypedFormGroup {
+    return new UntypedFormGroup({
+      text: new UntypedFormControl(null, Validators.required),
+      mediaSrc: new UntypedFormControl({value: '', disabled: true}),
+      answers: new UntypedFormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),
         answer2: this.createFormGroupForAnswer(),
         answer3: this.createFormGroupForAnswer()
       }, {validators: this.atLeastOneCorrectAnswer()}),
-      answersVisible: new FormControl(true)
+      answersVisible: new UntypedFormControl(true)
     });
   }
 
-  private createFormGroupForAnswer(): FormGroup {
-    return new FormGroup({
-      text: new FormControl(null, Validators.required),
-      isCorrect: new FormControl(false)
+  private createFormGroupForAnswer(): UntypedFormGroup {
+    return new UntypedFormGroup({
+      text: new UntypedFormControl(null, Validators.required),
+      isCorrect: new UntypedFormControl(false)
     });
   }
 
-  public getQuestionFormGroup(name: string): FormGroup {
-    return this.questionsFormGroup.get(name) as FormGroup;
+  public getQuestionFormGroup(name: string): UntypedFormGroup {
+    return this.questionsFormGroup.get(name) as UntypedFormGroup;
   }
 
-  public getAnswerFromGroup(questionName: string): FormGroup {
-    return this.getQuestionFormGroup(questionName).get('answers') as FormGroup;
+  public getAnswerFromGroup(questionName: string): UntypedFormGroup {
+    return this.getQuestionFormGroup(questionName).get('answers') as UntypedFormGroup;
   }
 
   private atLeastOneCorrectAnswer(): ValidatorFn {
@@ -233,12 +233,12 @@ export class SetupComponent implements OnInit {
   private buildSetupQuestionsObject(): IQuestion[] {
     const ret: IQuestion[] = [];
     for (const name of this.questionFormGroupNames) {
-      const questionFormGroup: FormGroup = this.questionsFormGroup.get(name) as FormGroup;
+      const questionFormGroup: UntypedFormGroup = this.questionsFormGroup.get(name) as UntypedFormGroup;
       const questionText: string = questionFormGroup.get('text').value.toString();
       const mediaSrc: string = questionFormGroup.get('mediaSrc').value.toString();
       const answers: IAnswer[] = [];
       for (let i = 0; i < 4; i++) {
-        const answerFormGroup: FormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as FormGroup;
+        const answerFormGroup: UntypedFormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as UntypedFormGroup;
         answers.push({
           text: answerFormGroup.get('text').value.toString(),
           isCorrect: answerFormGroup.get('isCorrect').value

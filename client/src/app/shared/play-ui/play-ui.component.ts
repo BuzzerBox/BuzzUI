@@ -32,7 +32,7 @@ export class PlayUiComponent implements OnInit, OnDestroy {
       // There is some angular directive to achieve the binding of a listener (@HostListener) but it is not possible to remove that binding
       // or have it react to some boolean state but we only need it if this component is used from a screen, thus I prefer the "old" JS-way
       // of adding an event listener
-      document.addEventListener('keypress', this.handleKeyboardEvent.bind(this));
+      document.addEventListener('keydown', this.handleKeyboardEvent.bind(this));
     }
   }
 
@@ -83,7 +83,7 @@ export class PlayUiComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     SubscriptionsHelper.cleanUpSubscriptions(this.setQuestionPacketSubscription);
     if (!this.isMaster) {
-      document.removeEventListener('keypress', this.handleKeyboardEvent.bind(this));
+      document.removeEventListener('keydown', this.handleKeyboardEvent.bind(this));
     }
   }
 

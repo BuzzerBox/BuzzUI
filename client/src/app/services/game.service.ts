@@ -86,6 +86,7 @@ export class GameService implements OnDestroy {
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
     this.markTeamSubject = new Subject<IMarkTeamPacket>();
     this.teams = [];
+    this.questions = [];
   }
 
   public useAsMaster(): void {
@@ -314,11 +315,12 @@ export class GameService implements OnDestroy {
   }
 
   public getCurrentQuestion(): IQuestion {
+    if (!this.currentGameState) { return null; }
     return this.getQuestion(this.currentGameState.currentQuestionNumber);
   }
 
   public getCurrentQuestionNumber(): number {
-    return this.currentGameState.currentQuestionNumber;
+    return this.currentGameState?.currentQuestionNumber ?? 0;
   }
 
   public addPoint(team: ITeam): void {
@@ -410,6 +412,7 @@ export class GameService implements OnDestroy {
   }
 
   public hasNextQuestion(): boolean {
+    if (!this.questions) { return false; }
     return this.getCurrentQuestionNumber() < this.questions.length - 1;
   }
 

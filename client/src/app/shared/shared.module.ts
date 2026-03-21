@@ -25,45 +25,42 @@ import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.componen
 import {MatIconModule} from '@angular/material/icon';
 
 @NgModule({
-  declarations: [
-    PlayUiComponent,
-    TeamCardComponent,
-    QuestionPaneComponent,
-    AnswerOptionsComponent,
-    DialogConfirmEndingGameComponent,
-    ScoreBoardComponent,
-    BuzzerLockComponent,
-    MediaQuestionComponent,
-    MediaRemoteComponent
-  ],
-  imports: [
-    CommonModule,
-    FlexModule,
-    MatButtonModule,
-    MatCardModule,
-    MatGridListModule,
-    MatDialogModule,
-    MatBottomSheetModule,
-    MatListModule,
-    MatSnackBarModule,
-    VgCoreModule,
-    VgControlsModule,
-    VgOverlayPlayModule,
-    VgBufferingModule,
-    MatIconModule
-  ],
-  exports: [
-    PlayUiComponent,
-    TeamCardComponent,
-    QuestionPaneComponent,
-    AnswerOptionsComponent,
-    DialogConfirmEndingGameComponent,
-    MediaQuestionComponent,
-    MediaRemoteComponent
-  ],
-  entryComponents: [
-    DialogConfirmEndingGameComponent
-  ],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    declarations: [
+        PlayUiComponent,
+        TeamCardComponent,
+        QuestionPaneComponent,
+        AnswerOptionsComponent,
+        DialogConfirmEndingGameComponent,
+        ScoreBoardComponent,
+        BuzzerLockComponent,
+        MediaQuestionComponent,
+        MediaRemoteComponent
+    ],
+    imports: [
+        CommonModule,
+        FlexModule,
+        MatButtonModule,
+        MatCardModule,
+        MatGridListModule,
+        MatDialogModule,
+        MatBottomSheetModule,
+        MatListModule,
+        MatSnackBarModule,
+        VgCoreModule,
+        VgControlsModule,
+        VgOverlayPlayModule,
+        VgBufferingModule,
+        MatIconModule
+    ],
+    exports: [
+        PlayUiComponent,
+        TeamCardComponent,
+        QuestionPaneComponent,
+        AnswerOptionsComponent,
+        DialogConfirmEndingGameComponent,
+        MediaQuestionComponent,
+        MediaRemoteComponent
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class SharedModule { }

@@ -1,7 +1,7 @@
 import {EProcessArguments, ProcessArgumentsService} from './process-arguments.service';
 import config from '../../config.json';
 import configDev from '../../config.dev.json';
-import * as _ from 'lodash';
+import { defaultsDeep } from 'lodash';
 
 export class ConfigService {
 	private static instance: ConfigService;
@@ -22,7 +22,7 @@ export class ConfigService {
 	 */
 	public static getConfig(): typeof config {
 		if (this.getInstance().isDevMode()) {
-			return _.defaultsDeep(configDev, config);
+			return defaultsDeep(configDev, config);
 		} else {
 			return config;
 		}

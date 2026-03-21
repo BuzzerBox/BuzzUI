@@ -31,6 +31,9 @@ export class FileServerService {
             })
             MainExpressService.get().getMain().get(serverPath, (req, res) => {
                 const tree = dirTree(localPath, {attributes:['extension', 'size', 'type'], normalizePath: true});
+                if (tree === null) {
+                    return res.status(404).json({ error: `Media path not found: ${localPath}` });
+                }
                 console.log(tree.children.length);
                 return res.json(this.cleanPath(tree, localPath));
             })

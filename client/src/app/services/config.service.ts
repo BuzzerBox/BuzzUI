@@ -1,7 +1,7 @@
 import {Injectable, isDevMode} from '@angular/core';
 import config from '../../../../config.json';
 import configDev from '../../../../config.dev.json';
-import * as _ from 'lodash';
+import { defaultsDeep } from 'lodash-es';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +15,7 @@ export class ConfigService {
    */
   public static getConfig(): typeof config {
     if (isDevMode()) {
-      return _.defaultsDeep(configDev, config);
+      return defaultsDeep(configDev, config);
     } else {
       return config;
     }

@@ -38,15 +38,15 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.isMaster) {
       this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
     }
-    this.showAnswers = !this.question.mediaDetails  && this.question.show as boolean;
+    this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
     this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         switch (packet.newState) {
           case EVideoStates.FINISHED:
-            this.showAnswers = this.question.show as boolean;
+            this.showAnswers = this.question?.show as boolean;
             break;
           default:
-            this.showAnswers = !this.question.mediaDetails && this.question.show as boolean;
+            this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
         }
       }
     );

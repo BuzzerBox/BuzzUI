@@ -3,7 +3,6 @@ import {FileService} from '../../services/file.service';
 import {IDirectoryTree, StringHelper, FileExtensionsService} from '../../../../../shared/shared';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
-import {addWarning} from '@angular-devkit/build-angular/src/utils/webpack-diagnostics';
 
 @Component({
   selector: 'app-select-media',
@@ -45,7 +44,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
 
   async getMediaDirectory(): Promise<void> {
     const result = await this.fileService.getMediaList();
-    this.dataSource.data = [result];
+    this.dataSource.data = result != null ? [result] : [];
     this.hasFetchedData = true;
   }
 
@@ -59,7 +58,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
     }
   }
 
-  hasChild = (_: number, node: IDirectoryTree) => !!node.children && node.children.length > 0;
+  hasChild = (_: number, node: IDirectoryTree) => !!node && !!node.children && node.children.length > 0;
 
   private async getData(): Promise<IDirectoryTree> {
     if (!this.hasFetchedData) {

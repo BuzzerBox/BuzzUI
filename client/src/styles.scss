@@ -1,0 +1,30 @@
+@use '@angular/material' as mat;
+
+// Include the core styles (typography, elevation, etc.)
+@include mat.core();
+
+// Define the theme palettes (indigo-pink, matching the old prebuilt theme)
+$primary: mat.define-palette(mat.$indigo-palette);
+$accent:  mat.define-palette(mat.$pink-palette, A200, A100, A400);
+$warn:    mat.define-palette(mat.$red-palette);
+
+$theme: mat.define-light-theme((
+  color: (
+    primary: $primary,
+    accent:  $accent,
+    warn:    $warn,
+  ),
+  typography: mat.define-typography-config(),
+  density: 0,
+));
+
+// Emit theme CSS for all Material components
+@include mat.all-component-themes($theme);
+
+// ── App global styles ──────────────────────────────────────────────────────
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #dddddd;
+}

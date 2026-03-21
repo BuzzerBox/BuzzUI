@@ -15,24 +15,23 @@ mat-grid-tile {
 }
 
 button {
-  height: 95%;
+  height: 95% !important;
   width: 90%;
-  box-sizing: content-box;
-  font-size: xx-large;
+  font-size: xx-large !important;
   transition: background-color 500ms ease-in;
   white-space: normal;
 }
 
 .logged-in {
-  background-color: aqua;
+  background-color: aqua !important;
 }
 
 .wrong {
-  background-color: orangered;
+  background-color: orangered !important;
 }
 
 .correct {
-  background-color: forestgreen;
+  background-color: forestgreen !important;
 }
 
 
