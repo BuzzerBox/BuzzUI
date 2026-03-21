@@ -67,7 +67,7 @@ export class RouteGuard  {
     if (this.game.getGameState() === EGameStatesMaster.READY_TO_START) {
       return true;
     } else {
-      this.redirectToStart();
+      return this.redirectToStart();
     }
   }
 
@@ -75,7 +75,7 @@ export class RouteGuard  {
     if (this.game.getGameState() === EGameStatesMaster.PLAYING) {
       return true;
     } else {
-      this.redirectToStart();
+      return this.redirectToStart();
     }
   }
 }
