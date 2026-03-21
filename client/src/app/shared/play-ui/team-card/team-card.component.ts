@@ -5,9 +5,10 @@ import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {Subscription} from 'rxjs';
 
 @Component({
-  selector: 'app-team-card',
-  templateUrl: './team-card.component.html',
-  styleUrls: ['./team-card.component.css']
+    selector: 'app-team-card',
+    templateUrl: './team-card.component.html',
+    styleUrls: ['./team-card.component.css'],
+    standalone: false
 })
 export class TeamCardComponent implements OnInit, OnDestroy {
   @Input() team: ITeam;

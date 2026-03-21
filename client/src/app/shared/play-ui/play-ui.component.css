@@ -1,14 +1,21 @@
 .play-container {
   height: calc(100% - 64px);
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: stretch;
 }
 
 .teams-left-pane {
+  flex: 0 0 15%;
 }
 
 .teams-right-pane {
+  flex: 0 0 15%;
 }
 
 .questions-pane {
+  flex: 0 0 70%;
   position: relative;
 }
 

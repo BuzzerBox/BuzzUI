@@ -5,9 +5,10 @@ import {NestedTreeControl} from '@angular/cdk/tree';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
 
 @Component({
-  selector: 'app-select-media',
-  templateUrl: './select-media.component.html',
-  styleUrls: ['./select-media.component.css']
+    selector: 'app-select-media',
+    templateUrl: './select-media.component.html',
+    styleUrls: ['./select-media.component.css'],
+    standalone: false
 })
 export class SelectMediaComponent implements OnInit, OnChanges {
   treeControl = new NestedTreeControl<IDirectoryTree>(node => node.children);

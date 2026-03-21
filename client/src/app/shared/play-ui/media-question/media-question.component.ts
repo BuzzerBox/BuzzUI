@@ -6,9 +6,10 @@ import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
 
 @Component({
-  selector: 'app-media-question',
-  templateUrl: './media-question.component.html',
-  styleUrls: ['./media-question.component.css']
+    selector: 'app-media-question',
+    templateUrl: './media-question.component.html',
+    styleUrls: ['./media-question.component.css'],
+    standalone: false
 })
 export class MediaQuestionComponent implements OnInit, OnDestroy {
   @Input() media: IMediaDetails;

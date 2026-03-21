@@ -1,25 +1,41 @@
-<div class="media-control-button-row" *ngIf="isVideo()">
-  <button mat-icon-button aria-label="Play" (click)="play()" *ngIf="!isPlaying()" title="Video auf allen Anzeigegeraeten fortsetzen">
-    <mat-icon>play_arrow</mat-icon>
-  </button>
-  <button mat-icon-button aria-label="Pause" (click)="pause()" *ngIf="isPlaying()" title="Video auf allen Anzeigegeraeten pausieren">
-    <mat-icon>pause</mat-icon>
-  </button>
-  <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video auf allen Anzeigegeraeten von vorne beginnen">
-    <mat-icon>replay</mat-icon>
-  </button>
-  <button mat-icon-button aria-label="Skip" (click)="skip()" *ngIf="isNotFinished()" title="Zum Ende springen">
-    <mat-icon>skip_next</mat-icon>
-  </button>
-</div>
-<div class="media-control-button-row" *ngIf="!isVideo()">
-  <button mat-icon-button aria-label="Play" (click)="play()" *ngIf="!isPlaying()" title="Bild verbergen">
-    <mat-icon>image</mat-icon>
-  </button>
-  <button mat-icon-button aria-label="Pause" (click)="pause()" *ngIf="isPlaying()" title="Bild verberben">
-    <mat-icon>hide_image</mat-icon>
-  </button>
-  <button mat-icon-button aria-label="Skip" (click)="skip()" *ngIf="isNotFinished()" title="Zum Ende springen">
-    <mat-icon>skip_next</mat-icon>
-  </button>
-</div>
+@if (isVideo()) {
+  <div class="media-control-button-row">
+    @if (!isPlaying()) {
+      <button mat-icon-button aria-label="Play" (click)="play()" title="Video auf allen Anzeigegeraeten fortsetzen">
+        <mat-icon>play_arrow</mat-icon>
+      </button>
+    }
+    @if (isPlaying()) {
+      <button mat-icon-button aria-label="Pause" (click)="pause()" title="Video auf allen Anzeigegeraeten pausieren">
+        <mat-icon>pause</mat-icon>
+      </button>
+    }
+    <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video auf allen Anzeigegeraeten von vorne beginnen">
+      <mat-icon>replay</mat-icon>
+    </button>
+    @if (isNotFinished()) {
+      <button mat-icon-button aria-label="Skip" (click)="skip()" title="Zum Ende springen">
+        <mat-icon>skip_next</mat-icon>
+      </button>
+    }
+  </div>
+}
+@if (!isVideo()) {
+  <div class="media-control-button-row">
+    @if (!isPlaying()) {
+      <button mat-icon-button aria-label="Play" (click)="play()" title="Bild verbergen">
+        <mat-icon>image</mat-icon>
+      </button>
+    }
+    @if (isPlaying()) {
+      <button mat-icon-button aria-label="Pause" (click)="pause()" title="Bild verberben">
+        <mat-icon>hide_image</mat-icon>
+      </button>
+    }
+    @if (isNotFinished()) {
+      <button mat-icon-button aria-label="Skip" (click)="skip()" title="Zum Ende springen">
+        <mat-icon>skip_next</mat-icon>
+      </button>
+    }
+  </div>
+}

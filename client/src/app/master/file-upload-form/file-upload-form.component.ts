@@ -3,9 +3,10 @@ import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} f
 import {IUploadFormData} from '../interfaces/IUploadFormData';
 
 @Component({
-  selector: 'app-file-upload-form',
-  templateUrl: './file-upload-form.component.html',
-  styleUrls: ['./file-upload-form.component.css']
+    selector: 'app-file-upload-form',
+    templateUrl: './file-upload-form.component.html',
+    styleUrls: ['./file-upload-form.component.css'],
+    standalone: false
 })
 export class FileUploadFormComponent implements OnInit {
   @ViewChild('fileDropRef', {static: false}) fileDropEl: ElementRef;

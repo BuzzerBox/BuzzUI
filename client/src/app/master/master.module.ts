@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import { StartComponent } from './start/start.component';
 import {MasterRoutingModule} from './master.routing.module';
 import { SetupComponent } from './setup/setup.component';
@@ -14,7 +14,6 @@ import {MatStepperModule} from '@angular/material/stepper';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatCheckboxModule} from '@angular/material/checkbox';
-import {FlexModule} from '@angular/flex-layout';
 import { StartGameComponent } from './start-game/start-game.component';
 import { PlayComponent } from './play/play.component';
 import {MatCardModule} from '@angular/material/card';
@@ -44,6 +43,7 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
   ],
   imports: [
     CommonModule,
+    AsyncPipe,
     MasterRoutingModule,
     MatToolbarModule,
     MatIconModule,
@@ -53,7 +53,6 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
-    FlexModule,
     MatCardModule,
     SharedModule,
     MatBottomSheetModule,

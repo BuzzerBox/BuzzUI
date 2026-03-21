@@ -1,12 +1,12 @@
 import {Injectable} from '@angular/core';
-import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree} from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import {GameService} from '../../services/game.service';
 import {Observable} from 'rxjs';
 import {pathsScreen} from '../paths-screen';
 import {pathsMaster} from '../../master/paths-master';
 
 @Injectable()
-export class RouteGuard implements CanActivate {
+export class RouteGuard  {
   constructor(private game: GameService, private router: Router) {
     game.useAsScreen();
   }

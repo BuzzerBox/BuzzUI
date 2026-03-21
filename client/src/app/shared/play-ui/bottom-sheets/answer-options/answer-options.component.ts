@@ -13,9 +13,10 @@ export enum EDecisionBottomSheetAnswerOptions {
 }
 
 @Component({
-  selector: 'app-answer-options',
-  templateUrl: './answer-options.component.html',
-  styleUrls: ['./answer-options.component.css']
+    selector: 'app-answer-options',
+    templateUrl: './answer-options.component.html',
+    styleUrls: ['./answer-options.component.css'],
+    standalone: false
 })
 export class AnswerOptionsComponent {
 

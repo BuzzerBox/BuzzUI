@@ -6,7 +6,6 @@ import { AppRoutingModule } from './app.routing.module';
 import {MasterRoutingModule} from './master/master.routing.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ChooseComponent } from './choose/choose.component';
-import {FlexModule} from '@angular/flex-layout';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import { TeamCardComponent } from './shared/play-ui/team-card/team-card.component';
@@ -18,31 +17,22 @@ import {MatListModule} from '@angular/material/list';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import { DialogConfirmEndingGameComponent } from './shared/play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialogModule} from '@angular/material/dialog';
-import {HttpClientModule} from "@angular/common/http";
+import { provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    ChooseComponent
-  ],
-  imports: [
-    HttpClientModule,
-    BrowserModule,
-    BrowserAnimationsModule,
-    AppRoutingModule,
-    MasterRoutingModule,
-    FlexModule,
-    MatButtonModule,
-    // MatCardModule,
-    // MatGridListModule,
-    MatBottomSheetModule,
-    // MatListModule,
-    MatSnackBarModule,
-    MatDialogModule,
-  ],
-  providers: [],
-  bootstrap: [AppComponent],
-  exports: [
-  ]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        ChooseComponent
+    ],
+    bootstrap: [AppComponent],
+    exports: [], imports: [BrowserModule,
+        BrowserAnimationsModule,
+        AppRoutingModule,
+        MasterRoutingModule,
+        MatButtonModule,
+        // MatCardModule,
+        // MatGridListModule,
+        MatBottomSheetModule,
+        // MatListModule,
+        MatSnackBarModule,
+        MatDialogModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule { }

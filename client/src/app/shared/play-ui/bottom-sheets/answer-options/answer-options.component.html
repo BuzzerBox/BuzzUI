@@ -1,5 +1,9 @@
 <mat-nav-list>
-  <a mat-list-item (click)="logOutAnswer()" *ngIf="isAlreadyLoggedIn()">Anwort ausloggen</a>
-  <a mat-list-item (click)="logInAnswer()" *ngIf="!isAlreadyLoggedIn()">Anwort einloggen</a>
+  @if (isAlreadyLoggedIn()) {
+    <a mat-list-item (click)="logOutAnswer()">Anwort ausloggen</a>
+  }
+  @if (!isAlreadyLoggedIn()) {
+    <a mat-list-item (click)="logInAnswer()">Anwort einloggen</a>
+  }
   <a mat-list-item (click)="activateAnswer()">Antwort aktivieren</a>
 </mat-nav-list>

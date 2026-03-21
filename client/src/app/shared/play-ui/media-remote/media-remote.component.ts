@@ -4,9 +4,10 @@ import {EVideoStates, FileExtensionsService, IMediaDetails} from '../../../../..
 import {Subscription} from 'rxjs';
 
 @Component({
-  selector: 'app-media-remote',
-  templateUrl: './media-remote.component.html',
-  styleUrls: ['./media-remote.component.css']
+    selector: 'app-media-remote',
+    templateUrl: './media-remote.component.html',
+    styleUrls: ['./media-remote.component.css'],
+    standalone: false
 })
 export class MediaRemoteComponent implements OnInit {
   @Input() media: IMediaDetails;

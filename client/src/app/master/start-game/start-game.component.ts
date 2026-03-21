@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {GameService} from '../../services/game.service';
 
 @Component({
-  selector: 'app-start-game',
-  templateUrl: './start-game.component.html',
-  styleUrls: ['./start-game.component.css']
+    selector: 'app-start-game',
+    templateUrl: './start-game.component.html',
+    styleUrls: ['./start-game.component.css'],
+    standalone: false
 })
 export class StartGameComponent implements OnInit {
 

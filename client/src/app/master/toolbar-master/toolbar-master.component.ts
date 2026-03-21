@@ -3,9 +3,10 @@ import {GameService} from '../../services/game.service';
 import {SafeUrl} from '@angular/platform-browser';
 
 @Component({
-  selector: 'app-toolbar-master',
-  templateUrl: './toolbar-master.component.html',
-  styleUrls: ['./toolbar-master.component.css']
+    selector: 'app-toolbar-master',
+    templateUrl: './toolbar-master.component.html',
+    styleUrls: ['./toolbar-master.component.css'],
+    standalone: false
 })
 export class ToolbarMasterComponent implements OnInit {
   @Input() showSaveIcon = false;

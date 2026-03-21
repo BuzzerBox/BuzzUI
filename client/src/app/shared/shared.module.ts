@@ -9,7 +9,6 @@ import {MatGridListModule} from '@angular/material/grid-list';
 import {MatCardModule} from '@angular/material/card';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
-import {FlexModule} from '@angular/flex-layout';
 import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
 import {MatListModule} from '@angular/material/list';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
@@ -38,7 +37,6 @@ import {MatIconModule} from '@angular/material/icon';
     ],
     imports: [
         CommonModule,
-        FlexModule,
         MatButtonModule,
         MatCardModule,
         MatGridListModule,

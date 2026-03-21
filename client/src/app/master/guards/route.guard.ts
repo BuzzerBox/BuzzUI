@@ -1,4 +1,4 @@
-import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree} from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import {Observable} from 'rxjs';
 import {GameService} from '../../services/game.service';
 import {Injectable} from '@angular/core';
@@ -6,7 +6,7 @@ import {EGameStatesMaster} from '../enums/EGameStatesMaster';
 import {pathsMaster} from '../paths-master';
 
 @Injectable()
-export class RouteGuard implements CanActivate {
+export class RouteGuard  {
   constructor(private game: GameService, private router: Router) {
     game.useAsMaster();
   }

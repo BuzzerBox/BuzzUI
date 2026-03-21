@@ -1,24 +1,31 @@
-<ng-template [ngIf]="isQuestionExisting()">
+@if (isQuestionExisting()) {
   <mat-card-header>
     <mat-card-title>Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}</mat-card-title>
   </mat-card-header>
   <mat-card-content>
     {{getQuestionText()}}
-    <app-media-remote *ngIf="isMaster && question.mediaDetails" [media]="question.mediaDetails"></app-media-remote>
+    @if (isMaster && question.mediaDetails) {
+      <app-media-remote [media]="question.mediaDetails"></app-media-remote>
+    }
     <div class="videooptions">
-      <div *ngIf="question.mediaDetails && !isMaster" class="bottom">
-        <app-media-question [media]="question.mediaDetails"></app-media-question>
-      </div>
+      @if (question.mediaDetails && !isMaster) {
+        <div class="bottom">
+          <app-media-question [media]="question.mediaDetails"></app-media-question>
+        </div>
+      }
       <div class="top">
-        <mat-grid-list cols="2" rowHeight="2:1" *ngIf="showAnswers">
-          <mat-grid-tile *ngFor="let answer of getAnswers(); let i = index">
-            <button id="button{{i}}" mat-raised-button (click)="onClickAnswer(answer, $event.currentTarget)">
-              {{answer.text}}
-            </button>
-
-          </mat-grid-tile>
-        </mat-grid-list>
+        @if (showAnswers) {
+          <mat-grid-list cols="2" rowHeight="2:1">
+            @for (answer of getAnswers(); track answer; let i = $index) {
+              <mat-grid-tile>
+                <button id="button{{i}}" mat-raised-button (click)="onClickAnswer(answer, $event.currentTarget)">
+                  {{answer.text}}
+                </button>
+              </mat-grid-tile>
+            }
+          </mat-grid-list>
+        }
       </div>
     </div>
   </mat-card-content>
-</ng-template>
+}

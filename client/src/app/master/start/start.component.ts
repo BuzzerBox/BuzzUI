@@ -4,9 +4,10 @@ import {Title} from '@angular/platform-browser';
 import {ConfigService} from '../../services/config.service';
 
 @Component({
-  selector: 'app-start',
-  templateUrl: './start.component.html',
-  styleUrls: ['./start.component.css']
+    selector: 'app-start',
+    templateUrl: './start.component.html',
+    styleUrls: ['./start.component.css'],
+    standalone: false
 })
 export class StartComponent implements OnInit {
 

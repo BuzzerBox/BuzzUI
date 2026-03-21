@@ -1,24 +1,34 @@
 <h3>Media Selection :</h3>
-<div *ngIf="activeNode !== undefined">
-  Die Datei {{activeNode.name}} ist ausgewaehlt.
-</div>
-<div *ngIf="activeNode === undefined">
-  Zu dieser Frage ist kein Medium ausgewaehlt.
-</div>
+@if (activeNode !== undefined) {
+  <div>
+    Die Datei {{activeNode.name}} ist ausgewaehlt.
+  </div>
+}
+@if (activeNode === undefined) {
+  <div>
+    Zu dieser Frage ist kein Medium ausgewaehlt.
+  </div>
+}
 
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
   <!-- This is the tree node template for files -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle (click)="changeSelection(node)" [ngClass]="{'background-highlight': activeNode === node}">
-    <mat-icon *ngIf="activeNode !== node && isImage(node)" mat-list-icon>image</mat-icon>
-    <mat-icon *ngIf="activeNode !== node && isVideo(node)" mat-list-icon>movie</mat-icon>
-    <mat-icon *ngIf="activeNode === node" mat-list-icon>check</mat-icon>
+    @if (activeNode !== node && isImage(node)) {
+      <mat-icon mat-list-icon>image</mat-icon>
+    }
+    @if (activeNode !== node && isVideo(node)) {
+      <mat-icon mat-list-icon>movie</mat-icon>
+    }
+    @if (activeNode === node) {
+      <mat-icon mat-list-icon>check</mat-icon>
+    }
     {{node.name}}
   </mat-tree-node>
   <!-- This is the tree node template for directories -->
   <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild" >
     <div class="mat-tree-node">
       <button mat-icon-button matTreeNodeToggle
-              [attr.aria-label]="'Toggle ' + node.name">
+        [attr.aria-label]="'Toggle ' + node.name">
         <mat-icon class="mat-icon-rtl-mirror">
           {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
         </mat-icon>
@@ -27,15 +37,17 @@
       {{node.name}}
     </div>
     <div [class.example-tree-invisible]="!treeControl.isExpanded(node)"
-         role="group">
+      role="group">
       <ng-container matTreeNodeOutlet></ng-container>
     </div>
   </mat-nested-tree-node>
 </mat-tree>
 
-<div *ngIf="activeNode !== undefined">
-  <button mat-icon-button (click)="changeSelection(undefined)">
-    <mat-icon>remove_circle_outline</mat-icon>
-  </button>
-  {{activeNode.name}}
-</div>
+@if (activeNode !== undefined) {
+  <div>
+    <button mat-icon-button (click)="changeSelection(undefined)">
+      <mat-icon>remove_circle_outline</mat-icon>
+    </button>
+    {{activeNode.name}}
+  </div>
+}

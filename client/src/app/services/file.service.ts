@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {ConfigService} from './config.service';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import {IDirectoryTree, StringHelper} from '../../../../shared/shared';
 @Injectable({
   providedIn: 'root'

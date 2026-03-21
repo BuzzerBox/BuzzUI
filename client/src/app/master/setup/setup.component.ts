@@ -4,24 +4,21 @@ import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
-import {Observable, Subject} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
 import {FileService} from '../../services/file.service';
 
 @Component({
-  selector: 'app-setup',
-  templateUrl: './setup.component.html',
-  styleUrls: ['./setup.component.css']
+    selector: 'app-setup',
+    templateUrl: './setup.component.html',
+    styleUrls: ['./setup.component.css'],
+    standalone: false
 })
 export class SetupComponent implements OnInit {
   public readonly FORM_GROUP_NAME_TEAMS = 'teamsFormGroup';
   public readonly ANSWER_FORM_GROUP_BASE_NAME = 'answer';
 
   @ViewChild('questionForm') questionForm;
-
-  public testSub: Subject<UntypedFormGroup> = new Subject<UntypedFormGroup>();
-  public testObs: Observable<UntypedFormGroup> = this.testSub.asObservable();
 
   public teamsFormGroup: UntypedFormGroup;
   public questionsFormGroup: UntypedFormGroup;

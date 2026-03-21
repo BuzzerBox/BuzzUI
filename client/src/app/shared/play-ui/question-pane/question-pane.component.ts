@@ -12,9 +12,10 @@ import {ArraysHelper} from '../../../helper/arrays.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
 
 @Component({
-  selector: 'app-question-pane',
-  templateUrl: './question-pane.component.html',
-  styleUrls: ['./question-pane.component.css']
+    selector: 'app-question-pane',
+    templateUrl: './question-pane.component.html',
+    styleUrls: ['./question-pane.component.css'],
+    standalone: false
 })
 export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isMaster = false;

@@ -456,7 +456,7 @@ export class GameService implements OnDestroy {
     this.webSocketService.send<IResetServerPacket>({
       packetType: EPacketTypes.RESET_SERVER
     });
-    window.location.reload();
+    this.router.navigate(['/choose']);
   }
 
   private isUsedAsScreen(): boolean {

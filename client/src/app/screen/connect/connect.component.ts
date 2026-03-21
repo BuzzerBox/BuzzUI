@@ -3,9 +3,10 @@ import {GameService} from '../../services/game.service';
 import {Observable, Subscription} from 'rxjs';
 
 @Component({
-  selector: 'app-connect',
-  templateUrl: './connect.component.html',
-  styleUrls: ['./connect.component.css']
+    selector: 'app-connect',
+    templateUrl: './connect.component.html',
+    styleUrls: ['./connect.component.css'],
+    standalone: false
 })
 export class ConnectComponent implements OnInit {
   public isWebsocketConnected = false;

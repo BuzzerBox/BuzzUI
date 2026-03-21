@@ -11,9 +11,10 @@ import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../helper/subscriptions.helper';
 
 @Component({
-  selector: 'app-play-ui',
-  templateUrl: './play-ui.component.html',
-  styleUrls: ['./play-ui.component.css']
+    selector: 'app-play-ui',
+    templateUrl: './play-ui.component.html',
+    styleUrls: ['./play-ui.component.css'],
+    standalone: false
 })
 export class PlayUiComponent implements OnInit, OnDestroy {
   @Input() isMaster = false;

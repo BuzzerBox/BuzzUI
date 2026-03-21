@@ -1,16 +1,20 @@
 <mat-toolbar color="primary">
   <!--<button mat-icon-button class="example-icon" aria-label="Example icon-button with menu icon">
-    <mat-icon>menu</mat-icon>
-  </button>-->
-  <span>{{getName()}}</span>
-  <span class="example-spacer"></span>
-  <button mat-icon-button *ngIf="showReleaseBuzzerLockIcon" (click)="releaseBuzzerLock()" title="Buzzerlock freigeben">
+  <mat-icon>menu</mat-icon>
+</button>-->
+<span>{{getName()}}</span>
+<span class="example-spacer"></span>
+@if (showReleaseBuzzerLockIcon) {
+  <button mat-icon-button (click)="releaseBuzzerLock()" title="Buzzerlock freigeben">
     <mat-icon>lock_open</mat-icon>
   </button>
-  <button mat-icon-button (click)="resetServer()" title="Server zurücksetzen">
-    <mat-icon>restart_alt</mat-icon>
-  </button>
-  <a mat-icon-button *ngIf="showSaveIcon" [href]="exportGameState()" [download]="getDownloadFileName()" title="Spielstand speichern">
+}
+<button mat-icon-button (click)="resetServer()" title="Server zurücksetzen">
+  <mat-icon>restart_alt</mat-icon>
+</button>
+@if (showSaveIcon) {
+  <a mat-icon-button [href]="exportGameState()" [download]="getDownloadFileName()" title="Spielstand speichern">
     <mat-icon>save</mat-icon>
   </a>
+}
 </mat-toolbar>
