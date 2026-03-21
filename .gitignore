@@ -6,3 +6,6 @@
 
 # Local config
 config.dev.json
+
+# Media files
+server/media/

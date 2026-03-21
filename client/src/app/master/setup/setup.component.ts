@@ -1,4 +1,5 @@
 import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
@@ -140,6 +141,63 @@ export class SetupComponent implements OnInit {
     }
   }
 
+  public removeQuestion(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    const deletedControl = this.questionsFormGroup.get(this.questionFormGroupNames[index]) as UntypedFormGroup;
+    const remainingNames = this.questionFormGroupNames.filter((_, i) => i !== index);
+    const newGroup = new UntypedFormGroup({});
+    const newNames: string[] = [];
+    for (let i = 0; i < remainingNames.length; i++) {
+      const newName = 'question' + i;
+      newNames.push(newName);
+      newGroup.addControl(newName, this.questionsFormGroup.get(remainingNames[i]) as UntypedFormGroup);
+    }
+    this.questionFormGroupNames = newNames;
+    this.questionsFormGroup = newGroup;
+    if (this.step >= this.questionFormGroupNames.length) {
+      this.step = Math.max(0, this.questionFormGroupNames.length - 1);
+    }
+
+    const snackBarRef = this.snackBar.open(`Frage ${index + 1} gelöscht`, 'Rückgängig', { duration: 5000 });
+    snackBarRef.onAction().subscribe(() => {
+      const restoredNames: string[] = [];
+      const restoredGroup = new UntypedFormGroup({});
+      for (let i = 0; i < index; i++) {
+        const name = 'question' + i;
+        restoredNames.push(name);
+        restoredGroup.addControl(name, this.questionsFormGroup.get(this.questionFormGroupNames[i]) as UntypedFormGroup);
+      }
+      restoredNames.push('question' + index);
+      restoredGroup.addControl('question' + index, deletedControl);
+      for (let i = index; i < this.questionFormGroupNames.length; i++) {
+        const name = 'question' + (i + 1);
+        restoredNames.push(name);
+        restoredGroup.addControl(name, this.questionsFormGroup.get(this.questionFormGroupNames[i]) as UntypedFormGroup);
+      }
+      this.questionFormGroupNames = restoredNames;
+      this.questionsFormGroup = restoredGroup;
+      this.step = index;
+    });
+  }
+
+  public dropQuestion(event: CdkDragDrop<string[]>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    moveItemInArray(this.questionFormGroupNames, event.previousIndex, event.currentIndex);
+    const newGroup = new UntypedFormGroup({});
+    const newNames: string[] = [];
+    for (let i = 0; i < this.questionFormGroupNames.length; i++) {
+      const newName = 'question' + i;
+      const control = this.questionsFormGroup.get(this.questionFormGroupNames[i]) as UntypedFormGroup;
+      newNames.push(newName);
+      newGroup.addControl(newName, control);
+    }
+    this.questionFormGroupNames = newNames;
+    this.questionsFormGroup = newGroup;
+    this.step = event.currentIndex;
+  }
+
   public addQuestionToFormGroup(): void {
     const qfc: UntypedFormGroup = this.createQuestionFormGroup();
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
@@ -151,7 +209,7 @@ export class SetupComponent implements OnInit {
   private createQuestionFormGroup(): UntypedFormGroup {
     return new UntypedFormGroup({
       text: new UntypedFormControl(null, Validators.required),
-      mediaSrc: new UntypedFormControl({value: '', disabled: true}),
+      mediaSrc: new UntypedFormControl(''),
       answers: new UntypedFormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),

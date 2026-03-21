@@ -45,18 +45,23 @@
     <!--    <ng-template>-->
     <form #questionForm [formGroup]="questionsFormGroup" id="questionForm">
       <!--    <form #questionForm [formGroup]="testObs | async" id="questionForm">-->
-      <mat-accordion class="example-headers-align">
+      <mat-accordion class="example-headers-align" cdkDropList (cdkDropListDropped)="dropQuestion($event)">
         @for (questionFormGroupName of questionFormGroupNames; track questionFormGroupName; let i = $index) {
-          <mat-expansion-panel hideToggle [expanded]="step === i" (opened)="setStep(i)">
+          <mat-expansion-panel hideToggle [expanded]="step === i" (opened)="setStep(i)" cdkDrag>
             <mat-expansion-panel-header>
               <mat-panel-title>
+                <mat-icon cdkDragHandle class="drag-handle" title="Frage verschieben">drag_indicator</mat-icon>
                 Frage {{i + 1}}
               </mat-panel-title>
               <mat-panel-description>
-                &nbsp; <!-- TODO I'm sure there is a cleaner way to check this-->
-                @if (questionsFormGroup.controls[questionFormGroupName] && questionsFormGroup.controls[questionFormGroupName].valid) {
-                  <mat-icon class="green-icon">check_circle</mat-icon>
-                }
+                <span class="panel-header-icons">
+                  @if (questionsFormGroup.controls[questionFormGroupName] && questionsFormGroup.controls[questionFormGroupName].valid) {
+                    <mat-icon class="green-icon">check_circle</mat-icon>
+                  }
+                  <button mat-icon-button (click)="removeQuestion(i, $event)" title="Frage löschen">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </span>
               </mat-panel-description>
             </mat-expansion-panel-header>
             <div class="row-layout" [formGroupName]="questionFormGroupName">

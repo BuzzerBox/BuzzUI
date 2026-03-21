@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges} from '@angular/core';
 import {FileService} from '../../services/file.service';
 import {IDirectoryTree, StringHelper, FileExtensionsService} from '../../../../../shared/shared';
 import {NestedTreeControl} from '@angular/cdk/tree';
@@ -20,22 +20,22 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   private hasFetchedData = false;
 
 
-  constructor(private fileService: FileService) {
+  constructor(private fileService: FileService, private cdr: ChangeDetectorRef) {
     this.getMediaDirectory();
   }
 
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     const locationVarName = 'fileLocation';
-    // if the change comes from the 'location' property and neither null nor empty
-    if (
-      changes.hasOwnProperty(locationVarName) && changes[locationVarName] != null
-      && !StringHelper.isEmpty(changes[locationVarName].currentValue as string)
-    ) {
+    if (changes.hasOwnProperty(locationVarName) && changes[locationVarName] != null) {
       const locChangeObject: SimpleChange = changes[locationVarName];
-      const data = await this.getData();
-      const node: IDirectoryTree | null = await this.getNodeByFilePath(locChangeObject.currentValue, data);
-      if (node != null) {
-        this.activeNode = node;
+      if (StringHelper.isEmpty(locChangeObject.currentValue as string)) {
+        this.activeNode = undefined;
+        this.cdr.markForCheck();
+      } else {
+        const data = await this.getData();
+        const node: IDirectoryTree | null = await this.getNodeByFilePath(locChangeObject.currentValue, data);
+        this.activeNode = node ?? undefined;
+        this.cdr.markForCheck();
       }
     }
   }

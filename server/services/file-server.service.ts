@@ -43,13 +43,14 @@ export class FileServerService {
 
     // This is an ugly hack.
     private cleanPath(tree: IDirectoryTree, localPath): IDirectoryTree {
+        const normalizedLocalPath = localPath.replace(/^\.\//, '');
         if(tree.path) {
-            tree.path = tree.path.replace(localPath, "");
+            tree.path = tree.path.replace(normalizedLocalPath, "");
         }
         const children = [];
         if (tree.children && tree.children.length > 0) {
             for (const child of tree.children) {
-                const subtree = this.cleanPath(child, localPath);
+                const subtree = this.cleanPath(child, normalizedLocalPath);
                 if (subtree) {
                     children.push(subtree);
                 }

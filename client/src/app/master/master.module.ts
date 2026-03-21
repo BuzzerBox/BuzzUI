@@ -26,6 +26,7 @@ import {MatExpansionModule} from '@angular/material/expansion';
 import {SelectMediaComponent} from './select-media/select-media.component';
 import {FileUploadFormComponent} from './file-upload-form/file-upload-form.component';
 import {MatTreeModule} from '@angular/material/tree';
+import {DragDropModule} from '@angular/cdk/drag-drop';
 import { FileDropEventsDirective } from './file-drop-events.directive';
 
 @NgModule({
@@ -61,6 +62,7 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     MatListModule,
     MatExpansionModule,
     MatTreeModule,
+    DragDropModule,
   ],
   exports: [
     StartComponent
