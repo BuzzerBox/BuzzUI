@@ -1,50 +1,94 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {EMediaStates, EQuestionAnswerStates, IDirectoryTree, IMediaQuestionState} from '../../../../../shared/shared';
-import {FormControl, FormGroup} from "@angular/forms";
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
+import {EMediaStates, EQuestionAnswerStates, FileExtensionsService, IMediaQuestionState} from '../../../../../shared/shared';
+import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
+
+type MediaAnswerPreset = 'MEDIA_FIRST' | 'HIDE_BOTH' | 'SHOW_ANSWERS';
+
+const PRESET_TO_STATE: Record<MediaAnswerPreset, Pick<IMediaQuestionState, 'mediaState' | 'answerState'>> = {
+  MEDIA_FIRST:  { mediaState: EMediaStates.PLAYING, answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA },
+  HIDE_BOTH:    { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.HIDDEN },
+  SHOW_ANSWERS: { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.SHOWN },
+};
+
+function presetFromConfig(config: IMediaQuestionState): MediaAnswerPreset {
+  if (config?.answerState === EQuestionAnswerStates.HIDDEN) { return 'HIDE_BOTH'; }
+  if (config?.answerState === EQuestionAnswerStates.SHOWN)  { return 'SHOW_ANSWERS'; }
+  return 'MEDIA_FIRST';
+}
 
 @Component({
   selector: 'app-media-question-display-order-configuration',
   templateUrl: './media-question-display-order-configuration.component.html',
-  styleUrls: ['./media-question-display-order-configuration.component.css']
+  styleUrls: ['./media-question-display-order-configuration.component.css'],
+  standalone: true,
+  imports: [ReactiveFormsModule, MatButtonToggleModule]
 })
-export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit {
-  initialQuestionState: IMediaQuestionState;
-  public questionConfig: FormGroup;
-  @Output() questionConfigChange: EventEmitter<IMediaQuestionState> = new EventEmitter<IMediaQuestionState>();
+export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, OnChanges {
+  @Output() questionConfigChange = new EventEmitter<IMediaQuestionState>();
   @Input() initialConfig: IMediaQuestionState;
+  @Input() mediaSrc: string = '';
 
-  questionAnswerOptions = [
-    {label: 'Show', key: EQuestionAnswerStates.SHOWN},
-    {label: 'Hide', key: EQuestionAnswerStates.HIDDEN},
-    {label: 'Reveal after Media', key: EQuestionAnswerStates.WAIT_FOR_MEDIA}
-  ];
-  mediaOptions = [
-    {label: 'Play', key: EMediaStates.PLAYING},
-    {label: 'Hide / Pause', key: EMediaStates.PAUSED},
+  public questionConfig: FormGroup;
+
+  private readonly allQuestionStateOptions = [
+    { label: 'Show',               key: EQuestionAnswerStates.SHOWN },
+    { label: 'Hide',               key: EQuestionAnswerStates.HIDDEN },
+    { label: 'Reveal after media', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
   ];
 
-  defaultConfig: IMediaQuestionState = {
-    answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA,
-    mediaState: EMediaStates.PAUSED,
-    questionState: EQuestionAnswerStates.SHOWN
+  readonly defaultConfig: IMediaQuestionState = {
+    mediaState:    EMediaStates.PLAYING,
+    questionState: EQuestionAnswerStates.SHOWN,
+    answerState:   EQuestionAnswerStates.WAIT_FOR_MEDIA,
   };
-  constructor() {
-    let config = this.defaultConfig;
-    if (this.initialConfig) {
-      config = this.initialConfig;
-    }
+
+  get isVideo(): boolean {
+    return FileExtensionsService.isVideo(this.mediaSrc);
+  }
+
+  get questionStateOptions() {
+    if (this.isVideo) { return this.allQuestionStateOptions; }
+    return this.allQuestionStateOptions.filter(o => o.key !== EQuestionAnswerStates.WAIT_FOR_MEDIA);
+  }
+
+  get presetOptions(): { label: string; key: MediaAnswerPreset }[] {
+    return [
+      { label: this.isVideo ? 'Play media, reveal answers after' : 'Show Image', key: 'MEDIA_FIRST' },
+      { label: 'Hide both',    key: 'HIDE_BOTH' },
+      { label: 'Show answers', key: 'SHOW_ANSWERS' },
+    ];
+  }
+
+  constructor() {}
+
+  ngOnInit(): void {
+    const config = this.initialConfig ?? this.defaultConfig;
+    const preset = presetFromConfig(config);
 
     this.questionConfig = new FormGroup({
       questionState: new FormControl(config.questionState),
-      mediaState: new FormControl(config.mediaState),
-      answerState: new FormControl(config.answerState),
+      preset:        new FormControl(preset),
     });
-    this.questionConfig.valueChanges.subscribe(x => {
-      this.questionConfigChange.emit(x);
-    });
+
+    this.questionConfig.valueChanges.subscribe(() => this.emit());
   }
 
-  ngOnInit(): void {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.questionConfig || !changes['mediaSrc']) { return; }
+    if (!this.isVideo) {
+      const qs = this.questionConfig.get('questionState');
+      if (qs.value === EQuestionAnswerStates.WAIT_FOR_MEDIA) {
+        qs.setValue(EQuestionAnswerStates.SHOWN);
+      }
+    }
   }
 
+  private emit(): void {
+    const { questionState, preset } = this.questionConfig.value as { questionState: EQuestionAnswerStates; preset: MediaAnswerPreset };
+    this.questionConfigChange.emit({
+      questionState,
+      ...PRESET_TO_STATE[preset],
+    });
+  }
 }

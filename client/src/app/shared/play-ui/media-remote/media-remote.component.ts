@@ -42,25 +42,25 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
   }
 
   play(): void {
-    this.game.updateMediaState(EMediaStates.PLAYING, this.state.questionState);
+    this.game.updateMediaState(EMediaStates.PLAYING, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
   pause(): void {
-    this.game.updateMediaState(EMediaStates.PAUSED, this.state.questionState);
+    this.game.updateMediaState(EMediaStates.PAUSED, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
   replay(): void {
-    this.game.updateMediaState(EMediaStates.RESET, this.state.questionState);
+    this.game.updateMediaState(EMediaStates.RESET, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
   showAnswers(): void {
     this.state.answerState = EQuestionAnswerStates.SHOWN;
-    this.game.updateMediaState(EMediaStates.PAUSED, this.state.questionState, this.state.answerState);
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
   hideAnswers(): void {
-    this.state.answerState = EQuestionAnswerStates.SHOWN;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState);
+    this.state.answerState = EQuestionAnswerStates.HIDDEN;
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
   isPlaying(): boolean {
@@ -73,16 +73,26 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
 
   showQuestion(): void {
     this.state.questionState = EQuestionAnswerStates.SHOWN;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState);
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
   hideQuestion(): void {
     this.state.questionState = EQuestionAnswerStates.HIDDEN;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState);
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
+  }
+
+  toggleFullscreen(): void {
+    this.state.fullscreen = !this.state.fullscreen;
+    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
+  }
+
+  isFullscreen(): boolean {
+    return !!this.state.fullscreen;
   }
 
   isQuestionHidden(): boolean {
-    return this.state.questionState === EQuestionAnswerStates.HIDDEN;
+    return this.state.questionState === EQuestionAnswerStates.HIDDEN
+      || this.state.questionState === EQuestionAnswerStates.WAIT_FOR_MEDIA;
   }
 
   isAnswersShown(): boolean {

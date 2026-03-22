@@ -4,4 +4,5 @@ export interface IMediaQuestionState {
     mediaState: EMediaStates | undefined;
     questionState: EQuestionAnswerStates | undefined;
     answerState: EQuestionAnswerStates | undefined;
+    fullscreen?: boolean;
 }

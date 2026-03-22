@@ -43,7 +43,6 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
     SelectMediaComponent,
     FileUploadFormComponent,
     FileDropEventsDirective,
-    MediaQuestionDisplayOrderConfigurationComponent
   ],
   imports: [
     CommonModule,
@@ -67,6 +66,7 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
     MatTreeModule,
     DragDropModule,
     MatButtonToggleModule,
+    MediaQuestionDisplayOrderConfigurationComponent,
   ],
   exports: [
     StartComponent

@@ -1,18 +1,23 @@
-@if (isVideo()) {
-  <vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
-    <vg-controls vgFor="my-video" [vgAutohide]="true" [vgAutohideTime]="0">
-    </vg-controls>
-    <video #myMedia
-      [vgMedia]="myMedia"
-      id="my-video"
-      preload="auto"
-      [src]="media.fileSrc">
-    </video>
-  </vg-player>
-}
+<div [class.fullscreen]="fullscreen">
+  @if (isVideo()) {
+    <vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
+      @if (mediaVisible) {
+        <vg-controls vgFor="my-video" [vgAutohide]="true" [vgAutohideTime]="0">
+        </vg-controls>
+      }
+      <video #myMedia
+        [vgMedia]="myMedia"
+        id="my-video"
+        preload="auto"
+        muted
+        [src]="media.fileSrc">
+      </video>
+    </vg-player>
+  }
 
-@if (isImage() && mediaVisible) {
-  <div class="player">
-    <img [src]="media.fileSrc" alt="The image for this question">
-  </div>
-}
+  @if (isImage() && mediaVisible) {
+    <div class="player">
+      <img [src]="media.fileSrc" alt="The image for this question">
+    </div>
+  }
+</div>

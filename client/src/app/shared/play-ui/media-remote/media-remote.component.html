@@ -36,4 +36,7 @@
       <mat-icon svgIcon="hide_answers"></mat-icon>
     </button>
   }
+  <button mat-icon-button (click)="toggleFullscreen()" [title]="isFullscreen() ? 'Vollbild beenden' : 'Vollbild'">
+    <mat-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+  </button>
 </div>

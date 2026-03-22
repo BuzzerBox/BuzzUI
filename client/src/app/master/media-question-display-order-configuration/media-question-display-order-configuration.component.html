@@ -1,18 +1,15 @@
 <form [formGroup]="questionConfig">
   <h3>Initial Question State</h3>
   <mat-button-toggle-group name="questionState" aria-label="Question State" formControlName="questionState">
-    <mat-button-toggle *ngFor="let option of questionAnswerOptions" [value]="option.key">{{option.label}}</mat-button-toggle>
+    @for (option of questionStateOptions; track option.key) {
+      <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+    }
   </mat-button-toggle-group>
 
-  <h3>Initial Media State</h3>
-  <mat-button-toggle-group name="mediaState" aria-label="Media State" formControlName="mediaState">
-    <mat-button-toggle *ngFor="let option of mediaOptions" [value]="option.key">{{option.label}}</mat-button-toggle>
-  </mat-button-toggle-group>
-
-  <h3>Initial Answer State</h3>
-  <mat-button-toggle-group name="answerState" aria-label="Answers State" formControlName="answerState">
-    <mat-button-toggle *ngFor="let option of questionAnswerOptions" [value]="option.key">{{option.label}}</mat-button-toggle>
+  <h3>Initial Media & Answer State</h3>
+  <mat-button-toggle-group name="preset" aria-label="Media and Answer State" formControlName="preset">
+    @for (option of presetOptions; track option.key) {
+      <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+    }
   </mat-button-toggle-group>
 </form>
-
-

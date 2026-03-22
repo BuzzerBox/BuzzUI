@@ -31,7 +31,7 @@ import {
   IUpdateMediaStatePacket,
   PacketHelper
 } from '../../../../shared/shared';
-import {Observable, Subject, Subscription} from 'rxjs';
+import {Observable, ReplaySubject, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
@@ -77,7 +77,7 @@ export class GameService implements OnDestroy {
   private cbEndGame: ZeroVoidCallback;
   private markTeamSubject: Subject<IMarkTeamPacket>;
   private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
-  private updateMediaStateSubject: Subject<IUpdateMediaStatePacket>;
+  private updateMediaStateSubject = new ReplaySubject<IUpdateMediaStatePacket>(1);
 
   constructor(
     private webSocketService: WebSocketService,
@@ -453,6 +453,12 @@ export class GameService implements OnDestroy {
   private handleDataForScreenPacket(packet: IDataForScreenPacket): void {
     if (this.isUsedAsScreen()) {
       this.setGameData(packet.teams, packet.questions, packet.gameState);
+      if (packet.gameState?.mediaQuestionState) {
+        this.updateMediaStateSubject.next({
+          packetType: EPacketTypes.UPDATE_MEDIA_STATE,
+          mediaQuestionState: packet.gameState.mediaQuestionState
+        });
+      }
       this.isScreenDataAvailable = true;
       this.redirect(baseUrlScreen + pathsScreen.main);
     }
@@ -607,27 +613,27 @@ export class GameService implements OnDestroy {
     return this.currentGameState;
   }
   public observeMediaStateUpdates(): Observable<IUpdateMediaStatePacket> {
-    if (this.updateMediaStateSubject == null) {
-      this.updateMediaStateSubject = new Subject<IUpdateMediaStatePacket>();
-    }
     return this.updateMediaStateSubject.asObservable();
   }
 
-  public updateMediaState(mediaState: EMediaStates, questionState?: EQuestionAnswerStates, answerState?: EQuestionAnswerStates): void {
+  public updateMediaState(mediaState: EMediaStates, questionState?: EQuestionAnswerStates, answerState?: EQuestionAnswerStates, fullscreen?: boolean): void {
     const mediaQuestionState: IMediaQuestionState = {
       mediaState,
       answerState,
-      questionState
+      questionState,
+      fullscreen
     };
     this.currentGameState.mediaQuestionState = mediaQuestionState;
     const mediaPacket = PacketHelper.makeMediaStatePacketFromQuestionState(mediaQuestionState);
     this.webSocketService.send<IUpdateMediaStatePacket>(mediaPacket);
   }
 
-  private handleMediaStateUpdate(packet: IUpdateMediaStatePacket): void {
-    if (this.updateMediaStateSubject != null) {
-      this.updateMediaStateSubject.next(packet);
-    }
+  public getCurrentMediaQuestionState(): IMediaQuestionState {
+    return this.currentGameState?.mediaQuestionState ?? PacketHelper.getDefaultMediaState();
+  }
 
+  private handleMediaStateUpdate(packet: IUpdateMediaStatePacket): void {
+    this.currentGameState.mediaQuestionState = packet.mediaQuestionState;
+    this.updateMediaStateSubject.next(packet);
   }
 }

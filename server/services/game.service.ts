@@ -249,7 +249,15 @@ export class GameService {
             this.setNewState(EGameStates.PLAYING);
         }
         this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
-        // TODO: send to screen
+        if (isLegal) {
+            let questionConfig = PacketHelper.getDefaultMediaState();
+            if (this.getCurrentQuestion()?.initialConfig) {
+                questionConfig = this.getCurrentQuestion().initialConfig;
+            }
+            this.currentGameState.mediaQuestionState = questionConfig;
+            const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(questionConfig.mediaState, questionConfig.questionState, questionConfig.answerState);
+            this.onUpdateMediaStatePacket(mediaPacket);
+        }
     }
 
     private onTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {

@@ -1,6 +1,6 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
-import {EMediaStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
+import {EMediaStates, EQuestionAnswerStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
@@ -17,6 +17,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
 
   private mediaUpdateSubscription: Subscription;
   public mediaVisible = false;
+  public fullscreen = false;
 
 
   constructor(private game: GameService) {
@@ -25,6 +26,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
+        this.fullscreen = !!packet.mediaQuestionState.fullscreen;
         switch (packet.mediaQuestionState.mediaState) {
           case EMediaStates.PAUSED:
             this.pausePlayback();
@@ -55,9 +57,19 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
     this.api = api;
     this.api.getDefaultMedia().subscriptions.ended.subscribe(
       () => {
-        this.game.updateMediaState(EMediaStates.FINISHED);
+        const current = this.game.getCurrentMediaQuestionState();
+        const questionState = current.questionState === EQuestionAnswerStates.WAIT_FOR_MEDIA
+          ? EQuestionAnswerStates.SHOWN
+          : current.questionState;
+        const answerState = current.answerState === EQuestionAnswerStates.WAIT_FOR_MEDIA
+          ? EQuestionAnswerStates.SHOWN
+          : current.answerState;
+        this.game.updateMediaState(EMediaStates.FINISHED, questionState, answerState);
       }
     );
+    if (this.mediaVisible) {
+      this.api.getDefaultMedia().play();
+    }
   }
 
   startPlayback(): void {
