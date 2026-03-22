@@ -1,13 +1,14 @@
-import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
-import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
+import {IBuzzer, ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
 import {FileService} from '../../services/file.service';
+import {Subscription} from 'rxjs';
 
 @Component({
     selector: 'app-setup',
@@ -15,7 +16,7 @@ import {FileService} from '../../services/file.service';
     styleUrls: ['./setup.component.css'],
     standalone: false
 })
-export class SetupComponent implements OnInit {
+export class SetupComponent implements OnInit, OnDestroy {
   public readonly FORM_GROUP_NAME_TEAMS = 'teamsFormGroup';
   public readonly ANSWER_FORM_GROUP_BASE_NAME = 'answer';
 
@@ -29,8 +30,12 @@ export class SetupComponent implements OnInit {
   private mapTeamFormControlNameToBuzzerId: Map<string, string>;
   public hasReachedLastStep = false;
 
+  /** Live list of detected UDP buzzers, updated from UDP_BUZZER_UPDATE packets */
+  public udpBuzzers: { buzzer: IBuzzer; name: string; enabled: boolean }[] = [];
+
   step = 0;
 
+  private udpBuzzerSub: Subscription;
 
   constructor(private game: GameService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
     game.useAsMaster();
@@ -40,6 +45,30 @@ export class SetupComponent implements OnInit {
     this.mapTeamFormControlNameToBuzzerId = new Map<string, string>();
     this.initTeamsFormControls();
     this.initQuestionsFormControls();
+    this.udpBuzzerSub = this.game.observeUdpBuzzerUpdates().subscribe(buzzers => {
+      this.onUdpBuzzersUpdated(buzzers);
+    });
+    // Populate from any already-detected UDP buzzers in the presetup data
+    const initial = this.game.getPresetupData()?.availableBuzzers?.filter(b => b.buzzerType === 'udp') ?? [];
+    if (initial.length > 0) {
+      this.onUdpBuzzersUpdated(initial);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.udpBuzzerSub?.unsubscribe();
+  }
+
+  private onUdpBuzzersUpdated(buzzers: IBuzzer[]): void {
+    const existing = new Map(this.udpBuzzers.map(e => [e.buzzer.id, e]));
+    this.udpBuzzers = buzzers.map(b => {
+      const prev = existing.get(b.id);
+      return {
+        buzzer: b,
+        name: prev?.name ?? b.name ?? b.udpIp ?? b.id,
+        enabled: prev?.enabled ?? true,
+      };
+    });
   }
 
   public onChangeTeamCheckbox(cb: MatCheckbox, tb: HTMLInputElement, formGroupName: string): void {
@@ -261,6 +290,7 @@ export class SetupComponent implements OnInit {
         count++;
       }
     }
+    count += this.getNumberOfActiveUdpBuzzers();
     return count;
   }
 
@@ -272,17 +302,32 @@ export class SetupComponent implements OnInit {
 
   private buildSetupTeamsObject(): ITeam[] {
     const ret: ITeam[] = [];
+    // Serial / keyboard buzzers (from form controls)
     for (const name of this.teamFormControlNames) {
       if (!this.teamsFormGroup.get(name).disabled) {
         const buzzerId = this.mapTeamFormControlNameToBuzzerId.get(name);
         ret.push({
           name: this.teamsFormGroup.get(name).value,
           buzzerId,
-          teamId: buzzerId // use the buzzerId for now
+          teamId: buzzerId
+        });
+      }
+    }
+    // UDP buzzers (live-detected)
+    for (const entry of this.udpBuzzers) {
+      if (entry.enabled) {
+        ret.push({
+          name: entry.name,
+          buzzerId: entry.buzzer.id,
+          teamId: entry.buzzer.id,
         });
       }
     }
     return ret;
+  }
+
+  public getNumberOfActiveUdpBuzzers(): number {
+    return this.udpBuzzers.filter(e => e.enabled).length;
   }
 
   private buildSetupQuestionsObject(): IQuestion[] {

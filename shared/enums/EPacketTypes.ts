@@ -23,4 +23,6 @@ export enum EPacketTypes {
     SET_BUZZER_LOCK,
     WEBSOCKET_CONNECTION_SUCCESSFUL, // no interface exists for this one!
     UPDATE_MEDIA_STATE,
+    /** Server → Master: online UDP buzzer list changed */
+    UDP_BUZZER_UPDATE,
 }

@@ -37,6 +37,26 @@
           <button mat-button matStepperNext [disabled]="!teamsFormGroup.valid">Weiter</button>
         </div>
       </form>
+
+      <!-- UDP Buzzer live detection panel -->
+      <mat-divider style="margin: 16px 0"></mat-divider>
+      <p><strong>UDP Buzzer (ESP32)</strong></p>
+      @if (udpBuzzers.length === 0) {
+        <p class="udp-none">Keine UDP Buzzer erkannt. Stelle sicher, dass die Buzzer eingeschaltet sind und im Netzwerk erreichbar sind.</p>
+      }
+      <mat-list role="list">
+        @for (entry of udpBuzzers; track entry.buzzer.id) {
+          <mat-list-item role="listitem">
+            <mat-icon mat-list-icon class="green-icon">wifi</mat-icon>
+            <mat-form-field>
+              <mat-label>Name</mat-label>
+              <input matInput [(ngModel)]="entry.name" [placeholder]="entry.buzzer.udpIp">
+            </mat-form-field>
+            <mat-checkbox [(ngModel)]="entry.enabled">Aktivieren</mat-checkbox>
+            <span class="udp-detail">{{ entry.buzzer.udpIp }}</span>
+          </mat-list-item>
+        }
+      </mat-list>
     <!--    </ng-template>-->
   </mat-step>
   <!--  <mat-step [stepControl]="questionsFormGroup" label="Fragen">-->

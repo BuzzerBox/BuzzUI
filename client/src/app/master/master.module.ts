@@ -9,7 +9,7 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button';
 import { ErrorPageComponent } from './error-page/error-page.component';
-import {ReactiveFormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatStepperModule} from '@angular/material/stepper';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
@@ -26,6 +26,7 @@ import {MatExpansionModule} from '@angular/material/expansion';
 import {SelectMediaComponent} from './select-media/select-media.component';
 import {FileUploadFormComponent} from './file-upload-form/file-upload-form.component';
 import {MatTreeModule} from '@angular/material/tree';
+import {MatDividerModule} from '@angular/material/divider';
 import {DragDropModule} from '@angular/cdk/drag-drop';
 import { FileDropEventsDirective } from './file-drop-events.directive';
 
@@ -49,6 +50,7 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
+    FormsModule,
     ReactiveFormsModule,
     MatStepperModule,
     MatFormFieldModule,
@@ -62,6 +64,7 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     MatListModule,
     MatExpansionModule,
     MatTreeModule,
+    MatDividerModule,
     DragDropModule,
   ],
   exports: [

@@ -89,5 +89,11 @@
     "stuffingBit": 0,
     "eol": 255
   },
-  "enableBrowserKeypressEvents": false
+  "enableBrowserKeypressEvents": false,
+  "udpBuzzer": {
+    "enabled": true,
+    "serverListenPort": 5005,
+    "heartbeatTimeoutMs": 5000,
+    "pressCollectionWindowMs": 50
+  }
 }

@@ -37,9 +37,11 @@ import {LoggerService} from './logger.service';
 import {MicroControllerSerialAdapter} from '../objects/adapters/MicroControllerSerialAdapter';
 import {Buffer} from 'buffer';
 import {SerialPortService} from './serial-port.service';
+import {UdpBuzzerService} from './udp-buzzer.service';
 import {ConfigService} from './config.service';
 import {toInteger} from 'lodash';
 import {ObjectHelper} from '../../shared/helper/object.helper';
+import {IUdpBuzzerUpdatePacket} from '../../shared/interfaces/IUdpBuzzerUpdatePacket';
 
 enum LOOKUP_TEAM_CODE {
     BY_KEYPRESS,
@@ -79,6 +81,17 @@ export class GameService {
         this.getBuzzerConfig();
         SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
         SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
+
+        const udpConf = ConfigService.get().udpBuzzer;
+        if (udpConf?.enabled) {
+            UdpBuzzerService.get().start(
+                udpConf.serverListenPort,
+                udpConf.heartbeatTimeoutMs,
+                udpConf.pressCollectionWindowMs,
+            );
+            UdpBuzzerService.get().addPressCallback(this.onUdpBuzzerPress.bind(this));
+            UdpBuzzerService.get().addListChangedCallback(this.onUdpBuzzerListChanged.bind(this));
+        }
     }
 
     public static get(): GameService {
@@ -218,7 +231,7 @@ export class GameService {
                 this.setNewState(EGameStates.WAITING_FOR_SETUP);
                 this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
                     packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-                    availableBuzzers: this.getBuzzerConfig()
+                    availableBuzzers: [...this.getBuzzerConfig(), ...UdpBuzzerService.get().getOnlineBuzzers()],
                 })
             } else if (this.currentStateInAutomaton === EGameStates.LOST_MASTER) {
                 if (this.previousStateInAutomaton === EGameStates.WAITING_FOR_START || this.previousStateInAutomaton === EGameStates.PLAYING) {
@@ -364,7 +377,7 @@ export class GameService {
         this.setNewState(EGameStates.WAITING_FOR_SETUP);
         this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
             packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-            availableBuzzers: this.getBuzzerConfig()
+            availableBuzzers: [...this.getBuzzerConfig(), ...UdpBuzzerService.get().getOnlineBuzzers()],
         });
         this.sendToAllScreens(packet);
         this.resetServerData();
@@ -547,6 +560,10 @@ export class GameService {
             // MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
             MicroControllerSerialAdapter.sendSerialCommandReleaseLock();
         }
+        // Notify UDP buzzers when lock is released
+        if (!packet.setLock) {
+            UdpBuzzerService.get().sendStateToAll(null, false);
+        }
     }
 
     private onUpdateMediaStatePacket(packet: IUpdateMediaStatePacket): void {
@@ -637,10 +654,39 @@ export class GameService {
         this.onUpdateMediaStatePacket(mediaStateUpdatePacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
+        // Notify UDP buzzers: the winner lights up, all others see locked=true
+        UdpBuzzerService.get().sendStateToAll(team.buzzerId, true);
     }
 
     private onSerialError(err): void {
         // TODO
         console.log('Serial Error', err);
+    }
+
+    // ─── UDP buzzer integration ────────────────────────────────────────────────
+
+    private onUdpBuzzerPress(buzzerId: string): void {
+        if (this.isKeypressLocked()) return;
+        const team = this.getTeamForBuzzerId(buzzerId);
+        if (team == null) {
+            LoggerService.warn(`UDP: no team found for buzzerId=${buzzerId}`);
+            return;
+        }
+        this.lastKeyPressed = buzzerId;
+        this.lockOnTeam(team);
+    }
+
+    private onUdpBuzzerListChanged(buzzers: IBuzzer[]): void {
+        if (this.webSocketConnectionMaster != null) {
+            this.webSocketConnectionMaster.send<IUdpBuzzerUpdatePacket>({
+                packetType: EPacketTypes.UDP_BUZZER_UPDATE,
+                buzzers,
+            });
+        }
+    }
+
+    private getTeamForBuzzerId(buzzerId: string): ITeam | null {
+        if (this.teams == null) return null;
+        return this.teams.find(t => t.buzzerId === buzzerId) ?? null;
     }
 }

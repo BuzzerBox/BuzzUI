@@ -24,6 +24,7 @@ import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
 import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
 import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
 import {IDirectoryTree} from './interfaces/IDirectoryTree';
+import {IUdpBuzzerUpdatePacket} from './interfaces/IUdpBuzzerUpdatePacket';
 
 export {
 	IDirectoryTree,
@@ -52,5 +53,6 @@ export {
 	IKeypressOnScreenPacket,
 	IMarkTeamPacket,
 	CURRENT_SAVEGAME_VERSION,
-	ISetBuzzerLockPacket
+	ISetBuzzerLockPacket,
+	IUdpBuzzerUpdatePacket,
 }

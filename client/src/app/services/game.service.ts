@@ -27,6 +27,8 @@ import {
   ITeam,
   ITeamSetPointsPacket,
   IUpdateMediaStatePacket,
+  IUdpBuzzerUpdatePacket,
+  IBuzzer,
   PacketHelper
 } from '../../../../shared/shared';
 import {Observable, Subject, Subscription} from 'rxjs';
@@ -76,6 +78,7 @@ export class GameService implements OnDestroy {
   private markTeamSubject: Subject<IMarkTeamPacket>;
   private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
   private updateMediaStateSubject: Subject<IUpdateMediaStatePacket>;
+  private udpBuzzerUpdateSubject: Subject<IBuzzer[]>;
 
   constructor(
     private webSocketService: WebSocketService,
@@ -160,6 +163,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.UPDATE_MEDIA_STATE:
         this.handleMediaStateUpdate(message as IUpdateMediaStatePacket);
+        break;
+      case EPacketTypes.UDP_BUZZER_UPDATE:
+        this.handleUdpBuzzerUpdate(message as IUdpBuzzerUpdatePacket);
         break;
       default:
         break;
@@ -617,6 +623,23 @@ export class GameService implements OnDestroy {
     if (this.updateMediaStateSubject != null) {
       this.updateMediaStateSubject.next(packet);
     }
+  }
 
+  public observeUdpBuzzerUpdates(): Observable<IBuzzer[]> {
+    if (this.udpBuzzerUpdateSubject == null) {
+      this.udpBuzzerUpdateSubject = new Subject<IBuzzer[]>();
+    }
+    return this.udpBuzzerUpdateSubject.asObservable();
+  }
+
+  private handleUdpBuzzerUpdate(packet: IUdpBuzzerUpdatePacket): void {
+    if (this.presetupData != null) {
+      // Keep serial buzzers; replace the UDP buzzer entries with the updated list
+      const serialBuzzers = this.presetupData.availableBuzzers.filter(b => b.buzzerType !== 'udp');
+      this.presetupData.availableBuzzers = [...serialBuzzers, ...packet.buzzers];
+    }
+    if (this.udpBuzzerUpdateSubject != null) {
+      this.udpBuzzerUpdateSubject.next(packet.buzzers);
+    }
   }
 }

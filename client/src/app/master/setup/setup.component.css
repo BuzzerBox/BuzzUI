@@ -42,6 +42,17 @@
   color: #4caf50;
 }
 
+.udp-none {
+  color: rgba(0, 0, 0, 0.54);
+  font-style: italic;
+}
+
+.udp-detail {
+  margin-left: 8px;
+  color: rgba(0, 0, 0, 0.54);
+  font-size: 0.85em;
+}
+
 .panel-header-icons {
   display: flex;
   align-items: center;
