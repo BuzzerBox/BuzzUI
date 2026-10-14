@@ -199,9 +199,8 @@ export class GameService {
         if (packetOk) {
             this.teams = packet.teams;
             this.questions = packet.questions;
-            if (packet.currentGameState != null) {
-                this.currentGameState = packet.currentGameState;
-            }
+            // a new game is set up without a game state; a loaded save may lack fields added since it was made
+            this.currentGameState = {...this.makeInitialGameState(), ...packet.currentGameState};
             this.setNewState(EGameStates.WAITING_FOR_START);
         }
         this.webSocketConnectionMaster.send<IResponsePacket>(responsePacket);
@@ -395,7 +394,11 @@ export class GameService {
         this.releaseHardwareBuzzerLock(true);
         this.ignoredKeypresses = [];
         this.lastKeyPressed = null;
-        this.currentGameState = {
+        this.currentGameState = this.makeInitialGameState();
+    }
+
+    private makeInitialGameState(): IGameState {
+        return {
             mediaQuestionState: {
                 mediaState: EMediaStates.NO_MEDIA,
                 questionState: EQuestionAnswerStates.SHOWN,
