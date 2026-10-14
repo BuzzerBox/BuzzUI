@@ -651,7 +651,12 @@ export class GameService {
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
-        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacket(EMediaStates.PAUSED);
+        // only pause the media: keep question/answer visibility as it is, but leave fullscreen so the screens show who buzzed
+        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacketFromQuestionState({
+            ...this.currentGameState.mediaQuestionState,
+            mediaState: EMediaStates.PAUSED,
+            fullscreen: false
+        });
         this.onUpdateMediaStatePacket(mediaStateUpdatePacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
