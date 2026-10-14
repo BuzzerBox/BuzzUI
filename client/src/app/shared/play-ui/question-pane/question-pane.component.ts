@@ -4,6 +4,7 @@ import {
   EAnswerStates,
   EMediaStates,
   EQuestionAnswerStates,
+  FileExtensionsService,
   IAnswer,
   IAnswerSetStatePacket,
   IQuestion
@@ -34,8 +35,12 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
   private mediaUpdateSubscription: Subscription;
+  // whether the question and the answers are visible on the screens; the master always sees both
   public showAnswers = true;
   public showQuestion = true;
+  // the states these were derived from, to tell the master why something is hidden
+  private questionState: EQuestionAnswerStates;
+  private answerState: EQuestionAnswerStates;
 
   constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
 
@@ -47,10 +52,14 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (this.question.initialConfig) {
       this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
       this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
+      this.questionState = this.question.initialConfig.questionState;
+      this.answerState = this.question.initialConfig.answerState;
     }
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
+        this.questionState = packet.mediaQuestionState.questionState;
+        this.answerState = packet.mediaQuestionState.answerState;
         switch (packet.mediaQuestionState.answerState) {
           case EQuestionAnswerStates.SHOWN:
             this.showAnswers = true;
@@ -91,12 +100,35 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.question?.text;
   }
 
+  public getQuestionVisibilityLabel(): string {
+    return this.getVisibilityLabel(this.showQuestion, this.questionState);
+  }
+
+  public getAnswersVisibilityLabel(): string {
+    if (!this.showAnswers && !this.question?.show) {
+      return 'Auf der Anzeige verborgen – in der Einrichtung ausgeblendet';
+    }
+    return this.getVisibilityLabel(this.showAnswers, this.answerState);
+  }
+
+  private getVisibilityLabel(visible: boolean, state: EQuestionAnswerStates): string {
+    if (visible) {
+      return 'Auf der Anzeige sichtbar';
+    }
+    const mediaSrc = this.question?.mediaDetails?.fileSrc;
+    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && mediaSrc && FileExtensionsService.isVideo(mediaSrc)) {
+      return 'Auf der Anzeige verborgen – erscheint nach dem Video';
+    }
+    return 'Auf der Anzeige verborgen';
+  }
+
   public getAnswers(): IAnswer[] {
     return this.question?.answers;
   }
 
   public onClickAnswer(answer, button: HTMLButtonElement): void {
-    if (!this.isMaster || this.activatedAnswers.includes(answer) || this.correctAnswersThatAreLeft === 0) {
+    // answers hidden on the screens can be seen but not used by the master
+    if (!this.isMaster || !this.showAnswers || this.activatedAnswers.includes(answer) || this.correctAnswersThatAreLeft === 0) {
       return;
     }
 

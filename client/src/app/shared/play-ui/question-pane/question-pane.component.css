@@ -46,3 +46,29 @@ button {
 .top {
   /*opacity: 0.5;*/
 }
+
+/* master only: whether the question and the answers are visible on the screens */
+.screen-visibility {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 8px 0;
+  padding: 4px 12px;
+  border: 1px solid currentColor;
+  border-radius: 16px;
+  font-size: large;
+  color: #1e6b34;
+  background-color: #e6f4ea;
+}
+
+.screen-visibility.hidden-on-screen {
+  color: #8a4300;
+  background-color: #fff1e0;
+}
+
+.hidden-on-screen-content {
+  opacity: 0.7;
+  outline: 2px dashed #8a4300;
+  outline-offset: 4px;
+}

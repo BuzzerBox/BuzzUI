@@ -3,8 +3,17 @@
     <mat-card-title>Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}</mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    @if (showQuestion) { {{getQuestionText()}} }
-    @if (!showQuestion) { ??? }
+    @if (isMaster) {
+      <div class="screen-visibility" [class.hidden-on-screen]="!showQuestion">
+        <mat-icon>{{ showQuestion ? 'visibility' : 'visibility_off' }}</mat-icon>
+        Frage: {{getQuestionVisibilityLabel()}}
+      </div>
+    }
+    @if (showQuestion || isMaster) {
+      <div [class.hidden-on-screen-content]="!showQuestion">{{getQuestionText()}}</div>
+    } @else {
+      ???
+    }
     @if (isMaster && question.mediaDetails) {
       <app-media-remote [question]="question"></app-media-remote>
     }
@@ -15,14 +24,21 @@
         </div>
       }
       <div class="top">
-        @if (showAnswers) {
-          <mat-grid-list cols="2" rowHeight="2:1">
+        @if (isMaster) {
+          <div class="screen-visibility" [class.hidden-on-screen]="!showAnswers">
+            <mat-icon>{{ showAnswers ? 'visibility' : 'visibility_off' }}</mat-icon>
+            Antworten: {{getAnswersVisibilityLabel()}}
+          </div>
+        }
+        @if (showAnswers || isMaster) {
+          <mat-grid-list cols="2" rowHeight="2:1" [class.hidden-on-screen-content]="!showAnswers">
             @for (answer of getAnswers(); track answer; let i = $index) {
               <mat-grid-tile>
                 <button id="button{{i}}" mat-raised-button
                   [class.logged-in]="isLoggedIn(answer)"
                   [class.correct]="isActivated(answer) && answer.isCorrect"
                   [class.wrong]="isActivated(answer) && !answer.isCorrect"
+                  [disabled]="!showAnswers"
                   (click)="onClickAnswer(answer, $event.currentTarget)">
                   {{answer.text}}
                 </button>
