@@ -37,6 +37,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private correctAnswersThatAreLeft: number;
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
+  private mediaUpdateSubscription: Subscription;
   public showAnswers = true;
   public showQuestion = true;
 
@@ -51,7 +52,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
       this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
     }
-    this.game.observeMediaStateUpdates().subscribe(
+    this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
         switch (packet.mediaQuestionState.answerState) {
@@ -202,6 +203,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     if (this.answerSetStatePacketSubscription != null) {
       this.answerSetStatePacketSubscription.unsubscribe();
+    }
+    if (this.mediaUpdateSubscription != null) {
+      this.mediaUpdateSubscription.unsubscribe();
     }
   }
 
