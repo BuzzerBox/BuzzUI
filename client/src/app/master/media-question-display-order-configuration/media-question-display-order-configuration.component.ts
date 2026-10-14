@@ -76,7 +76,16 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!this.questionConfig || !changes['mediaSrc']) { return; }
+    if (!this.questionConfig) { return; }
+    if (changes['initialConfig']) {
+      // the setup list renumbers its entries, so after a reorder or delete this component can belong to a different question
+      const config = this.initialConfig ?? DEFAULT_MEDIA_QUESTION_CONFIG;
+      this.questionConfig.setValue({
+        questionState: config.questionState,
+        preset:        presetFromConfig(config),
+      }, {emitEvent: false});
+    }
+    if (!changes['mediaSrc']) { return; }
     if (!this.isVideo) {
       const qs = this.questionConfig.get('questionState');
       if (qs.value === EQuestionAnswerStates.WAIT_FOR_MEDIA) {

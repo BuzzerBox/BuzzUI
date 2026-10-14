@@ -154,6 +154,8 @@ export class SetupComponent implements OnInit {
   public removeQuestion(index: number, event: MouseEvent): void {
     event.stopPropagation();
     const deletedControl = this.questionsFormGroup.get(this.questionFormGroupNames[index]) as UntypedFormGroup;
+    const deletedInitialConfig = this.questionInitialConfig[index];
+    this.questionInitialConfig = this.questionInitialConfig.filter((_, i) => i !== index);
     const remainingNames = this.questionFormGroupNames.filter((_, i) => i !== index);
     const newGroup = new UntypedFormGroup({});
     const newNames: string[] = [];
@@ -186,6 +188,11 @@ export class SetupComponent implements OnInit {
       }
       this.questionFormGroupNames = restoredNames;
       this.questionsFormGroup = restoredGroup;
+      this.questionInitialConfig = [
+        ...this.questionInitialConfig.slice(0, index),
+        deletedInitialConfig,
+        ...this.questionInitialConfig.slice(index)
+      ];
       this.step = index;
     });
   }
@@ -195,6 +202,7 @@ export class SetupComponent implements OnInit {
       return;
     }
     moveItemInArray(this.questionFormGroupNames, event.previousIndex, event.currentIndex);
+    moveItemInArray(this.questionInitialConfig, event.previousIndex, event.currentIndex);
     const newGroup = new UntypedFormGroup({});
     const newNames: string[] = [];
     for (let i = 0; i < this.questionFormGroupNames.length; i++) {
