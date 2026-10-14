@@ -24,6 +24,9 @@
     </button>
   }
   @if (isSlideshow()) {
+    <button mat-icon-button aria-label="Previous image" (click)="previousSlide()" [disabled]="getSlideIndex() === 0" title="Vorheriges Bild">
+      <mat-icon>skip_previous</mat-icon>
+    </button>
     <button mat-icon-button aria-label="Next image" (click)="nextSlide()" [disabled]="isFinished()" [title]="getNextSlideTitle()">
       <mat-icon>skip_next</mat-icon>
     </button>

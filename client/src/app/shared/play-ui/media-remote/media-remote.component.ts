@@ -119,6 +119,16 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Shows the previous image. From a complete slideshow, this goes back to the image before the last; a question and
+   * answers that were revealed stay visible.
+   */
+  previousSlide(): void {
+    if (this.getSlideIndex() > 0) {
+      this.game.changeMediaState({mediaState: EMediaStates.PLAYING, slideIndex: this.getSlideIndex() - 1});
+    }
+  }
+
   public getNextSlideTitle(): string {
     if (!this.isPlaying()) {
       return 'Aktuelles Bild auf der Anzeige zeigen';
