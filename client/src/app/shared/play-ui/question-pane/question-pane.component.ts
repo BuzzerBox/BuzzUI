@@ -28,10 +28,6 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isMaster = false;
   @Input() question: IQuestion;
 
-  private readonly STYLE_CLASS_ANSWER_LOGGED_IN = 'logged-in';
-  private readonly STYLE_CLASS_ANSWER_CORRECT = 'correct';
-  private readonly STYLE_CLASS_ANSWER_WRONG = 'wrong';
-
   private loggedInAnswers: IAnswer[];
   private activatedAnswers: IAnswer[];
   private correctAnswersThatAreLeft: number;
@@ -113,13 +109,13 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       if (decision != null) {
         switch (decision) {
           case EDecisionBottomSheetAnswerOptions.ACTIVATE:
-            this.activateAnswer(answer, button);
+            this.activateAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.LOG_IN:
-            this.logInAnswer(answer, button);
+            this.logInAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.LOG_OUT:
-            this.logOutAnswer(answer, button);
+            this.logOutAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.NOTHING:
           default:
@@ -132,28 +128,31 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  public logInAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.add(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public isLoggedIn(answer: IAnswer): boolean {
+    return this.loggedInAnswers.includes(answer);
+  }
+
+  public isActivated(answer: IAnswer): boolean {
+    return this.activatedAnswers.includes(answer);
+  }
+
+  public logInAnswer(answer: IAnswer, setInService: boolean = true): void {
     this.loggedInAnswers.push(answer);
     if (setInService) {
       this.game.logInAnswer(answer);
     }
   }
 
-  public logOutAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public logOutAnswer(answer: IAnswer, setInService: boolean = true): void {
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
     if (setInService) {
       this.game.logOutAnswer(answer);
     }
   }
 
-  public activateAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public activateAnswer(answer: IAnswer, setInService: boolean = true): void {
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
-    let style: string;
     if (answer.isCorrect) {
-      style = this.STYLE_CLASS_ANSWER_CORRECT;
       this.correctAnswersThatAreLeft--;
       if (this.correctAnswersThatAreLeft === 0 && this.isMaster) {
         this.allCorrectAnswersFoundSnackBar = this.snackBar.open('Alle richtigen Antworten wurden aufgedeckt.', 'Okay');
@@ -166,10 +165,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         this.game.sendUnmarkAllTeamsPacket();
         this.game.setBuzzerLock(false);
       }
-    } else {
-      style = this.STYLE_CLASS_ANSWER_WRONG;
     }
-    button.classList.add(style);
     this.activatedAnswers.push(answer);
     if (setInService) {
       this.game.activateAnswer(answer);
@@ -181,14 +177,17 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
-    const answer = packet.answer;
-    const button: HTMLButtonElement = document.getElementById('button' + this.getAnswerIndex(answer)) as HTMLButtonElement;
+    // use this question's own answer object, the button styles are looked up by reference
+    const answer = this.question?.answers[this.getAnswerIndex(packet.answer)];
+    if (answer == null) {
+      return;
+    }
     if (packet.state === EAnswerStates.LOG_IN) {
-      this.logInAnswer(answer, button, false);
+      this.logInAnswer(answer, false);
     } else if (packet.state === EAnswerStates.LOG_OUT) {
-      this.logOutAnswer(answer, button, false);
+      this.logOutAnswer(answer, false);
     } else if (packet.state === EAnswerStates.ACTIVATE) {
-      this.activateAnswer(answer, button, false);
+      this.activateAnswer(answer, false);
     }
   }
 

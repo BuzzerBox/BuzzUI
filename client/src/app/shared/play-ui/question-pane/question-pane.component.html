@@ -19,7 +19,11 @@
           <mat-grid-list cols="2" rowHeight="2:1">
             @for (answer of getAnswers(); track answer; let i = $index) {
               <mat-grid-tile>
-                <button id="button{{i}}" mat-raised-button (click)="onClickAnswer(answer, $event.currentTarget)">
+                <button id="button{{i}}" mat-raised-button
+                  [class.logged-in]="isLoggedIn(answer)"
+                  [class.correct]="isActivated(answer) && answer.isCorrect"
+                  [class.wrong]="isActivated(answer) && !answer.isCorrect"
+                  (click)="onClickAnswer(answer, $event.currentTarget)">
                   {{answer.text}}
                 </button>
               </mat-grid-tile>
