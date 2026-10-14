@@ -44,18 +44,19 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
     { label: 'Reveal after media', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
   ];
 
-  get isVideo(): boolean {
-    return FileExtensionsService.isVideo(this.mediaSrc);
+  // video or audio: media that ends, so the question and answers can wait for it
+  get isPlayable(): boolean {
+    return FileExtensionsService.isPlayable(this.mediaSrc);
   }
 
   get questionStateOptions() {
-    if (this.isVideo) { return this.allQuestionStateOptions; }
+    if (this.isPlayable) { return this.allQuestionStateOptions; }
     return this.allQuestionStateOptions.filter(o => o.key !== EQuestionAnswerStates.WAIT_FOR_MEDIA);
   }
 
   get presetOptions(): { label: string; key: MediaAnswerPreset }[] {
     return [
-      { label: this.isVideo ? 'Play media, reveal answers after' : 'Show Image', key: 'MEDIA_FIRST' },
+      { label: this.isPlayable ? 'Play media, reveal answers after' : 'Show Image', key: 'MEDIA_FIRST' },
       { label: 'Hide both',    key: 'HIDE_BOTH' },
       { label: 'Show answers', key: 'SHOW_ANSWERS' },
     ];
@@ -86,7 +87,7 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
       }, {emitEvent: false});
     }
     if (!changes['mediaSrc']) { return; }
-    if (!this.isVideo) {
+    if (!this.isPlayable) {
       const qs = this.questionConfig.get('questionState');
       if (qs.value === EQuestionAnswerStates.WAIT_FOR_MEDIA) {
         qs.setValue(EQuestionAnswerStates.SHOWN);

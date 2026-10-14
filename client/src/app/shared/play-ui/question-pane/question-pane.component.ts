@@ -142,8 +142,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       return 'Auf der Anzeige sichtbar';
     }
     const mediaSrc = this.question?.mediaDetails?.fileSrc;
-    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && mediaSrc && FileExtensionsService.isVideo(mediaSrc)) {
-      return 'Auf der Anzeige verborgen – erscheint nach dem Video';
+    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && mediaSrc && FileExtensionsService.isPlayable(mediaSrc)) {
+      return 'Auf der Anzeige verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(mediaSrc) ? 'Audio' : 'Video');
     }
     return 'Auf der Anzeige verborgen';
   }

@@ -12,11 +12,29 @@
         [src]="media.fileSrc">
       </video>
     </vg-player>
-    @if (soundBlocked && mediaVisible) {
-      <div class="sound-blocked">
-        <mat-icon>volume_off</mat-icon> Klicken, um den Ton einzuschalten
-      </div>
-    }
+  }
+
+  <!-- a separate player per media type, so switching between them gets a fresh player and onPlayerReady -->
+  @if (isAudio()) {
+    <vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
+      @if (mediaVisible) {
+        <div class="audio-visual">
+          <mat-icon>music_note</mat-icon>
+        </div>
+      }
+      <audio #myAudio
+        [vgMedia]="myAudio"
+        id="my-audio"
+        preload="auto"
+        [src]="media.fileSrc">
+      </audio>
+    </vg-player>
+  }
+
+  @if (isPlayable() && soundBlocked && mediaVisible) {
+    <div class="sound-blocked">
+      <mat-icon>volume_off</mat-icon> Klicken, um den Ton einzuschalten
+    </div>
   }
 
   @if (isImage() && mediaVisible) {

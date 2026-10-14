@@ -83,11 +83,15 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   }
 
   public isImage(node: IDirectoryTree): boolean {
-    return !!FileExtensionsService.getImageExtensions().includes(node.extension);
+    return FileExtensionsService.isImage(node.name);
   }
 
   public isVideo(node: IDirectoryTree): boolean {
-    return !!FileExtensionsService.getVideoExtensions().includes(node.extension);
+    return FileExtensionsService.isVideo(node.name);
+  }
+
+  public isAudio(node: IDirectoryTree): boolean {
+    return FileExtensionsService.isAudio(node.name);
   }
 
 }

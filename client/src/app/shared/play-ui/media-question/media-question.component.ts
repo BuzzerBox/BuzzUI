@@ -165,4 +165,12 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   public isImage(): boolean {
     return FileExtensionsService.isImage(this.media.fileSrc);
   }
+
+  public isAudio(): boolean {
+    return FileExtensionsService.isAudio(this.media.fileSrc);
+  }
+
+  public isPlayable(): boolean {
+    return FileExtensionsService.isPlayable(this.media.fileSrc);
+  }
 }

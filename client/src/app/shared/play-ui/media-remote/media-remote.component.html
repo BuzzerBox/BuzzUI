@@ -1,22 +1,22 @@
 <div class="media-controls large-controls">
   <span class="media-controls-title">
-    <mat-icon>{{ isVideo() ? 'movie' : 'image' }}</mat-icon>
+    <mat-icon>{{ isVideo() ? 'movie' : isAudio() ? 'audiotrack' : 'image' }}</mat-icon>
     Medium
   </span>
   @if (!isPlaying()) {
     <button mat-icon-button aria-label="Play" (click)="play()" title="Medium anzeigen / abspielen">
-      @if (isVideo()) { <mat-icon>play_arrow</mat-icon> }
-      @if (!isVideo()) { <mat-icon>image</mat-icon> }
+      @if (isPlayable()) { <mat-icon>play_arrow</mat-icon> }
+      @if (!isPlayable()) { <mat-icon>image</mat-icon> }
     </button>
   }
   @if (isPlaying()) {
     <button mat-icon-button aria-label="Pause" (click)="pause()" title="Medium verbergen / pausieren">
-      @if (isVideo()) { <mat-icon>pause</mat-icon> }
-      @if (!isVideo()) { <mat-icon>hide_image</mat-icon> }
+      @if (isPlayable()) { <mat-icon>pause</mat-icon> }
+      @if (!isPlayable()) { <mat-icon>hide_image</mat-icon> }
     </button>
   }
-  @if (isVideo()) {
-    <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video von vorne beginnen">
+  @if (isPlayable()) {
+    <button mat-icon-button aria-label="Replay" (click)="replay()" title="Von vorne beginnen">
       <mat-icon>replay</mat-icon>
     </button>
     <span class="volume-control">

@@ -63,7 +63,7 @@ export class FileServerService {
         } else if (tree.children && tree.children.length === 0) {
             return undefined;
         } else if (tree.type === 'file') {
-            if (FileExtensionsService.getExtensions().includes(tree.extension)) {
+            if (FileExtensionsService.isSupportedExtension(tree.extension)) {
                 return tree;
             } else {
                 return undefined;

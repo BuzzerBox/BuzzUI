@@ -20,6 +20,9 @@
       @if (activeNode !== node && isVideo(node)) {
         <mat-icon mat-list-icon>movie</mat-icon>
       }
+      @if (activeNode !== node && isAudio(node)) {
+        <mat-icon mat-list-icon>audiotrack</mat-icon>
+      }
       @if (activeNode === node) {
         <mat-icon mat-list-icon>check</mat-icon>
       }

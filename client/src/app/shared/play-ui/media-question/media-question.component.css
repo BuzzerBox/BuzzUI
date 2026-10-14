@@ -45,3 +45,21 @@ video, img{
   color: white;
   cursor: pointer;
 }
+
+/* audio has no picture of its own: show a music note while it is shown/playing */
+.audio-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40vh;
+  height: 40vh;
+  border-radius: 50%;
+  background-color: #3f51b5;
+  color: white;
+}
+
+.audio-visual mat-icon {
+  width: 24vh;
+  height: 24vh;
+  font-size: 24vh;
+}

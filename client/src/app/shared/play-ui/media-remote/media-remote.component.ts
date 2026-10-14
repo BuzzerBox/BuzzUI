@@ -100,5 +100,13 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     return FileExtensionsService.isImage(this.question.mediaDetails.fileSrc);
   }
 
+  public isAudio(): boolean {
+    return FileExtensionsService.isAudio(this.question.mediaDetails.fileSrc);
+  }
+
+  public isPlayable(): boolean {
+    return FileExtensionsService.isPlayable(this.question.mediaDetails.fileSrc);
+  }
+
 
 }
