@@ -92,3 +92,26 @@ button.screen-visibility:disabled {
   outline: 2px dashed #8a4300;
   outline-offset: 4px;
 }
+
+/* master only: the question's notes, like presenter notes */
+.notes {
+  margin-top: 16px;
+  padding: 8px 16px 12px;
+  border-left: 4px solid #c9a400;
+  border-radius: 4px;
+  background-color: #fff8d6;
+  color: #3d3200;
+  font-size: large;
+}
+
+.notes-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.notes-text {
+  white-space: pre-wrap;
+}

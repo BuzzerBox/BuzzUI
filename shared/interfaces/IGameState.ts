@@ -10,6 +10,7 @@ import {IMediaVolume} from "./IMediaVolume";
  * 2 -> 3:
  *  replaced mediaState: EVideoStates with mediaQuestionState: IMediaQuestionState
  *  added mediaVolume: IMediaVolume
+ *  added optional notes to the questions
  *  (version 2 savegames are still accepted and migrated on import)
  */
 export const CURRENT_SAVEGAME_VERSION = 3;

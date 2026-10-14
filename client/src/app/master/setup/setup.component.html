@@ -113,6 +113,13 @@
               </div>
             </div>
             <app-select-media [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({path: $event, question: i})"></app-select-media>
+            <div class="row-layout" [formGroupName]="questionFormGroupName">
+              <mat-form-field class="notes">
+                <mat-label>Notizen für die Spielleitung (optional)</mat-label>
+                <textarea matInput formControlName="notes" cdkTextareaAutosize cdkAutosizeMinRows="2"></textarea>
+                <mat-hint>Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige</mat-hint>
+              </mat-form-field>
+            </div>
             <app-media-question-display-order-configuration *ngIf="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" [initialConfig]="questionInitialConfig[i]" [mediaSrc]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
             <mat-action-row>
               <button mat-button color="primary" (click)="addQuestionToFormGroup()">Add Question</button>

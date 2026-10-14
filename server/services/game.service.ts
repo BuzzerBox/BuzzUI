@@ -375,7 +375,8 @@ export class GameService {
         return {
             packetType: EPacketTypes.DATA_FOR_SCREEN,
             teams: this.teams,
-            questions: this.questions,
+            // the notes are for the game master only
+            questions: this.questions.map(({notes, ...question}) => question),
             gameState: this.currentGameState
         }
     }

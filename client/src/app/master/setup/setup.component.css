@@ -72,3 +72,8 @@
 .example-headers-align.cdk-drop-list-dragging mat-expansion-panel:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
+
+.notes {
+  flex: 1 1 auto;
+  max-width: 40em;
+}

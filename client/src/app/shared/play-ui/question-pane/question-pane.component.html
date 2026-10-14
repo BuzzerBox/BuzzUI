@@ -58,5 +58,11 @@
         }
       </div>
     </div>
+    @if (isMaster && question.notes) {
+      <div class="notes">
+        <div class="notes-title"><mat-icon>sticky_note_2</mat-icon> Notizen</div>
+        <div class="notes-text">{{question.notes}}</div>
+      </div>
+    }
   </mat-card-content>
 }

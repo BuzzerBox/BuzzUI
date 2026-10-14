@@ -135,7 +135,8 @@ export class SetupComponent implements OnInit {
               isCorrect: new UntypedFormControl(q.answers[3].isCorrect)
             })
           }),
-          answersVisible: new UntypedFormControl(q.show)
+          answersVisible: new UntypedFormControl(q.show),
+          notes: new UntypedFormControl(q.notes ?? '')
         }));
         console.log("this.questionsFormGroup", this.questionsFormGroup);
         if (!q.show) {
@@ -235,7 +236,8 @@ export class SetupComponent implements OnInit {
         answer2: this.createFormGroupForAnswer(),
         answer3: this.createFormGroupForAnswer()
       }, {validators: this.atLeastOneCorrectAnswer()}),
-      answersVisible: new UntypedFormControl(true)
+      answersVisible: new UntypedFormControl(true),
+      notes: new UntypedFormControl('')
     });
   }
 
@@ -323,6 +325,10 @@ export class SetupComponent implements OnInit {
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
       };
+      const notes: string = (questionFormGroup.get('notes').value ?? '').toString().trim();
+      if (notes) {
+        question.notes = notes;
+      }
       if (mediaSrc) {
         question.mediaDetails = {
           fileSrc: mediaSrc
