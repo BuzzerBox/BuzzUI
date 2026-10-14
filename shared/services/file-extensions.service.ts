@@ -1,5 +1,5 @@
 export class FileExtensionsService {
-    private static imageExtenions: string[] = ['.png', '.jpg', '.jpeg', '.gif', '.bmp'];
+    private static imageExtenions: string[] = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.avif'];
     private static videoExtensions: string[] = ['.mp4'];
     private static audioExtensions: string[] = ['.mp3', '.wav', '.ogg', '.m4a'];
 
