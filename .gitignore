@@ -9,3 +9,6 @@ config.dev.json
 
 # Media files
 server/media/
+
+# macOS
+.DS_Store
