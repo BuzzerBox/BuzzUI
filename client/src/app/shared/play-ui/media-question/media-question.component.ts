@@ -80,6 +80,16 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
       // the media ended: leave fullscreen, there is nothing left to show in it
       () => this.game.finishMedia({fullscreen: false})
     );
+    // When the next question also has a video (or audio), the player stays and only the file changes. Videogular then
+    // reloads the media shortly after, which cancels a playback started right after the question change. So start it
+    // again once the new file is loaded, if it is supposed to be playing.
+    this.api.getDefaultMedia().subscriptions.loadedMetadata.subscribe(
+      () => {
+        if (this.mediaVisible) {
+          this.playMedia();
+        }
+      }
+    );
     this.applyVolume();
     if (this.mediaVisible) {
       this.playMedia();
