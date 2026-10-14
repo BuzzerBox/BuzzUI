@@ -5,7 +5,6 @@ import {TeamCardComponent} from './play-ui/team-card/team-card.component';
 import {QuestionPaneComponent} from './play-ui/question-pane/question-pane.component';
 import {AnswerOptionsComponent} from './play-ui/bottom-sheets/answer-options/answer-options.component';
 import {DialogConfirmEndingGameComponent} from './play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
-import {MatGridListModule} from '@angular/material/grid-list';
 import {MatCardModule} from '@angular/material/card';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
@@ -40,7 +39,6 @@ import {MatSliderModule} from '@angular/material/slider';
         CommonModule,
         MatButtonModule,
         MatCardModule,
-        MatGridListModule,
         MatDialogModule,
         MatBottomSheetModule,
         MatListModule,

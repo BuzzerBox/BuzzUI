@@ -41,9 +41,9 @@
           </button>
         }
         @if (showAnswers || (isMaster && question.show)) {
-          <mat-grid-list cols="2" rowHeight="2:1" [class.hidden-on-screen-content]="!showAnswers">
+          <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers">
             @for (answer of getAnswers(); track answer; let i = $index) {
-              <mat-grid-tile>
+              <div class="answer-cell">
                 <button id="button{{i}}" mat-raised-button
                   [class.logged-in]="isLoggedIn(answer)"
                   [class.correct]="isActivated(answer) && answer.isCorrect"
@@ -52,9 +52,9 @@
                   (click)="onClickAnswer(answer, $event.currentTarget)">
                   {{answer.text}}
                 </button>
-              </mat-grid-tile>
+              </div>
             }
-          </mat-grid-list>
+          </div>
         }
       </div>
     </div>
