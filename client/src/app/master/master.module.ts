@@ -28,6 +28,8 @@ import {FileUploadFormComponent} from './file-upload-form/file-upload-form.compo
 import {MatTreeModule} from '@angular/material/tree';
 import {DragDropModule} from '@angular/cdk/drag-drop';
 import { FileDropEventsDirective } from './file-drop-events.directive';
+import { MediaQuestionDisplayOrderConfigurationComponent } from './media-question-display-order-configuration/media-question-display-order-configuration.component';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 @NgModule({
   declarations: [
@@ -40,7 +42,7 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     PlayComponent,
     SelectMediaComponent,
     FileUploadFormComponent,
-    FileDropEventsDirective
+    FileDropEventsDirective,
   ],
   imports: [
     CommonModule,
@@ -63,6 +65,8 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     MatExpansionModule,
     MatTreeModule,
     DragDropModule,
+    MatButtonToggleModule,
+    MediaQuestionDisplayOrderConfigurationComponent,
   ],
   exports: [
     StartComponent

@@ -5,7 +5,6 @@ import {TeamCardComponent} from './play-ui/team-card/team-card.component';
 import {QuestionPaneComponent} from './play-ui/question-pane/question-pane.component';
 import {AnswerOptionsComponent} from './play-ui/bottom-sheets/answer-options/answer-options.component';
 import {DialogConfirmEndingGameComponent} from './play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
-import {MatGridListModule} from '@angular/material/grid-list';
 import {MatCardModule} from '@angular/material/card';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
@@ -22,6 +21,7 @@ import {VgOverlayPlayModule} from '@videogular/ngx-videogular/overlay-play';
 import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
 import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.component';
 import {MatIconModule} from '@angular/material/icon';
+import {MatSliderModule} from '@angular/material/slider';
 
 @NgModule({
     declarations: [
@@ -39,7 +39,6 @@ import {MatIconModule} from '@angular/material/icon';
         CommonModule,
         MatButtonModule,
         MatCardModule,
-        MatGridListModule,
         MatDialogModule,
         MatBottomSheetModule,
         MatListModule,
@@ -48,7 +47,8 @@ import {MatIconModule} from '@angular/material/icon';
         VgControlsModule,
         VgOverlayPlayModule,
         VgBufferingModule,
-        MatIconModule
+        MatIconModule,
+        MatSliderModule
     ],
     exports: [
         PlayUiComponent,

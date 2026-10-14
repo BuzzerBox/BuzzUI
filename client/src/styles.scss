@@ -29,3 +29,23 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: #dddddd;
 }
+
+// Larger buttons for the game master's question controls, so they are easier to hit.
+.large-controls {
+  --mat-icon-button-state-layer-size: 64px;
+  --mat-icon-button-touch-target-size: 64px;
+  --mat-icon-button-icon-size: 36px;
+  --mat-button-text-container-height: 56px;
+  --mat-button-text-touch-target-size: 56px;
+  --mat-button-text-label-text-size: 20px;
+  --mat-button-text-horizontal-padding: 20px;
+  --mat-slider-handle-width: 28px;
+  --mat-slider-handle-height: 28px;
+
+  // mat-icon has a fixed size of its own
+  .mat-mdc-icon-button .mat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 36px;
+  }
+}

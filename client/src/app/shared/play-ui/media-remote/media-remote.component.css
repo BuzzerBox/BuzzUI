@@ -1,3 +1,37 @@
-.media-control-button-row button {
+.media-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 12px 0;
+  padding: 4px 12px;
+  border: 1px solid #c4c4c4;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+}
+
+.media-controls-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-right: 8px;
+  font-size: large;
+}
+
+.volume-control {
+  display: inline-flex;
+  align-items: center;
+}
+
+.slide-position {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: large;
+  font-variant-numeric: tabular-nums;
+}
+
+.slide-position.finished {
+  color: #1e6b34;
 }

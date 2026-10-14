@@ -4,8 +4,9 @@ import {Observable, Subscription} from "rxjs";
 import {
     EAnswerStates,
     EGameStates,
+    EMediaStates,
     EPacketTypes,
-    EVideoStates,
+    EQuestionAnswerStates,
     IAnswer,
     IAnswerSetStatePacket,
     IBuzzer,
@@ -23,6 +24,7 @@ import {
     IResetServerPacket,
     IResponsePacket,
     ISetBuzzerLockPacket,
+    ISetMediaVolumePacket,
     ISetQuestionPacket,
     ISetupPacket,
     IStartGamePacket,
@@ -125,6 +127,8 @@ export class GameService {
                 this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
             } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
                 this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
+            } else if (packet.packetType === EPacketTypes.SET_MEDIA_VOLUME) {
+                this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
             }
         })
     }
@@ -198,9 +202,8 @@ export class GameService {
         if (packetOk) {
             this.teams = packet.teams;
             this.questions = packet.questions;
-            if (packet.currentGameState != null) {
-                this.currentGameState = packet.currentGameState;
-            }
+            // a new game is set up without a game state; a loaded save may lack fields added since it was made
+            this.currentGameState = {...this.makeInitialGameState(), ...packet.currentGameState};
             this.setNewState(EGameStates.WAITING_FOR_START);
         }
         this.webSocketConnectionMaster.send<IResponsePacket>(responsePacket);
@@ -244,11 +247,23 @@ export class GameService {
 
     private onStartGamePacket(packet: IStartGamePacket): void {
         const isLegal = this.currentStateInAutomaton === EGameStates.WAITING_FOR_START;
+        // a master that rejoined a running game restarts it: keep the media state the screens are showing
+        const isRejoin = this.previousStateInAutomaton === EGameStates.LOST_MASTER;
         if (isLegal) {
             this.setNewState(EGameStates.PLAYING);
         }
         this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
-        // TODO: send to screen
+        if (isLegal && isRejoin && this.currentGameState.mediaQuestionState) {
+            this.onUpdateMediaStatePacket(PacketHelper.makeMediaStatePacketFromQuestionState(this.currentGameState.mediaQuestionState));
+        } else if (isLegal) {
+            let questionConfig = PacketHelper.getDefaultMediaState();
+            if (this.getCurrentQuestion()?.initialConfig) {
+                questionConfig = this.getCurrentQuestion().initialConfig;
+            }
+            this.currentGameState.mediaQuestionState = questionConfig;
+            const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(questionConfig.mediaState, questionConfig.questionState, questionConfig.answerState);
+            this.onUpdateMediaStatePacket(mediaPacket);
+        }
     }
 
     private onTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {
@@ -294,7 +309,12 @@ export class GameService {
         this.onSetBuzzerLockPacket(null, lockPacket);
         this.ignoredKeypresses = [];
         this.sendToAllScreens(packet);
-        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
+        let questionConfig = PacketHelper.getDefaultMediaState();
+        if (this.getCurrentQuestion().initialConfig) {
+            questionConfig = this.getCurrentQuestion().initialConfig;
+        }
+        this.currentGameState.mediaQuestionState = questionConfig;
+        const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(questionConfig.mediaState, questionConfig.questionState, questionConfig.answerState);
         this.onUpdateMediaStatePacket(mediaPacket);
     }
 
@@ -355,7 +375,8 @@ export class GameService {
         return {
             packetType: EPacketTypes.DATA_FOR_SCREEN,
             teams: this.teams,
-            questions: this.questions,
+            // the notes are for the game master only
+            questions: this.questions.map(({notes, ...question}) => question),
             gameState: this.currentGameState
         }
     }
@@ -377,8 +398,17 @@ export class GameService {
         this.releaseHardwareBuzzerLock(true);
         this.ignoredKeypresses = [];
         this.lastKeyPressed = null;
-        this.currentGameState = {
-            mediaState: EVideoStates.NO_VIDEO,
+        this.currentGameState = this.makeInitialGameState();
+    }
+
+    private makeInitialGameState(): IGameState {
+        return {
+            mediaQuestionState: {
+                mediaState: EMediaStates.NO_MEDIA,
+                questionState: EQuestionAnswerStates.SHOWN,
+                answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+            },
+            mediaVolume: PacketHelper.getDefaultMediaVolume(),
             currentQuestionNumber: 0,
             markedTeamIds: [],
             loggedAnswers: [],
@@ -550,10 +580,24 @@ export class GameService {
     }
 
     private onUpdateMediaStatePacket(packet: IUpdateMediaStatePacket): void {
+        // remember the state so screens and masters that (re)connect get what is currently shown
+        if (this.currentGameState != null) {
+            this.currentGameState.mediaQuestionState = packet.mediaQuestionState;
+        }
         if (this.webSocketConnectionMaster != null) {
             this.webSocketConnectionMaster.send<IUpdateMediaStatePacket>(packet);
         }
         this.sendToAllScreens<IUpdateMediaStatePacket>(packet);
+    }
+
+    private onSetMediaVolumePacket(packet: ISetMediaVolumePacket): void {
+        if (this.currentGameState != null) {
+            this.currentGameState.mediaVolume = packet.mediaVolume;
+        }
+        if (this.webSocketConnectionMaster != null) {
+            this.webSocketConnectionMaster.send<ISetMediaVolumePacket>(packet);
+        }
+        this.sendToAllScreens<ISetMediaVolumePacket>(packet);
     }
 
     private startMicroControllerI2CPolling(): void {
@@ -633,7 +677,12 @@ export class GameService {
         this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
-        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacket(EVideoStates.STOPPED, undefined);
+        // only pause the media: keep question/answer visibility as it is, but leave fullscreen so the screens show who buzzed
+        const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacketFromQuestionState({
+            ...this.currentGameState.mediaQuestionState,
+            mediaState: EMediaStates.PAUSED,
+            fullscreen: false
+        });
         this.onUpdateMediaStatePacket(mediaStateUpdatePacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);

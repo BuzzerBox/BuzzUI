@@ -8,10 +8,11 @@ import {
     IAnswerSetStatePacket,
     ISetQuestionPacket,
     IEndGamePacket,
-    IKeypressOnScreenPacket, IUpdateMediaStatePacket
+    IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket
 } from "../interfaces";
 
-import {EPacketTypes, EAnswerStates, EVideoStates} from '../enums';
+import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates} from '../enums';
+import {IMediaQuestionState} from "../interfaces/IMediaQuestionState";
 
 export class PacketHelper {
     private constructor() {
@@ -48,11 +49,41 @@ export class PacketHelper {
         }
     }
 
-    public static makeMediaStatePacket(state: EVideoStates, timestamp: number | undefined): IUpdateMediaStatePacket {
+    public static makeMediaStatePacket(mediaState: EMediaStates, questionState?: EQuestionAnswerStates, answerState?: EQuestionAnswerStates | undefined): IUpdateMediaStatePacket {
+        return this.makeMediaStatePacketFromQuestionState(
+            {
+                mediaState: mediaState,
+                questionState: questionState,
+                answerState: answerState
+            })
+    }
+
+    public static makeMediaVolumePacket(mediaVolume: IMediaVolume): ISetMediaVolumePacket {
         return {
-            newState: state,
-            timeStamp: timestamp,
-            packetType: EPacketTypes.UPDATE_MEDIA_STATE,
+            packetType: EPacketTypes.SET_MEDIA_VOLUME,
+            mediaVolume
+        }
+    }
+
+    public static getDefaultMediaVolume(): IMediaVolume {
+        return {
+            volume: 1,
+            muted: false
+        };
+    }
+
+    public static getDefaultMediaState(): IMediaQuestionState {
+        return {
+            mediaState: EMediaStates.NO_MEDIA,
+            questionState: EQuestionAnswerStates.SHOWN,
+            answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+        };
+    }
+
+    public static makeMediaStatePacketFromQuestionState(mediaQuestionState: IMediaQuestionState): IUpdateMediaStatePacket {
+        return <IUpdateMediaStatePacket>{
+            mediaQuestionState,
+            packetType: EPacketTypes.UPDATE_MEDIA_STATE
         }
     }
 

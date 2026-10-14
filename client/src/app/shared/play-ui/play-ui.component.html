@@ -1,4 +1,4 @@
-<div class="play-container">
+<div class="play-container" [class.below-toolbar]="isMaster">
   @if (!isGameOver) {
     <div class="teams-left-pane">
       @for (team of getTeams(); track team; let even = $even) {
@@ -13,10 +13,10 @@
           <app-question-pane [question]="currentQuestion" [isMaster]="isMaster"></app-question-pane>
           <mat-card-actions>
             @if (isMaster) {
-              <button mat-button [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage">Vorherige Frage</button>
+              <button mat-button class="large-controls" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage">Vorherige Frage</button>
             }
             @if (isMaster) {
-              <button mat-button [disabled]="!hasNextQuestion()" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
+              <button mat-button class="large-controls" [disabled]="!hasNextQuestion()" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
             }
             <span class="spacer"></span>
             <!--            TODO: move this button to the right. Also, show dialog to confirm it-->

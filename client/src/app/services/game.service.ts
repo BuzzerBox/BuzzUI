@@ -3,8 +3,9 @@ import {WebSocketService} from './web-socket.service';
 import {
   CURRENT_SAVEGAME_VERSION,
   EAnswerStates,
+  EMediaStates,
   EPacketTypes,
-  EVideoStates,
+  EQuestionAnswerStates,
   IAnswer,
   IAnswerSetStatePacket,
   IDataForScreenPacket,
@@ -13,6 +14,8 @@ import {
   IGameState,
   IKeypressOnScreenPacket,
   IMarkTeamPacket,
+  IMediaQuestionState,
+  IMediaVolume,
   INewMasterAccepted,
   IPresetupAvailableInfoPacket,
   IQuestion,
@@ -21,6 +24,7 @@ import {
   IResetServerPacket,
   IResponsePacket,
   ISetBuzzerLockPacket,
+  ISetMediaVolumePacket,
   ISetQuestionPacket,
   ISetupPacket,
   IStartGamePacket,
@@ -29,7 +33,7 @@ import {
   IUpdateMediaStatePacket,
   PacketHelper
 } from '../../../../shared/shared';
-import {Observable, Subject, Subscription} from 'rxjs';
+import {Observable, ReplaySubject, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
@@ -75,7 +79,8 @@ export class GameService implements OnDestroy {
   private cbEndGame: ZeroVoidCallback;
   private markTeamSubject: Subject<IMarkTeamPacket>;
   private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
-  private updateMediaStateSubject: Subject<IUpdateMediaStatePacket>;
+  private updateMediaStateSubject = new ReplaySubject<IUpdateMediaStatePacket>(1);
+  private mediaVolumeSubject = new ReplaySubject<IMediaVolume>(1);
 
   constructor(
     private webSocketService: WebSocketService,
@@ -160,6 +165,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.UPDATE_MEDIA_STATE:
         this.handleMediaStateUpdate(message as IUpdateMediaStatePacket);
+        break;
+      case EPacketTypes.SET_MEDIA_VOLUME:
+        this.handleMediaVolumePacket(message as ISetMediaVolumePacket);
         break;
       default:
         break;
@@ -301,7 +309,12 @@ export class GameService implements OnDestroy {
           markedTeamIds: [],
           // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
           setBuzzerLock: false,
-          mediaState: EVideoStates.NO_VIDEO
+          mediaQuestionState: {
+            mediaState: EMediaStates.NO_MEDIA,
+            questionState: EQuestionAnswerStates.SHOWN,
+            answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+          },
+          mediaVolume: PacketHelper.getDefaultMediaVolume()
         };
       } else {
         this.currentGameState = gameState;
@@ -358,9 +371,15 @@ export class GameService implements OnDestroy {
   }
 
   public importGameStateFromJson(gameState: IGameStateAsJson, sendPacketImmediately: boolean = true): Promise<void> {
-    if (gameState.version !== CURRENT_SAVEGAME_VERSION) {
+    if (gameState.version !== CURRENT_SAVEGAME_VERSION && gameState.version !== 2) {
       alert('savegame version is not okay');
       return;
+    }
+    if (gameState.version === 2 && gameState.gameState) {
+      // version 2 had mediaState (EVideoStates) instead of mediaQuestionState, see CURRENT_SAVEGAME_VERSION
+      delete (gameState.gameState as {mediaState?: unknown}).mediaState;
+      gameState.gameState.mediaQuestionState ??= PacketHelper.getDefaultMediaState();
+      gameState.gameState.mediaVolume ??= PacketHelper.getDefaultMediaVolume();
     }
     this.currentGameState = gameState.gameState;
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
@@ -447,6 +466,13 @@ export class GameService implements OnDestroy {
   private handleDataForScreenPacket(packet: IDataForScreenPacket): void {
     if (this.isUsedAsScreen()) {
       this.setGameData(packet.teams, packet.questions, packet.gameState);
+      if (packet.gameState?.mediaQuestionState) {
+        this.updateMediaStateSubject.next({
+          packetType: EPacketTypes.UPDATE_MEDIA_STATE,
+          mediaQuestionState: packet.gameState.mediaQuestionState
+        });
+      }
+      this.mediaVolumeSubject.next(packet.gameState?.mediaVolume ?? PacketHelper.getDefaultMediaVolume());
       this.isScreenDataAvailable = true;
       this.redirect(baseUrlScreen + pathsScreen.main);
     }
@@ -601,22 +627,64 @@ export class GameService implements OnDestroy {
     return this.currentGameState;
   }
   public observeMediaStateUpdates(): Observable<IUpdateMediaStatePacket> {
-    if (this.updateMediaStateSubject == null) {
-      this.updateMediaStateSubject = new Subject<IUpdateMediaStatePacket>();
-    }
     return this.updateMediaStateSubject.asObservable();
   }
 
-  public updateMediaState(state: EVideoStates, timestamp?: number): void {
-    this.currentGameState.mediaState = state;
-    const mediaPacket = PacketHelper.makeMediaStatePacket(state, timestamp);
+  /**
+   * Changes the given parts of the current media question state and sends it to the server; the rest stays as it is.
+   */
+  public changeMediaState(changes: Partial<IMediaQuestionState>): void {
+    const current = this.getCurrentMediaQuestionState();
+    const mediaQuestionState: IMediaQuestionState = {...current, ...changes};
+    // RESET restarts the media once; it must not be sent again with unrelated changes
+    if (changes.mediaState === undefined && current.mediaState === EMediaStates.RESET) {
+      mediaQuestionState.mediaState = EMediaStates.PLAYING;
+    }
+    this.currentGameState.mediaQuestionState = mediaQuestionState;
+    const mediaPacket = PacketHelper.makeMediaStatePacketFromQuestionState(mediaQuestionState);
     this.webSocketService.send<IUpdateMediaStatePacket>(mediaPacket);
   }
 
-  private handleMediaStateUpdate(packet: IUpdateMediaStatePacket): void {
-    if (this.updateMediaStateSubject != null) {
-      this.updateMediaStateSubject.next(packet);
-    }
+  /**
+   * Marks the media as played to the end: a question and answers waiting for the media are shown.
+   */
+  public finishMedia(changes: Partial<IMediaQuestionState> = {}): void {
+    const current = this.getCurrentMediaQuestionState();
+    const reveal = (state: EQuestionAnswerStates) => state === EQuestionAnswerStates.WAIT_FOR_MEDIA ? EQuestionAnswerStates.SHOWN : state;
+    this.changeMediaState({
+      mediaState: EMediaStates.FINISHED,
+      questionState: reveal(current.questionState),
+      answerState: reveal(current.answerState),
+      ...changes
+    });
+  }
 
+  public observeMediaVolume(): Observable<IMediaVolume> {
+    return this.mediaVolumeSubject.asObservable();
+  }
+
+  public getCurrentMediaVolume(): IMediaVolume {
+    return this.currentGameState?.mediaVolume ?? PacketHelper.getDefaultMediaVolume();
+  }
+
+  public setMediaVolume(mediaVolume: IMediaVolume): void {
+    this.currentGameState.mediaVolume = mediaVolume;
+    this.webSocketService.send<ISetMediaVolumePacket>(PacketHelper.makeMediaVolumePacket(mediaVolume));
+  }
+
+  private handleMediaVolumePacket(packet: ISetMediaVolumePacket): void {
+    if (this.currentGameState != null) {
+      this.currentGameState.mediaVolume = packet.mediaVolume;
+    }
+    this.mediaVolumeSubject.next(packet.mediaVolume);
+  }
+
+  public getCurrentMediaQuestionState(): IMediaQuestionState {
+    return this.currentGameState?.mediaQuestionState ?? PacketHelper.getDefaultMediaState();
+  }
+
+  private handleMediaStateUpdate(packet: IUpdateMediaStatePacket): void {
+    this.currentGameState.mediaQuestionState = packet.mediaQuestionState;
+    this.updateMediaStateSubject.next(packet);
   }
 }

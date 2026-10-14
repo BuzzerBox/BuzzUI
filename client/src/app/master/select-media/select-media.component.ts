@@ -3,6 +3,7 @@ import {FileService} from '../../services/file.service';
 import {IDirectoryTree, StringHelper, FileExtensionsService} from '../../../../../shared/shared';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
+import {IMediaSelection} from '../interfaces/IMediaSelection';
 
 @Component({
     selector: 'app-select-media',
@@ -14,7 +15,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   treeControl = new NestedTreeControl<IDirectoryTree>(node => node.children);
   dataSource = new MatTreeNestedDataSource<IDirectoryTree>();
   activeNode: IDirectoryTree;
-  @Output() locationChange: EventEmitter<string> = new EventEmitter<string>();
+  @Output() locationChange: EventEmitter<IMediaSelection> = new EventEmitter<IMediaSelection>();
   @Input() fileLocation: string;
 
   private hasFetchedData = false;
@@ -52,11 +53,36 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   changeSelection(node: IDirectoryTree): void {
     if (!node || node === this.activeNode) {
       this.activeNode = undefined;
-      this.locationChange.emit('');
+      this.locationChange.emit({path: ''});
     } else {
       this.activeNode = node;
-      this.locationChange.emit(node.path);
+      this.locationChange.emit({path: node.path});
     }
+  }
+
+  selectSlideshow(folder: IDirectoryTree): void {
+    if (folder === this.activeNode) {
+      this.changeSelection(undefined);
+      return;
+    }
+    this.activeNode = folder;
+    this.locationChange.emit({path: folder.path, slides: this.getSlideImages(folder).map(image => image.path)});
+  }
+
+  /**
+   * The images directly in this folder, sorted by name with numbers in numeric order (2 before 10)
+   */
+  getSlideImages(folder: IDirectoryTree): IDirectoryTree[] {
+    return (folder.children ?? [])
+      .filter(child => child.type === 'file' && this.isImage(child))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+  }
+
+  /**
+   * Only subfolders of the media folder can be slideshows, not the media folder itself
+   */
+  canBeSlideshow(folder: IDirectoryTree): boolean {
+    return folder !== this.dataSource.data[0] && this.getSlideImages(folder).length >= 2;
   }
 
   hasChild = (_: number, node: IDirectoryTree) => !!node && !!node.children && node.children.length > 0;
@@ -83,11 +109,15 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   }
 
   public isImage(node: IDirectoryTree): boolean {
-    return !!FileExtensionsService.getImageExtensions().includes(node.extension);
+    return FileExtensionsService.isImage(node.name);
   }
 
   public isVideo(node: IDirectoryTree): boolean {
-    return !!FileExtensionsService.getVideoExtensions().includes(node.extension);
+    return FileExtensionsService.isVideo(node.name);
+  }
+
+  public isAudio(node: IDirectoryTree): boolean {
+    return FileExtensionsService.isAudio(node.name);
   }
 
 }

@@ -1,13 +1,22 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates, EVideoStates} from '../../../../../../shared/shared';
+import {
+  EAnswerStates,
+  EMediaStates,
+  EQuestionAnswerStates,
+  FileExtensionsService,
+  MediaHelper,
+  IAnswer,
+  IAnswerSetStatePacket,
+  IQuestion
+} from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
   AnswerOptionsComponent,
   EDecisionBottomSheetAnswerOptions,
   IBottomSheetsAnswerOptionsData
 } from '../bottom-sheets/answer-options/answer-options.component';
-import {Observable, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
 import {ArraysHelper} from '../../../helper/arrays.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
 
@@ -21,16 +30,18 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isMaster = false;
   @Input() question: IQuestion;
 
-  private readonly STYLE_CLASS_ANSWER_LOGGED_IN = 'logged-in';
-  private readonly STYLE_CLASS_ANSWER_CORRECT = 'correct';
-  private readonly STYLE_CLASS_ANSWER_WRONG = 'wrong';
-
   private loggedInAnswers: IAnswer[];
   private activatedAnswers: IAnswer[];
   private correctAnswersThatAreLeft: number;
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
-  public showAnswers: boolean;
+  private mediaUpdateSubscription: Subscription;
+  // whether the question and the answers are visible on the screens; the master always sees both
+  public showAnswers = true;
+  public showQuestion = true;
+  // the states these were derived from, to tell the master why something is hidden
+  private questionState: EQuestionAnswerStates;
+  private answerState: EQuestionAnswerStates;
 
   constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
 
@@ -39,12 +50,21 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.isMaster) {
       this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
     }
-    this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
-    this.game.observeMediaStateUpdates().subscribe(
+    if (this.question.initialConfig) {
+      this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
+      this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
+      this.questionState = this.question.initialConfig.questionState;
+      this.answerState = this.question.initialConfig.answerState;
+    }
+    this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
-        switch (packet.newState) {
-          case EVideoStates.FINISHED:
-            this.showAnswers = this.question?.show as boolean;
+        this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
+        this.questionState = packet.mediaQuestionState.questionState;
+        this.answerState = packet.mediaQuestionState.answerState;
+        switch (packet.mediaQuestionState.answerState) {
+          case EQuestionAnswerStates.SHOWN:
+            // questions without answer options (unchecked in setup) never show their answers
+            this.showAnswers = !!this.question?.show;
             break;
           default:
             this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
@@ -82,12 +102,59 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.question?.text;
   }
 
+  // The master shows and hides the question and the answers on the screens with their status labels. Like the
+  // media, these states only exist for media questions, and answers turned off in setup can't be shown.
+  public canToggleQuestion(): boolean {
+    return this.isMaster && !!this.question?.mediaDetails;
+  }
+
+  public canToggleAnswers(): boolean {
+    return this.canToggleQuestion() && !!this.question?.show;
+  }
+
+  public toggleQuestionVisibility(): void {
+    if (!this.canToggleQuestion()) {
+      return;
+    }
+    this.game.changeMediaState({questionState: this.showQuestion ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
+  }
+
+  public toggleAnswersVisibility(): void {
+    if (!this.canToggleAnswers()) {
+      return;
+    }
+    this.game.changeMediaState({answerState: this.showAnswers ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
+  }
+
+  public getQuestionVisibilityLabel(): string {
+    return this.getVisibilityLabel(this.showQuestion, this.questionState);
+  }
+
+  public getAnswersVisibilityLabel(): string {
+    return this.getVisibilityLabel(this.showAnswers, this.answerState);
+  }
+
+  private getVisibilityLabel(visible: boolean, state: EQuestionAnswerStates): string {
+    if (visible) {
+      return 'Auf der Anzeige sichtbar';
+    }
+    const media = this.question?.mediaDetails;
+    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && MediaHelper.hasEnd(media)) {
+      if (MediaHelper.isSlideshow(media)) {
+        return 'Auf der Anzeige verborgen – erscheint nach der Bildserie';
+      }
+      return 'Auf der Anzeige verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(media.fileSrc) ? 'Audio' : 'Video');
+    }
+    return 'Auf der Anzeige verborgen';
+  }
+
   public getAnswers(): IAnswer[] {
     return this.question?.answers;
   }
 
   public onClickAnswer(answer, button: HTMLButtonElement): void {
-    if (!this.isMaster || this.activatedAnswers.includes(answer) || this.correctAnswersThatAreLeft === 0) {
+    // answers hidden on the screens can be seen but not used by the master
+    if (!this.isMaster || !this.showAnswers || this.activatedAnswers.includes(answer) || this.correctAnswersThatAreLeft === 0) {
       return;
     }
 
@@ -100,13 +167,13 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       if (decision != null) {
         switch (decision) {
           case EDecisionBottomSheetAnswerOptions.ACTIVATE:
-            this.activateAnswer(answer, button);
+            this.activateAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.LOG_IN:
-            this.logInAnswer(answer, button);
+            this.logInAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.LOG_OUT:
-            this.logOutAnswer(answer, button);
+            this.logOutAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.NOTHING:
           default:
@@ -119,28 +186,31 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  public logInAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.add(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public isLoggedIn(answer: IAnswer): boolean {
+    return this.loggedInAnswers.includes(answer);
+  }
+
+  public isActivated(answer: IAnswer): boolean {
+    return this.activatedAnswers.includes(answer);
+  }
+
+  public logInAnswer(answer: IAnswer, setInService: boolean = true): void {
     this.loggedInAnswers.push(answer);
     if (setInService) {
       this.game.logInAnswer(answer);
     }
   }
 
-  public logOutAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public logOutAnswer(answer: IAnswer, setInService: boolean = true): void {
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
     if (setInService) {
       this.game.logOutAnswer(answer);
     }
   }
 
-  public activateAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public activateAnswer(answer: IAnswer, setInService: boolean = true): void {
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
-    let style: string;
     if (answer.isCorrect) {
-      style = this.STYLE_CLASS_ANSWER_CORRECT;
       this.correctAnswersThatAreLeft--;
       if (this.correctAnswersThatAreLeft === 0 && this.isMaster) {
         this.allCorrectAnswersFoundSnackBar = this.snackBar.open('Alle richtigen Antworten wurden aufgedeckt.', 'Okay');
@@ -153,10 +223,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         this.game.sendUnmarkAllTeamsPacket();
         this.game.setBuzzerLock(false);
       }
-    } else {
-      style = this.STYLE_CLASS_ANSWER_WRONG;
     }
-    button.classList.add(style);
     this.activatedAnswers.push(answer);
     if (setInService) {
       this.game.activateAnswer(answer);
@@ -168,14 +235,17 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
-    const answer = packet.answer;
-    const button: HTMLButtonElement = document.getElementById('button' + this.getAnswerIndex(answer)) as HTMLButtonElement;
+    // use this question's own answer object, the button styles are looked up by reference
+    const answer = this.question?.answers[this.getAnswerIndex(packet.answer)];
+    if (answer == null) {
+      return;
+    }
     if (packet.state === EAnswerStates.LOG_IN) {
-      this.logInAnswer(answer, button, false);
+      this.logInAnswer(answer, false);
     } else if (packet.state === EAnswerStates.LOG_OUT) {
-      this.logOutAnswer(answer, button, false);
+      this.logOutAnswer(answer, false);
     } else if (packet.state === EAnswerStates.ACTIVATE) {
-      this.activateAnswer(answer, button, false);
+      this.activateAnswer(answer, false);
     }
   }
 
@@ -190,6 +260,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     if (this.answerSetStatePacketSubscription != null) {
       this.answerSetStatePacketSubscription.unsubscribe();
+    }
+    if (this.mediaUpdateSubscription != null) {
+      this.mediaUpdateSubscription.unsubscribe();
     }
   }
 

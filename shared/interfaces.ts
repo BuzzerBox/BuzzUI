@@ -7,6 +7,9 @@ import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {IQuestion} from './interfaces/IQuestion';
 import {IMediaDetails} from './interfaces/IMediaDetails';
+import {IMediaQuestionState} from './interfaces/IMediaQuestionState';
+import {IMediaVolume} from './interfaces/IMediaVolume';
+import {ISetMediaVolumePacket} from './interfaces/ISetMediaVolumePacket';
 import {ISetupPacket} from './interfaces/ISetupPacket';
 import {IAnswer} from './interfaces/IAnswer';
 import {INewMasterAccepted} from './interfaces/INewMasterAccepted';
@@ -52,5 +55,8 @@ export {
 	IKeypressOnScreenPacket,
 	IMarkTeamPacket,
 	CURRENT_SAVEGAME_VERSION,
-	ISetBuzzerLockPacket
+	ISetBuzzerLockPacket,
+	IMediaQuestionState,
+	IMediaVolume,
+	ISetMediaVolumePacket
 }

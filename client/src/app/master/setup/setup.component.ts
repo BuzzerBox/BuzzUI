@@ -3,11 +3,13 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
-import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
+import {ITeam, IQuestion, IAnswer, IMediaQuestionState} from '../../../../../shared/shared';
 import {SafeUrl} from '@angular/platform-browser';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
 import {FileService} from '../../services/file.service';
+import {IMediaSelection} from '../interfaces/IMediaSelection';
+import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-configuration/media-question-display-order-configuration.component';
 
 @Component({
     selector: 'app-setup',
@@ -28,6 +30,7 @@ export class SetupComponent implements OnInit {
   public questionFormGroupNames: string[];
   private mapTeamFormControlNameToBuzzerId: Map<string, string>;
   public hasReachedLastStep = false;
+  public questionInitialConfig: IMediaQuestionState[];
 
   step = 0;
 
@@ -94,39 +97,51 @@ export class SetupComponent implements OnInit {
       // reset everything
       this.questionsFormGroup = new UntypedFormGroup({});
       this.questionFormGroupNames = [];
+      this.questionInitialConfig = [];
 
       for (let i = 0; i < this.game.getQuestions().length; i++) {
         const q: IQuestion = this.game.getQuestions()[i];
         const fgn = 'question' + i;
         this.questionFormGroupNames.push(fgn);
-        let mediaSrc = '';
 
+        if (q.initialConfig) {
+          this.questionInitialConfig.push(q.initialConfig);
+        } else {
+          this.questionInitialConfig.push(undefined);
+        }
+
+        let mediaSrc = '';
         if (q.mediaDetails) {
           mediaSrc = q.mediaDetails.fileSrc;
         }
 
+        // setups saved before answers were kept filled answers of questions without answer options with placeholders
+        const answers: IAnswer[] = q.show ? q.answers : q.answers.map(a => a.text === 'bla' && a.isCorrect ? {text: '', isCorrect: false} : a);
+
         this.questionsFormGroup.setControl(fgn, new UntypedFormGroup({
           text: new UntypedFormControl(q.text),
           mediaSrc: new UntypedFormControl(mediaSrc),
+          slides: new UntypedFormControl(q.mediaDetails?.slides ?? null),
           answers: new UntypedFormGroup({
             answer0: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[0].text),
-              isCorrect: new UntypedFormControl(q.answers[0].isCorrect)
+              text: new UntypedFormControl(answers[0].text),
+              isCorrect: new UntypedFormControl(answers[0].isCorrect)
             }),
             answer1: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[1].text),
-              isCorrect: new UntypedFormControl(q.answers[1].isCorrect)
+              text: new UntypedFormControl(answers[1].text),
+              isCorrect: new UntypedFormControl(answers[1].isCorrect)
             }),
             answer2: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[2].text),
-              isCorrect: new UntypedFormControl(q.answers[2].isCorrect)
+              text: new UntypedFormControl(answers[2].text),
+              isCorrect: new UntypedFormControl(answers[2].isCorrect)
             }),
             answer3: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[3].text),
-              isCorrect: new UntypedFormControl(q.answers[3].isCorrect)
+              text: new UntypedFormControl(answers[3].text),
+              isCorrect: new UntypedFormControl(answers[3].isCorrect)
             })
           }),
-          answersVisible: new UntypedFormControl(q.show)
+          answersVisible: new UntypedFormControl(q.show),
+          notes: new UntypedFormControl(q.notes ?? '')
         }));
         console.log("this.questionsFormGroup", this.questionsFormGroup);
         if (!q.show) {
@@ -137,6 +152,7 @@ export class SetupComponent implements OnInit {
     } else {
       this.questionsFormGroup = new UntypedFormGroup({});
       this.questionFormGroupNames = [];
+      this.questionInitialConfig = [];
       this.addQuestionToFormGroup();
     }
   }
@@ -144,6 +160,8 @@ export class SetupComponent implements OnInit {
   public removeQuestion(index: number, event: MouseEvent): void {
     event.stopPropagation();
     const deletedControl = this.questionsFormGroup.get(this.questionFormGroupNames[index]) as UntypedFormGroup;
+    const deletedInitialConfig = this.questionInitialConfig[index];
+    this.questionInitialConfig = this.questionInitialConfig.filter((_, i) => i !== index);
     const remainingNames = this.questionFormGroupNames.filter((_, i) => i !== index);
     const newGroup = new UntypedFormGroup({});
     const newNames: string[] = [];
@@ -176,6 +194,11 @@ export class SetupComponent implements OnInit {
       }
       this.questionFormGroupNames = restoredNames;
       this.questionsFormGroup = restoredGroup;
+      this.questionInitialConfig = [
+        ...this.questionInitialConfig.slice(0, index),
+        deletedInitialConfig,
+        ...this.questionInitialConfig.slice(index)
+      ];
       this.step = index;
     });
   }
@@ -185,6 +208,7 @@ export class SetupComponent implements OnInit {
       return;
     }
     moveItemInArray(this.questionFormGroupNames, event.previousIndex, event.currentIndex);
+    moveItemInArray(this.questionInitialConfig, event.previousIndex, event.currentIndex);
     const newGroup = new UntypedFormGroup({});
     const newNames: string[] = [];
     for (let i = 0; i < this.questionFormGroupNames.length; i++) {
@@ -202,6 +226,7 @@ export class SetupComponent implements OnInit {
     const qfc: UntypedFormGroup = this.createQuestionFormGroup();
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
+    this.questionInitialConfig.push(undefined);
     this.questionsFormGroup.addControl(formGroupName, qfc);
     this.setStep(this.questionFormGroupNames.length - 1);
   }
@@ -210,13 +235,16 @@ export class SetupComponent implements OnInit {
     return new UntypedFormGroup({
       text: new UntypedFormControl(null, Validators.required),
       mediaSrc: new UntypedFormControl(''),
+      // only for slideshows: the image URLs, mediaSrc is then the folder
+      slides: new UntypedFormControl(null),
       answers: new UntypedFormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),
         answer2: this.createFormGroupForAnswer(),
         answer3: this.createFormGroupForAnswer()
       }, {validators: this.atLeastOneCorrectAnswer()}),
-      answersVisible: new UntypedFormControl(true)
+      answersVisible: new UntypedFormControl(true),
+      notes: new UntypedFormControl('')
     });
   }
 
@@ -287,7 +315,7 @@ export class SetupComponent implements OnInit {
 
   private buildSetupQuestionsObject(): IQuestion[] {
     const ret: IQuestion[] = [];
-    for (const name of this.questionFormGroupNames) {
+    this.questionFormGroupNames.forEach((name, index) => {
       const questionFormGroup: UntypedFormGroup = this.questionsFormGroup.get(name) as UntypedFormGroup;
       const questionText: string = questionFormGroup.get('text').value.toString();
       const mediaSrc: string = questionFormGroup.get('mediaSrc').value.toString();
@@ -295,8 +323,9 @@ export class SetupComponent implements OnInit {
       for (let i = 0; i < 4; i++) {
         const answerFormGroup: UntypedFormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as UntypedFormGroup;
         answers.push({
-          text: answerFormGroup.get('text').value.toString(),
-          isCorrect: answerFormGroup.get('isCorrect').value
+          // answers of questions without answer options may never have been filled in
+          text: (answerFormGroup.get('text').value ?? '').toString(),
+          isCorrect: !!answerFormGroup.get('isCorrect').value
         });
       }
       const question: IQuestion = {
@@ -304,13 +333,23 @@ export class SetupComponent implements OnInit {
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
       };
+      const notes: string = (questionFormGroup.get('notes').value ?? '').toString().trim();
+      if (notes) {
+        question.notes = notes;
+      }
       if (mediaSrc) {
         question.mediaDetails = {
           fileSrc: mediaSrc
         };
+        const slides: string[] | null = questionFormGroup.get('slides').value;
+        if (slides?.length) {
+          question.mediaDetails.slides = slides;
+        }
+        // the config component only emits once the user changes something, so fall back to the default it shows
+        question.initialConfig = this.questionInitialConfig[index] ?? {...DEFAULT_MEDIA_QUESTION_CONFIG};
       }
       ret.push(question);
-    }
+    });
     return ret;
   }
 
@@ -361,53 +400,44 @@ export class SetupComponent implements OnInit {
   }
 
   // TODO: implement it in a correct way, this is just because of the haste
-  public toggleShowAnswers(cb: MatCheckbox, fgn: string): void {
-    const showAnswers = !cb.checked; // it shows the state before the click, so we need to invert it
-    this.applyShowAnswersState(fgn, showAnswers);
-  }
-
-
-  private applyShowAnswersState(fgn: string, showAnswers: boolean): void {
-    const fgq = this.questionsFormGroup.get(fgn);
-    const fga = fgq.get('answers');
-    let text = 'bla';
-    if (showAnswers) {
-      text = '';
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').enable();
-    } else {
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').disable();
+  /**
+   * Questions without answer options keep their answers in the form, disabled, so turning the option back on restores them.
+   */
+  public applyShowAnswersState(fgn: string, showAnswers: boolean): void {
+    const fga = this.questionsFormGroup.get(fgn).get('answers');
+    for (let i = 0; i < 4; i++) {
+      const answer = fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + i);
+      if (showAnswers) {
+        answer.enable();
+      } else {
+        answer.disable();
+      }
     }
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('isCorrect').setValue(!showAnswers);
   }
 
   setStep(index: number): void {
     this.step = index;
   }
 
-  changeMediaSelection(event: { path: string; question: number }, prependPrefix: boolean = true): void {
-    const mediaSrcControl = this.questionsFormGroup.controls['question' + event.question].get('mediaSrc');
-    if (event && event.path) {
-      const path = event.path;
-      mediaSrcControl.setValue(FileService.buildFullPathString(path));
+  changeMediaSelection(event: { selection: IMediaSelection; question: number }): void {
+    const questionFormGroup = this.questionsFormGroup.controls['question' + event.question];
+    const selection = event.selection;
+    if (selection?.path) {
+      questionFormGroup.get('mediaSrc').setValue(FileService.buildFullPathString(selection.path));
+      questionFormGroup.get('slides').setValue(selection.slides?.map(path => FileService.buildFullPathString(path)) ?? null);
     } else {
-      mediaSrcControl.setValue('');
+      questionFormGroup.get('mediaSrc').setValue('');
+      questionFormGroup.get('slides').setValue(null);
     }
   }
+
+  public isSlideshow(questionFormGroupName: string): boolean {
+    return !!this.questionsFormGroup.controls[questionFormGroupName].get('slides').value?.length;
+  }
+
+  changeQuestionConfig(event: { config: IMediaQuestionState; question: number }): void {
+    this.questionInitialConfig[event.question] = event.config;
+  }
+
 
 }
