@@ -1,4 +1,4 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
 import {EMediaStates, EQuestionAnswerStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
@@ -18,6 +18,8 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   private mediaUpdateSubscription: Subscription;
   public mediaVisible = false;
   public fullscreen = false;
+  // set when the browser refused to play with sound because nobody has interacted with the page yet
+  public soundBlocked = false;
 
 
   constructor(private game: GameService) {
@@ -71,14 +73,45 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
       }
     );
     if (this.mediaVisible) {
-      this.api.getDefaultMedia().play();
+      this.playMedia();
+    }
+  }
+
+  /**
+   * Browsers only allow playback with sound once the user interacted with the page (e.g. a laptop screen that was
+   * reloaded). In that case, play muted instead and unmute on the next click or keypress, see enableSound().
+   */
+  private playMedia(): void {
+    const media = this.api?.getDefaultMedia();
+    if (!media) {
+      return;
+    }
+    media.play()?.catch((error: DOMException) => {
+      if (error?.name !== 'NotAllowedError' || media.elem.muted) {
+        return;
+      }
+      this.soundBlocked = true;
+      media.elem.muted = true;
+      // videogular still considers its own play() call pending at this point and would ignore another one
+      media.elem.play().catch(() => {});
+    });
+  }
+
+  @HostListener('document:click')
+  @HostListener('document:keydown')
+  enableSound(): void {
+    if (!this.soundBlocked) {
+      return;
+    }
+    this.soundBlocked = false;
+    const media = this.api?.getDefaultMedia();
+    if (media) {
+      media.elem.muted = false;
     }
   }
 
   startPlayback(): void {
-    if (this.api && this.api.getDefaultMedia()) {
-      this.api.getDefaultMedia().play();
-    }
+    this.playMedia();
     this.mediaVisible = true;
   }
 
@@ -92,7 +125,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   restartPlayback(): void {
     if (this.api && this.api.getDefaultMedia()) {
       this.api.getDefaultMedia().currentTime = 0;
-      this.api.getDefaultMedia().play();
+      this.playMedia();
     }
     this.mediaVisible = true;
 

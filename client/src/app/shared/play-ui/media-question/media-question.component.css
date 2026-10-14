@@ -1,3 +1,7 @@
+:host {
+  display: block;
+  position: relative;
+}
 .player {
   justify-content: center;
   display: flex;
@@ -25,4 +29,19 @@ video, img{
 .fullscreen .player {
   width: 100%;
   height: 100%;
+}
+.sound-blocked {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  cursor: pointer;
 }

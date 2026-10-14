@@ -9,10 +9,14 @@
         [vgMedia]="myMedia"
         id="my-video"
         preload="auto"
-        muted
         [src]="media.fileSrc">
       </video>
     </vg-player>
+    @if (soundBlocked && mediaVisible) {
+      <div class="sound-blocked">
+        <mat-icon>volume_off</mat-icon> Klicken, um den Ton einzuschalten
+      </div>
+    }
   }
 
   @if (isImage() && mediaVisible) {
