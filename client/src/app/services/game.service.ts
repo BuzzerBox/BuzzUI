@@ -364,9 +364,14 @@ export class GameService implements OnDestroy {
   }
 
   public importGameStateFromJson(gameState: IGameStateAsJson, sendPacketImmediately: boolean = true): Promise<void> {
-    if (gameState.version !== CURRENT_SAVEGAME_VERSION) {
+    if (gameState.version !== CURRENT_SAVEGAME_VERSION && gameState.version !== 2) {
       alert('savegame version is not okay');
       return;
+    }
+    if (gameState.version === 2 && gameState.gameState) {
+      // version 2 had mediaState (EVideoStates) instead of mediaQuestionState, see CURRENT_SAVEGAME_VERSION
+      delete (gameState.gameState as {mediaState?: unknown}).mediaState;
+      gameState.gameState.mediaQuestionState ??= PacketHelper.getDefaultMediaState();
     }
     this.currentGameState = gameState.gameState;
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
