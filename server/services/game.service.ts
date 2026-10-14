@@ -245,11 +245,15 @@ export class GameService {
 
     private onStartGamePacket(packet: IStartGamePacket): void {
         const isLegal = this.currentStateInAutomaton === EGameStates.WAITING_FOR_START;
+        // a master that rejoined a running game restarts it: keep the media state the screens are showing
+        const isRejoin = this.previousStateInAutomaton === EGameStates.LOST_MASTER;
         if (isLegal) {
             this.setNewState(EGameStates.PLAYING);
         }
         this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
-        if (isLegal) {
+        if (isLegal && isRejoin && this.currentGameState.mediaQuestionState) {
+            this.onUpdateMediaStatePacket(PacketHelper.makeMediaStatePacketFromQuestionState(this.currentGameState.mediaQuestionState));
+        } else if (isLegal) {
             let questionConfig = PacketHelper.getDefaultMediaState();
             if (this.getCurrentQuestion()?.initialConfig) {
                 questionConfig = this.getCurrentQuestion().initialConfig;
@@ -568,6 +572,10 @@ export class GameService {
     }
 
     private onUpdateMediaStatePacket(packet: IUpdateMediaStatePacket): void {
+        // remember the state so screens and masters that (re)connect get what is currently shown
+        if (this.currentGameState != null) {
+            this.currentGameState.mediaQuestionState = packet.mediaQuestionState;
+        }
         if (this.webSocketConnectionMaster != null) {
             this.webSocketConnectionMaster.send<IUpdateMediaStatePacket>(packet);
         }
