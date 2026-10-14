@@ -34,10 +34,10 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     );
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
-        this.state = packet.mediaQuestionState;
-        if (packet.mediaQuestionState.mediaState === EMediaStates.RESET) {
-          this.state.mediaState = EMediaStates.PLAYING;
-        }
+        // after a restart the media is playing again (without changing the packet, it is shared)
+        this.state = packet.mediaQuestionState.mediaState === EMediaStates.RESET
+          ? {...packet.mediaQuestionState, mediaState: EMediaStates.PLAYING}
+          : packet.mediaQuestionState;
       }
     );
   }
@@ -64,15 +64,15 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
   }
 
   play(): void {
-    this.game.updateMediaState(EMediaStates.PLAYING, this.state.questionState, this.state.answerState, this.state.fullscreen);
+    this.game.changeMediaState({mediaState: EMediaStates.PLAYING});
   }
 
   pause(): void {
-    this.game.updateMediaState(EMediaStates.PAUSED, this.state.questionState, this.state.answerState, this.state.fullscreen);
+    this.game.changeMediaState({mediaState: EMediaStates.PAUSED});
   }
 
   replay(): void {
-    this.game.updateMediaState(EMediaStates.RESET, this.state.questionState, this.state.answerState, this.state.fullscreen);
+    this.game.changeMediaState({mediaState: EMediaStates.RESET});
   }
 
   isPlaying(): boolean {
@@ -84,8 +84,7 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
   }
 
   toggleFullscreen(): void {
-    this.state.fullscreen = !this.state.fullscreen;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
+    this.game.changeMediaState({fullscreen: !this.state.fullscreen});
   }
 
   isFullscreen(): boolean {

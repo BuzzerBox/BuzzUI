@@ -1,6 +1,6 @@
 import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
-import {EMediaStates, EQuestionAnswerStates, IMediaDetails, IMediaVolume, FileExtensionsService, PacketHelper} from '../../../../../../shared/shared';
+import {EMediaStates, IMediaDetails, IMediaVolume, FileExtensionsService, PacketHelper} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
@@ -68,16 +68,8 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   onPlayerReady(api: VgApiService): void {
     this.api = api;
     this.api.getDefaultMedia().subscriptions.ended.subscribe(
-      () => {
-        const current = this.game.getCurrentMediaQuestionState();
-        const questionState = current.questionState === EQuestionAnswerStates.WAIT_FOR_MEDIA
-          ? EQuestionAnswerStates.SHOWN
-          : current.questionState;
-        const answerState = current.answerState === EQuestionAnswerStates.WAIT_FOR_MEDIA
-          ? EQuestionAnswerStates.SHOWN
-          : current.answerState;
-        this.game.updateMediaState(EMediaStates.FINISHED, questionState, answerState);
-      }
+      // the media ended: leave fullscreen, there is nothing left to show in it
+      () => this.game.finishMedia({fullscreen: false})
     );
     this.applyVolume();
     if (this.mediaVisible) {

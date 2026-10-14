@@ -630,16 +630,33 @@ export class GameService implements OnDestroy {
     return this.updateMediaStateSubject.asObservable();
   }
 
-  public updateMediaState(mediaState: EMediaStates, questionState?: EQuestionAnswerStates, answerState?: EQuestionAnswerStates, fullscreen?: boolean): void {
-    const mediaQuestionState: IMediaQuestionState = {
-      mediaState,
-      answerState,
-      questionState,
-      fullscreen
-    };
+  /**
+   * Changes the given parts of the current media question state and sends it to the server; the rest stays as it is.
+   */
+  public changeMediaState(changes: Partial<IMediaQuestionState>): void {
+    const current = this.getCurrentMediaQuestionState();
+    const mediaQuestionState: IMediaQuestionState = {...current, ...changes};
+    // RESET restarts the media once; it must not be sent again with unrelated changes
+    if (changes.mediaState === undefined && current.mediaState === EMediaStates.RESET) {
+      mediaQuestionState.mediaState = EMediaStates.PLAYING;
+    }
     this.currentGameState.mediaQuestionState = mediaQuestionState;
     const mediaPacket = PacketHelper.makeMediaStatePacketFromQuestionState(mediaQuestionState);
     this.webSocketService.send<IUpdateMediaStatePacket>(mediaPacket);
+  }
+
+  /**
+   * Marks the media as played to the end: a question and answers waiting for the media are shown.
+   */
+  public finishMedia(changes: Partial<IMediaQuestionState> = {}): void {
+    const current = this.getCurrentMediaQuestionState();
+    const reveal = (state: EQuestionAnswerStates) => state === EQuestionAnswerStates.WAIT_FOR_MEDIA ? EQuestionAnswerStates.SHOWN : state;
+    this.changeMediaState({
+      mediaState: EMediaStates.FINISHED,
+      questionState: reveal(current.questionState),
+      answerState: reveal(current.answerState),
+      ...changes
+    });
   }
 
   public observeMediaVolume(): Observable<IMediaVolume> {

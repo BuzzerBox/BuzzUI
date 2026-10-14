@@ -115,18 +115,14 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.canToggleQuestion()) {
       return;
     }
-    const current = this.game.getCurrentMediaQuestionState();
-    const questionState = this.showQuestion ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN;
-    this.game.updateMediaState(current.mediaState, questionState, current.answerState, current.fullscreen);
+    this.game.changeMediaState({questionState: this.showQuestion ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
   }
 
   public toggleAnswersVisibility(): void {
     if (!this.canToggleAnswers()) {
       return;
     }
-    const current = this.game.getCurrentMediaQuestionState();
-    const answerState = this.showAnswers ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN;
-    this.game.updateMediaState(current.mediaState, current.questionState, answerState, current.fullscreen);
+    this.game.changeMediaState({answerState: this.showAnswers ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
   }
 
   public getQuestionVisibilityLabel(): string {
