@@ -1,24 +1,39 @@
 <div class="media-controls large-controls">
   <span class="media-controls-title">
-    <mat-icon>{{ isVideo() ? 'movie' : isAudio() ? 'audiotrack' : 'image' }}</mat-icon>
-    Medium
+    <mat-icon>{{ isVideo() ? 'movie' : isAudio() ? 'audiotrack' : isSlideshow() ? 'burst_mode' : 'image' }}</mat-icon>
+    {{ isSlideshow() ? 'Bildserie' : 'Medium' }}
   </span>
-  @if (!isPlaying()) {
+  @if (isSlideshow()) {
+    <span class="slide-position" [class.finished]="isFinished()">
+      Bild {{getSlideIndex() + 1}} / {{getSlideCount()}}
+      @if (isFinished()) {
+        <mat-icon>check_circle</mat-icon> abgeschlossen
+      }
+    </span>
+  }
+  @if (!isShown()) {
     <button mat-icon-button aria-label="Play" (click)="play()" title="Medium anzeigen / abspielen">
       @if (isPlayable()) { <mat-icon>play_arrow</mat-icon> }
       @if (!isPlayable()) { <mat-icon>image</mat-icon> }
     </button>
   }
-  @if (isPlaying()) {
+  @if (isShown()) {
     <button mat-icon-button aria-label="Pause" (click)="pause()" title="Medium verbergen / pausieren">
       @if (isPlayable()) { <mat-icon>pause</mat-icon> }
       @if (!isPlayable()) { <mat-icon>hide_image</mat-icon> }
     </button>
   }
-  @if (isPlayable()) {
+  @if (isSlideshow()) {
+    <button mat-icon-button aria-label="Next image" (click)="nextSlide()" [disabled]="isFinished()" [title]="getNextSlideTitle()">
+      <mat-icon>skip_next</mat-icon>
+    </button>
+  }
+  @if (isPlayable() || isSlideshow()) {
     <button mat-icon-button aria-label="Replay" (click)="replay()" title="Von vorne beginnen">
       <mat-icon>replay</mat-icon>
     </button>
+  }
+  @if (isPlayable()) {
     <span class="volume-control">
       <button mat-icon-button (click)="toggleMute()" [title]="mediaVolume.muted ? 'Ton einschalten' : 'Ton ausschalten'">
         <mat-icon>{{ mediaVolume.muted ? 'volume_off' : 'volume_up' }}</mat-icon>

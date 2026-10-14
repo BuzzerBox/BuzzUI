@@ -5,4 +5,8 @@ export interface IMediaQuestionState {
     questionState: EQuestionAnswerStates | undefined;
     answerState: EQuestionAnswerStates | undefined;
     fullscreen?: boolean;
+    /**
+     * Only for slideshows: the image that is shown, starting at 0
+     */
+    slideIndex?: number;
 }

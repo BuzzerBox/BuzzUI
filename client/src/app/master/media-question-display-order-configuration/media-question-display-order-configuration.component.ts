@@ -35,6 +35,7 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
   @Output() questionConfigChange = new EventEmitter<IMediaQuestionState>();
   @Input() initialConfig: IMediaQuestionState;
   @Input() mediaSrc: string = '';
+  @Input() isSlideshow = false;
 
   public questionConfig: FormGroup;
 
@@ -44,19 +45,19 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
     { label: 'Reveal after media', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
   ];
 
-  // video or audio: media that ends, so the question and answers can wait for it
-  get isPlayable(): boolean {
-    return FileExtensionsService.isPlayable(this.mediaSrc);
+  // video, audio or a slideshow: media that ends, so the question and answers can wait for it
+  get hasEnd(): boolean {
+    return this.isSlideshow || FileExtensionsService.isPlayable(this.mediaSrc);
   }
 
   get questionStateOptions() {
-    if (this.isPlayable) { return this.allQuestionStateOptions; }
+    if (this.hasEnd) { return this.allQuestionStateOptions; }
     return this.allQuestionStateOptions.filter(o => o.key !== EQuestionAnswerStates.WAIT_FOR_MEDIA);
   }
 
   get presetOptions(): { label: string; key: MediaAnswerPreset }[] {
     return [
-      { label: this.isPlayable ? 'Play media, reveal answers after' : 'Show Image', key: 'MEDIA_FIRST' },
+      { label: this.isSlideshow ? 'Show first image, reveal answers after the last' : this.hasEnd ? 'Play media, reveal answers after' : 'Show Image', key: 'MEDIA_FIRST' },
       { label: 'Hide both',    key: 'HIDE_BOTH' },
       { label: 'Show answers', key: 'SHOW_ANSWERS' },
     ];
@@ -86,8 +87,8 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
         preset:        presetFromConfig(config),
       }, {emitEvent: false});
     }
-    if (!changes['mediaSrc']) { return; }
-    if (!this.isPlayable) {
+    if (!changes['mediaSrc'] && !changes['isSlideshow']) { return; }
+    if (!this.hasEnd) {
       const qs = this.questionConfig.get('questionState');
       if (qs.value === EQuestionAnswerStates.WAIT_FOR_MEDIA) {
         qs.setValue(EQuestionAnswerStates.SHOWN);

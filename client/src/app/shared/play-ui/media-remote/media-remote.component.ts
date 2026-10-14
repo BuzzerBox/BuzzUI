@@ -4,7 +4,7 @@ import {
   EMediaStates,
   FileExtensionsService,
   IMediaDetails,
-  IMediaQuestionState, IMediaVolume, IQuestion, PacketHelper
+  IMediaQuestionState, IMediaVolume, IQuestion, MediaHelper, PacketHelper
 } from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 
@@ -72,7 +72,58 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
   }
 
   replay(): void {
+    if (this.isSlideshow()) {
+      this.game.changeMediaState({mediaState: EMediaStates.PLAYING, slideIndex: 0});
+      return;
+    }
     this.game.changeMediaState({mediaState: EMediaStates.RESET});
+  }
+
+  public isSlideshow(): boolean {
+    return MediaHelper.isSlideshow(this.question.mediaDetails);
+  }
+
+  public getSlideCount(): number {
+    return this.question.mediaDetails.slides.length;
+  }
+
+  public getSlideIndex(): number {
+    return this.state.slideIndex ?? 0;
+  }
+
+  /**
+   * Whether the media is visible (or playing) on the screens; a complete slideshow keeps showing its last image
+   */
+  public isShown(): boolean {
+    return this.isPlaying() || (this.isSlideshow() && this.isFinished());
+  }
+
+  public isFinished(): boolean {
+    return this.state.mediaState === EMediaStates.FINISHED;
+  }
+
+  /**
+   * Shows the current image if the slideshow is hidden, otherwise the next one. After the last image, the slideshow
+   * is complete, which reveals a question and answers that wait for it.
+   */
+  nextSlide(): void {
+    if (this.isFinished()) {
+      return;
+    }
+    if (!this.isPlaying()) {
+      this.game.changeMediaState({mediaState: EMediaStates.PLAYING});
+    } else if (this.getSlideIndex() < this.getSlideCount() - 1) {
+      this.game.changeMediaState({mediaState: EMediaStates.PLAYING, slideIndex: this.getSlideIndex() + 1});
+    } else {
+      this.game.finishMedia();
+    }
+  }
+
+  public getNextSlideTitle(): string {
+    if (!this.isPlaying()) {
+      return 'Aktuelles Bild auf der Anzeige zeigen';
+    }
+    return this.getSlideIndex() < this.getSlideCount() - 1 ? 'Nächstes Bild' : 'Bildserie abschließen';
   }
 
   isPlaying(): boolean {

@@ -23,3 +23,15 @@
   display: inline-flex;
   align-items: center;
 }
+
+.slide-position {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: large;
+  font-variant-numeric: tabular-nums;
+}
+
+.slide-position.finished {
+  color: #1e6b34;
+}

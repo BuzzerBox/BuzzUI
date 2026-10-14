@@ -8,6 +8,7 @@ import {SafeUrl} from '@angular/platform-browser';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
 import {FileService} from '../../services/file.service';
+import {IMediaSelection} from '../interfaces/IMediaSelection';
 import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-configuration/media-question-display-order-configuration.component';
 
 @Component({
@@ -120,6 +121,7 @@ export class SetupComponent implements OnInit {
         this.questionsFormGroup.setControl(fgn, new UntypedFormGroup({
           text: new UntypedFormControl(q.text),
           mediaSrc: new UntypedFormControl(mediaSrc),
+          slides: new UntypedFormControl(q.mediaDetails?.slides ?? null),
           answers: new UntypedFormGroup({
             answer0: new UntypedFormGroup({
               text: new UntypedFormControl(answers[0].text),
@@ -233,6 +235,8 @@ export class SetupComponent implements OnInit {
     return new UntypedFormGroup({
       text: new UntypedFormControl(null, Validators.required),
       mediaSrc: new UntypedFormControl(''),
+      // only for slideshows: the image URLs, mediaSrc is then the folder
+      slides: new UntypedFormControl(null),
       answers: new UntypedFormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),
@@ -337,6 +341,10 @@ export class SetupComponent implements OnInit {
         question.mediaDetails = {
           fileSrc: mediaSrc
         };
+        const slides: string[] | null = questionFormGroup.get('slides').value;
+        if (slides?.length) {
+          question.mediaDetails.slides = slides;
+        }
         // the config component only emits once the user changes something, so fall back to the default it shows
         question.initialConfig = this.questionInitialConfig[index] ?? {...DEFAULT_MEDIA_QUESTION_CONFIG};
       }
@@ -411,14 +419,20 @@ export class SetupComponent implements OnInit {
     this.step = index;
   }
 
-  changeMediaSelection(event: { path: string; question: number }, prependPrefix: boolean = true): void {
-    const mediaSrcControl = this.questionsFormGroup.controls['question' + event.question].get('mediaSrc');
-    if (event && event.path) {
-      const path = event.path;
-      mediaSrcControl.setValue(FileService.buildFullPathString(path));
+  changeMediaSelection(event: { selection: IMediaSelection; question: number }): void {
+    const questionFormGroup = this.questionsFormGroup.controls['question' + event.question];
+    const selection = event.selection;
+    if (selection?.path) {
+      questionFormGroup.get('mediaSrc').setValue(FileService.buildFullPathString(selection.path));
+      questionFormGroup.get('slides').setValue(selection.slides?.map(path => FileService.buildFullPathString(path)) ?? null);
     } else {
-      mediaSrcControl.setValue('');
+      questionFormGroup.get('mediaSrc').setValue('');
+      questionFormGroup.get('slides').setValue(null);
     }
+  }
+
+  public isSlideshow(questionFormGroupName: string): boolean {
+    return !!this.questionsFormGroup.controls[questionFormGroupName].get('slides').value?.length;
   }
 
   changeQuestionConfig(event: { config: IMediaQuestionState; question: number }): void {

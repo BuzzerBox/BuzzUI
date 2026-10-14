@@ -37,6 +37,12 @@
     </div>
   }
 
+  @if (isSlideshow() && mediaVisible) {
+    <div class="player">
+      <img [src]="getCurrentSlide()" alt="Bild {{slideIndex + 1}} von {{media.slides.length}} zu dieser Frage">
+    </div>
+  }
+
   @if (isImage() && mediaVisible) {
     <div class="player">
       <img [src]="media.fileSrc" alt="The image for this question">

@@ -1,6 +1,6 @@
 import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
-import {EMediaStates, IMediaDetails, IMediaVolume, FileExtensionsService, PacketHelper} from '../../../../../../shared/shared';
+import {EMediaStates, IMediaDetails, IMediaVolume, FileExtensionsService, MediaHelper, PacketHelper} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
@@ -22,6 +22,8 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   public fullscreen = false;
   // set when the browser refused to play with sound because nobody has interacted with the page yet
   public soundBlocked = false;
+  // only for slideshows: the image that is shown
+  public slideIndex = 0;
 
 
   constructor(private game: GameService) {
@@ -31,6 +33,8 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.fullscreen = !!packet.mediaQuestionState.fullscreen;
+        this.slideIndex = packet.mediaQuestionState.slideIndex ?? 0;
+        this.preloadNextSlide();
         switch (packet.mediaQuestionState.mediaState) {
           // this component is reused when the next question also has media, so hide whatever was shown before
           case EMediaStates.NO_MEDIA:
@@ -45,6 +49,11 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
             this.restartPlayback();
             break;
           case EMediaStates.FINISHED:
+            if (this.isSlideshow()) {
+              // a complete slideshow keeps showing its last image
+              this.mediaVisible = true;
+              break;
+            }
             this.pausePlayback();
             if (this.api && this.api.getDefaultMedia()) {
               this.api.getDefaultMedia().currentTime = 0;
@@ -156,6 +165,25 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
 
   public isImage(): boolean {
     return FileExtensionsService.isImage(this.media.fileSrc);
+  }
+
+  public isSlideshow(): boolean {
+    return MediaHelper.isSlideshow(this.media);
+  }
+
+  public getCurrentSlide(): string {
+    const slides = this.media.slides;
+    return slides[Math.min(this.slideIndex, slides.length - 1)];
+  }
+
+  /**
+   * Loads the next image of a slideshow ahead, so it appears without delay when the master advances
+   */
+  private preloadNextSlide(): void {
+    const next = this.media?.slides?.[this.slideIndex + 1];
+    if (next) {
+      new Image().src = next;
+    }
   }
 
   public isAudio(): boolean {

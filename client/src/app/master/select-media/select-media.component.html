@@ -1,5 +1,10 @@
 <h3>Media Selection :</h3>
-@if (activeNode !== undefined) {
+@if (activeNode !== undefined && activeNode.type === 'directory') {
+  <div>
+    Die Bildserie {{activeNode.name}} ({{getSlideImages(activeNode).length}} Bilder) ist ausgewaehlt.
+  </div>
+}
+@if (activeNode !== undefined && activeNode.type !== 'directory') {
   <div>
     Die Datei {{activeNode.name}} ist ausgewaehlt.
   </div>
@@ -40,6 +45,13 @@
       </button>
       <mat-icon mat-list-icon>folder</mat-icon>
       {{node.name}}
+      @if (canBeSlideshow(node)) {
+        <button mat-stroked-button class="slideshow-button" [class.background-highlight]="activeNode === node" (click)="selectSlideshow(node)"
+          [title]="activeNode === node ? 'Bildserie abwählen' : 'Die Bilder dieses Ordners nacheinander zeigen'">
+          <mat-icon>{{ activeNode === node ? 'check' : 'burst_mode' }}</mat-icon>
+          {{ activeNode === node ? 'Bildserie ausgewählt' : 'Als Bildserie' }} ({{getSlideImages(node).length}} Bilder)
+        </button>
+      }
     </div>
     <div [class.example-tree-invisible]="!treeControl.isExpanded(node)"
       role="group">

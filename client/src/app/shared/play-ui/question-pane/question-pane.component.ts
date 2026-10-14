@@ -5,6 +5,7 @@ import {
   EMediaStates,
   EQuestionAnswerStates,
   FileExtensionsService,
+  MediaHelper,
   IAnswer,
   IAnswerSetStatePacket,
   IQuestion
@@ -137,9 +138,12 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (visible) {
       return 'Auf der Anzeige sichtbar';
     }
-    const mediaSrc = this.question?.mediaDetails?.fileSrc;
-    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && mediaSrc && FileExtensionsService.isPlayable(mediaSrc)) {
-      return 'Auf der Anzeige verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(mediaSrc) ? 'Audio' : 'Video');
+    const media = this.question?.mediaDetails;
+    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && MediaHelper.hasEnd(media)) {
+      if (MediaHelper.isSlideshow(media)) {
+        return 'Auf der Anzeige verborgen – erscheint nach der Bildserie';
+      }
+      return 'Auf der Anzeige verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(media.fileSrc) ? 'Audio' : 'Video');
     }
     return 'Auf der Anzeige verborgen';
   }
