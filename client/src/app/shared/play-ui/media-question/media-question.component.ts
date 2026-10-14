@@ -1,6 +1,6 @@
 import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
 import {VgApiService} from '@videogular/ngx-videogular/core';
-import {EMediaStates, EQuestionAnswerStates, IMediaDetails, FileExtensionsService} from '../../../../../../shared/shared';
+import {EMediaStates, EQuestionAnswerStates, IMediaDetails, IMediaVolume, FileExtensionsService, PacketHelper} from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
@@ -16,6 +16,8 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   api: VgApiService;
 
   private mediaUpdateSubscription: Subscription;
+  private mediaVolumeSubscription: Subscription;
+  private mediaVolume: IMediaVolume = PacketHelper.getDefaultMediaVolume();
   public mediaVisible = false;
   public fullscreen = false;
   // set when the browser refused to play with sound because nobody has interacted with the page yet
@@ -51,11 +53,16 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
         }
       }
     );
-
+    this.mediaVolumeSubscription = this.game.observeMediaVolume().subscribe(
+      (mediaVolume) => {
+        this.mediaVolume = mediaVolume;
+        this.applyVolume();
+      }
+    );
   }
 
   ngOnDestroy(): void {
-    SubscriptionsHelper.cleanUpSubscriptions(this.mediaUpdateSubscription);
+    SubscriptionsHelper.cleanUpSubscriptions(this.mediaUpdateSubscription, this.mediaVolumeSubscription);
   }
 
   onPlayerReady(api: VgApiService): void {
@@ -72,21 +79,40 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
         this.game.updateMediaState(EMediaStates.FINISHED, questionState, answerState);
       }
     );
+    this.applyVolume();
     if (this.mediaVisible) {
       this.playMedia();
     }
+  }
+
+  private applyVolume(): void {
+    const media = this.api?.getDefaultMedia();
+    if (!media) {
+      return;
+    }
+    const wasPlaying = !media.elem.paused;
+    media.elem.volume = this.mediaVolume.volume;
+    media.elem.muted = this.mediaVolume.muted || this.soundBlocked;
+    if (wasPlaying && !media.elem.muted) {
+      // browsers pause a video that gets unmuted before the user interacted with the page, so resume it
+      this.playWithMutedFallback(media.elem.play(), media);
+    }
+  }
+
+  private playMedia(): void {
+    const media = this.api?.getDefaultMedia();
+    if (!media) {
+      return;
+    }
+    this.playWithMutedFallback(media.play(), media);
   }
 
   /**
    * Browsers only allow playback with sound once the user interacted with the page (e.g. a laptop screen that was
    * reloaded). In that case, play muted instead and unmute on the next click or keypress, see enableSound().
    */
-  private playMedia(): void {
-    const media = this.api?.getDefaultMedia();
-    if (!media) {
-      return;
-    }
-    media.play()?.catch((error: DOMException) => {
+  private playWithMutedFallback(playPromise: Promise<void> | undefined, media: ReturnType<VgApiService['getDefaultMedia']>): void {
+    playPromise?.catch((error: DOMException) => {
       if (error?.name !== 'NotAllowedError' || media.elem.muted) {
         return;
       }
@@ -104,10 +130,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
       return;
     }
     this.soundBlocked = false;
-    const media = this.api?.getDefaultMedia();
-    if (media) {
-      media.elem.muted = false;
-    }
+    this.applyVolume();
   }
 
   startPlayback(): void {

@@ -24,6 +24,7 @@ import {
     IResetServerPacket,
     IResponsePacket,
     ISetBuzzerLockPacket,
+    ISetMediaVolumePacket,
     ISetQuestionPacket,
     ISetupPacket,
     IStartGamePacket,
@@ -126,6 +127,8 @@ export class GameService {
                 this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
             } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
                 this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
+            } else if (packet.packetType === EPacketTypes.SET_MEDIA_VOLUME) {
+                this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
             }
         })
     }
@@ -404,6 +407,7 @@ export class GameService {
                 questionState: EQuestionAnswerStates.SHOWN,
                 answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
             },
+            mediaVolume: PacketHelper.getDefaultMediaVolume(),
             currentQuestionNumber: 0,
             markedTeamIds: [],
             loggedAnswers: [],
@@ -583,6 +587,16 @@ export class GameService {
             this.webSocketConnectionMaster.send<IUpdateMediaStatePacket>(packet);
         }
         this.sendToAllScreens<IUpdateMediaStatePacket>(packet);
+    }
+
+    private onSetMediaVolumePacket(packet: ISetMediaVolumePacket): void {
+        if (this.currentGameState != null) {
+            this.currentGameState.mediaVolume = packet.mediaVolume;
+        }
+        if (this.webSocketConnectionMaster != null) {
+            this.webSocketConnectionMaster.send<ISetMediaVolumePacket>(packet);
+        }
+        this.sendToAllScreens<ISetMediaVolumePacket>(packet);
     }
 
     private startMicroControllerI2CPolling(): void {

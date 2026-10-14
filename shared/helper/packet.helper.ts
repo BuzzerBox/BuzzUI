@@ -8,7 +8,7 @@ import {
     IAnswerSetStatePacket,
     ISetQuestionPacket,
     IEndGamePacket,
-    IKeypressOnScreenPacket, IUpdateMediaStatePacket
+    IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket
 } from "../interfaces";
 
 import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates} from '../enums';
@@ -56,6 +56,20 @@ export class PacketHelper {
                 questionState: questionState,
                 answerState: answerState
             })
+    }
+
+    public static makeMediaVolumePacket(mediaVolume: IMediaVolume): ISetMediaVolumePacket {
+        return {
+            packetType: EPacketTypes.SET_MEDIA_VOLUME,
+            mediaVolume
+        }
+    }
+
+    public static getDefaultMediaVolume(): IMediaVolume {
+        return {
+            volume: 1,
+            muted: false
+        };
     }
 
     public static getDefaultMediaState(): IMediaQuestionState {

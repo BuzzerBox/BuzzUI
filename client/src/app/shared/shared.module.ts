@@ -22,6 +22,7 @@ import {VgOverlayPlayModule} from '@videogular/ngx-videogular/overlay-play';
 import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
 import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.component';
 import {MatIconModule} from '@angular/material/icon';
+import {MatSliderModule} from '@angular/material/slider';
 
 @NgModule({
     declarations: [
@@ -48,7 +49,8 @@ import {MatIconModule} from '@angular/material/icon';
         VgControlsModule,
         VgOverlayPlayModule,
         VgBufferingModule,
-        MatIconModule
+        MatIconModule,
+        MatSliderModule
     ],
     exports: [
         PlayUiComponent,

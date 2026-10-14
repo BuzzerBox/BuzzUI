@@ -5,7 +5,7 @@ import {
   EQuestionAnswerStates,
   FileExtensionsService,
   IMediaDetails,
-  IMediaQuestionState, IQuestion, PacketHelper
+  IMediaQuestionState, IMediaVolume, IQuestion, PacketHelper
 } from '../../../../../../shared/shared';
 import {Subscription} from 'rxjs';
 
@@ -19,6 +19,8 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
   @Input() question: IQuestion;
   public state: IMediaQuestionState;
   private mediaUpdateSubscription: Subscription;
+  public mediaVolume: IMediaVolume;
+  private mediaVolumeSubscription: Subscription;
 
   constructor(private game: GameService) { }
 
@@ -27,6 +29,10 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     if (this.question.initialConfig) {
       this.state = this.question.initialConfig;
     }
+    this.mediaVolume = this.game.getCurrentMediaVolume();
+    this.mediaVolumeSubscription = this.game.observeMediaVolume().subscribe(
+      (mediaVolume) => this.mediaVolume = mediaVolume
+    );
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.state = packet.mediaQuestionState;
@@ -39,6 +45,23 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.mediaUpdateSubscription.unsubscribe();
+    this.mediaVolumeSubscription.unsubscribe();
+  }
+
+  toggleMute(): void {
+    this.game.setMediaVolume({...this.mediaVolume, muted: !this.mediaVolume.muted});
+  }
+
+  /**
+   * @param percent 0 to 100, as shown on the slider
+   */
+  setVolume(percent: number): void {
+    // moving the slider is meant to be heard, so it also unmutes
+    this.game.setMediaVolume({volume: percent / 100, muted: false});
+  }
+
+  getVolumePercent(): number {
+    return Math.round(this.mediaVolume.volume * 100);
   }
 
   play(): void {

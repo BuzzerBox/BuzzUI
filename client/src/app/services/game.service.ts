@@ -15,6 +15,7 @@ import {
   IKeypressOnScreenPacket,
   IMarkTeamPacket,
   IMediaQuestionState,
+  IMediaVolume,
   INewMasterAccepted,
   IPresetupAvailableInfoPacket,
   IQuestion,
@@ -23,6 +24,7 @@ import {
   IResetServerPacket,
   IResponsePacket,
   ISetBuzzerLockPacket,
+  ISetMediaVolumePacket,
   ISetQuestionPacket,
   ISetupPacket,
   IStartGamePacket,
@@ -78,6 +80,7 @@ export class GameService implements OnDestroy {
   private markTeamSubject: Subject<IMarkTeamPacket>;
   private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
   private updateMediaStateSubject = new ReplaySubject<IUpdateMediaStatePacket>(1);
+  private mediaVolumeSubject = new ReplaySubject<IMediaVolume>(1);
 
   constructor(
     private webSocketService: WebSocketService,
@@ -162,6 +165,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.UPDATE_MEDIA_STATE:
         this.handleMediaStateUpdate(message as IUpdateMediaStatePacket);
+        break;
+      case EPacketTypes.SET_MEDIA_VOLUME:
+        this.handleMediaVolumePacket(message as ISetMediaVolumePacket);
         break;
       default:
         break;
@@ -307,7 +313,8 @@ export class GameService implements OnDestroy {
             mediaState: EMediaStates.NO_MEDIA,
             questionState: EQuestionAnswerStates.SHOWN,
             answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
-          }
+          },
+          mediaVolume: PacketHelper.getDefaultMediaVolume()
         };
       } else {
         this.currentGameState = gameState;
@@ -372,6 +379,7 @@ export class GameService implements OnDestroy {
       // version 2 had mediaState (EVideoStates) instead of mediaQuestionState, see CURRENT_SAVEGAME_VERSION
       delete (gameState.gameState as {mediaState?: unknown}).mediaState;
       gameState.gameState.mediaQuestionState ??= PacketHelper.getDefaultMediaState();
+      gameState.gameState.mediaVolume ??= PacketHelper.getDefaultMediaVolume();
     }
     this.currentGameState = gameState.gameState;
     gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
@@ -464,6 +472,7 @@ export class GameService implements OnDestroy {
           mediaQuestionState: packet.gameState.mediaQuestionState
         });
       }
+      this.mediaVolumeSubject.next(packet.gameState?.mediaVolume ?? PacketHelper.getDefaultMediaVolume());
       this.isScreenDataAvailable = true;
       this.redirect(baseUrlScreen + pathsScreen.main);
     }
@@ -631,6 +640,26 @@ export class GameService implements OnDestroy {
     this.currentGameState.mediaQuestionState = mediaQuestionState;
     const mediaPacket = PacketHelper.makeMediaStatePacketFromQuestionState(mediaQuestionState);
     this.webSocketService.send<IUpdateMediaStatePacket>(mediaPacket);
+  }
+
+  public observeMediaVolume(): Observable<IMediaVolume> {
+    return this.mediaVolumeSubject.asObservable();
+  }
+
+  public getCurrentMediaVolume(): IMediaVolume {
+    return this.currentGameState?.mediaVolume ?? PacketHelper.getDefaultMediaVolume();
+  }
+
+  public setMediaVolume(mediaVolume: IMediaVolume): void {
+    this.currentGameState.mediaVolume = mediaVolume;
+    this.webSocketService.send<ISetMediaVolumePacket>(PacketHelper.makeMediaVolumePacket(mediaVolume));
+  }
+
+  private handleMediaVolumePacket(packet: ISetMediaVolumePacket): void {
+    if (this.currentGameState != null) {
+      this.currentGameState.mediaVolume = packet.mediaVolume;
+    }
+    this.mediaVolumeSubject.next(packet.mediaVolume);
   }
 
   public getCurrentMediaQuestionState(): IMediaQuestionState {
