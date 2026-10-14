@@ -8,6 +8,7 @@ import {SafeUrl} from '@angular/platform-browser';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
 import {FileService} from '../../services/file.service';
+import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-configuration/media-question-display-order-configuration.component';
 
 @Component({
     selector: 'app-setup',
@@ -318,7 +319,8 @@ export class SetupComponent implements OnInit {
         question.mediaDetails = {
           fileSrc: mediaSrc
         };
-        question.initialConfig = this.questionInitialConfig[index];
+        // the config component only emits once the user changes something, so fall back to the default it shows
+        question.initialConfig = this.questionInitialConfig[index] ?? {...DEFAULT_MEDIA_QUESTION_CONFIG};
       }
       ret.push(question);
     });

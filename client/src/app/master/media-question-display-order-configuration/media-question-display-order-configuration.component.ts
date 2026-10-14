@@ -11,6 +11,13 @@ const PRESET_TO_STATE: Record<MediaAnswerPreset, Pick<IMediaQuestionState, 'medi
   SHOW_ANSWERS: { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.SHOWN },
 };
 
+// What the form shows when a question has no config yet. Setup applies the same default so the UI matches what is played.
+export const DEFAULT_MEDIA_QUESTION_CONFIG: IMediaQuestionState = {
+  mediaState:    EMediaStates.PLAYING,
+  questionState: EQuestionAnswerStates.SHOWN,
+  answerState:   EQuestionAnswerStates.WAIT_FOR_MEDIA,
+};
+
 function presetFromConfig(config: IMediaQuestionState): MediaAnswerPreset {
   if (config?.answerState === EQuestionAnswerStates.HIDDEN) { return 'HIDE_BOTH'; }
   if (config?.answerState === EQuestionAnswerStates.SHOWN)  { return 'SHOW_ANSWERS'; }
@@ -37,12 +44,6 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
     { label: 'Reveal after media', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
   ];
 
-  readonly defaultConfig: IMediaQuestionState = {
-    mediaState:    EMediaStates.PLAYING,
-    questionState: EQuestionAnswerStates.SHOWN,
-    answerState:   EQuestionAnswerStates.WAIT_FOR_MEDIA,
-  };
-
   get isVideo(): boolean {
     return FileExtensionsService.isVideo(this.mediaSrc);
   }
@@ -63,7 +64,7 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
   constructor() {}
 
   ngOnInit(): void {
-    const config = this.initialConfig ?? this.defaultConfig;
+    const config = this.initialConfig ?? DEFAULT_MEDIA_QUESTION_CONFIG;
     const preset = presetFromConfig(config);
 
     this.questionConfig = new FormGroup({
