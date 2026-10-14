@@ -28,6 +28,9 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
       (packet) => {
         this.fullscreen = !!packet.mediaQuestionState.fullscreen;
         switch (packet.mediaQuestionState.mediaState) {
+          // this component is reused when the next question also has media, so hide whatever was shown before
+          case EMediaStates.NO_MEDIA:
+          case EMediaStates.HIDDEN:
           case EMediaStates.PAUSED:
             this.pausePlayback();
             break;
