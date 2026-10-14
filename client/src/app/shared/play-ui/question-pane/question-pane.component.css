@@ -20,7 +20,8 @@ mat-card-content {
 
 /*
  * Two columns of answers with 2:1 tiles while there is room. On small screens the grid shrinks to the height that is
- * left instead of scrolling, and the answer text scales with it (cqh: 1% of the grid's height).
+ * left, and the answer text scales with it (cqh: 1% of the grid's height). Below its minimum height the question
+ * card scrolls instead.
  */
 .answer-grid {
   display: grid;
@@ -29,7 +30,7 @@ mat-card-content {
   width: 100%;
   aspect-ratio: 2 / 1;
   flex: 0 1 auto;
-  min-height: 0;
+  min-height: 160px;
   margin-top: 0.5em;
   container-type: size;
 }
