@@ -1,14 +1,8 @@
-<div class="media-control-button-row large-controls">
-  @if (isQuestionHidden()) {
-    <button mat-icon-button (click)="showQuestion()" title="Frage zeigen">
-      <mat-icon svgIcon="show_question"></mat-icon>
-    </button>
-  }
-  @if (!isQuestionHidden()) {
-    <button mat-icon-button (click)="hideQuestion()" title="Frage verbergen">
-      <mat-icon svgIcon="hide_question"></mat-icon>
-    </button>
-  }
+<div class="media-controls large-controls">
+  <span class="media-controls-title">
+    <mat-icon>{{ isVideo() ? 'movie' : 'image' }}</mat-icon>
+    Medium
+  </span>
   @if (!isPlaying()) {
     <button mat-icon-button aria-label="Play" (click)="play()" title="Medium anzeigen / abspielen">
       @if (isVideo()) { <mat-icon>play_arrow</mat-icon> }
@@ -25,18 +19,6 @@
     <button mat-icon-button aria-label="Replay" (click)="replay()" title="Video von vorne beginnen">
       <mat-icon>replay</mat-icon>
     </button>
-  }
-  @if (!isAnswersShown() && question.show) {
-    <button mat-icon-button aria-label="Show Answers" (click)="showAnswers()" title="Antworten zeigen">
-      <mat-icon svgIcon="show_answers"></mat-icon>
-    </button>
-  }
-  @if (isAnswersShown() && question.show) {
-    <button mat-icon-button aria-label="Hide Answers" (click)="hideAnswers()" title="Antworten verbergen">
-      <mat-icon svgIcon="hide_answers"></mat-icon>
-    </button>
-  }
-  @if (isVideo()) {
     <span class="volume-control">
       <button mat-icon-button (click)="toggleMute()" [title]="mediaVolume.muted ? 'Ton einschalten' : 'Ton ausschalten'">
         <mat-icon>{{ mediaVolume.muted ? 'volume_off' : 'volume_up' }}</mat-icon>

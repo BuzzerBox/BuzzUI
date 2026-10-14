@@ -100,6 +100,34 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.question?.text;
   }
 
+  // The master shows and hides the question and the answers on the screens with their status labels. Like the
+  // media, these states only exist for media questions, and answers turned off in setup can't be shown.
+  public canToggleQuestion(): boolean {
+    return this.isMaster && !!this.question?.mediaDetails;
+  }
+
+  public canToggleAnswers(): boolean {
+    return this.canToggleQuestion() && !!this.question?.show;
+  }
+
+  public toggleQuestionVisibility(): void {
+    if (!this.canToggleQuestion()) {
+      return;
+    }
+    const current = this.game.getCurrentMediaQuestionState();
+    const questionState = this.showQuestion ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN;
+    this.game.updateMediaState(current.mediaState, questionState, current.answerState, current.fullscreen);
+  }
+
+  public toggleAnswersVisibility(): void {
+    if (!this.canToggleAnswers()) {
+      return;
+    }
+    const current = this.game.getCurrentMediaQuestionState();
+    const answerState = this.showAnswers ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN;
+    this.game.updateMediaState(current.mediaState, current.questionState, answerState, current.fullscreen);
+  }
+
   public getQuestionVisibilityLabel(): string {
     return this.getVisibilityLabel(this.showQuestion, this.questionState);
   }

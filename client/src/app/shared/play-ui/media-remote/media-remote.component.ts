@@ -2,7 +2,6 @@ import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {GameService} from '../../../services/game.service';
 import {
   EMediaStates,
-  EQuestionAnswerStates,
   FileExtensionsService,
   IMediaDetails,
   IMediaQuestionState, IMediaVolume, IQuestion, PacketHelper
@@ -76,32 +75,12 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     this.game.updateMediaState(EMediaStates.RESET, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
-  showAnswers(): void {
-    this.state.answerState = EQuestionAnswerStates.SHOWN;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
-  }
-
-  hideAnswers(): void {
-    this.state.answerState = EQuestionAnswerStates.HIDDEN;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
-  }
-
   isPlaying(): boolean {
     return this.state.mediaState === EMediaStates.PLAYING;
   }
 
   isNotFinished(): boolean {
     return this.state.mediaState !== EMediaStates.FINISHED;
-  }
-
-  showQuestion(): void {
-    this.state.questionState = EQuestionAnswerStates.SHOWN;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
-  }
-
-  hideQuestion(): void {
-    this.state.questionState = EQuestionAnswerStates.HIDDEN;
-    this.game.updateMediaState(this.state.mediaState, this.state.questionState, this.state.answerState, this.state.fullscreen);
   }
 
   toggleFullscreen(): void {
@@ -111,15 +90,6 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
 
   isFullscreen(): boolean {
     return !!this.state.fullscreen;
-  }
-
-  isQuestionHidden(): boolean {
-    return this.state.questionState === EQuestionAnswerStates.HIDDEN
-      || this.state.questionState === EQuestionAnswerStates.WAIT_FOR_MEDIA;
-  }
-
-  isAnswersShown(): boolean {
-    return this.state.answerState === EQuestionAnswerStates.SHOWN;
   }
 
   public isVideo(): boolean {

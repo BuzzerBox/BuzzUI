@@ -14,7 +14,7 @@ mat-grid-tile {
   /*padding: 50px;*/
 }
 
-button {
+mat-grid-tile button {
   height: 95% !important;
   width: 90%;
   font-size: xx-large !important;
@@ -47,19 +47,39 @@ button {
   /*opacity: 0.5;*/
 }
 
-/* master only: whether the question and the answers are visible on the screens */
-.screen-visibility {
+/* master only: whether the question and the answers are visible on the screens; clicking toggles it */
+button.screen-visibility {
   display: flex;
   align-items: center;
   gap: 8px;
   width: fit-content;
+  height: auto;
+  min-height: 48px;
   margin: 8px 0;
-  padding: 4px 12px;
+  padding: 4px 16px;
   border: 1px solid currentColor;
-  border-radius: 16px;
+  border-radius: 24px;
+  font: inherit;
   font-size: large;
+  white-space: normal;
   color: #1e6b34;
   background-color: #e6f4ea;
+  cursor: pointer;
+}
+
+button.screen-visibility:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+button.screen-visibility:disabled {
+  cursor: default;
+}
+
+.visibility-action {
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid currentColor;
+  font-weight: bold;
 }
 
 .screen-visibility.hidden-on-screen {

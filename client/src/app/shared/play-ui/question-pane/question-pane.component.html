@@ -4,10 +4,15 @@
   </mat-card-header>
   <mat-card-content>
     @if (isMaster) {
-      <div class="screen-visibility" [class.hidden-on-screen]="!showQuestion">
+      <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showQuestion"
+        [disabled]="!canToggleQuestion()" (click)="toggleQuestionVisibility()"
+        [title]="canToggleQuestion() ? (showQuestion ? 'Frage auf der Anzeige verbergen' : 'Frage auf der Anzeige zeigen') : ''">
         <mat-icon>{{ showQuestion ? 'visibility' : 'visibility_off' }}</mat-icon>
-        Frage: {{getQuestionVisibilityLabel()}}
-      </div>
+        <span>Frage: {{getQuestionVisibilityLabel()}}</span>
+        @if (canToggleQuestion()) {
+          <span class="visibility-action">{{ showQuestion ? 'Verbergen' : 'Zeigen' }}</span>
+        }
+      </button>
     }
     @if (showQuestion || isMaster) {
       <div [class.hidden-on-screen-content]="!showQuestion">{{getQuestionText()}}</div>
@@ -25,10 +30,15 @@
       }
       <div class="top">
         @if (isMaster) {
-          <div class="screen-visibility" [class.hidden-on-screen]="!showAnswers">
+          <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showAnswers"
+            [disabled]="!canToggleAnswers()" (click)="toggleAnswersVisibility()"
+            [title]="canToggleAnswers() ? (showAnswers ? 'Antworten auf der Anzeige verbergen' : 'Antworten auf der Anzeige zeigen') : ''">
             <mat-icon>{{ showAnswers ? 'visibility' : 'visibility_off' }}</mat-icon>
-            Antworten: {{getAnswersVisibilityLabel()}}
-          </div>
+            <span>Antworten: {{getAnswersVisibilityLabel()}}</span>
+            @if (canToggleAnswers()) {
+              <span class="visibility-action">{{ showAnswers ? 'Verbergen' : 'Zeigen' }}</span>
+            }
+          </button>
         }
         @if (showAnswers || isMaster) {
           <mat-grid-list cols="2" rowHeight="2:1" [class.hidden-on-screen-content]="!showAnswers">
