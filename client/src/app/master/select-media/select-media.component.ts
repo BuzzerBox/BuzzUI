@@ -78,8 +78,11 @@ export class SelectMediaComponent implements OnInit, OnChanges {
       .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
   }
 
+  /**
+   * Only subfolders of the media folder can be slideshows, not the media folder itself
+   */
   canBeSlideshow(folder: IDirectoryTree): boolean {
-    return this.getSlideImages(folder).length >= 2;
+    return folder !== this.dataSource.data[0] && this.getSlideImages(folder).length >= 2;
   }
 
   hasChild = (_: number, node: IDirectoryTree) => !!node && !!node.children && node.children.length > 0;
