@@ -1,4 +1,4 @@
-<div [class.fullscreen]="fullscreen">
+<div class="media-area" [class.fullscreen]="fullscreen">
   @if (isVideo()) {
     <vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
       @if (mediaVisible) {

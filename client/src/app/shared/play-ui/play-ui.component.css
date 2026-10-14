@@ -1,9 +1,14 @@
 .play-container {
-  height: calc(100% - 64px);
+  height: 100%;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
   align-items: stretch;
+}
+
+.play-container.below-toolbar {
+  /* the master's toolbar */
+  height: calc(100% - 64px);
 }
 
 .teams-left-pane {
@@ -17,11 +22,18 @@
 .questions-pane {
   flex: 0 0 70%;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
+/* the question card fills the middle column, so media can use all of its height */
 mat-card.question {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   /*width: 95%;*/
-  margin: 5px auto;
+  /* no auto margins: they would shrink the card to its content in the flex column */
+  margin: 5px 0;
   /*position: absolute;*/
   /*bottom: 1em;*/
   /*left: 50%;*/
@@ -31,6 +43,10 @@ mat-card.question {
 
 .parent {
   position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .spacer {

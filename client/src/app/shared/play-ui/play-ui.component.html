@@ -1,4 +1,4 @@
-<div class="play-container">
+<div class="play-container" [class.below-toolbar]="isMaster">
   @if (!isGameOver) {
     <div class="teams-left-pane">
       @for (team of getTeams(); track team; let even = $even) {
