@@ -114,25 +114,28 @@ export class SetupComponent implements OnInit {
           mediaSrc = q.mediaDetails.fileSrc;
         }
 
+        // setups saved before answers were kept filled answers of questions without answer options with placeholders
+        const answers: IAnswer[] = q.show ? q.answers : q.answers.map(a => a.text === 'bla' && a.isCorrect ? {text: '', isCorrect: false} : a);
+
         this.questionsFormGroup.setControl(fgn, new UntypedFormGroup({
           text: new UntypedFormControl(q.text),
           mediaSrc: new UntypedFormControl(mediaSrc),
           answers: new UntypedFormGroup({
             answer0: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[0].text),
-              isCorrect: new UntypedFormControl(q.answers[0].isCorrect)
+              text: new UntypedFormControl(answers[0].text),
+              isCorrect: new UntypedFormControl(answers[0].isCorrect)
             }),
             answer1: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[1].text),
-              isCorrect: new UntypedFormControl(q.answers[1].isCorrect)
+              text: new UntypedFormControl(answers[1].text),
+              isCorrect: new UntypedFormControl(answers[1].isCorrect)
             }),
             answer2: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[2].text),
-              isCorrect: new UntypedFormControl(q.answers[2].isCorrect)
+              text: new UntypedFormControl(answers[2].text),
+              isCorrect: new UntypedFormControl(answers[2].isCorrect)
             }),
             answer3: new UntypedFormGroup({
-              text: new UntypedFormControl(q.answers[3].text),
-              isCorrect: new UntypedFormControl(q.answers[3].isCorrect)
+              text: new UntypedFormControl(answers[3].text),
+              isCorrect: new UntypedFormControl(answers[3].isCorrect)
             })
           }),
           answersVisible: new UntypedFormControl(q.show),
@@ -316,8 +319,9 @@ export class SetupComponent implements OnInit {
       for (let i = 0; i < 4; i++) {
         const answerFormGroup: UntypedFormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as UntypedFormGroup;
         answers.push({
-          text: answerFormGroup.get('text').value.toString(),
-          isCorrect: answerFormGroup.get('isCorrect').value
+          // answers of questions without answer options may never have been filled in
+          text: (answerFormGroup.get('text').value ?? '').toString(),
+          isCorrect: !!answerFormGroup.get('isCorrect').value
         });
       }
       const question: IQuestion = {
@@ -388,39 +392,19 @@ export class SetupComponent implements OnInit {
   }
 
   // TODO: implement it in a correct way, this is just because of the haste
-  public toggleShowAnswers(cb: MatCheckbox, fgn: string): void {
-    const showAnswers = !cb.checked; // it shows the state before the click, so we need to invert it
-    this.applyShowAnswersState(fgn, showAnswers);
-  }
-
-
-  private applyShowAnswersState(fgn: string, showAnswers: boolean): void {
-    const fgq = this.questionsFormGroup.get(fgn);
-    const fga = fgq.get('answers');
-    let text = 'bla';
-    if (showAnswers) {
-      text = '';
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').enable();
-    } else {
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').disable();
+  /**
+   * Questions without answer options keep their answers in the form, disabled, so turning the option back on restores them.
+   */
+  public applyShowAnswersState(fgn: string, showAnswers: boolean): void {
+    const fga = this.questionsFormGroup.get(fgn).get('answers');
+    for (let i = 0; i < 4; i++) {
+      const answer = fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + i);
+      if (showAnswers) {
+        answer.enable();
+      } else {
+        answer.disable();
+      }
     }
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('isCorrect').setValue(!showAnswers);
   }
 
   setStep(index: number): void {

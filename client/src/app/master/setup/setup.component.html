@@ -69,7 +69,7 @@
                 <mat-label>Fragetext</mat-label>
                 <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
               </mat-form-field>
-              <mat-checkbox formControlName="answersVisible" #self (click)="toggleShowAnswers(self, questionFormGroupName)">Zeige Antwortmöglichkeiten</mat-checkbox>
+              <mat-checkbox formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">Zeige Antwortmöglichkeiten</mat-checkbox>
               <!--          <button mat-raised-button>Frage entfernen</button>-->
             </div>
             <div class="row-layout" [formGroupName]="questionFormGroupName">
