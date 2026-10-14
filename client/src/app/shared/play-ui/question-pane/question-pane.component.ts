@@ -62,7 +62,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         this.answerState = packet.mediaQuestionState.answerState;
         switch (packet.mediaQuestionState.answerState) {
           case EQuestionAnswerStates.SHOWN:
-            this.showAnswers = true;
+            // questions without answer options (unchecked in setup) never show their answers
+            this.showAnswers = !!this.question?.show;
             break;
           default:
             this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
@@ -133,9 +134,6 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   public getAnswersVisibilityLabel(): string {
-    if (!this.showAnswers && !this.question?.show) {
-      return 'Auf der Anzeige verborgen – in der Einrichtung ausgeblendet';
-    }
     return this.getVisibilityLabel(this.showAnswers, this.answerState);
   }
 

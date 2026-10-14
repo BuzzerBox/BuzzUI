@@ -29,7 +29,7 @@
         </div>
       }
       <div class="top">
-        @if (isMaster) {
+        @if (isMaster && question.show) {
           <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showAnswers"
             [disabled]="!canToggleAnswers()" (click)="toggleAnswersVisibility()"
             [title]="canToggleAnswers() ? (showAnswers ? 'Antworten auf der Anzeige verbergen' : 'Antworten auf der Anzeige zeigen') : ''">
@@ -40,7 +40,7 @@
             }
           </button>
         }
-        @if (showAnswers || isMaster) {
+        @if (showAnswers || (isMaster && question.show)) {
           <mat-grid-list cols="2" rowHeight="2:1" [class.hidden-on-screen-content]="!showAnswers">
             @for (answer of getAnswers(); track answer; let i = $index) {
               <mat-grid-tile>
