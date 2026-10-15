@@ -37,6 +37,30 @@ export class ConfigService {
     return this.get().server.address || window.location.hostname;
   }
 
+  /**
+   * The URL of the game server's WebSocket. Behind a reverse proxy (config.reverseProxy), it's /ws on the page's own
+   * origin, so the proxy's TLS and login cover it too.
+   */
+  public static getWebSocketUrl(): string {
+    if (this.get().reverseProxy) {
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      return protocol + '://' + window.location.host + '/ws';
+    }
+    return this.get().server.webSocketProtocol + '://' + this.getServerAddress() + ':' + this.get().server.port;
+  }
+
+  /**
+   * The URL the file server serves the media under. Behind a reverse proxy (config.reverseProxy), it's on the page's
+   * own origin.
+   */
+  public static getMediaUrl(): string {
+    const fileServer = this.get().fileServer;
+    if (this.get().reverseProxy) {
+      return window.location.origin + fileServer.publicPath;
+    }
+    return 'http://' + this.getServerAddress() + ':' + fileServer.port + fileServer.publicPath;
+  }
+
   public static isDevMode(): boolean {
     return isDevMode();
   }

@@ -1,6 +1,7 @@
 {
   "gameName": "BuzzerBox Test",
   "enableBrowserKeypressEvents": true,
+  "reverseProxy": true,
   "serial": {
     "enabled": false
   },

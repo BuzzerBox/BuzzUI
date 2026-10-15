@@ -62,7 +62,7 @@ export class WebSocketService implements OnDestroy {
   }
 
   private connect(): void {
-    const websocketAddress = ConfigService.get().server.webSocketProtocol + '://' + ConfigService.getServerAddress() + ':' + ConfigService.get().server.port;
+    const websocketAddress = ConfigService.getWebSocketUrl();
     const subject: WebSocketSubject<IWebSocketMessage> = webSocket(websocketAddress);
     let isOpen = false;
     this.currentSubject = subject;

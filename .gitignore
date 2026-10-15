@@ -12,3 +12,6 @@ server/media/
 
 # macOS
 .DS_Store
+
+# Test environment secrets
+deploy/test/.env
