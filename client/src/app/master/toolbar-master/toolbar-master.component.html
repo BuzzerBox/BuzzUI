@@ -13,8 +13,8 @@
   <mat-icon>restart_alt</mat-icon>
 </button>
 @if (showSaveIcon) {
-  <a mat-icon-button [href]="exportGameState()" [download]="getDownloadFileName()" title="Spielstand speichern">
+  <button mat-icon-button (click)="exportGameState()" title="Spielstand speichern">
     <mat-icon>save</mat-icon>
-  </a>
+  </button>
 }
 </mat-toolbar>

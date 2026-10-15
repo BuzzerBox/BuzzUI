@@ -209,7 +209,6 @@ export class GameService {
         this.webSocketConnectionMaster.send<IResponsePacket>(responsePacket);
 
         this.sendToAllScreens<IDataForScreenPacket>(this.makeInitDataForScreen())
-        console.log("current game state", this.currentGameState, packet.currentGameState);
     }
 
     private onRegisterMasterPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterMasterPacket): void {

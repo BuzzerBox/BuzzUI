@@ -26,7 +26,7 @@
                 <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
               </mat-form-field>
               @if (i >= 2) {
-                <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="true">Aktivieren</mat-checkbox>
+                <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="teamsFormGroup.get(teamFormControlName).enabled">Aktivieren</mat-checkbox>
               }
             </mat-list-item>
           }
@@ -142,7 +142,7 @@
   <p>Das Spiel wurde konfiguriert. Es spielen <b>{{getNumberOfActiveTeams()}} Team(s)</b> und es gibt <b>{{getNumberOfQuestions()}} Frage(n)</b>.</p>
   <div>
     <button mat-button matStepperPrevious>Zurück</button>
-    <a mat-button (click)="hasReachedLastStep = true" [href]="downloadSetupAsJson()" download="buzzer-game-setup.json">Konfiguration Herunterladen</a>
+    <button mat-button (click)="downloadSetupAsJson()">Konfiguration Herunterladen</button>
     <button mat-button (click)="startGame()">Spiel starten</button>
   </div>
 <!-- </ng-template> -->

@@ -38,7 +38,6 @@ import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
 import {pathsMaster} from '../master/paths-master';
-import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {TeamHelper} from '../helper/team.helper';
 import * as Uuid from 'uuid';
 import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
@@ -85,7 +84,6 @@ export class GameService implements OnDestroy {
   constructor(
     private webSocketService: WebSocketService,
     private router: Router,
-    private sanitizer: DomSanitizer,
     private config: ConfigService
   ) {
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
@@ -357,23 +355,31 @@ export class GameService implements OnDestroy {
     });
   }
 
-  public exportGameStateAsJson(): SafeUrl {
+  /**
+   * Saves the current game, or the given data, as a JSON file that can be imported in the setup again.
+   */
+  public downloadGameStateAsJson(fileName: string, teams: ITeam[] = this.teams, questions: IQuestion[] = this.questions,
+                                 gameState: IGameState = this.currentGameState): void {
     const gameStateAsJson: IGameStateAsJson = {
       version: CURRENT_SAVEGAME_VERSION,
-      teams: this.teams,
-      question: this.questions,
-      gameState: this.currentGameState
+      teams,
+      question: questions,
+      gameState
     };
     const json = JSON.stringify(gameStateAsJson);
-    const blob = new Blob([json], {type: 'text/json'});
+    const blob = new Blob([json], {type: 'application/json'});
     const url = window.URL.createObjectURL(blob);
-    return this.sanitizer.bypassSecurityTrustUrl(url);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    // the browser reads the blob asynchronously after the click, so it must not be revoked right away
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
   }
 
   public importGameStateFromJson(gameState: IGameStateAsJson, sendPacketImmediately: boolean = true): Promise<void> {
     if (gameState.version !== CURRENT_SAVEGAME_VERSION && gameState.version !== 2) {
-      alert('savegame version is not okay');
-      return;
+      return Promise.reject(new Error(`Unsupported savegame version ${gameState.version}`));
     }
     if (gameState.version === 2 && gameState.gameState) {
       // version 2 had mediaState (EVideoStates) instead of mediaQuestionState, see CURRENT_SAVEGAME_VERSION
@@ -381,8 +387,17 @@ export class GameService implements OnDestroy {
       gameState.gameState.mediaQuestionState ??= PacketHelper.getDefaultMediaState();
       gameState.gameState.mediaVolume ??= PacketHelper.getDefaultMediaVolume();
     }
+    const savedTeamIds = new Map<ITeam, string>((gameState.teams ?? []).map(team => [team, team.teamId]));
+    gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams ?? []);
+    if (gameState.gameState?.markedTeamIds) {
+      // team IDs are buzzer IDs, which are generated anew on every server start
+      const newTeamIds = new Map<string, string>();
+      gameState.teams.forEach(team => newTeamIds.set(savedTeamIds.get(team), team.teamId));
+      gameState.gameState.markedTeamIds = gameState.gameState.markedTeamIds
+        .filter(id => newTeamIds.has(id))
+        .map(id => newTeamIds.get(id));
+    }
     this.currentGameState = gameState.gameState;
-    gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams);
     return this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
   }
 
@@ -546,10 +561,13 @@ export class GameService implements OnDestroy {
   private mergeBuzzerIdsFromPresetupDataWithSetTeams(teams: ITeam[]): ITeam[] {
     if (this.presetupData != null) {
     const availableBuzzers = this.presetupData.availableBuzzers;
-    for (let i = 0; i < Math.min(availableBuzzers.length, teams.length); i++) {
-      const buzzerId: string = availableBuzzers[i].id;
-      teams[i].buzzerId = buzzerId;
-      teams[i].teamId = buzzerId;
+    for (let i = 0; i < teams.length; i++) {
+      // teams without a buzzerIndex sit on the buzzers in order
+      const buzzer = availableBuzzers[teams[i].buzzerIndex ?? i];
+      if (buzzer != null) {
+        teams[i].buzzerId = buzzer.id;
+        teams[i].teamId = buzzer.id;
+      }
       }
     }
     return teams;
@@ -601,18 +619,25 @@ export class GameService implements OnDestroy {
     });
   }
 
+  /**
+   * Puts the teams of a savegame on the buzzers that are available now. Teams whose buzzer no longer exists are dropped.
+   */
   private setCurrentBuzzerIdsToTeams(teams: ITeam[]): ITeam[] {
-    if (this.presetupData.availableBuzzers.length < teams.length) {
-      throw new Error('Can\'t set buzzer IDs to teams since there are more teams than buzzers!');
-    }
-
+    const availableBuzzers = this.presetupData.availableBuzzers;
+    const ret: ITeam[] = [];
     for (let i = 0; i < teams.length; i++) {
       const team = teams[i];
-      team.teamId = this.presetupData.availableBuzzers[i].id;
-      team.buzzerId = this.presetupData.availableBuzzers[i].id;
+      // savegames from before buzzerIndex existed have their teams on the buzzers in order
+      const buzzerIndex = team.buzzerIndex ?? i;
+      if (buzzerIndex >= availableBuzzers.length) {
+        continue;
+      }
+      team.buzzerIndex = buzzerIndex;
+      team.teamId = availableBuzzers[buzzerIndex].id;
+      team.buzzerId = availableBuzzers[buzzerIndex].id;
+      ret.push(team);
     }
-
-    return teams;
+    return ret;
   }
 
   private handleResetServerPacket(packet: IResetServerPacket): void {

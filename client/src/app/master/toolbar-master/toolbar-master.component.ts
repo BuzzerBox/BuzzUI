@@ -1,6 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {GameService} from '../../services/game.service';
-import {SafeUrl} from '@angular/platform-browser';
 
 @Component({
     selector: 'app-toolbar-master',
@@ -21,8 +20,8 @@ export class ToolbarMasterComponent implements OnInit {
     return this.game.getGameName();
   }
 
-  public exportGameState(): SafeUrl {
-    return this.game.exportGameStateAsJson();
+  public exportGameState(): void {
+    this.game.downloadGameStateAsJson(this.getDownloadFileName());
   }
 
   public getDownloadFileName(): string {
