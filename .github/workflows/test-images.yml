@@ -1,6 +1,9 @@
 # Builds the server and client images for the test environment.
 # Pushes to main publish them to GHCR as :test (plus :test-<sha>); pull requests only check that they build.
 # The test host picks up new :test images on its own (see deploy/test/).
+#
+# The organization only allows actions owned by BuzzerBox, so this uses plain shell steps
+# with the Docker and buildx that come preinstalled on the GitHub-hosted runners.
 name: Test environment images
 
 on:
@@ -24,35 +27,45 @@ jobs:
       fail-fast: false
       matrix:
         component: [server, client]
+    env:
+      PUSH: ${{ github.event_name != 'pull_request' }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init -q .
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          git -c http.extraheader="$auth" fetch -q --depth 1 origin "$GITHUB_REF"
+          git checkout -q FETCH_HEAD
+          git log -1 --oneline
 
       - name: Image name
-        id: image
         # GHCR image names must be lowercase
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.component }}" >> "$GITHUB_OUTPUT"
-
-      - uses: docker/setup-buildx-action@v3
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.component }}" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        if: env.PUSH == 'true'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ${{ matrix.component }}/docker/Dockerfile
-          build-args: CONFIG_OVERRIDE=config.test.json
-          # add linux/arm64 here if the test host is a Pi or another ARM machine (builds take longer under emulation)
-          platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ${{ steps.image.outputs.name }}:test
-            ${{ steps.image.outputs.name }}:test-${{ github.sha }}
-          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-          cache-from: type=gha,scope=${{ matrix.component }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+      - name: Build and push
+        run: |
+          # the default docker driver can't export a build cache, so use a container builder
+          docker buildx create --use --driver docker-container > /dev/null
+          args=(
+            --file "${{ matrix.component }}/docker/Dockerfile"
+            --build-arg CONFIG_OVERRIDE=config.test.json
+            # add linux/arm64 here if the test host is a Pi or another ARM machine (builds take longer under emulation)
+            --platform linux/amd64
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+            --tag "$IMAGE:test"
+            --tag "$IMAGE:test-$GITHUB_SHA"
+            --cache-from "type=registry,ref=$IMAGE:buildcache"
+          )
+          if [ "$PUSH" = true ]; then
+            args+=(--push --cache-to "type=registry,ref=$IMAGE:buildcache,mode=max")
+          fi
+          docker buildx build "${args[@]}" .
