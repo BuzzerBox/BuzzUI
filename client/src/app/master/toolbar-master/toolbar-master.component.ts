@@ -1,5 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {GameService} from '../../services/game.service';
+import {MatDialog} from '@angular/material/dialog';
+import {DialogTeamsComponent} from '../dialog-teams/dialog-teams.component';
 
 @Component({
     selector: 'app-toolbar-master',
@@ -10,8 +12,14 @@ import {GameService} from '../../services/game.service';
 export class ToolbarMasterComponent implements OnInit {
   @Input() showSaveIcon = false;
   @Input() showReleaseBuzzerLockIcon = false;
+  // only once the game is set up, since the setup has its own teams step
+  @Input() showTeamsIcon = false;
 
-  constructor(private game: GameService) { }
+  constructor(private game: GameService, private dialog: MatDialog) { }
+
+  public openTeamsDialog(): void {
+    this.dialog.open(DialogTeamsComponent);
+  }
 
   ngOnInit(): void {
   }

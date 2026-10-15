@@ -1,0 +1,34 @@
+<h1 mat-dialog-title>Teams</h1>
+<div mat-dialog-content>
+  @if (rows.length === 0) {
+    <p>Die Buzzer sind nicht bekannt. Lade die Seite neu, um die Teams zu ändern.</p>
+  }
+  <form [formGroup]="teamsFormGroup">
+    @for (row of rows; track row.controlName) {
+      <div class="team-row" [class.inactive]="!isActive(row)">
+        <mat-checkbox [checked]="isActive(row)" (change)="setActive(row, $event.checked)">{{row.buzzer.name}}</mat-checkbox>
+        <mat-form-field class="team-name">
+          <mat-label>Teamname</mat-label>
+          <input matInput [formControlName]="row.controlName">
+        </mat-form-field>
+        <span class="team-points">
+          @if (row.team) {
+            {{formatPoints(row.team.points ?? 0)}}
+          } @else if (isActive(row)) {
+            neu
+          }
+        </span>
+      </div>
+      @if (losesPoints(row)) {
+        <div class="warning">{{row.team.name}} wird entfernt und verliert {{formatPoints(row.team.points)}}.</div>
+      }
+    }
+  </form>
+  @if (getActiveCount() < MIN_TEAMS) {
+    <p class="warning">Es müssen mindestens {{MIN_TEAMS}} Teams spielen.</p>
+  }
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Abbrechen</button>
+  <button mat-raised-button color="primary" [disabled]="!canSave()" (click)="save()">Übernehmen</button>
+</div>

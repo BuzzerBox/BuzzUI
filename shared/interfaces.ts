@@ -28,6 +28,7 @@ import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
 import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
 import {IDirectoryTree} from './interfaces/IDirectoryTree';
 import {IGradeAnswerPacket} from './interfaces/IGradeAnswerPacket';
+import {IUpdateTeamsPacket} from './interfaces/IUpdateTeamsPacket';
 
 export {
 	IDirectoryTree,
@@ -60,5 +61,6 @@ export {
 	IMediaQuestionState,
 	IMediaVolume,
 	ISetMediaVolumePacket,
-	IGradeAnswerPacket
+	IGradeAnswerPacket,
+	IUpdateTeamsPacket
 }

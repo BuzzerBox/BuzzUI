@@ -34,6 +34,8 @@ import {
   ITeam,
   ITeamSetPointsPacket,
   IUpdateMediaStatePacket,
+  IUpdateTeamsPacket,
+  IBuzzer,
   PacketHelper
 } from '../../../../shared/shared';
 import {Observable, ReplaySubject, Subject, Subscription} from 'rxjs';
@@ -198,6 +200,9 @@ export class GameService implements OnDestroy {
       case EPacketTypes.GRADE_ANSWER:
         this.gradeAnswerSubject.next(message as IGradeAnswerPacket);
         break;
+      case EPacketTypes.UPDATE_TEAMS:
+        this.handleUpdateTeamsPacket(message as IUpdateTeamsPacket);
+        break;
       default:
         break;
     }
@@ -298,6 +303,10 @@ export class GameService implements OnDestroy {
   private handleNewMasterAcceptedPacket(packet: INewMasterAccepted): void {
     if (this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
       this.joinedRunningGame = true;
+      if (packet.availableBuzzers) {
+        // needed to change the teams later on
+        this.presetupData = {packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO, availableBuzzers: packet.availableBuzzers};
+      }
       this.setGameData(packet.teams, packet.questions, packet.currentGameState);
       this.setNewGameState(EGameStatesMaster.READY_TO_START);
       this.redirect(pathsMaster.readyToStart);
@@ -591,6 +600,30 @@ export class GameService implements OnDestroy {
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
     GameStateHelper.applyAnswerState(this.currentGameState, packet);
     this.answerSetStatePacketSubject.next(packet);
+  }
+
+  /**
+   * The buzzers of the BuzzerBox, which teams can be put on
+   */
+  public getAvailableBuzzers(): IBuzzer[] {
+    return this.presetupData?.availableBuzzers ?? [];
+  }
+
+  /**
+   * Replaces the teams of the running game, see IUpdateTeamsPacket; the server sends back the teams it took
+   */
+  public updateTeams(teams: ITeam[]): void {
+    this.webSocketService.send<IUpdateTeamsPacket>({packetType: EPacketTypes.UPDATE_TEAMS, teams});
+  }
+
+  private handleUpdateTeamsPacket(packet: IUpdateTeamsPacket): void {
+    this.teams = packet.teams;
+    for (const team of this.teams) {
+      team.points ??= 0;
+    }
+    if (this.currentGameState?.markedTeamIds) {
+      this.currentGameState.markedTeamIds = this.currentGameState.markedTeamIds.filter(id => this.findTeam(id) != null);
+    }
   }
 
   /**

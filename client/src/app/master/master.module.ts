@@ -30,6 +30,8 @@ import {DragDropModule} from '@angular/cdk/drag-drop';
 import { FileDropEventsDirective } from './file-drop-events.directive';
 import { MediaQuestionDisplayOrderConfigurationComponent } from './media-question-display-order-configuration/media-question-display-order-configuration.component';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {MatDialogModule} from '@angular/material/dialog';
+import {DialogTeamsComponent} from './dialog-teams/dialog-teams.component';
 
 @NgModule({
   declarations: [
@@ -43,6 +45,7 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
     SelectMediaComponent,
     FileUploadFormComponent,
     FileDropEventsDirective,
+    DialogTeamsComponent,
   ],
   imports: [
     CommonModule,
@@ -66,6 +69,7 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
     MatTreeModule,
     DragDropModule,
     MatButtonToggleModule,
+    MatDialogModule,
     MediaQuestionDisplayOrderConfigurationComponent,
   ],
   exports: [

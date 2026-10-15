@@ -9,6 +9,11 @@
     <mat-icon>lock_open</mat-icon>
   </button>
 }
+@if (showTeamsIcon) {
+  <button mat-icon-button (click)="openTeamsDialog()" title="Teams bearbeiten">
+    <mat-icon>people</mat-icon>
+  </button>
+}
 <button mat-icon-button (click)="resetServer()" title="Server zurücksetzen">
   <mat-icon>restart_alt</mat-icon>
 </button>

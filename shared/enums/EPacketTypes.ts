@@ -25,4 +25,5 @@ export enum EPacketTypes {
     UPDATE_MEDIA_STATE,
     SET_MEDIA_VOLUME,
     GRADE_ANSWER,
+    UPDATE_TEAMS,
 }

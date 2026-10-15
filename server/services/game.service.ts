@@ -34,6 +34,7 @@ import {
     ITeam,
     ITeamSetPointsPacket,
     IUpdateMediaStatePacket,
+    IUpdateTeamsPacket,
     PacketHelper
 } from "../../shared/shared";
 import config from '../../config.json';
@@ -150,6 +151,8 @@ export class GameService {
             this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
         } else if (packet.packetType === EPacketTypes.GRADE_ANSWER) {
             this.onGradeAnswerPacket(packet as IGradeAnswerPacket);
+        } else if (packet.packetType === EPacketTypes.UPDATE_TEAMS) {
+            this.onUpdateTeamsPacket(packet as IUpdateTeamsPacket);
         }
     }
 
@@ -259,7 +262,8 @@ export class GameService {
                         serverState: EGameStates.WAITING_FOR_START,
                         teams: this.teams,
                         questions: this.questions,
-                        currentGameState: this.currentGameState
+                        currentGameState: this.currentGameState,
+                        availableBuzzers: this.getBuzzerConfig()
                     })
                 }
             }
@@ -340,6 +344,52 @@ export class GameService {
         // the screens and the master flash the answers for a wrong one
         this.sendToMaster<IGradeAnswerPacket>(packet);
         this.sendToAllScreens<IGradeAnswerPacket>(packet);
+    }
+
+    /**
+     * Renames, adds and removes teams of a game that is set up. Teams that stay keep their points, new ones start with
+     * none. If the team that buzzed is removed, the buzzers are released.
+     */
+    private onUpdateTeamsPacket(packet: IUpdateTeamsPacket): void {
+        if (this.currentStateInAutomaton !== EGameStates.WAITING_FOR_START && this.currentStateInAutomaton !== EGameStates.PLAYING) {
+            return;
+        }
+        const buzzers = this.getBuzzerConfig();
+        const requestedTeams = Array.isArray(packet.teams) ? packet.teams : [];
+        const newTeams: ITeam[] = [];
+        for (const requested of requestedTeams) {
+            const buzzerIndex = buzzers.findIndex(buzzer => buzzer.id === requested?.buzzerId);
+            const name = typeof requested?.name === 'string' ? requested.name.trim() : '';
+            if (buzzerIndex < 0 || name === '' || newTeams.some(team => team.buzzerId === requested.buzzerId)) {
+                newTeams.length = 0;
+                break;
+            }
+            const existingTeam = this.findTeam(requested.buzzerId);
+            newTeams.push({
+                name,
+                buzzerId: requested.buzzerId,
+                teamId: requested.buzzerId,
+                buzzerIndex,
+                points: existingTeam?.points ?? 0
+            });
+        }
+        // like in the setup, a game needs at least two teams
+        if (newTeams.length < 2) {
+            LoggerService.warn('Ignoring invalid teams', packet.teams);
+            // let the master show the teams that are still in place
+            this.sendToMaster<IUpdateTeamsPacket>({packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams});
+            return;
+        }
+        this.teams = newTeams;
+        const isRemoved = (teamId: string) => !newTeams.some(team => team.teamId === teamId);
+        if ((this.currentGameState.markedTeamIds ?? []).some(isRemoved)) {
+            this.unmarkAllTeams();
+            this.setKeypressLocked(false);
+            this.releaseHardwareBuzzerLock(true);
+        }
+        const updateTeamsPacket: IUpdateTeamsPacket = {packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams};
+        this.sendToMaster<IUpdateTeamsPacket>(updateTeamsPacket);
+        this.sendToAllScreens<IUpdateTeamsPacket>(updateTeamsPacket);
     }
 
     // TODO move to some shared resource
