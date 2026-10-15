@@ -89,5 +89,6 @@
     "stuffingBit": 0,
     "eol": 255
   },
-  "enableBrowserKeypressEvents": false
+  "enableBrowserKeypressEvents": false,
+  "reverseProxy": false
 }

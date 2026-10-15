@@ -1,0 +1,18 @@
+# One entry point for the test environment: HTTPS, a shared login, and routing to the containers.
+# The values come from .env (see .env.example).
+{$SITE_ADDRESS} {
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	# the client connects here when config.reverseProxy is on
+	handle /ws {
+		reverse_proxy server:4201
+	}
+	handle /media* {
+		reverse_proxy server:4202
+	}
+	handle {
+		reverse_proxy client:80
+	}
+}

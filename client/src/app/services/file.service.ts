@@ -10,10 +10,7 @@ export class FileService {
   constructor(private http: HttpClient) { }
 
   public static getPathPrefix(): string {
-    return 'http://' +
-      ConfigService.getServerAddress() + ':' +
-      ConfigService.get().fileServer.port +
-      ConfigService.get().fileServer.publicPath;
+    return ConfigService.getMediaUrl();
   }
 
   public static buildFullPathString(partialPath: string): string {
