@@ -18,6 +18,11 @@ export class SerialPortService {
     private constructor() {
         this.onDataInCallbacks = [];
         this.onErrorCallbacks = [];
+        if (!ConfigService.get().serial.enabled) {
+            // e.g. in the test environment, where buzzers come from browser keypresses only
+            LoggerService.warn('Serial port is disabled in the config');
+            return;
+        }
         this.serialPortConnection = new SerialPort({
             path: ConfigService.get().serial.address,
             baudRate: ConfigService.get().serial.baudRate
@@ -63,7 +68,7 @@ export class SerialPortService {
     }
 
     public write(buffer: Buffer): void {
-        this.serialPortConnection.write(buffer);
+        this.serialPortConnection?.write(buffer);
     }
 
 }

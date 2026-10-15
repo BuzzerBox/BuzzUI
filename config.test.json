@@ -1,0 +1,10 @@
+{
+  "gameName": "BuzzerBox Test",
+  "enableBrowserKeypressEvents": true,
+  "serial": {
+    "enabled": false
+  },
+  "fileServer": {
+    "localPath": "/srv/media"
+  }
+}

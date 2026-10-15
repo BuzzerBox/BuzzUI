@@ -1,45 +1,27 @@
-# thanks to Lukas Marx, https://malcoded.com/posts/angular-docker/
+# Build from the repo root, since the client compiles in shared/ and config.json:
+#   docker build -f client/docker/Dockerfile .
+# Pass --build-arg CONFIG_OVERRIDE=config.test.json to merge that file into config.json.
+ARG NODE_VERSION=22
 
-######
-# CAUTION: The build context is set to the parent directoy in order to be able to work with the shared/ directory.
-#          Thus, we need to explicitly enter the client's directory
-######
-ARG dirClient=client
-ARG workDir=/usr/buzzerWebUI/$dirClient
-ARG ARCH=amd64
-
-# build angular app
-FROM $ARCH/node:current-alpine3.13 as node
-LABEL version="0.0.1"
-LABEL description="Image for the buzzer web UI frontend"
-# leaving it without a value to have it inherit the globally set value
-ARG workDir
-ARG dirClient
-WORKDIR $workDir
-# WORKDIR /src/app
-# copy both, the package.json and the package.lock.json, into the image
-COPY $dirClient/package.json ./
-COPY $dirClient/package-lock.json ./
-COPY shared ../shared/
-# then run npm install to install all dependencies of the project
-RUN npm i
-# we copy the rest of the project into the image
-COPY $dirClient/ .
-COPY config.json ../
-# run the serve build of the angular project
+FROM node:${NODE_VERSION}-bookworm-slim AS build
+WORKDIR /app/client
+COPY client/package.json client/package-lock.json client/.npmrc ./
+RUN npm ci
+COPY shared ../shared
+# shared/services/abstract-logger.service.ts imports server/env.ts
+COPY server/env.ts ../server/
+COPY config.json config.test.json config.dev.json.example ../
+COPY scripts/merge-config.js ../scripts/
+ARG CONFIG_OVERRIDE=
+# config.dev.json is imported by the code (it is only used in dev builds), so it has to exist
+RUN cp ../config.dev.json.example ../config.dev.json \
+ && if [ -n "$CONFIG_OVERRIDE" ]; then node ../scripts/merge-config.js ../config.json "../$CONFIG_OVERRIDE"; fi
+COPY client ./
 RUN npm run build
 
-
-# serve built angular app
-FROM $ARCH/nginx:1.21.0-alpine
-# leaving them without a value to have them inherit the globally set values
-ARG dirClient
-ARG workDir
-# remove the nginx's defaultly served files
-RUN rm -f /usr/share/nginx/html/*
-# copy ng build's output to html folder to be served
-COPY --from=node $workDir/dist/$dirClient /usr/share/nginx/html
-# copy nginx config file
-COPY $dirClient/docker/nginx.conf /etc/nginx/conf.d/default.conf
-
+FROM nginx:1.28-alpine
+LABEL org.opencontainers.image.description="BuzzerBox web client"
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=build /app/client/dist/client/browser /usr/share/nginx/html
+COPY client/docker/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
