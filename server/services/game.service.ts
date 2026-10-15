@@ -4,6 +4,7 @@ import {Observable, Subscription} from "rxjs";
 import {
     EAnswerStates,
     EGameStates,
+    EGradeResults,
     GameStateHelper,
     EMediaStates,
     EPacketTypes,
@@ -15,6 +16,7 @@ import {
     IEndGamePacket,
     IGamePacket,
     IGameState,
+    IGradeAnswerPacket,
     IKeypressOnScreenPacket,
     IMarkTeamPacket,
     INewMasterAccepted,
@@ -146,6 +148,8 @@ export class GameService {
             this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
         } else if (packet.packetType === EPacketTypes.SET_MEDIA_VOLUME) {
             this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
+        } else if (packet.packetType === EPacketTypes.GRADE_ANSWER) {
+            this.onGradeAnswerPacket(packet as IGradeAnswerPacket);
         }
     }
 
@@ -297,6 +301,45 @@ export class GameService {
             team.points = packet.points;
         }
         this.sendToAllScreens<ITeamSetPointsPacket>(packet);
+    }
+
+    /**
+     * Awards the team that buzzed the points of the question, twice them for a double answer and none for a wrong one.
+     * A correct answer solves the question: it reveals the correct answer options and keeps the buzzers locked. A wrong
+     * one releases the buzzers for the other teams.
+     */
+    private onGradeAnswerPacket(packet: IGradeAnswerPacket): void {
+        const team: ITeam = this.findTeam(packet.teamId);
+        if (team == null) {
+            LoggerService.warn(`Can't grade the answer of unknown team ${packet.teamId}`);
+            return;
+        }
+        const question = this.getCurrentQuestion();
+        const factor = packet.result === EGradeResults.DOUBLE ? 2 : packet.result === EGradeResults.CORRECT ? 1 : 0;
+        if (factor > 0) {
+            team.points = (team.points ?? 0) + factor * (question?.points ?? 1);
+            const pointsPacket: ITeamSetPointsPacket = {packetType: EPacketTypes.TEAM_SET_POINTS, teamId: team.teamId, points: team.points};
+            this.sendToMaster<ITeamSetPointsPacket>(pointsPacket);
+            this.sendToAllScreens<ITeamSetPointsPacket>(pointsPacket);
+            if (packet.revealCorrectAnswers) {
+                for (const answer of (question?.answers ?? []).filter(a => a.isCorrect)) {
+                    if ((this.currentGameState.activatedAnswers ?? []).some(a => GameStateHelper.isSameAnswer(a, answer))) {
+                        continue;
+                    }
+                    const activatePacket = PacketHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer);
+                    GameStateHelper.applyAnswerState(this.currentGameState, activatePacket);
+                    this.sendToMaster<IAnswerSetStatePacket>(activatePacket);
+                    this.sendToAllScreens<IAnswerSetStatePacket>(activatePacket);
+                }
+            }
+        } else {
+            this.unmarkAllTeams();
+            this.setKeypressLocked(false);
+            this.releaseHardwareBuzzerLock(true);
+        }
+        // the screens and the master flash the answers for a wrong one
+        this.sendToMaster<IGradeAnswerPacket>(packet);
+        this.sendToAllScreens<IGradeAnswerPacket>(packet);
     }
 
     // TODO move to some shared resource

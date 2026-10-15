@@ -2,6 +2,7 @@ import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@an
 import {GameService} from '../../../services/game.service';
 import {
   EAnswerStates,
+  EGradeResults,
   EMediaStates,
   EQuestionAnswerStates,
   FileExtensionsService,
@@ -9,6 +10,8 @@ import {
   MediaHelper,
   IAnswer,
   IAnswerSetStatePacket,
+  IGradeAnswerPacket,
+  IMarkTeamPacket,
   IQuestion
 } from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
@@ -19,7 +22,10 @@ import {
 } from '../bottom-sheets/answer-options/answer-options.component';
 import {Subscription} from 'rxjs';
 import {ArraysHelper} from '../../../helper/arrays.helper';
+import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {DialogGradeAnswerComponent, IDialogGradeAnswerData} from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
 
 @Component({
     selector: 'app-question-pane',
@@ -28,6 +34,7 @@ import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/s
     standalone: false
 })
 export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
+  private static readonly FLASH_WRONG_DURATION_IN_MS = 1000;
   @Input() isMaster = false;
   @Input() question: IQuestion;
 
@@ -37,6 +44,14 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
   private mediaUpdateSubscription: Subscription;
+  private markTeamSubscription: Subscription;
+  private gradeAnswerSubscription: Subscription;
+  // only on the master: grading the answer of the team that buzzed
+  private gradeDialogRef: MatDialogRef<DialogGradeAnswerComponent, EGradeResults>;
+  private gradeDialogTeamId: string;
+  // set for a moment after a wrong answer, which lets the answers flash red
+  public flashWrong = false;
+  private flashWrongTimeout: ReturnType<typeof setTimeout>;
   // whether the question and the answers are visible on the screens; the master always sees both
   public showAnswers = true;
   public showQuestion = true;
@@ -44,12 +59,20 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private questionState: EQuestionAnswerStates;
   private answerState: EQuestionAnswerStates;
 
-  constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
+  constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     // Not needed here since ngOnChange is fired even upon the first instantiation
-    if (!this.isMaster) {
-      this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
+    // the master gets these too, when grading reveals the correct answers
+    this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
+    this.gradeAnswerSubscription = this.game.observeGradeAnswerPackets().subscribe(this.handleGradeAnswerPacket.bind(this));
+    if (this.isMaster) {
+      this.markTeamSubscription = this.game.observeMarkTeamPackets().subscribe(this.handleMarkTeamPacket.bind(this));
+      // after a reload or rejoining, a team may have buzzed already
+      const gameState = this.game.getGameStateData();
+      if (gameState?.setBuzzerLock && gameState.markedTeamIds?.length === 1) {
+        this.openGradeDialog(gameState.markedTeamIds[0]);
+      }
     }
     if (this.question.initialConfig) {
       this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
@@ -123,6 +146,17 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
 
   public getTotalQuestionNumber(): number {
     return this.game.getQuestions().length;
+  }
+
+  /**
+   * What the question is worth, e.g. "3 Punkte"; only shown if some question in the game is not worth the default 1
+   */
+  public getPointsLabel(): string | null {
+    if (!this.game.hasCustomQuestionPoints()) {
+      return null;
+    }
+    const points = GameService.getQuestionPoints(this.question);
+    return points === 1 ? '1 Punkt' : `${points} Punkte`;
   }
 
   public getQuestionText(): string {
@@ -245,7 +279,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
           sub.unsubscribe();
           this.allCorrectAnswersFoundSnackBar = null;
         });
-      } else if (this.isMaster) {
+      } else if (this.isMaster && setInService) {
         // if there are correct answers left, manually release the buzzer lock
         this.game.sendUnmarkAllTeamsPacket();
         this.game.setBuzzerLock(false);
@@ -280,13 +314,60 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.question?.answers.find(a => GameStateHelper.isSameAnswer(a, answer));
   }
 
+  /**
+   * A team buzzed: the master grades its answer. The dialog goes away once the team is no longer marked, e.g. when the
+   * buzzers were released or the question changed.
+   */
+  private handleMarkTeamPacket(packet: IMarkTeamPacket): void {
+    if (packet.unmarkAll || (!packet.mark && packet.teamId === this.gradeDialogTeamId)) {
+      this.closeGradeDialog();
+    } else if (packet.mark) {
+      this.openGradeDialog(packet.teamId);
+    }
+  }
+
+  private openGradeDialog(teamId: string): void {
+    const team = this.game.findTeam(teamId);
+    if (team == null) {
+      return;
+    }
+    this.closeGradeDialog();
+    this.gradeDialogTeamId = teamId;
+    const dialogRef = this.dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, EGradeResults>(DialogGradeAnswerComponent, {
+      data: {teamName: team.name, points: GameService.getQuestionPoints(this.question)}
+    });
+    this.gradeDialogRef = dialogRef;
+    dialogRef.afterClosed().subscribe(result => {
+      if (this.gradeDialogRef === dialogRef) {
+        this.gradeDialogRef = null;
+        this.gradeDialogTeamId = null;
+      }
+      // closing it without a grade (or because the team is no longer marked) leaves everything as it is
+      if (result != null) {
+        // a correct answer lights up where the answer options are shown
+        this.game.gradeAnswer(teamId, result, this.showAnswers && !!this.question?.show);
+      }
+    });
+  }
+
+  private closeGradeDialog(): void {
+    this.gradeDialogRef?.close();
+  }
+
+  private handleGradeAnswerPacket(packet: IGradeAnswerPacket): void {
+    if (packet.result !== EGradeResults.WRONG) {
+      return;
+    }
+    clearTimeout(this.flashWrongTimeout);
+    this.flashWrong = true;
+    this.flashWrongTimeout = setTimeout(() => this.flashWrong = false, QuestionPaneComponent.FLASH_WRONG_DURATION_IN_MS);
+  }
+
   ngOnDestroy(): void {
-    if (this.answerSetStatePacketSubscription != null) {
-      this.answerSetStatePacketSubscription.unsubscribe();
-    }
-    if (this.mediaUpdateSubscription != null) {
-      this.mediaUpdateSubscription.unsubscribe();
-    }
+    SubscriptionsHelper.cleanUpSubscriptions(this.answerSetStatePacketSubscription, this.mediaUpdateSubscription,
+      this.markTeamSubscription, this.gradeAnswerSubscription);
+    clearTimeout(this.flashWrongTimeout);
+    this.closeGradeDialog();
   }
 
   public isQuestionExisting(): boolean {

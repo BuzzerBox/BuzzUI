@@ -10,4 +10,8 @@ export interface IQuestion {
      * Notes for the game master, like presenter notes. Only the master sees them, they are not sent to screens.
      */
     notes?: string;
+    /**
+     * What a correct answer is worth. Missing means 1 point, as in savegames from before it existed.
+     */
+    points?: number;
 }

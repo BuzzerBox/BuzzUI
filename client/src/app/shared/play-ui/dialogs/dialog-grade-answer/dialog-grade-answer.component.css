@@ -1,0 +1,25 @@
+.grade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+}
+
+.grade-actions button {
+  flex: 1 1 auto;
+}
+
+/* the colors of correct and wrong answers in the question pane */
+.correct {
+  background-color: forestgreen !important;
+  color: white !important;
+}
+
+.wrong {
+  background-color: orangered !important;
+  color: white !important;
+}
+
+.double {
+  background-color: #ffc107 !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+}

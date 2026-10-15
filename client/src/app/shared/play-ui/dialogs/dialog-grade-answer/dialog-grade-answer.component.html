@@ -1,0 +1,9 @@
+<h1 mat-dialog-title>{{data.teamName}} hat gebuzzert</h1>
+<div mat-dialog-content>
+  <p>Wie war die Antwort?</p>
+</div>
+<div mat-dialog-actions class="grade-actions">
+  <button mat-raised-button class="correct" [mat-dialog-close]="EGradeResults.CORRECT">Richtig (+{{formatPoints(data.points)}})</button>
+  <button mat-raised-button class="wrong" [mat-dialog-close]="EGradeResults.WRONG">Falsch (0 Punkte)</button>
+  <button mat-raised-button class="double" [mat-dialog-close]="EGradeResults.DOUBLE">Doppelt (+{{formatPoints(data.points * 2)}})</button>
+</div>

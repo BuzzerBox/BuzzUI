@@ -8,10 +8,10 @@ import {
     IAnswerSetStatePacket,
     ISetQuestionPacket,
     IEndGamePacket,
-    IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket
+    IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket, IGradeAnswerPacket
 } from "../interfaces";
 
-import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates} from '../enums';
+import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates, EGradeResults} from '../enums';
 import {IMediaQuestionState} from "../interfaces/IMediaQuestionState";
 
 export class PacketHelper {
@@ -105,6 +105,15 @@ export class PacketHelper {
     public static makeEndGamePacket(): IEndGamePacket {
         return {
             packetType: EPacketTypes.END_GAME
+        };
+    }
+
+    public static makeGradeAnswerPacket(teamId: string, result: EGradeResults, revealCorrectAnswers: boolean): IGradeAnswerPacket {
+        return {
+            packetType: EPacketTypes.GRADE_ANSWER,
+            teamId,
+            result,
+            revealCorrectAnswers
         };
     }
 

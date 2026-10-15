@@ -5,6 +5,7 @@ import {
   EAnswerStates,
   EMediaStates,
   EPacketTypes,
+  EGradeResults,
   EQuestionAnswerStates,
   GameStateHelper,
   IAnswer,
@@ -13,6 +14,7 @@ import {
   IEndGamePacket,
   IGamePacket,
   IGameState,
+  IGradeAnswerPacket,
   IKeypressOnScreenPacket,
   IMarkTeamPacket,
   IMediaQuestionState,
@@ -74,7 +76,9 @@ export class GameService implements OnDestroy {
   private initedAsScreen = false;
   private screenId: string = null;
   private isScreenDataAvailable = false;
-  private answerSetStatePacketSubject: Subject<IAnswerSetStatePacket>;
+  // the master gets these too, when grading reveals the correct answers
+  private answerSetStatePacketSubject = new Subject<IAnswerSetStatePacket>();
+  private gradeAnswerSubject = new Subject<IGradeAnswerPacket>();
   private cbUpdateCurrentQuestion: ZeroVoidCallback;
   private cbEndGame: ZeroVoidCallback;
   private markTeamSubject: Subject<IMarkTeamPacket>;
@@ -108,7 +112,6 @@ export class GameService implements OnDestroy {
       this.screenId = Uuid.v4();
       this.registerScreen();
       this.initedAsScreen = true;
-      this.answerSetStatePacketSubject = new Subject<IAnswerSetStatePacket>();
     }
   }
 
@@ -191,6 +194,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.SET_MEDIA_VOLUME:
         this.handleMediaVolumePacket(message as ISetMediaVolumePacket);
+        break;
+      case EPacketTypes.GRADE_ANSWER:
+        this.gradeAnswerSubject.next(message as IGradeAnswerPacket);
         break;
       default:
         break;
@@ -372,8 +378,23 @@ export class GameService implements OnDestroy {
   }
 
   public addPoint(team: ITeam): void {
-    team.points += 1;
+    this.addPoints(team, 1);
+  }
+
+  public addPoints(team: ITeam, points: number): void {
+    team.points += points;
     this.sendSetTeamsSetPointsPacket(team);
+  }
+
+  public static getQuestionPoints(question: IQuestion | null | undefined): number {
+    return question?.points ?? 1;
+  }
+
+  /**
+   * Point values are only worth showing when they differ, i.e. some question is not worth the default 1 point
+   */
+  public hasCustomQuestionPoints(): boolean {
+    return (this.questions ?? []).some(question => GameService.getQuestionPoints(question) !== 1);
   }
 
   public removePoint(team: ITeam): void {
@@ -546,16 +567,17 @@ export class GameService implements OnDestroy {
     return this.initedAsScreen && !this.initedAsMaster;
   }
 
+  /**
+   * Screens get every change of points; the master only those the server makes itself, when grading an answer
+   */
   private handleTeamSetPointsPacket(packet: ITeamSetPointsPacket): void {
-    if (this.isUsedAsScreen()) {
-      const team: ITeam = this.findTeam(packet.teamId);
-      if (team != null) {
-        team.points = packet.points;
-      }
+    const team: ITeam = this.findTeam(packet.teamId);
+    if (team != null) {
+      team.points = packet.points;
     }
   }
 
-  private findTeam(teamId: string): ITeam {
+  public findTeam(teamId: string): ITeam {
     for (const team of this.teams) {
       if (teamId === team.teamId) {
         return team;
@@ -563,11 +585,23 @@ export class GameService implements OnDestroy {
     }
   }
 
+  /**
+   * Screens get every change of the answers; the master only the correct answers that grading reveals
+   */
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
-    if (this.isUsedAsScreen()) {
-      GameStateHelper.applyAnswerState(this.currentGameState, packet);
-      this.answerSetStatePacketSubject.next(packet);
-    }
+    GameStateHelper.applyAnswerState(this.currentGameState, packet);
+    this.answerSetStatePacketSubject.next(packet);
+  }
+
+  /**
+   * Grades the answer of the team that buzzed; the server awards the points, see IGradeAnswerPacket
+   */
+  public gradeAnswer(teamId: string, result: EGradeResults, revealCorrectAnswers: boolean): void {
+    this.webSocketService.send<IGradeAnswerPacket>(PacketHelper.makeGradeAnswerPacket(teamId, result, revealCorrectAnswers));
+  }
+
+  public observeGradeAnswerPackets(): Observable<IGradeAnswerPacket> {
+    return this.gradeAnswerSubject.asObservable();
   }
 
   private handleSetQuestionPacket(packet: ISetQuestionPacket): void {

@@ -1,6 +1,11 @@
 @if (isQuestionExisting()) {
   <mat-card-header>
-    <mat-card-title>Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}</mat-card-title>
+    <mat-card-title>
+      Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}
+      @if (getPointsLabel(); as pointsLabel) {
+        <span class="question-points">{{pointsLabel}}</span>
+      }
+    </mat-card-title>
   </mat-card-header>
   <mat-card-content>
     @if (isMaster) {
@@ -41,7 +46,7 @@
           </button>
         }
         @if (showAnswers || (isMaster && question.show)) {
-          <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers">
+          <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong">
             @for (answer of getAnswers(); track answer; let i = $index) {
               <div class="answer-cell">
                 <button id="button{{i}}" mat-raised-button

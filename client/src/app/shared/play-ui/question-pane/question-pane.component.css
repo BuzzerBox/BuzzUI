@@ -9,6 +9,18 @@ mat-card-header {
   font-size: xxx-large;
 }
 
+.question-points {
+  display: inline-block;
+  margin-left: 0.5em;
+  padding: 0.1em 0.5em;
+  border-radius: 1em;
+  background-color: #ffc107;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 0.7em;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 mat-card-content {
   /* xx-large on big screens, smaller on small ones so everything fits without scrolling */
   font-size: clamp(16px, 3vh, 32px);
@@ -62,6 +74,11 @@ mat-card-content {
 
 .correct {
   background-color: forestgreen !important;
+}
+
+/* after a wrong answer, all answers turn red for a moment (the buttons fade in and out with their transition) */
+.answer-grid.flash-wrong .answer-cell button {
+  background-color: orangered !important;
 }
 
 

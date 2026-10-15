@@ -33,6 +33,17 @@ export class TeamCardComponent implements OnInit, OnDestroy {
     this.game.removePoint(this.team);
   }
 
+  /**
+   * What the current question is worth
+   */
+  public getQuestionPoints(): number {
+    return GameService.getQuestionPoints(this.game.getCurrentQuestion());
+  }
+
+  public addQuestionPoints(): void {
+    this.game.addPoints(this.team, this.getQuestionPoints());
+  }
+
   public getName(): string {
     return this.team.name;
   }

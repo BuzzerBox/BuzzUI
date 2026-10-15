@@ -117,7 +117,8 @@ export class SetupComponent implements OnInit {
         slides: q.mediaDetails?.slides ?? null,
         answers: answersValue,
         answersVisible: showAnswers,
-        notes: q.notes ?? ''
+        notes: q.notes ?? '',
+        points: GameService.getQuestionPoints(q)
       });
       this.questionsFormGroup.setControl(fgn, questionFormGroup);
       if (!showAnswers) {
@@ -248,7 +249,9 @@ export class SetupComponent implements OnInit {
         answer3: this.createFormGroupForAnswer()
       }, {validators: this.atLeastOneCorrectAnswer()}),
       answersVisible: new UntypedFormControl(true),
-      notes: new UntypedFormControl('')
+      notes: new UntypedFormControl(''),
+      // whole points, at least 1
+      points: new UntypedFormControl(1, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)])
     });
   }
 
@@ -357,6 +360,11 @@ export class SetupComponent implements OnInit {
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
       };
+      const points = Number(questionFormGroup.get('points').value);
+      // the default of 1 point is left out, like in savegames from before points could be set
+      if (points !== 1) {
+        question.points = points;
+      }
       const notes: string = (questionFormGroup.get('notes').value ?? '').toString().trim();
       if (notes) {
         question.notes = notes;
@@ -457,6 +465,14 @@ export class SetupComponent implements OnInit {
       questionFormGroup.get('mediaSrc').setValue('');
       questionFormGroup.get('slides').setValue(null);
     }
+  }
+
+  /**
+   * The points of the question if they differ from the default 1, for the panel header; otherwise null
+   */
+  public getCustomPoints(questionFormGroupName: string): number | null {
+    const points = Number(this.questionsFormGroup.controls[questionFormGroupName]?.get('points').value);
+    return Number.isFinite(points) && points !== 1 ? points : null;
   }
 
   public isSlideshow(questionFormGroupName: string): boolean {

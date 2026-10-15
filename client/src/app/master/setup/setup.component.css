@@ -77,3 +77,13 @@
   flex: 1 1 auto;
   max-width: 40em;
 }
+
+.points {
+  width: 6em;
+  margin: 0 1em;
+}
+
+.panel-header-points {
+  margin-right: 0.5em;
+  font-weight: 500;
+}

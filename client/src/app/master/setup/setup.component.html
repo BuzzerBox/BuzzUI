@@ -55,6 +55,9 @@
               </mat-panel-title>
               <mat-panel-description>
                 <span class="panel-header-icons">
+                  @if (getCustomPoints(questionFormGroupName) !== null) {
+                    <span class="panel-header-points">{{getCustomPoints(questionFormGroupName)}} Punkte</span>
+                  }
                   @if (questionsFormGroup.controls[questionFormGroupName] && questionsFormGroup.controls[questionFormGroupName].valid) {
                     <mat-icon class="green-icon">check_circle</mat-icon>
                   }
@@ -68,6 +71,11 @@
               <mat-form-field >
                 <mat-label>Fragetext</mat-label>
                 <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
+              </mat-form-field>
+              <mat-form-field class="points">
+                <mat-label>Punkte</mat-label>
+                <input matInput type="number" min="1" step="1" formControlName="points">
+                <mat-error>Ganze Zahl ab 1</mat-error>
               </mat-form-field>
               <mat-checkbox formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">Zeige Antwortmöglichkeiten</mat-checkbox>
               <!--          <button mat-raised-button>Frage entfernen</button>-->

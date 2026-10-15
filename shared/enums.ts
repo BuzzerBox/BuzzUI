@@ -4,6 +4,7 @@ import {EKeyBinds} from './enums/EKeyBinds';
 import {EAnswerStates} from './enums/EAnswerStates';
 import {EMediaStates} from './enums/EMediaStates';
 import {EQuestionAnswerStates} from './enums/EQuestionAnswerStates';
+import {EGradeResults} from './enums/EGradeResults';
 
 export {
 	EPacketTypes,
@@ -11,5 +12,6 @@ export {
 	EKeyBinds,
 	EAnswerStates,
 	EMediaStates,
-	EQuestionAnswerStates
+	EQuestionAnswerStates,
+	EGradeResults
 }
