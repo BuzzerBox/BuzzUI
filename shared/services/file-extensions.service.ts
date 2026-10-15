@@ -1,6 +1,6 @@
 export class FileExtensionsService {
     private static imageExtenions: string[] = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.avif'];
-    private static videoExtensions: string[] = ['.mp4'];
+    private static videoExtensions: string[] = ['.mp4', '.m4v', '.webm'];
     private static audioExtensions: string[] = ['.mp3', '.wav', '.ogg', '.m4a'];
 
     public static getImageExtensions(): string[] {
