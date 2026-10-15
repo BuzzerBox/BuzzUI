@@ -1,0 +1,26 @@
+# Test environment: the latest main, built by .github/workflows/test-images.yml.
+#
+# On the test host (Docker with the compose plugin):
+#   1. Copy this directory there and put sample media into ./media
+#   2. docker compose up -d
+#   3. Run ./update.sh from cron to deploy new images, e.g. every 5 minutes:
+#        */5 * * * * cd /opt/buzzerbox-test && ./update.sh >> update.log 2>&1
+#
+# Open http://<test-host>/ in a browser. Ports 4201 (WebSocket) and 4202 (media)
+# must be reachable too, since the browser talks to the server directly.
+# Buzzers are the number keys on a screen (/screen/), Q is the soft release.
+services:
+  server:
+    image: ghcr.io/buzzerbox/buzzui-server:test
+    restart: unless-stopped
+    ports:
+      - "4201:4201"
+      - "4202:4202"
+    volumes:
+      - ./media:/srv/media:ro
+
+  client:
+    image: ghcr.io/buzzerbox/buzzui-client:test
+    restart: unless-stopped
+    ports:
+      - "80:80"
