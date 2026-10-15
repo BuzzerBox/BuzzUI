@@ -48,6 +48,22 @@ installs one only after a big warning that the user has to confirm; over SSH it 
 runs as root, so this lets anyone who can open the master page install any software on the box. To turn it off on a
 box, create the file `/etc/buzzerbox/require-signed-updates`.
 
+#### Built by GitHub
+The *Update bundle* workflow (`.github/workflows/update-bundle.yml`) builds the signed bundle for every tag `v<version>`
+and attaches it to the tag's GitHub release, next to the SD card image. To release:
+1. Raise the version in `version.json` and merge it into `main`.
+2. Tag the commit and push the tag: `git tag v1.2.0 && git push origin v1.2.0`. The tag has to match `version.json`.
+
+Pull requests check that a bundle builds, signed with a throwaway key that no box accepts. The workflow refuses to sign
+a bundle if the key does not belong to `install/.assets/update-public-key.pem`.
+
+The private key lives in the secret `BUZZERBOX_UPDATE_SIGNING_KEY` of the GitHub environment `update-signing`. Set it
+up once under *Settings → Environments*: create `update-signing`, limit its deployment branches and tags to the tag
+pattern `v*` and add the secret with the contents of the private key file, e.g.
+`gh secret set BUZZERBOX_UPDATE_SIGNING_KEY --env update-signing < <private-key.pem>`. Anyone who can push a `v*` tag
+can then sign a bundle, so restrict who may create those tags (a tag ruleset), or add required reviewers to the
+environment so that each signing waits for an approval.
+
 ### Boxes installed before USB updates
 Older installations run the server from the desktop autostart and have no update helper. Copy the `install/` directory
 (with `.assets/update-public-key.pem`) onto the box and run `sudo ./enable-usb-updates.sh` once. It moves the installed
