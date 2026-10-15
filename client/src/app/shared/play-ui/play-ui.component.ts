@@ -1,4 +1,4 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostBinding, Input, OnDestroy, OnInit} from '@angular/core';
 import {GameService} from '../../services/game.service';
 import {
   ITeam,
@@ -19,6 +19,18 @@ import {ConfigService} from '../../services/config.service';
 })
 export class PlayUiComponent implements OnInit, OnDestroy {
   @Input() isMaster = false;
+
+  // the screens scale everything with their size, see the stylesheet
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
+  }
+
+  /**
+   * Rows of team cards on each side of the screens; at least 4, so a few teams don't get huge cards
+   */
+  @HostBinding('style.--team-rows') get teamRows(): number {
+    return Math.max(4, Math.ceil((this.getTeams()?.length ?? 0) / 2));
+  }
 
   public currentQuestion: IQuestion;
   public isGameOver = false;

@@ -23,6 +23,7 @@ import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
 import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.component';
 import {MatIconModule} from '@angular/material/icon';
 import {MatSliderModule} from '@angular/material/slider';
+import {FitTextDirective} from './fit-text.directive';
 
 @NgModule({
     declarations: [
@@ -35,7 +36,8 @@ import {MatSliderModule} from '@angular/material/slider';
         ScoreBoardComponent,
         BuzzerLockComponent,
         MediaQuestionComponent,
-        MediaRemoteComponent
+        MediaRemoteComponent,
+        FitTextDirective
     ],
     imports: [
         CommonModule,

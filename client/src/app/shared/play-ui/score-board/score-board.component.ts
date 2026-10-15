@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, HostBinding, Input, OnInit} from '@angular/core';
 import {GameService} from '../../../services/game.service';
 import {ITeam} from '../../../../../../shared/shared';
 
@@ -10,6 +10,11 @@ import {ITeam} from '../../../../../../shared/shared';
 })
 export class ScoreBoardComponent implements OnInit {
   @Input() isMaster = false;
+
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
+  }
+
   public sortedTeams: ITeam[] = [];
 
   constructor(private game: GameService) { }

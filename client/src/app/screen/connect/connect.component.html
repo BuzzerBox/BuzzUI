@@ -1,10 +1,10 @@
 <div class="container">
-  <p class="center-center">
+  <p class="center-center message">
     @if (isWebsocketConnected) {
       Warte auf Spielaufbau!
     } @else {
       Warte auf Verbindung zu Server!
     }
   </p>
-  <mat-spinner diameter="400" class="center-center"></mat-spinner>
+  <mat-spinner [diameter]="spinnerDiameter" class="center-center"></mat-spinner>
 </div>

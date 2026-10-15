@@ -1,4 +1,4 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+import {Component, HostBinding, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
 import {
   EAnswerStates,
@@ -38,6 +38,10 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isMaster = false;
   @Input() question: IQuestion;
 
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
+  }
+
   private loggedInAnswers: IAnswer[];
   private activatedAnswers: IAnswer[];
   private correctAnswersThatAreLeft: number;
@@ -58,6 +62,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   // the states these were derived from, to tell the master why something is hidden
   private questionState: EQuestionAnswerStates;
   private answerState: EQuestionAnswerStates;
+  // whether the screens show the question's media, see isMediaShown()
+  private mediaState: EMediaStates;
 
   constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar, private dialog: MatDialog) { }
 
@@ -78,12 +84,14 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
       this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
       this.questionState = this.question.initialConfig.questionState;
+      this.mediaState = this.question.initialConfig.mediaState;
       this.answerState = this.question.initialConfig.answerState;
     }
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
         this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
         this.questionState = packet.mediaQuestionState.questionState;
+        this.mediaState = packet.mediaQuestionState.mediaState;
         this.answerState = packet.mediaQuestionState.answerState;
         switch (packet.mediaQuestionState.answerState) {
           case EQuestionAnswerStates.SHOWN:
@@ -207,6 +215,18 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       return 'Auf der Anzeige verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(media.fileSrc) ? 'Audio' : 'Video');
     }
     return 'Auf der Anzeige verborgen';
+  }
+
+  /**
+   * Whether the screens show the media, as decided in MediaQuestionComponent: while it plays, and a slideshow also
+   * once it is complete. The screens then show the answers below the media.
+   */
+  public isMediaShown(): boolean {
+    if (!this.question?.mediaDetails) {
+      return false;
+    }
+    return this.mediaState === EMediaStates.PLAYING || this.mediaState === EMediaStates.RESET
+      || (this.mediaState === EMediaStates.FINISHED && MediaHelper.isSlideshow(this.question.mediaDetails));
   }
 
   public getAnswers(): IAnswer[] {

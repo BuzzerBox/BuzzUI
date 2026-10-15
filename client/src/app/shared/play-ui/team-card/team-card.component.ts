@@ -1,4 +1,4 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostBinding, Input, OnDestroy, OnInit} from '@angular/core';
 import {ITeam, IMarkTeamPacket} from '../../../../../../shared/shared';
 import {GameService} from '../../../services/game.service';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
@@ -13,6 +13,10 @@ import {Subscription} from 'rxjs';
 export class TeamCardComponent implements OnInit, OnDestroy {
   @Input() team: ITeam;
   @Input() isMaster = false;
+
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
+  }
 
   private markTeamPacketsSubscription: Subscription;
   public isMarked = false;

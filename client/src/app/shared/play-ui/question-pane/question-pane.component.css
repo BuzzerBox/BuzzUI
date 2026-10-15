@@ -170,3 +170,71 @@ button.screen-visibility:disabled {
 .notes-text {
   white-space: pre-wrap;
 }
+
+/*
+ * Screens: sized in --u (see the play UI). The question text and the answers use the largest size that fits their
+ * box (appFitText), so long texts get smaller instead of being cut off.
+ */
+:host(.screen) mat-card-header {
+  padding: calc(var(--u) * 1.2) calc(var(--u) * 1.6) 0;
+}
+
+:host(.screen) mat-card-title {
+  font-size: calc(var(--u) * 3.2);
+  line-height: 1.2;
+}
+
+:host(.screen) mat-card-content {
+  font-size: calc(var(--u) * 5);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1.6) calc(var(--u) * 1.6);
+}
+
+:host(.screen) .question-text {
+  flex: 0 1 auto;
+  max-height: 30%;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+/* without answer options, the question has more room */
+:host(.screen) .question-text.without-answers {
+  max-height: 60%;
+}
+
+/* the answers fill the height that is left instead of keeping a fixed shape */
+:host(.screen) .answer-grid {
+  flex: 1 1 0;
+  aspect-ratio: auto;
+  min-height: 0;
+  margin-top: var(--u);
+}
+
+/* the largest size; longer answers get smaller to fit their tile */
+:host(.screen) .answer-cell button {
+  font-size: max(12px, min(10cqh, 6cqw)) !important;
+}
+
+/* while the media is shown, the answers are in a band below it instead of on top of it */
+:host(.screen) .videooptions.below-media {
+  grid-template-rows: minmax(0, 1fr) auto;
+  row-gap: var(--u);
+}
+
+:host(.screen) .videooptions.below-media .bottom {
+  grid-area: 1 / 1;
+}
+
+:host(.screen) .videooptions.below-media .top {
+  grid-area: 2 / 1;
+}
+
+:host(.screen) .videooptions.below-media .answer-grid {
+  flex: none;
+  height: calc(var(--u) * 28);
+  margin-top: 0;
+}
+
+/* the tiles are lower here, so their text is sized to a larger share of the band's height */
+:host(.screen) .videooptions.below-media .answer-cell button {
+  font-size: max(12px, min(18cqh, 6cqw)) !important;
+}

@@ -20,14 +20,15 @@
       </button>
     }
     @if (showQuestion || isMaster) {
-      <div [class.hidden-on-screen-content]="!showQuestion">{{getQuestionText()}}</div>
+      <div class="question-text" [class.without-answers]="!question.show" [class.hidden-on-screen-content]="!showQuestion"
+        [appFitText]="!isMaster">{{getQuestionText()}}</div>
     } @else {
-      ???
+      <div class="question-text">???</div>
     }
     @if (isMaster && question.mediaDetails) {
       <app-media-remote [question]="question"></app-media-remote>
     }
-    <div class="videooptions">
+    <div class="videooptions" [class.below-media]="isMediaShown()">
       @if (question.mediaDetails && !isMaster) {
         <div class="bottom">
           <app-media-question [media]="question.mediaDetails"></app-media-question>
@@ -53,7 +54,7 @@
                   [class.logged-in]="isLoggedIn(answer)"
                   [class.correct]="isActivated(answer) && answer.isCorrect"
                   [class.wrong]="isActivated(answer) && !answer.isCorrect"
-                  [disabled]="!showAnswers"
+                  [disabled]="!showAnswers" [appFitText]="!isMaster"
                   (click)="onClickAnswer(answer, $event.currentTarget)">
                   {{answer.text}}
                 </button>
