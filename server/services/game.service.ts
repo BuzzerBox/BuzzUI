@@ -4,6 +4,7 @@ import {Observable, Subscription} from "rxjs";
 import {
     EAnswerStates,
     EGameStates,
+    GameStateHelper,
     EMediaStates,
     EPacketTypes,
     EQuestionAnswerStates,
@@ -58,10 +59,12 @@ export class GameService {
     private currentStateInAutomaton: EGameStates;
     private previousStateInAutomaton: EGameStates;
     private buzzerConfig: IBuzzer[];
-    private teams: ITeam[];
-    private questions: IQuestion[];
+    private teams: ITeam[] = [];
+    private questions: IQuestion[] = [];
     private currentGameState: IGameState;
     private keypressLocked = false;
+    // whether the master that rejoined left a game that was already running, so starting it again continues it
+    private resumesRunningGame = false;
     private keyOrByteCodesInUse: string[] = [];
     private ignoredKeypresses: string[] = [];
     // TODO: maybe rename it to lastBuzzerPressed to reflect an upcoming change in behavior for this field
@@ -73,6 +76,7 @@ export class GameService {
             throw new Error(this.configInvalidReason);
         }
         this.webSocketConnectionsScreens = new Map<string, WebSocketConnection>();
+        this.currentGameState = this.makeInitialGameState();
         this.newConnectionEstablished$ = WebSocketService.get().start();
         this.newConnectionEstablishedSubscription = this.newConnectionEstablished$.subscribe(this.onNewConnection.bind(this))
         // When this is instantiated, the game is looking for a master
@@ -103,6 +107,15 @@ export class GameService {
             // the "sub" will be unsubscribed in the onRegisterMasterPacket
             if (packet.packetType === EPacketTypes.REGISTER_MASTER) {
                 this.onRegisterMasterPacket(con, sub, packet as IRegisterMasterPacket);
+            } else if (packet.packetType === EPacketTypes.REGISTER_SCREEN) {
+                this.onRegisterScreenPacket(con, sub, packet as IRegisterScreenPacket);
+            } else  if (packet.packetType === EPacketTypes.KEYPRESS_ON_SCREEN) {
+                this.onKeypressOnScreenPacket(packet as IKeypressOnScreenPacket);
+            } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
+                // screens send this as well, when the media they play has ended
+                this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
+            } else if (con !== this.webSocketConnectionMaster) {
+                LoggerService.warn(`Ignoring packet ${EPacketTypes[packet.packetType]} since only the master may send it`);
             } else if (packet.packetType === EPacketTypes.SETUP_GAME) {
                 this.onSetupGamePackage(packet as ISetupPacket);
             } else if (packet.packetType === EPacketTypes.START_GAME) {
@@ -115,18 +128,12 @@ export class GameService {
                 this.onSetQuestionPacket(packet as ISetQuestionPacket);
             } else if (packet.packetType === EPacketTypes.END_GAME) {
                 this.onEndGamePacket(packet as IEndGamePacket);
-            } else if (packet.packetType === EPacketTypes.REGISTER_SCREEN) {
-                this.onRegisterScreenPacket(con, sub, packet as IRegisterScreenPacket);
             } else if (packet.packetType === EPacketTypes.RESET_SERVER) {
                 this.onResetServerPacket(packet as IResetServerPacket);
-            } else  if (packet.packetType === EPacketTypes.KEYPRESS_ON_SCREEN) {
-                this.onKeypressOnScreenPacket(packet as IKeypressOnScreenPacket);
             } else if (packet.packetType === EPacketTypes.MARK_TEAM) {
                 this.onMarkTeamPacket(packet as IMarkTeamPacket);
             } else if (packet.packetType === EPacketTypes.SET_BUZZER_LOCK) {
                 this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
-            } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
-                this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
             } else if (packet.packetType === EPacketTypes.SET_MEDIA_VOLUME) {
                 this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
             }
@@ -142,6 +149,8 @@ export class GameService {
             this.resetServerData();
             this.setNewState(EGameStates.WAITING_FOR_MASTER);
             this.previousStateInAutomaton = null;
+            // screens still show the scores of the ended game; reloading takes them back to waiting for the next one
+            this.sendToAllScreens<IResetServerPacket>({packetType: EPacketTypes.RESET_SERVER});
         } else {
             this.setNewState(EGameStates.LOST_MASTER);
         }
@@ -204,9 +213,12 @@ export class GameService {
             this.questions = packet.questions;
             // a new game is set up without a game state; a loaded save may lack fields added since it was made
             this.currentGameState = {...this.makeInitialGameState(), ...packet.currentGameState};
+            // a savegame can't lock the buzzers, only a buzzer press can
+            this.currentGameState.setBuzzerLock = this.keypressLocked;
+            this.resumesRunningGame = false;
             this.setNewState(EGameStates.WAITING_FOR_START);
         }
-        this.webSocketConnectionMaster.send<IResponsePacket>(responsePacket);
+        this.sendToMaster<IResponsePacket>(responsePacket);
 
         this.sendToAllScreens<IDataForScreenPacket>(this.makeInitDataForScreen())
     }
@@ -216,16 +228,20 @@ export class GameService {
             this.webSocketConnectionMaster = con;
             // TODO: maybe also allow EGameStates.END as state for this one?
             if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_MASTER) {
-                this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
+                this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
                 this.setNewState(EGameStates.WAITING_FOR_SETUP);
-                this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
+                this.sendToMaster<IPresetupAvailableInfoPacket>({
                     packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
                     availableBuzzers: this.getBuzzerConfig()
                 })
             } else if (this.currentStateInAutomaton === EGameStates.LOST_MASTER) {
                 if (this.previousStateInAutomaton === EGameStates.WAITING_FOR_START || this.previousStateInAutomaton === EGameStates.PLAYING) {
+                    // a master leaving again before restarting keeps resuming the running game
+                    if (this.previousStateInAutomaton === EGameStates.PLAYING) {
+                        this.resumesRunningGame = true;
+                    }
                     this.setNewState(EGameStates.WAITING_FOR_START);
-                    this.webSocketConnectionMaster.send<INewMasterAccepted>({
+                    this.sendToMaster<INewMasterAccepted>({
                         packetType: EPacketTypes.NEW_MASTER_ACCEPTED,
                         serverState: EGameStates.WAITING_FOR_START,
                         teams: this.teams,
@@ -247,11 +263,12 @@ export class GameService {
     private onStartGamePacket(packet: IStartGamePacket): void {
         const isLegal = this.currentStateInAutomaton === EGameStates.WAITING_FOR_START;
         // a master that rejoined a running game restarts it: keep the media state the screens are showing
-        const isRejoin = this.previousStateInAutomaton === EGameStates.LOST_MASTER;
+        const isRejoin = this.resumesRunningGame;
         if (isLegal) {
             this.setNewState(EGameStates.PLAYING);
+            this.resumesRunningGame = false;
         }
-        this.webSocketConnectionMaster.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
+        this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
         if (isLegal && isRejoin && this.currentGameState.mediaQuestionState) {
             this.onUpdateMediaStatePacket(PacketHelper.makeMediaStatePacketFromQuestionState(this.currentGameState.mediaQuestionState));
         } else if (isLegal) {
@@ -283,10 +300,10 @@ export class GameService {
     }
 
     private onAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
-        if (packet.state === EAnswerStates.ACTIVATE) {
-            const p = PacketHelper.makeUnmarkAllTeamsPacket();
-            this.webSocketConnectionMaster.send<IMarkTeamPacket>(p);
-            this.sendToAllScreens<IMarkTeamPacket>(p);
+        GameStateHelper.applyAnswerState(this.currentGameState, packet);
+        // once all correct answers are revealed the question is done, so the buzzers stay locked
+        if (packet.state === EAnswerStates.ACTIVATE && !GameStateHelper.areAllCorrectAnswersActivated(this.currentGameState, this.getCurrentQuestion())) {
+            this.unmarkAllTeams();
             this.setKeypressLocked(false);
             this.releaseHardwareBuzzerLock(true);
             if (this.lastKeyPressed != null) {
@@ -303,6 +320,7 @@ export class GameService {
         if (value >= 0 && value <= this.questions.length - 1) {
             this.currentGameState.currentQuestionNumber = value;
         }
+        GameStateHelper.resetQuestionProgress(this.currentGameState);
         // this.setKeypressLocked(false);
         const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
         this.onSetBuzzerLockPacket(null, lockPacket);
@@ -382,7 +400,7 @@ export class GameService {
 
     private onResetServerPacket(packet: IResetServerPacket): void {
         this.setNewState(EGameStates.WAITING_FOR_SETUP);
-        this.webSocketConnectionMaster.send<IPresetupAvailableInfoPacket>({
+        this.sendToMaster<IPresetupAvailableInfoPacket>({
             packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
             availableBuzzers: this.getBuzzerConfig()
         });
@@ -397,6 +415,7 @@ export class GameService {
         this.releaseHardwareBuzzerLock(true);
         this.ignoredKeypresses = [];
         this.lastKeyPressed = null;
+        this.resumesRunningGame = false;
         this.currentGameState = this.makeInitialGameState();
     }
 
@@ -411,6 +430,7 @@ export class GameService {
             currentQuestionNumber: 0,
             markedTeamIds: [],
             loggedAnswers: [],
+            activatedAnswers: [],
             setBuzzerLock: this.keypressLocked
         };
     }
@@ -419,9 +439,7 @@ export class GameService {
     private onKeypressOnScreenPacket(packet: IKeypressOnScreenPacket): void {
         if (packet.keyCode === config.softReleaseKey) {
             this.releaseHardwareBuzzerLock(true);
-            const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
-            this.webSocketConnectionMaster.send<IMarkTeamPacket>(unmarkTeamsPacket);
-            this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
+            this.unmarkAllTeams();
         } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
             const team: ITeam = this.getTeamForKeyPressCode(packet.keyCode);
             if (team == null) {
@@ -440,6 +458,23 @@ export class GameService {
 
     private setKeypressLocked(locked: boolean): void {
         this.keypressLocked = locked;
+        this.currentGameState.setBuzzerLock = locked;
+    }
+
+    private unmarkAllTeams(): void {
+        const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
+        GameStateHelper.applyMarkTeam(this.currentGameState, unmarkTeamsPacket);
+        this.sendToMaster<IMarkTeamPacket>(unmarkTeamsPacket);
+        this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
+    }
+
+    /**
+     * The master may be gone (e.g. while it reconnects), then there is nobody to tell
+     */
+    private sendToMaster<T extends IGamePacket>(packet: T): void {
+        if (this.webSocketConnectionMaster != null) {
+            this.webSocketConnectionMaster.send<T>(packet);
+        }
     }
 
     private isKeypressLocked(): boolean {
@@ -500,13 +535,11 @@ export class GameService {
     }
 
     private getTeamForByteOrKeyPressCode(code: string, mode: LOOKUP_TEAM_CODE): ITeam {
-        console.log("keycodes", this.keyOrByteCodesInUse, code)
         if (!this.keyOrByteCodesInUse.includes(code)) {
             return null;
         }
         let b: IBuzzer;
         for (const buzzer of this.getBuzzerConfig()) {
-            console.log("buzzer", buzzer)
             if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
                 if (buzzer.byteBind === code) {
                     b = buzzer;
@@ -520,11 +553,9 @@ export class GameService {
             }
         }
         if (b == null) {
-            console.log("b null")
             return null;
         }
         for (const team of this.teams) {
-            console.log("team", b.id, team.buzzerId)
             if (b.id === team.buzzerId) {
                 if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
                     LoggerService.log("found team " + team.name + " to match keypress " + code);
@@ -543,8 +574,8 @@ export class GameService {
     }
 
     private onMarkTeamPacket(packet: IMarkTeamPacket): void {
-        // we conclude that only the master can send such a package
-        this.webSocketConnectionMaster.send<IMarkTeamPacket>(packet);
+        GameStateHelper.applyMarkTeam(this.currentGameState, packet);
+        this.sendToMaster<IMarkTeamPacket>(packet);
         this.sendToAllScreens<IMarkTeamPacket>(packet);
     }
 
@@ -567,9 +598,7 @@ export class GameService {
     private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendSerial: boolean = true): void {
         this.setKeypressLocked(packet.setLock);
         // it is very likely, that the master already reloaded the page, thus this is null
-        if (this.webSocketConnectionMaster != null) {
-            this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(packet);
-        }
+        this.sendToMaster<ISetBuzzerLockPacket>(packet);
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
         // release the lock via i2c if necessary
         if (sendSerial && !packet.setLock) {
@@ -580,22 +609,14 @@ export class GameService {
 
     private onUpdateMediaStatePacket(packet: IUpdateMediaStatePacket): void {
         // remember the state so screens and masters that (re)connect get what is currently shown
-        if (this.currentGameState != null) {
-            this.currentGameState.mediaQuestionState = packet.mediaQuestionState;
-        }
-        if (this.webSocketConnectionMaster != null) {
-            this.webSocketConnectionMaster.send<IUpdateMediaStatePacket>(packet);
-        }
+        this.currentGameState.mediaQuestionState = packet.mediaQuestionState;
+        this.sendToMaster<IUpdateMediaStatePacket>(packet);
         this.sendToAllScreens<IUpdateMediaStatePacket>(packet);
     }
 
     private onSetMediaVolumePacket(packet: ISetMediaVolumePacket): void {
-        if (this.currentGameState != null) {
-            this.currentGameState.mediaVolume = packet.mediaVolume;
-        }
-        if (this.webSocketConnectionMaster != null) {
-            this.webSocketConnectionMaster.send<ISetMediaVolumePacket>(packet);
-        }
+        this.currentGameState.mediaVolume = packet.mediaVolume;
+        this.sendToMaster<ISetMediaVolumePacket>(packet);
         this.sendToAllScreens<ISetMediaVolumePacket>(packet);
     }
 
@@ -629,8 +650,8 @@ export class GameService {
     private handlePressedBuzzer(buzzerNumber: number): void {
         const lockPacket: ISetBuzzerLockPacket =  PacketHelper.makeBuzzerLockPacket(true);
         const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(this.teams[buzzerNumber].teamId, true);
-        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(lockPacket);
-        this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+        this.sendToMaster<ISetBuzzerLockPacket>(lockPacket);
+        this.sendToMaster<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
     }
@@ -638,26 +659,29 @@ export class GameService {
     private handleIdleSituation(): void {
         const lockPacket: ISetBuzzerLockPacket =  PacketHelper.makeBuzzerLockPacket(false);
         const markTeamPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
-        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(lockPacket);
-        this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+        this.sendToMaster<ISetBuzzerLockPacket>(lockPacket);
+        this.sendToMaster<IMarkTeamPacket>(markTeamPacket);
         this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
         this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
     }
 
     private onSerialDataIn(data: Buffer): void {
-        console.log("got new data on serial: ", data);
+        // one chunk of data can hold several bytes, e.g. when two buzzers were pressed right after each other
+        for (const byte of data) {
+            this.onSerialByteIn(byte);
+        }
+    }
+
+    private onSerialByteIn(byte: number): void {
         const c: typeof config = ConfigService.get();
-        const input: number = toInteger(data.toString('hex'));
-        console.log("inputnumber", input);
+        // the config writes the bytes as their hex digits, e.g. 0x31 as 31
+        const input: number = toInteger(byte.toString(16).padStart(2, '0'));
         if (input === c.softReleaseByte) {
-            const unmarkTeamsPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
-            this.webSocketConnectionMaster.send<IMarkTeamPacket>(unmarkTeamsPacket);
-            this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
+            this.unmarkAllTeams();
             this.setKeypressLocked(false);
             this.releaseHardwareBuzzerLock(false);
         } else {
             const inputAsString = input.toString(10);
-            console.log("inputAsString", inputAsString);
             if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(inputAsString)) {
                 const team: ITeam = this.getTeamForByteCode(inputAsString);
                 if (team == null) {
@@ -673,9 +697,10 @@ export class GameService {
         ObjectHelper.ensureNotNull(team);
         this.setKeypressLocked(true);
         const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
-        this.webSocketConnectionMaster.send<IMarkTeamPacket>(markTeamPacket);
+        GameStateHelper.applyMarkTeam(this.currentGameState, markTeamPacket);
+        this.sendToMaster<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
-        this.webSocketConnectionMaster.send<ISetBuzzerLockPacket>(buzzerLockPacket)
+        this.sendToMaster<ISetBuzzerLockPacket>(buzzerLockPacket)
         // only pause the media: keep question/answer visibility as it is, but leave fullscreen so the screens show who buzzed
         const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacketFromQuestionState({
             ...this.currentGameState.mediaQuestionState,

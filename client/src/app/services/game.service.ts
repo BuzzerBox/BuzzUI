@@ -6,6 +6,7 @@ import {
   EMediaStates,
   EPacketTypes,
   EQuestionAnswerStates,
+  GameStateHelper,
   IAnswer,
   IAnswerSetStatePacket,
   IDataForScreenPacket,
@@ -304,6 +305,7 @@ export class GameService implements OnDestroy {
         this.currentGameState = {
           currentQuestionNumber: 0,
           loggedAnswers: [],
+          activatedAnswers: [],
           markedTeamIds: [],
           // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
           setBuzzerLock: false,
@@ -406,23 +408,30 @@ export class GameService implements OnDestroy {
    * This one is just to mark an answer as given, without revealing if it is true
    */
   public logInAnswer(answer: IAnswer): void {
-    this.webSocketService.send<IAnswerSetStatePacket>(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_IN, answer));
+    this.sendAnswerSetStatePacket(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_IN, answer));
   }
 
   /**
    * This one activates a given answer, revealing if it was true
    */
   public activateAnswer(answer: IAnswer): void {
-    this.webSocketService.send<IAnswerSetStatePacket>(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer));
+    this.sendAnswerSetStatePacket(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer));
   }
 
   public logOutAnswer(answer: IAnswer): void {
-    this.webSocketService.send<IAnswerSetStatePacket>(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_OUT, answer));
+    this.sendAnswerSetStatePacket(PacketHelper.makeAnswerSetSatePacket(EAnswerStates.LOG_OUT, answer));
+  }
+
+  private sendAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
+    // the server does not send these back to the master, so keep track of them here
+    GameStateHelper.applyAnswerState(this.currentGameState, packet);
+    this.webSocketService.send<IAnswerSetStatePacket>(packet);
   }
 
   public getPreviousQuestion(): IQuestion {
     if (this.hasPreviousQuestion()) {
       this.currentGameState.currentQuestionNumber--;
+      GameStateHelper.resetQuestionProgress(this.currentGameState);
       this.sendUnmarkAllTeamsPacket();
       this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
@@ -432,6 +441,7 @@ export class GameService implements OnDestroy {
   public getNextQuestion(): IQuestion {
     if (this.hasNextQuestion()) {
       this.currentGameState.currentQuestionNumber++;
+      GameStateHelper.resetQuestionProgress(this.currentGameState);
       this.sendUnmarkAllTeamsPacket();
       this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
@@ -520,6 +530,7 @@ export class GameService implements OnDestroy {
 
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
     if (this.isUsedAsScreen()) {
+      GameStateHelper.applyAnswerState(this.currentGameState, packet);
       this.answerSetStatePacketSubject.next(packet);
     }
   }
@@ -527,6 +538,7 @@ export class GameService implements OnDestroy {
   private handleSetQuestionPacket(packet: ISetQuestionPacket): void {
     if (this.isUsedAsScreen()) {
       this.currentGameState.currentQuestionNumber = packet.set;
+      GameStateHelper.resetQuestionProgress(this.currentGameState);
       if (this.cbUpdateCurrentQuestion != null) {
         this.cbUpdateCurrentQuestion();
       }
@@ -571,6 +583,9 @@ export class GameService implements OnDestroy {
   }
 
   private handleMarkTeamPacket(packet: IMarkTeamPacket): void {
+    if (this.currentGameState != null) {
+      GameStateHelper.applyMarkTeam(this.currentGameState, packet);
+    }
     this.markTeamSubject.next(packet);
   }
 
@@ -599,6 +614,9 @@ export class GameService implements OnDestroy {
   }
 
   private handleSetBuzzerLockPacket(packet: ISetBuzzerLockPacket): void {
+    if (this.currentGameState != null) {
+      this.currentGameState.setBuzzerLock = packet.setLock;
+    }
     if (this.setBuzzerLockSubject != null) {
       this.setBuzzerLockSubject.next(packet);
     }

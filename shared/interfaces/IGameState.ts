@@ -20,7 +20,8 @@ export interface IGameState {
     currentQuestionNumber: number;
     markedTeamIds: string[];
     loggedAnswers: IAnswer[];
-    activatedAnswer?: IAnswer;
+    // the answers of the current question that were revealed; missing in savegames from before it was tracked
+    activatedAnswers?: IAnswer[];
     setBuzzerLock: boolean;
     mediaQuestionState: IMediaQuestionState;
     mediaVolume: IMediaVolume;

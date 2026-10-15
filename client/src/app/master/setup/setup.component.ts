@@ -218,7 +218,7 @@ export class SetupComponent implements OnInit {
       this.importedGameState = {
         ...this.importedGameState,
         loggedAnswers: [],
-        activatedAnswer: undefined,
+        activatedAnswers: [],
         markedTeamIds: [],
         setBuzzerLock: false,
         mediaQuestionState: PacketHelper.getDefaultMediaState()

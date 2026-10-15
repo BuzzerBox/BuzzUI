@@ -5,6 +5,7 @@ import {
   EMediaStates,
   EQuestionAnswerStates,
   FileExtensionsService,
+  GameStateHelper,
   MediaHelper,
   IAnswer,
   IAnswerSetStatePacket,
@@ -71,6 +72,32 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         }
       }
     );
+    this.restoreQuestionProgress();
+  }
+
+  /**
+   * After a reload or a master rejoining, show the answers that were already logged in or revealed for this question
+   */
+  private restoreQuestionProgress(): void {
+    const gameState = this.game.getGameStateData();
+    if (this.question == null || this.question !== this.game.getCurrentQuestion()) {
+      return;
+    }
+    for (const loggedAnswer of gameState?.loggedAnswers ?? []) {
+      const answer = this.findAnswer(loggedAnswer);
+      if (answer != null && !this.loggedInAnswers.includes(answer)) {
+        this.loggedInAnswers.push(answer);
+      }
+    }
+    for (const activatedAnswer of gameState?.activatedAnswers ?? []) {
+      const answer = this.findAnswer(activatedAnswer);
+      if (answer != null && !this.activatedAnswers.includes(answer)) {
+        this.activatedAnswers.push(answer);
+        if (answer.isCorrect) {
+          this.correctAnswersThatAreLeft--;
+        }
+      }
+    }
   }
 
   public reset(): void {
@@ -236,7 +263,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
 
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
     // use this question's own answer object, the button styles are looked up by reference
-    const answer = this.question?.answers[this.getAnswerIndex(packet.answer)];
+    const answer = this.findAnswer(packet.answer);
     if (answer == null) {
       return;
     }
@@ -249,12 +276,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private getAnswerIndex(answer: IAnswer): number {
-    for (let i = 0; i < this.question.answers.length; i++) {
-      if (answer.isCorrect === this.question.answers[i].isCorrect && answer.text === this.question.answers[i].text) {
-        return i;
-      }
-    }
+  private findAnswer(answer: IAnswer): IAnswer | undefined {
+    return this.question?.answers.find(a => GameStateHelper.isSameAnswer(a, answer));
   }
 
   ngOnDestroy(): void {

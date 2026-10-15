@@ -20,6 +20,8 @@ export class TeamCardComponent implements OnInit, OnDestroy {
   constructor(private game: GameService) { }
 
   ngOnInit(): void {
+    // after a reload or a master rejoining, show the team that buzzed
+    this.isMarked = !!this.game.getGameStateData()?.markedTeamIds?.includes(this.team.teamId);
     this.markTeamPacketsSubscription = this.game.observeMarkTeamPackets().subscribe(this.onMarkTeamPacket.bind(this));
   }
 
