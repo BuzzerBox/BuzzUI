@@ -1,0 +1,2 @@
+# lets the BuzzerBox server (running as pi) start an update from the master, see buzzerbox-update.sh
+pi ALL=(root) NOPASSWD: /usr/local/sbin/buzzerbox-update start *

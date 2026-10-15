@@ -32,6 +32,7 @@ import { MediaQuestionDisplayOrderConfigurationComponent } from './media-questio
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDialogModule} from '@angular/material/dialog';
 import {DialogTeamsComponent} from './dialog-teams/dialog-teams.component';
+import {UpdateCardComponent} from './update-card/update-card.component';
 
 @NgModule({
   declarations: [
@@ -46,6 +47,7 @@ import {DialogTeamsComponent} from './dialog-teams/dialog-teams.component';
     FileUploadFormComponent,
     FileDropEventsDirective,
     DialogTeamsComponent,
+    UpdateCardComponent,
   ],
   imports: [
     CommonModule,

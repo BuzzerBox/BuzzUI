@@ -1,6 +1,10 @@
 #!/bin/sh
+# Builds the client and the server into install/.assets/compilations, which install.sh installs and
+# create-update-bundle.sh packs into an update bundle.
 
-ROOT_DIR="$PWD/../"
+set -e
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 COMPILATIONS_DIR="$ROOT_DIR/install/.assets/compilations"
 
 CLIENT_DIR="$ROOT_DIR/client"
@@ -22,17 +26,19 @@ fi
 mkdir -p "$COMPILATIONS_DIR"
 
 # create server files
-npm --prefix "$SERVER_DIR" i
+npm --prefix "$SERVER_DIR" ci
+rm -rf "$SERVER_DIST_DIR"
 npm --prefix "$SERVER_DIR" run "$NPM_BACKEND_TRANSPILE_SCRIPT_NAME"
 mv "$SERVER_DIST_DIR" "$COMPILATIONS_BACKEND_DIR"
-# copy the package.json so we can "npm i" during installation procedure
-cp "$SERVER_DIR/package.json" "$COMPILATIONS_BACKEND_DIR/server/"
+# the box has no internet, so the server's dependencies come along. They are the same on every platform: serialport
+# ships prebuilt bindings for the Pi (linux-arm/linux-arm64).
+cp "$SERVER_DIR/package.json" "$SERVER_DIR/package-lock.json" "$COMPILATIONS_BACKEND_DIR/server/"
+npm --prefix "$COMPILATIONS_BACKEND_DIR/server" ci --omit=dev
 
 # create frontend files
-# create server files
-npm --prefix "$CLIENT_DIR" i
+npm --prefix "$CLIENT_DIR" ci
 npm --prefix "$CLIENT_DIR" run "$NPM_FRONTEND_TRANSPILE_SCRIPT_NAME"
-mv "$CLIENT_DIST_DIR" "$COMPILATIONS_FRONTEND_DIR"
+# the Angular build puts the files to serve into browser/
+mv "$CLIENT_DIST_DIR/browser" "$COMPILATIONS_FRONTEND_DIR"
 
-echo "Successfully created dynamic installation files. Press enter to leave..."
-read WAIT
+echo "Successfully created dynamic installation files."

@@ -1,0 +1,69 @@
+@if (info?.enabled) {
+  <mat-card class="update-card" appearance="outlined">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>system_update</mat-icon>
+      <mat-card-title>Software-Update</mat-card-title>
+      <mat-card-subtitle>Installierte Version {{info.installedVersion}}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (isUpdating()) {
+        <div class="status">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>
+            Das Update{{info.status?.version ? ' auf ' + info.status.version : ''}} wird installiert. Die BuzzerBox
+            startet dabei neu, diese Seite verbindet sich danach von selbst wieder. Bitte den USB-Stick nicht abziehen.
+          </span>
+        </div>
+      } @else {
+        @switch (info.status?.state) {
+          @case (EUpdateStates.SUCCEEDED) {
+            <p class="status success"><mat-icon>check_circle</mat-icon>Version {{info.status.version}} wurde installiert.</p>
+          }
+          @case (EUpdateStates.FAILED) {
+            <p class="status error"><mat-icon>error</mat-icon>Das Update ist fehlgeschlagen: {{info.status.message}}</p>
+          }
+          @case (EUpdateStates.ROLLED_BACK) {
+            <p class="status error">
+              <mat-icon>error</mat-icon>
+              Version {{info.status.version}} ließ sich nicht starten, deshalb läuft wieder die vorherige Version.
+              {{info.status.message}}
+            </p>
+          }
+        }
+      }
+      @if (startError) {
+        <p class="status error"><mat-icon>error</mat-icon>{{startError}}</p>
+      }
+      @if (isPageOutdated()) {
+        <p class="status">
+          Diese Seite gehört noch zu Version {{pageVersion}}.
+          <button mat-stroked-button (click)="reload()">Neu laden</button>
+        </p>
+      }
+
+      @if (info.bundles.length === 0) {
+        <p class="hint">
+          Für ein Update kopiere die Datei <code>buzzerbox-update-&lt;version&gt;.tar</code> auf einen USB-Stick und
+          stecke ihn in die BuzzerBox.
+        </p>
+      } @else {
+        <mat-list>
+          @for (bundle of info.bundles; track bundle.fileName) {
+            <mat-list-item>
+              <span matListItemTitle>Version {{bundle.version}} <span class="label" [class.newer]="bundle.isNewer">{{getBundleLabel(bundle)}}</span></span>
+              <span matListItemLine>{{bundle.fileName}}</span>
+              <span matListItemMeta>
+                @if (confirmFileName === bundle.fileName) {
+                  <button mat-button (click)="confirmFileName = null">Abbrechen</button>
+                  <button mat-flat-button color="primary" (click)="install(bundle)">Jetzt installieren</button>
+                } @else {
+                  <button mat-stroked-button [disabled]="isUpdating()" (click)="confirmFileName = bundle.fileName">Installieren</button>
+                }
+              </span>
+            </mat-list-item>
+          }
+        </mat-list>
+      }
+    </mat-card-content>
+  </mat-card>
+}

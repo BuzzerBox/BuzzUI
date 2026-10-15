@@ -10,7 +10,7 @@ RUN npm ci
 COPY shared ../shared
 # shared/services/abstract-logger.service.ts imports server/env.ts
 COPY server/env.ts ../server/
-COPY config.json config.test.json config.dev.json.example ../
+COPY config.json config.test.json config.dev.json.example version.json ../
 COPY scripts/merge-config.js ../scripts/
 ARG CONFIG_OVERRIDE=
 # config.dev.json is imported by the code (it is only used in dev builds), so it has to exist

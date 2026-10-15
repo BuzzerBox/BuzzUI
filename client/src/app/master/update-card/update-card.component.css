@@ -1,0 +1,36 @@
+.update-card {
+  margin: 16px 0;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success mat-icon {
+  color: #2e7d32;
+}
+
+.error mat-icon {
+  color: #c62828;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.label {
+  margin-left: 8px;
+  font-size: 0.8em;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.label.newer {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+mat-list-item {
+  height: auto !important;
+}

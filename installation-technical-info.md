@@ -5,6 +5,9 @@ configurable now, it will be stated so. Then the shown example can be used as a 
 but the actual result in the end may differ, depending on the `setup.env` file's settings during installation.
 
 ## Autostart
+The server no longer starts from the autostart: it runs as the systemd service `buzzerbox-server` (see
+`install/.assets/configs/systemd/` and the update section of the README), so drop the `node ... main.js` lines below.
+
 To auto start all the required stuff, make sure the following lines are present in  `/etc/xdg/lxsession/LXDE-pi/autostart`.
 The installation directory is configurable now so the result in an actual installation may differ.
 ```
