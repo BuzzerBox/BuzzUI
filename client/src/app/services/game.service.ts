@@ -341,9 +341,6 @@ export class GameService implements OnDestroy {
 
   public removePoint(team: ITeam): void {
     team.points -= 1;
-    if (team.points < 0) {
-      team.points = 0;
-    }
     this.sendSetTeamsSetPointsPacket(team);
   }
 
