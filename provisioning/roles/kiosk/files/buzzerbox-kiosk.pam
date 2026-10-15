@@ -1,0 +1,4 @@
+# the session that buzzerbox-kiosk.service opens for the kiosk (logind seat, user services such as PipeWire)
+auth     required  pam_deny.so
+@include common-account
+@include common-session

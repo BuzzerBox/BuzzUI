@@ -1,0 +1,55 @@
+# Builds the BuzzerBox image for the SD card / eMMC (provisioning/image/build.sh) on an arm64 runner, so the chroot runs
+# natively. Pull requests that touch the setup check that it builds; tags v* attach the image to their GitHub release.
+name: BuzzerBox image
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - provisioning/**
+      - install/.assets/**
+      - .github/workflows/pi-image.yml
+  workflow_dispatch:
+
+concurrency:
+  group: pi-image-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # the Node.js that the box runs (provisioning/group_vars/all.yml)
+          node-version: 24.21.0
+
+      - name: Create the dev config that the builds import
+        run: cp config.dev.json.example config.dev.json
+
+      - name: Build the image
+        run: provisioning/image/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: buzzerbox-image
+          path: provisioning/image/out/
+          # the image is already compressed
+          compression-level: 0
+          retention-days: 14
+
+      - name: Attach the image to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1 \
+            || gh release create "${GITHUB_REF_NAME}" --verify-tag --title "${GITHUB_REF_NAME}" --generate-notes
+          gh release upload "${GITHUB_REF_NAME}" provisioning/image/out/* --clobber

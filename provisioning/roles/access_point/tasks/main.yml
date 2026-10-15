@@ -1,0 +1,36 @@
+# The box's own WiFi network: an access point of NetworkManager with DHCP and DNS for the BuzzerBox hostnames.
+# Its values are per box (buzzerbox.txt on the boot partition), so a script applies them on every boot.
+
+- name: Install the settings script
+  ansible.builtin.copy:
+    src: buzzerbox-apply-settings.sh
+    dest: /usr/local/sbin/buzzerbox-apply-settings
+    mode: "0755"
+  notify: Apply the settings
+
+- name: Install the default settings
+  ansible.builtin.template:
+    src: buzzerbox.txt.j2
+    dest: /etc/buzzerbox/settings.defaults
+    mode: "0644"
+  notify: Apply the settings
+
+# a box that already has its settings keeps them
+- name: Put the settings file on the boot partition
+  ansible.builtin.template:
+    src: buzzerbox.txt.j2
+    dest: /boot/firmware/buzzerbox.txt
+    force: false
+  notify: Apply the settings
+
+- name: Install the settings service
+  ansible.builtin.copy:
+    src: buzzerbox-settings.service
+    dest: /etc/systemd/system/buzzerbox-settings.service
+    mode: "0644"
+
+- name: Enable the settings service
+  ansible.builtin.systemd_service:
+    name: buzzerbox-settings.service
+    enabled: true
+    daemon_reload: "{{ not ansible_facts.is_chroot }}"

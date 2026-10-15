@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply the BuzzerBox settings from the boot partition
+RequiresMountsFor=/boot/firmware
+Before=NetworkManager.service network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/buzzerbox-apply-settings
+
+[Install]
+WantedBy=multi-user.target

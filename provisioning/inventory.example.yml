@@ -1,0 +1,9 @@
+# For running the playbook against boxes that are already set up (copy to inventory.yml, which is gitignored):
+#   ansible-playbook -i inventory.yml site.yml
+# The boxes need SSH, i.e. an image built with ssh_authorized_keys. Join the box's WiFi to reach it.
+all:
+  vars:
+    ansible_user: admin
+  hosts:
+    buzzerbox-1:
+      ansible_host: 10.0.0.5

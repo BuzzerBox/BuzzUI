@@ -1,0 +1,35 @@
+# Node.js from nodejs.org, pinned by version and checksum (group_vars/all.yml)
+
+- name: Look for Node.js {{ node_version }}
+  ansible.builtin.stat:
+    path: "/opt/node-v{{ node_version }}-linux-arm64/bin/node"
+  register: node_binary
+
+- name: Install Node.js {{ node_version }}
+  when: not node_binary.stat.exists
+  block:
+    - name: Download Node.js {{ node_version }}
+      ansible.builtin.get_url:
+        url: "https://nodejs.org/dist/v{{ node_version }}/node-v{{ node_version }}-linux-arm64.tar.xz"
+        dest: "/var/cache/node-v{{ node_version }}-linux-arm64.tar.xz"
+        checksum: "sha256:{{ node_sha256 }}"
+        mode: "0644"
+
+    - name: Unpack Node.js {{ node_version }}
+      ansible.builtin.unarchive:
+        src: "/var/cache/node-v{{ node_version }}-linux-arm64.tar.xz"
+        dest: /opt
+        remote_src: true
+
+    - name: Remove the downloaded archive
+      ansible.builtin.file:
+        path: "/var/cache/node-v{{ node_version }}-linux-arm64.tar.xz"
+        state: absent
+
+# buzzerbox-server.service and the update helper run /usr/bin/node
+- name: Link node into /usr/bin
+  ansible.builtin.file:
+    src: "/opt/node-v{{ node_version }}-linux-arm64/bin/node"
+    dest: /usr/bin/node
+    state: link
+    force: true

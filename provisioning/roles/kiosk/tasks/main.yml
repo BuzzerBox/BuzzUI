@@ -1,0 +1,32 @@
+# The screen: Chromium in kiosk mode on the HDMI output, in the cage Wayland compositor. There is no desktop.
+
+- name: Install cage, Chromium and the audio stack
+  ansible.builtin.apt:
+    # PipeWire plays the media's audio over HDMI
+    name: [cage, chromium, pipewire, pipewire-pulse, wireplumber, fonts-noto-color-emoji]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install the PAM configuration of the kiosk session
+  ansible.builtin.copy:
+    src: buzzerbox-kiosk.pam
+    dest: /etc/pam.d/buzzerbox-kiosk
+    mode: "0644"
+
+- name: Install the kiosk service
+  ansible.builtin.template:
+    src: buzzerbox-kiosk.service.j2
+    dest: /etc/systemd/system/buzzerbox-kiosk.service
+    mode: "0644"
+
+- name: Enable the kiosk service
+  ansible.builtin.systemd_service:
+    name: buzzerbox-kiosk.service
+    enabled: true
+    daemon_reload: "{{ not ansible_facts.is_chroot }}"
+
+- name: Boot into the kiosk
+  ansible.builtin.file:
+    src: /usr/lib/systemd/system/graphical.target
+    dest: /etc/systemd/system/default.target
+    state: link

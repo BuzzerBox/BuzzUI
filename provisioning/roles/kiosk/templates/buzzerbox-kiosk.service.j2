@@ -1,0 +1,35 @@
+[Unit]
+Description=BuzzerBox screen (Chromium kiosk in cage)
+After=systemd-user-sessions.service nginx.service buzzerbox-server.service splashscreen.service getty@tty1.service
+Wants=nginx.service
+Conflicts=getty@tty1.service
+
+[Service]
+User={{ buzzerbox_user }}
+# a logind session on tty1, which gives cage the screen and input and starts the user's PipeWire
+PAMName=buzzerbox-kiosk
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
+Environment=XDG_SESSION_TYPE=wayland
+# the splash screen holds the framebuffer until the kiosk takes over ("+": as root)
+ExecStartPre=-+/usr/bin/systemctl stop splashscreen.service
+# after a power cut, Chromium would offer to restore the last session
+ExecStartPre=-/usr/bin/sed -i -e 's/"exited_cleanly":false/"exited_cleanly":true/' -e 's/"exit_type":"[^"]*"/"exit_type":"Normal"/' %h/.config/chromium/Default/Preferences
+ExecStart=/usr/bin/cage -d -- /usr/bin/chromium \
+  --ozone-platform=wayland \
+  --kiosk --noerrdialogs --disable-infobars --no-first-run --password-store=basic \
+  --autoplay-policy=no-user-gesture-required \
+  --disable-restore-session-state --disk-cache-dir=/dev/null --disk-cache-size=1 \
+  http://localhost/screen/
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

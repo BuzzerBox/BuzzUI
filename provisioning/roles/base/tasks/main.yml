@@ -1,0 +1,86 @@
+# The OS around the BuzzerBox: user, boot configuration and first boot.
+
+- name: Set the hostname
+  ansible.builtin.copy:
+    dest: /etc/hostname
+    content: "{{ buzzerbox_hostname }}\n"
+    mode: "0644"
+
+- name: Resolve the hostname locally
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1\t{{ buzzerbox_hostname }}"
+
+# The image comes with the user pi (uid 1000) but without a password or shell; userconfig.service would ask for both on
+# the first boot. The box needs no login: the kiosk starts on its own and SSH has its own user (roles/ssh).
+- name: Set up the user that runs the BuzzerBox
+  ansible.builtin.user:
+    name: "{{ buzzerbox_user }}"
+    shell: /bin/bash
+    password_lock: true
+    # exactly these: the image also puts it in sudo and adm. dialout: the serial port of the buzzers,
+    # video/render/input/audio: the kiosk, plugdev: USB sticks, gpio/i2c/spi: the hardware of the box
+    groups: [dialout, video, render, input, audio, plugdev, gpio, i2c, spi]
+    append: false
+
+- name: Skip the user setup on the first boot
+  ansible.builtin.systemd_service:
+    name: userconfig.service
+    enabled: false
+    masked: true
+
+# cloud-init would apply the customisation of the Raspberry Pi Imager from the boot partition. The box has its own
+# per-box settings (buzzerbox.txt, see roles/access_point), so a second way to configure it would only get in the way.
+- name: Disable cloud-init
+  ansible.builtin.copy:
+    dest: /etc/cloud/cloud-init.disabled
+    content: "Disabled by the BuzzerBox setup, see provisioning/roles/base\n"
+    mode: "0644"
+
+- name: Remove the cloud-init files from the boot partition
+  ansible.builtin.file:
+    path: "/boot/firmware/{{ item }}"
+    state: absent
+  loop: [user-data, network-config, meta-data]
+
+# the box has no internet, so these only wake the card up
+- name: Disable the automatic package updates
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: false
+  loop: [apt-daily.timer, apt-daily-upgrade.timer]
+
+- name: Configure the firmware
+  ansible.builtin.blockinfile:
+    path: /boot/firmware/config.txt
+    marker: "# {mark} BuzzerBox (provisioning/roles/base)"
+    block: |
+      [all]
+      # the buzzers' microcontroller is on the GPIO UART, /dev/ttyS0 (serial.address in config.json)
+      enable_uart=1
+      # turn HDMI on even if the screen is switched on after the box
+      hdmi_force_hotplug=1
+      # the splash screen replaces the rainbow screen of the firmware
+      disable_splash=1
+
+- name: Read the kernel command line
+  ansible.builtin.slurp:
+    src: /boot/firmware/cmdline.txt
+  register: cmdline_file
+
+# cmdline.txt is a single line. Parameters that aren't managed here (root=, resize, the WiFi country of roles/access_point)
+# stay as they are.
+- name: Configure the kernel command line
+  vars:
+    managed_parameters: '^(console=|video=HDMI-A-1:|consoleblank=|quiet$|loglevel=|logo\.nologo$|vt\.global_cursor_default=)'
+    kept_parameters: "{{ (cmdline_file.content | b64decode).split() | reject('match', managed_parameters) | list }}"
+    # the serial console is gone, since the buzzers use the UART. "D" forces HDMI on under KMS.
+    added_parameters: >-
+      {{ (['console=tty3', 'quiet', 'loglevel=3', 'logo.nologo', 'vt.global_cursor_default=0'] if quiet_boot
+          else ['console=tty1'])
+         + ['video=HDMI-A-1:' ~ display_mode ~ 'D', 'consoleblank=0'] }}
+  # no mode: the boot partition is FAT
+  ansible.builtin.copy:
+    dest: /boot/firmware/cmdline.txt
+    content: "{{ (kept_parameters + added_parameters) | join(' ') }}\n"

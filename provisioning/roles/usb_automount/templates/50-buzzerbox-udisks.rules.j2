@@ -1,0 +1,10 @@
+// lets {{ buzzerbox_user }} mount and unmount USB sticks without a desktop session (provisioning/roles/usb_automount)
+polkit.addRule(function (action, subject) {
+    if (subject.user === "{{ buzzerbox_user }}" &&
+        (action.id.indexOf("org.freedesktop.udisks2.filesystem-mount") === 0 ||
+         action.id === "org.freedesktop.udisks2.filesystem-unmount-others" ||
+         action.id.indexOf("org.freedesktop.udisks2.eject-media") === 0 ||
+         action.id.indexOf("org.freedesktop.udisks2.power-off-drive") === 0)) {
+        return polkit.Result.YES;
+    }
+});

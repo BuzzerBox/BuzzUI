@@ -1,0 +1,13 @@
+[Unit]
+Description=Mount USB sticks for the BuzzerBox
+After=udisks2.service
+Wants=udisks2.service
+
+[Service]
+User={{ buzzerbox_user }}
+ExecStart=/usr/bin/udiskie --automount --no-notify --no-tray --no-password-prompt --no-config
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

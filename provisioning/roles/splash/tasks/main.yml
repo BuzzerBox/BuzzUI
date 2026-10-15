@@ -1,0 +1,33 @@
+# The BuzzerBox logo from early in the boot until the kiosk starts
+
+- name: Install fbi
+  ansible.builtin.apt:
+    name: fbi
+    install_recommends: false
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create the directory of the splash image
+  ansible.builtin.file:
+    path: /usr/share/buzzerbox
+    state: directory
+    mode: "0755"
+
+- name: Install the splash image
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../install/.assets/images/logo.png"
+    dest: /usr/share/buzzerbox/splash.png
+    mode: "0644"
+
+- name: Install the splash service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/splashscreen.service
+    content: "{{ lookup('file', playbook_dir ~ '/../install/.assets/configs/splashscreen/splashscreen.service')
+                 | replace('__SPLASH_IMAGE_TARGET_LOCATION__', '/usr/share/buzzerbox/splash.png') }}\n"
+    mode: "0644"
+
+- name: Enable the splash service
+  ansible.builtin.systemd_service:
+    name: splashscreen.service
+    enabled: true
+    daemon_reload: "{{ not ansible_facts.is_chroot }}"
