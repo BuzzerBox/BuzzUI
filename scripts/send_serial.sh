@@ -2,7 +2,7 @@
 
 prompt="Select Option: "
 options=("Buzzer 1" "Buzzer 2" "Buzzer 3" "Buzzer 4" "Buzzer 5" "Buzzer 6" "Buzzer 7" "Buzzer 8" "Buzzer 9" "Buzzer 10" "Release" "Quit")
-bytes=('\x31' '\x32' '\x33' '\x34' '\x35' '\x36' '\x37' '\x38' '\x39' '\x40' '\x71')
+bytes=('\x31' '\x32' '\x33' '\x34' '\x35' '\x36' '\x37' '\x38' '\x39' '\x30' '\x71')
 
 port=/tmp/ttyV1
 

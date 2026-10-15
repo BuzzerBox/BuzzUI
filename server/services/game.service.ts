@@ -104,40 +104,49 @@ export class GameService {
 
         // wait until the first packet to determine whether it is a master or a screen
         const sub = con.onMessage().subscribe((packet: IGamePacket) => {
-            // the "sub" will be unsubscribed in the onRegisterMasterPacket
-            if (packet.packetType === EPacketTypes.REGISTER_MASTER) {
-                this.onRegisterMasterPacket(con, sub, packet as IRegisterMasterPacket);
-            } else if (packet.packetType === EPacketTypes.REGISTER_SCREEN) {
-                this.onRegisterScreenPacket(con, sub, packet as IRegisterScreenPacket);
-            } else  if (packet.packetType === EPacketTypes.KEYPRESS_ON_SCREEN) {
-                this.onKeypressOnScreenPacket(packet as IKeypressOnScreenPacket);
-            } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
-                // screens send this as well, when the media they play has ended
-                this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
-            } else if (con !== this.webSocketConnectionMaster) {
-                LoggerService.warn(`Ignoring packet ${EPacketTypes[packet.packetType]} since only the master may send it`);
-            } else if (packet.packetType === EPacketTypes.SETUP_GAME) {
-                this.onSetupGamePackage(packet as ISetupPacket);
-            } else if (packet.packetType === EPacketTypes.START_GAME) {
-                this.onStartGamePacket(packet as IStartGamePacket);
-            } else if (packet.packetType === EPacketTypes.TEAM_SET_POINTS) {
-                this.onTeamSetPointsPacket(packet as ITeamSetPointsPacket);
-            } else if (packet.packetType === EPacketTypes.ANSWER_SET_STATE) {
-                this.onAnswerSetStatePacket(packet as IAnswerSetStatePacket);
-            } else if (packet.packetType === EPacketTypes.SET_QUESTION) {
-                this.onSetQuestionPacket(packet as ISetQuestionPacket);
-            } else if (packet.packetType === EPacketTypes.END_GAME) {
-                this.onEndGamePacket(packet as IEndGamePacket);
-            } else if (packet.packetType === EPacketTypes.RESET_SERVER) {
-                this.onResetServerPacket(packet as IResetServerPacket);
-            } else if (packet.packetType === EPacketTypes.MARK_TEAM) {
-                this.onMarkTeamPacket(packet as IMarkTeamPacket);
-            } else if (packet.packetType === EPacketTypes.SET_BUZZER_LOCK) {
-                this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
-            } else if (packet.packetType === EPacketTypes.SET_MEDIA_VOLUME) {
-                this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
+            // a broken packet must not take the server and the running game down
+            try {
+                this.onPacket(con, sub, packet);
+            } catch (e) {
+                LoggerService.error(`Could not handle packet ${JSON.stringify(packet)}`, e);
             }
         })
+    }
+
+    private onPacket(con: WebSocketConnection, sub: Subscription, packet: IGamePacket): void {
+        // the "sub" will be unsubscribed in the onRegisterMasterPacket
+        if (packet.packetType === EPacketTypes.REGISTER_MASTER) {
+            this.onRegisterMasterPacket(con, sub, packet as IRegisterMasterPacket);
+        } else if (packet.packetType === EPacketTypes.REGISTER_SCREEN) {
+            this.onRegisterScreenPacket(con, sub, packet as IRegisterScreenPacket);
+        } else  if (packet.packetType === EPacketTypes.KEYPRESS_ON_SCREEN) {
+            this.onKeypressOnScreenPacket(packet as IKeypressOnScreenPacket);
+        } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
+            // screens send this as well, when the media they play has ended
+            this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);
+        } else if (con !== this.webSocketConnectionMaster) {
+            LoggerService.warn(`Ignoring packet ${EPacketTypes[packet.packetType]} since only the master may send it`);
+        } else if (packet.packetType === EPacketTypes.SETUP_GAME) {
+            this.onSetupGamePackage(packet as ISetupPacket);
+        } else if (packet.packetType === EPacketTypes.START_GAME) {
+            this.onStartGamePacket(packet as IStartGamePacket);
+        } else if (packet.packetType === EPacketTypes.TEAM_SET_POINTS) {
+            this.onTeamSetPointsPacket(packet as ITeamSetPointsPacket);
+        } else if (packet.packetType === EPacketTypes.ANSWER_SET_STATE) {
+            this.onAnswerSetStatePacket(packet as IAnswerSetStatePacket);
+        } else if (packet.packetType === EPacketTypes.SET_QUESTION) {
+            this.onSetQuestionPacket(packet as ISetQuestionPacket);
+        } else if (packet.packetType === EPacketTypes.END_GAME) {
+            this.onEndGamePacket(packet as IEndGamePacket);
+        } else if (packet.packetType === EPacketTypes.RESET_SERVER) {
+            this.onResetServerPacket(packet as IResetServerPacket);
+        } else if (packet.packetType === EPacketTypes.MARK_TEAM) {
+            this.onMarkTeamPacket(packet as IMarkTeamPacket);
+        } else if (packet.packetType === EPacketTypes.SET_BUZZER_LOCK) {
+            this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
+        } else if (packet.packetType === EPacketTypes.SET_MEDIA_VOLUME) {
+            this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
+        }
     }
 
     private onMasterConnectionDestroy(): void {
@@ -167,7 +176,7 @@ export class GameService {
             this.buzzerConfig = [];
             // check if no key was used more than once
             const keys: string[] = [];
-            for (const buzzConf of config.buzzers) {
+            for (const buzzConf of ConfigService.get().buzzers) {
                 const eKeyBind = buzzConf.key;
                 if (keys.includes(eKeyBind))
                 {
@@ -175,7 +184,7 @@ export class GameService {
                 }
                 keys.push(eKeyBind);
             }
-            for (const buzzConf of config.buzzers) {
+            for (const buzzConf of ConfigService.get().buzzers) {
                 const id: string = Uuid.v4();
                 const c: IBuzzer = {
                     name: buzzConf.name,
@@ -437,7 +446,10 @@ export class GameService {
 
     // TODO: create method to send to all screens AND master
     private onKeypressOnScreenPacket(packet: IKeypressOnScreenPacket): void {
-        if (packet.keyCode === config.softReleaseKey) {
+        if (!ConfigService.get().enableBrowserKeypressEvents) {
+            return;
+        }
+        if (packet.keyCode === ConfigService.get().softReleaseKey) {
             this.releaseHardwareBuzzerLock(true);
             this.unmarkAllTeams();
         } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
@@ -581,13 +593,13 @@ export class GameService {
 
     private validateConfig(): boolean {
         // check that buzzers are present
-        if (config.buzzers == null) {
+        if (ConfigService.get().buzzers == null) {
             this.configInvalidReason = "No buzzers are configured";
             return false;
         }
 
         // check that at least 2 buzzers are present
-        if (config.buzzers.length < 2) {
+        if (ConfigService.get().buzzers.length < 2) {
             this.configInvalidReason = "Less than two buzzers are configured";
             return false;
         }
@@ -668,7 +680,12 @@ export class GameService {
     private onSerialDataIn(data: Buffer): void {
         // one chunk of data can hold several bytes, e.g. when two buzzers were pressed right after each other
         for (const byte of data) {
-            this.onSerialByteIn(byte);
+            // like a broken packet, a failing buzzer press must not take the server down
+            try {
+                this.onSerialByteIn(byte);
+            } catch (e) {
+                LoggerService.error(`Could not handle serial byte ${byte}`, e);
+            }
         }
     }
 

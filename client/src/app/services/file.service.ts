@@ -11,7 +11,7 @@ export class FileService {
 
   public static getPathPrefix(): string {
     return 'http://' +
-      ConfigService.get().server.address + ':' +
+      ConfigService.getServerAddress() + ':' +
       ConfigService.get().fileServer.port +
       ConfigService.get().fileServer.publicPath;
   }
@@ -20,8 +20,22 @@ export class FileService {
     return StringHelper.appendWithInfixIf(FileService.getPathPrefix(), partialPath, '/', !StringHelper.isFirstChar(partialPath, '/'));
   }
 
-  getMediaList(): Promise<IDirectoryTree> {
-    const path = FileService.getPathPrefix();
-    return this.http.get<IDirectoryTree>(path).toPromise();
+  // every question in the setup shows the media, so they share one request instead of scanning the media folder each
+  private static readonly MEDIA_LIST_CACHE_IN_MS = 5000;
+  private mediaList: Promise<IDirectoryTree | null>;
+  private mediaListRequestedAt = 0;
+
+  /**
+   * The media folder as a tree, or null if there are no media or the file server can't be reached
+   */
+  getMediaList(): Promise<IDirectoryTree | null> {
+    if (this.mediaList == null || Date.now() - this.mediaListRequestedAt > FileService.MEDIA_LIST_CACHE_IN_MS) {
+      this.mediaListRequestedAt = Date.now();
+      this.mediaList = this.http.get<IDirectoryTree>(FileService.getPathPrefix()).toPromise().catch(error => {
+        console.error('Could not load the media list', error);
+        return null;
+      });
+    }
+    return this.mediaList;
   }
 }

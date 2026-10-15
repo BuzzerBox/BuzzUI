@@ -29,6 +29,14 @@ export class ConfigService {
     return this.getConfig();
   }
 
+  /**
+   * The host of the game server. If the config leaves it empty, it's the host this page was loaded from, so the app
+   * keeps working when the server's IP address or hostname changes.
+   */
+  public static getServerAddress(): string {
+    return this.get().server.address || window.location.hostname;
+  }
+
   public static isDevMode(): boolean {
     return isDevMode();
   }

@@ -88,6 +88,7 @@ export class GameService implements OnDestroy {
     private config: ConfigService
   ) {
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
+    this.webSocketService.observeReconnects().subscribe(() => this.onReconnected());
     this.markTeamSubject = new Subject<IMarkTeamPacket>();
     this.teams = [];
     this.questions = [];
@@ -116,6 +117,29 @@ export class GameService implements OnDestroy {
    */
   public dataAvailable(): boolean {
     return this.isScreenDataAvailable;
+  }
+
+  /**
+   * The server dropped this client with the lost connection, so it has to join again
+   */
+  private onReconnected(): void {
+    if (this.isUsedAsScreen()) {
+      // the game may have changed or even be gone meanwhile; a fresh start of the screen shows what is there now
+      window.location.reload();
+    } else if (this.initedAsMaster) {
+      switch (this.currentGameStateInAutomaton) {
+        case EGameStatesMaster.STARTING:
+        case EGameStatesMaster.MASTER_ACCEPTED:
+        case EGameStatesMaster.RECEIVED_PRESETUP_DATA:
+          // no game was set up yet, so registering again keeps what was entered in the setup so far
+          this.registerMaster();
+          break;
+        default:
+          // the server keeps a running game for a master that rejoins, which a reload does
+          window.location.reload();
+          break;
+      }
+    }
   }
 
   private registerMaster(): void {
@@ -185,6 +209,9 @@ export class GameService implements OnDestroy {
       this.setNewGameState(EGameStatesMaster.RECEIVED_PRESETUP_DATA);
       this.presetupData = packet;
       this.redirect(pathsMaster.setup);
+    } else if (this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
+      // registered again after a lost connection; a restarted server has new buzzer IDs
+      this.presetupData = packet;
     }
   }
 
@@ -195,7 +222,7 @@ export class GameService implements OnDestroy {
   }
 
   private handleResponsePackets(packet: IResponsePacket): void {
-    if (packet.responseTo === EPacketTypes.REGISTER_MASTER && this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
+    if (packet.responseTo === EPacketTypes.REGISTER_MASTER && this.isRegisteringAsMaster()) {
       this.handleMasterRegistrationResponse(packet);
     } else if (packet.responseTo === EPacketTypes.SETUP_GAME && this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
       this.handleGameSetupResponse(packet);
@@ -204,9 +231,17 @@ export class GameService implements OnDestroy {
     }
   }
 
+  private isRegisteringAsMaster(): boolean {
+    // after a lost connection, a master that is setting up registers again, see onReconnected()
+    return [EGameStatesMaster.STARTING, EGameStatesMaster.MASTER_ACCEPTED, EGameStatesMaster.RECEIVED_PRESETUP_DATA]
+      .includes(this.currentGameStateInAutomaton);
+  }
+
   private handleMasterRegistrationResponse(packet): void {
     if (packet.wasSuccessful) {
-      this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
+      if (this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
+        this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
+      }
     } else {
       this.setNewGameState(EGameStatesMaster.END);
       this.redirect(pathsMaster.masterAlreadyRegistered);

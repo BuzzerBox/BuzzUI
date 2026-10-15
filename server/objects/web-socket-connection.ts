@@ -21,7 +21,18 @@ export class WebSocketConnection {
         // connection is up, let's add a simple simple event
         ws.on('message', m => {
             LoggerService.log(`Received packet: ${m}`);
-            this.onMessageSubject.next(JSON.parse(m as string));
+            let packet: IGamePacket;
+            try {
+                packet = JSON.parse(m as string);
+            } catch (e) {
+                LoggerService.warn(`Ignoring a message that is not valid JSON: ${m}`);
+                return;
+            }
+            if (packet == null || typeof packet !== 'object') {
+                LoggerService.warn(`Ignoring a message that is not a packet: ${m}`);
+                return;
+            }
+            this.onMessageSubject.next(packet);
         });
         ws.on('close', this.onClose.bind(this));
         this.uuid = Uuid.v4()

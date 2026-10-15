@@ -40,7 +40,10 @@ export class FileUploadFormComponent implements OnInit {
       item.progress = 0;
       this.file = item;
     }
-    this.fileDropEl.nativeElement.value = '';
+    // the file input is only there while no file is selected; a file can also be dropped onto the selected one
+    if (this.fileDropEl) {
+      this.fileDropEl.nativeElement.value = '';
+    }
   }
 
   /**

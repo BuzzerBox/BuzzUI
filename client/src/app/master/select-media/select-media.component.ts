@@ -17,6 +17,8 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   activeNode: IDirectoryTree;
   @Output() locationChange: EventEmitter<IMediaSelection> = new EventEmitter<IMediaSelection>();
   @Input() fileLocation: string;
+  // the selected media file or folder if it isn't in the media folder (e.g. the USB stick is missing)
+  public missingLocation: string | null = null;
 
   private hasFetchedData = false;
 
@@ -31,11 +33,13 @@ export class SelectMediaComponent implements OnInit, OnChanges {
       const locChangeObject: SimpleChange = changes[locationVarName];
       if (StringHelper.isEmpty(locChangeObject.currentValue as string)) {
         this.activeNode = undefined;
+        this.missingLocation = null;
         this.cdr.markForCheck();
       } else {
         const data = await this.getData();
         const node: IDirectoryTree | null = await this.getNodeByFilePath(locChangeObject.currentValue, data);
         this.activeNode = node ?? undefined;
+        this.missingLocation = node == null ? locChangeObject.currentValue : null;
         this.cdr.markForCheck();
       }
     }
@@ -51,6 +55,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   }
 
   changeSelection(node: IDirectoryTree): void {
+    this.missingLocation = null;
     if (!node || node === this.activeNode) {
       this.activeNode = undefined;
       this.locationChange.emit({path: ''});
@@ -66,6 +71,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
       return;
     }
     this.activeNode = folder;
+    this.missingLocation = null;
     this.locationChange.emit({path: folder.path, slides: this.getSlideImages(folder).map(image => image.path)});
   }
 
@@ -94,7 +100,11 @@ export class SelectMediaComponent implements OnInit, OnChanges {
     return Promise.resolve(this.dataSource.data[0]);
   }
 
-  public async getNodeByFilePath(filePath: string, root: IDirectoryTree): Promise<IDirectoryTree | null> {
+  public async getNodeByFilePath(filePath: string, root: IDirectoryTree | null): Promise<IDirectoryTree | null> {
+    // without media (e.g. no USB stick), the selected file can't be found
+    if (root == null) {
+      return null;
+    }
     if (FileService.buildFullPathString(root.path) === filePath) {
       return root;
     } else if (root.type === 'directory') {

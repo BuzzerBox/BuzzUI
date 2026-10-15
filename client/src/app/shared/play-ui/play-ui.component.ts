@@ -9,6 +9,7 @@ import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-
 import {MatDialog} from '@angular/material/dialog';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../helper/subscriptions.helper';
+import {ConfigService} from '../../services/config.service';
 
 @Component({
     selector: 'app-play-ui',
@@ -35,7 +36,10 @@ export class PlayUiComponent implements OnInit, OnDestroy {
       // There is some angular directive to achieve the binding of a listener (@HostListener) but it is not possible to remove that binding
       // or have it react to some boolean state but we only need it if this component is used from a screen, thus I prefer the "old" JS-way
       // of adding an event listener
-      document.addEventListener('keydown', this.keydownListener);
+      // keys only work as buzzers where the config allows it, see enableBrowserKeypressEvents
+      if (ConfigService.get().enableBrowserKeypressEvents) {
+        document.addEventListener('keydown', this.keydownListener);
+      }
     }
   }
 

@@ -9,7 +9,15 @@
     Die Datei {{activeNode.name}} ist ausgewaehlt.
   </div>
 }
-@if (activeNode === undefined) {
+@if (activeNode === undefined && missingLocation) {
+  <div>
+    <button mat-icon-button (click)="changeSelection(undefined)" title="Medium entfernen">
+      <mat-icon>remove_circle_outline</mat-icon>
+    </button>
+    Das ausgewaehlte Medium {{missingLocation}} wurde nicht gefunden. Ist der USB-Stick eingesteckt?
+  </div>
+}
+@if (activeNode === undefined && !missingLocation) {
   <div>
     Zu dieser Frage ist kein Medium ausgewaehlt.
   </div>
