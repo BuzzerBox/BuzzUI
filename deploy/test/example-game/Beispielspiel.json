@@ -1,0 +1,285 @@
+{
+  "formatVersion": 4,
+  "kind": "bundle",
+  "gameName": "Beispielspiel",
+  "game": {
+    "formatVersion": 4,
+    "kind": "game",
+    "version": 1,
+    "savedAt": "2026-10-16T00:00:00.000Z",
+    "questions": [
+      {
+        "text": "Welche Hunderasse ist das?",
+        "answers": [
+          {
+            "text": "Mops",
+            "isCorrect": true
+          },
+          {
+            "text": "Dackel",
+            "isCorrect": false
+          },
+          {
+            "text": "Pudel",
+            "isCorrect": false
+          },
+          {
+            "text": "Beagle",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Bilder/Mops.jpg"
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2
+        }
+      },
+      {
+        "text": "Welche Tiere sind hier zu sehen?",
+        "answers": [
+          {
+            "text": "Seelöwen",
+            "isCorrect": false
+          },
+          {
+            "text": "Walrosse",
+            "isCorrect": true
+          },
+          {
+            "text": "Robben",
+            "isCorrect": false
+          },
+          {
+            "text": "Seekühe",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Bilder/Walrosse.jpg"
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2
+        }
+      },
+      {
+        "text": "Wie viele Bilder hatte die Diashow?",
+        "answers": [
+          {
+            "text": "3",
+            "isCorrect": false
+          },
+          {
+            "text": "4",
+            "isCorrect": false
+          },
+          {
+            "text": "5",
+            "isCorrect": true
+          },
+          {
+            "text": "6",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Slideshow%20Landschaften",
+          "slides": [
+            "/media/Teststick/Slideshow%20Landschaften/01.jpg",
+            "/media/Teststick/Slideshow%20Landschaften/02.jpg",
+            "/media/Teststick/Slideshow%20Landschaften/03.jpg",
+            "/media/Teststick/Slideshow%20Landschaften/04.jpg",
+            "/media/Teststick/Slideshow%20Landschaften/05.jpg"
+          ]
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2,
+          "slideIndex": 0
+        }
+      },
+      {
+        "text": "Aus welchem Film stammt dieser Ausschnitt?",
+        "answers": [
+          {
+            "text": "Sintel",
+            "isCorrect": false
+          },
+          {
+            "text": "Elephants Dream",
+            "isCorrect": false
+          },
+          {
+            "text": "Big Buck Bunny",
+            "isCorrect": true
+          },
+          {
+            "text": "Tears of Steel",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Videos/Big%20Buck%20Bunny.mp4"
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2
+        }
+      },
+      {
+        "text": "Wer hat diesen Film produziert?",
+        "answers": [
+          {
+            "text": "Pixar",
+            "isCorrect": false
+          },
+          {
+            "text": "Blender Foundation",
+            "isCorrect": true
+          },
+          {
+            "text": "DreamWorks",
+            "isCorrect": false
+          },
+          {
+            "text": "Studio Ghibli",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Videos/Sintel.mp4"
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2
+        }
+      },
+      {
+        "text": "Wer hat dieses Musikstück komponiert?",
+        "answers": [
+          {
+            "text": "Hans Zimmer",
+            "isCorrect": false
+          },
+          {
+            "text": "Kevin MacLeod",
+            "isCorrect": true
+          },
+          {
+            "text": "Ennio Morricone",
+            "isCorrect": false
+          },
+          {
+            "text": "John Williams",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Audio/Monkeys%20Spinning%20Monkeys.mp3"
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2
+        }
+      },
+      {
+        "text": "Wie heißt dieses Musikstück?",
+        "answers": [
+          {
+            "text": "Sneaky Snitch",
+            "isCorrect": true
+          },
+          {
+            "text": "Pink Panther",
+            "isCorrect": false
+          },
+          {
+            "text": "Monkeys Spinning Monkeys",
+            "isCorrect": false
+          },
+          {
+            "text": "Fluffing a Duck",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Audio/Sneaky%20Snitch.mp3"
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2
+        }
+      },
+      {
+        "text": "Wie heißt die Hauptstadt von Australien?",
+        "answers": [
+          {
+            "text": "Sydney",
+            "isCorrect": false
+          },
+          {
+            "text": "Melbourne",
+            "isCorrect": false
+          },
+          {
+            "text": "Canberra",
+            "isCorrect": true
+          },
+          {
+            "text": "Perth",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "notes": "Frage ohne Medium"
+      },
+      {
+        "text": "Welches Tier ist das?",
+        "answers": [
+          {
+            "text": "Tiger",
+            "isCorrect": false
+          },
+          {
+            "text": "Löwin",
+            "isCorrect": true
+          },
+          {
+            "text": "Gepard",
+            "isCorrect": false
+          },
+          {
+            "text": "Puma",
+            "isCorrect": false
+          }
+        ],
+        "show": true,
+        "mediaDetails": {
+          "fileSrc": "/media/Teststick/Bilder/Loewin.jpg"
+        },
+        "initialConfig": {
+          "mediaState": 2,
+          "questionState": 1,
+          "answerState": 2
+        },
+        "points": 2
+      }
+    ]
+  }
+}

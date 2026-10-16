@@ -68,7 +68,14 @@ export class StorageService {
       if (error.status === 507) {
         return 'Es ist nicht genug Speicherplatz frei.';
       }
-      return error.error?.error ?? error.message;
+      if (typeof error.error?.error === 'string') {
+        return error.error.error;
+      }
+      if (error.status >= 200 && error.status < 300) {
+        // the answer wasn't JSON, e.g. the web page itself, when a reverse proxy doesn't pass the storage API through
+        return 'Die BuzzerBox hat keine gültige Antwort geschickt.';
+      }
+      return error.message;
     }
     return error instanceof Error ? error.message : String(error);
   }
