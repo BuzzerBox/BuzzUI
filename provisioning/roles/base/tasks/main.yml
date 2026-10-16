@@ -24,14 +24,36 @@
     groups: [dialout, video, render, input, audio, plugdev, gpio, i2c, spi]
     append: false
 
+# Trixie creates home directories with mode 0700 (HOME_MODE in /etc/login.defs), but nginx (www-data) serves the client
+# from the release below it
+- name: Let nginx into the home directory of the user
+  ansible.builtin.file:
+    path: "/home/{{ buzzerbox_user }}"
+    state: directory
+    mode: "0755"
+
 - name: Skip the user setup on the first boot
   ansible.builtin.systemd_service:
     name: userconfig.service
     enabled: false
     masked: true
 
+# On the first boot it would ask for the locale, keymap, timezone and root password on the console, hidden behind the
+# splash screen, and the rest of the boot would wait for it forever. The playbook sets up everything the box needs.
+- name: Skip the interactive first boot setup of systemd
+  ansible.builtin.systemd_service:
+    name: systemd-firstboot.service
+    masked: true
+
 # cloud-init would apply the customisation of the Raspberry Pi Imager from the boot partition. The box has its own
 # per-box settings (buzzerbox.txt, see roles/access_point), so a second way to configure it would only get in the way.
+# The box has no use for Bluetooth. Only the service is turned off: dtoverlay=disable-bt would move the buzzers' UART
+# from /dev/ttyS0 to /dev/ttyAMA0.
+- name: Disable Bluetooth
+  ansible.builtin.systemd_service:
+    name: bluetooth.service
+    enabled: false
+
 - name: Disable cloud-init
   ansible.builtin.copy:
     dest: /etc/cloud/cloud-init.disabled
@@ -59,6 +81,10 @@
       [all]
       # the buzzers' microcontroller is on the GPIO UART, /dev/ttyS0 (serial.address in config.json)
       enable_uart=1
+      # pulls the UART's RX (GPIO 15) up to its idle level: without a microcontroller it floats, and the server reads
+      # the noise as a stream of zero bytes (and logs every one). a5 keeps the pin on the UART (RXD1): with "ip" it
+      # would be a plain input, and no byte would reach the server at all.
+      gpio=15=a5,pu
       # turn HDMI on even if the screen is switched on after the box
       hdmi_force_hotplug=1
       # the splash screen replaces the rainbow screen of the firmware

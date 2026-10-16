@@ -111,8 +111,10 @@ chroot "${ROOT}" apt-get clean
 rm -rf "${ROOT}/var/lib/apt/lists/"* "${ROOT}/usr/sbin/policy-rc.d" "${ROOT}/root/.ansible" "${ROOT}/root/.cache"
 rm -f "${ROOT}/etc/resolv.conf"
 mv "${ROOT}/etc/resolv.conf.buzzerbox" "${ROOT}/etc/resolv.conf" 2> /dev/null || true
-# each box creates its own on the first boot (the SSH host keys come from regenerate_ssh_host_keys.service)
-: > "${ROOT}/etc/machine-id"
+# each box creates its own on the first boot (the SSH host keys come from regenerate_ssh_host_keys.service). It has to
+# say "uninitialized" as in the base image: systemd doesn't treat an empty file as the first boot, so it would skip
+# every ConditionFirstBoot unit, regenerate_ssh_host_keys.service among them
+echo uninitialized > "${ROOT}/etc/machine-id"
 rm -f "${ROOT}/var/lib/dbus/machine-id" "${ROOT}/etc/ssh/ssh_host_"*
 mkdir -p "${OUTPUT_DIR}"
 chroot "${ROOT}" dpkg-query -W -f '${Package} ${Version} ${Architecture}\n' > "${OUTPUT_DIR}/${IMAGE_NAME}.packages.txt"
