@@ -6,7 +6,7 @@
       <mat-spinner diameter="48"></mat-spinner>
     } @else if (loadError) {
       <p class="error"><mat-icon>error</mat-icon>{{loadError}}</p>
-      <a mat-stroked-button [routerLink]="homeUrl">Zur Startseite</a>
+      <a mat-stroked-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
     } @else if (isNewGame() && ref === null) {
       <p>Hallo und herzlich willkommen bei <b>{{getGameName()}}</b>! Gib dem neuen Spiel einen Namen und wähle, wo es
         gespeichert wird. Seine Medien kommen in denselben Ordner.</p>
@@ -19,19 +19,24 @@
           }
         </mat-form-field>
         <p class="label">Speichern auf</p>
-        <app-storage-locations (selectedChange)="newGameLocation = $event"></app-storage-locations>
+        <app-storage-locations [initialId]="newGameLocationId" (selectedChange)="newGameLocation = $event"></app-storage-locations>
         @if (createError) {
           <p class="error"><mat-icon>error</mat-icon>{{createError}}</p>
         }
         <div>
-          <a mat-button [routerLink]="homeUrl">Zur Startseite</a>
+          <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
           <button mat-button type="submit" [disabled]="creating || !getSanitizedNewGameName() || !newGameLocation?.writable">Weiter</button>
         </div>
       </form>
     } @else if (ref) {
-      <p>Du bearbeitest <b>{{ref.gameName}}</b> auf {{getLocationText(ref.location)}}{{loadedVersion !== null ? ', Version ' + loadedVersion : ''}}.</p>
+      <p>
+        Du bearbeitest <b>{{ref.gameName}}</b> auf {{getLocationText(ref.location)}}{{loadedVersion !== null ? ', ausgehend von Version ' + loadedVersion : ''}}.
+        @if (loadedVersion !== null && loadedVersion !== latestVersion) {
+          Die neueste ist Version {{latestVersion}}; beim Speichern entsteht eine neue Version mit diesen Fragen.
+        }
+      </p>
       <div>
-        <a mat-button [routerLink]="homeUrl">Zur Startseite</a>
+        <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
         <button mat-button matStepperNext>Weiter</button>
       </div>
     }
@@ -152,7 +157,7 @@
     <button mat-raised-button color="primary" [disabled]="saving || !questionsFormGroup.valid" (click)="saveGame()">Spiel speichern</button>
     @if (savedVersion !== null) {
       <button mat-button (click)="playSavedVersion()"><mat-icon>play_arrow</mat-icon> Version {{savedVersion}} spielen</button>
-      <a mat-button [routerLink]="homeUrl">Zur Startseite</a>
+      <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
     }
   </div>
 </mat-step>

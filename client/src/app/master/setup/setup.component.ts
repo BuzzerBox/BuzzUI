@@ -9,7 +9,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {IMediaSelection} from '../interfaces/IMediaSelection';
 import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-configuration/media-question-display-order-configuration.component';
 import {IGameRef, StorageService} from '../../services/storage.service';
-import {IEditorNavigationState, IPrepareNavigationState} from '../game-navigation';
+import {IEditorNavigationState, INewGameNavigationState, IPrepareNavigationState} from '../game-navigation';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
 
 /**
@@ -27,12 +27,15 @@ export class SetupComponent implements OnInit {
 
   @ViewChild('questionForm') questionForm;
   @ViewChild(MatStepper) stepper: MatStepper;
-  public readonly homeUrl = '/' + baseUrlMaster + pathsMaster.home;
+  // the editor is opened from the game manager, which it goes back to
+  public readonly managerUrl = '/' + baseUrlMaster + pathsMaster.storage;
 
   // the game that is edited; null until a new game was created
   public ref: IGameRef = null;
   // the version the questions were loaded from, null for a new game
   public loadedVersion: number = null;
+  // to tell when an older version is the base
+  public latestVersion: number = null;
   public loading = false;
   public loadError: string = null;
   // for a new game
@@ -52,10 +55,13 @@ export class SetupComponent implements OnInit {
   step = 0;
 
   private readonly navigation: IEditorNavigationState | null;
+  // where a new game goes first, the location chosen in the game manager
+  public readonly newGameLocationId: string | null;
 
   constructor(private game: GameService, private storage: StorageService, private snackBar: MatSnackBar, private router: Router) {
     game.useAsMaster();
     this.navigation = (history.state as IEditorNavigationState)?.gameName ? history.state : null;
+    this.newGameLocationId = (history.state as INewGameNavigationState)?.newGameLocationId ?? null;
   }
 
   async ngOnInit(): Promise<void> {
@@ -81,9 +87,14 @@ export class SetupComponent implements OnInit {
       if (info == null) {
         throw new Error(`Das Spiel ${navigation.gameName} gibt es nicht mehr.`);
       }
-      if (info.latestVersion != null) {
-        const definition = await this.storage.getVersion(ref, info.latestVersion);
+      const baseVersion = navigation.baseVersion ?? info.latestVersion;
+      if (baseVersion != null) {
+        if (!info.versions.some(version => version.version === baseVersion)) {
+          throw new Error(`Version ${baseVersion} von ${navigation.gameName} gibt es nicht mehr.`);
+        }
+        const definition = await this.storage.getVersion(ref, baseVersion);
         this.loadedVersion = definition.version;
+        this.latestVersion = info.latestVersion;
         this.initQuestionsFormControls(definition.questions);
       }
       this.ref = ref;
@@ -118,7 +129,7 @@ export class SetupComponent implements OnInit {
       setTimeout(() => this.stepper?.next());
     } catch (e) {
       this.createError = StorageService.isConflict(e)
-        ? `Auf ${this.getLocationText(this.newGameLocation)} gibt es schon ein Spiel „${name}“. Wähle einen anderen Namen oder bearbeite es über die Startseite.`
+        ? `Auf ${this.getLocationText(this.newGameLocation)} gibt es schon ein Spiel „${name}“. Wähle einen anderen Namen oder bearbeite es in der Spielverwaltung.`
         : StorageService.getErrorMessage(e);
     } finally {
       this.creating = false;

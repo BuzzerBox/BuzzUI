@@ -37,6 +37,7 @@ import {FormsModule} from '@angular/forms';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatRadioModule} from '@angular/material/radio';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatMenuModule} from '@angular/material/menu';
 import {HomeComponent} from './home/home.component';
 import {LoadGameComponent} from './load-game/load-game.component';
 import {StorageManagerComponent} from './storage-manager/storage-manager.component';
@@ -45,6 +46,9 @@ import {GameListComponent} from './game-list/game-list.component';
 import {GameImportComponent} from './game-import/game-import.component';
 import {PrepareGameComponent} from './prepare-game/prepare-game.component';
 import {DialogCopyMediaComponent} from './dialog-copy-media/dialog-copy-media.component';
+import {DialogEditGameComponent} from './dialog-edit-game/dialog-edit-game.component';
+import {DialogEditStateComponent} from './dialog-edit-state/dialog-edit-state.component';
+import {DialogEditMediaComponent} from './dialog-edit-media/dialog-edit-media.component';
 import {MediaBrowserComponent} from './media-browser/media-browser.component';
 import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component';
 
@@ -70,6 +74,9 @@ import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component'
     GameImportComponent,
     PrepareGameComponent,
     DialogCopyMediaComponent,
+    DialogEditGameComponent,
+    DialogEditStateComponent,
+    DialogEditMediaComponent,
     MediaBrowserComponent,
     DialogConfirmComponent,
   ],
@@ -85,6 +92,7 @@ import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component'
     MatTabsModule,
     MatRadioModule,
     MatProgressBarModule,
+    MatMenuModule,
     MatStepperModule,
     MatFormFieldModule,
     MatInputModule,

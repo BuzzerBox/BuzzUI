@@ -6,6 +6,11 @@ export interface IGameVersionInfo {
      * How many states play this version; a version with states can't be deleted
      */
     stateCount: number;
+    /**
+     * How many media files the questions show that aren't in the game's media folder; such a version can't be played
+     * as it is
+     */
+    missingMediaCount: number;
 }
 
 export interface IGameStateInfo {
@@ -60,6 +65,17 @@ export interface IGameStorageRef {
 /**
  * The result of importing a bundle or an old savegame
  */
+/**
+ * The game where it was copied or moved to
+ */
+export interface IGameCopyResult extends IGameInfo {
+    /**
+     * Only for a move: the original couldn't be removed afterwards, or only partly, e.g. since its USB stick was pulled
+     * out, so the game was copied
+     */
+    originalKept: boolean;
+}
+
 export interface IGameImportResult {
     gameName: string;
     stateName?: string;
@@ -67,4 +83,8 @@ export interface IGameImportResult {
      * Media of the questions that couldn't be found and copied into the game, e.g. since their USB stick isn't there
      */
     missingMedia: string[];
+    /**
+     * Only for archives: what was in it but doesn't belong in a game, and was left out
+     */
+    skippedEntries?: string[];
 }

@@ -1,5 +1,6 @@
+/* next to the button that creates a game, so level with it */
 .import {
-  margin: 8px 0 16px;
+  margin: 0 0 8px;
 }
 
 .details, .name {
@@ -34,4 +35,12 @@
 
 .warning mat-icon {
   color: #ef6c00;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 32em;
 }

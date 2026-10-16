@@ -1,4 +1,5 @@
 import express, {NextFunction, Request, RequestHandler, Response, Router} from 'express';
+import {pipeline} from 'stream';
 import {StorageApiHelper} from '../../shared/shared';
 import {StorageError, StorageService} from './storage.service';
 import {LoggerService} from './logger.service';
@@ -10,6 +11,8 @@ import {LoggerService} from './logger.service';
 export class StorageApiService {
     private static instance: StorageApiService;
     private readonly storage = StorageService.get();
+    // the download of a game's archive, see makeRouter; names can't contain "/"
+    private static readonly ARCHIVE_ROUTE = /^\/locations\/[^/]+\/games\/[^/]+\/archive$/;
 
     private constructor() {
     }
@@ -40,6 +43,31 @@ export class StorageApiService {
             await this.storage.deleteGame(req.params.location, req.params.game);
             res.status(204).end();
         }));
+        router.post(game + '/archive-ticket', this.handle(async (req, res) => {
+            res.status(201).json({ticket: this.storage.issueDownloadTicket(req.params.location, req.params.game)});
+        }));
+        router.get(game + '/archive', this.handle(async (req, res) => {
+            const ticket = req.query[StorageApiHelper.DOWNLOAD_TICKET_QUERY_PARAMETER];
+            if (!this.hasValidToken(req) && !this.storage.redeemDownloadTicket(ticket, req.params.location, req.params.game)) {
+                res.status(401).json({error: 'This download link is no longer valid, start the download again'});
+                return;
+            }
+            const archive = await this.storage.createGameArchive(req.params.location, req.params.game);
+            const fileName = req.params.game + StorageApiHelper.GAME_ARCHIVE_EXTENSION;
+            res.setHeader('Content-Type', 'application/gzip');
+            // the ASCII name for old browsers, the real one for the others
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName.replace(/[^\x20-\x7e]|"/g, '_')}"; `
+                + `filename*=UTF-8''${encodeURIComponent(fileName)}`);
+            // unlike pipe, pipeline also ends the archive, with its open files, when the download is cancelled
+            pipeline(archive, res, e => {
+                if (e != null && !res.writableFinished) {
+                    LoggerService.warn(`The archive of ${req.params.game} was not sent completely`, e);
+                }
+            });
+        }));
+        router.post(game + '/copy', jsonBody, this.handle(async (req, res) => {
+            res.status(201).json(await this.storage.copyGame(req.params.location, req.params.game, req.body));
+        }));
 
         router.get(game + '/versions/:version', this.handle(async (req, res) => {
             res.json(await this.storage.getVersion(req.params.location, req.params.game, req.params.version));
@@ -54,6 +82,10 @@ export class StorageApiService {
 
         router.get(game + '/states/:state', this.handle(async (req, res) => {
             res.json(await this.storage.getState(req.params.location, req.params.game, req.params.state));
+        }));
+        router.post(game + '/states/:state/rename', jsonBody, this.handle(async (req, res) => {
+            await this.storage.renameState(req.params.location, req.params.game, req.params.state, req.body?.name);
+            res.status(204).end();
         }));
         router.delete(game + '/states/:state', this.handle(async (req, res) => {
             await this.storage.deleteState(req.params.location, req.params.game, req.params.state);
@@ -79,6 +111,9 @@ export class StorageApiService {
             await this.storage.deleteGameMedia(req.params.location, req.params.game, this.getPath(req));
             res.status(204).end();
         }));
+        router.post(game + '/media/move', jsonBody, this.handle(async (req, res) => {
+            res.json(await this.storage.moveGameMedia(req.params.location, req.params.game, this.getPath(req), req.body?.toPath));
+        }));
         router.post(game + '/media/copy', jsonBody, this.handle(async (req, res) => {
             res.status(201).json(await this.storage.copyIntoGame(req.params.location, req.params.game, this.getPath(req),
                 req.body?.fromLocation, req.body?.fromPath));
@@ -87,6 +122,12 @@ export class StorageApiService {
         router.get('/locations/:location/media', this.handle(async (req, res) => {
             res.json(await this.storage.listStickMedia(req.params.location, this.getPath(req)));
         }));
+        // the body is the archive itself, streamed since it holds the game's media
+        router.post('/locations/:location/import-archive', this.handle(async (req, res) => {
+            const name = typeof req.query.name === 'string' ? req.query.name : '';
+            const contentLength = req.headers['content-length'] != null ? Number(req.headers['content-length']) : undefined;
+            res.status(201).json(await this.storage.importGameArchive(req.params.location, name, req, contentLength));
+        }));
         router.post('/locations/:location/import', jsonBody, this.handle(async (req, res) => {
             const name = typeof req.query.name === 'string' ? req.query.name : '';
             res.status(201).json(await this.storage.importBundle(req.params.location, name, req.body));
@@ -94,8 +135,15 @@ export class StorageApiService {
         return router;
     }
 
+    private hasValidToken(req: Request): boolean {
+        return this.storage.isValidAccessToken(req.get(StorageApiHelper.TOKEN_HEADER));
+    }
+
     private checkAccessToken(req: Request, res: Response, next: NextFunction): void {
-        if (this.storage.isValidAccessToken(req.get(StorageApiHelper.TOKEN_HEADER))) {
+        // a download through the browser can't send the header; its route checks the download ticket instead. Only
+        // that route: a state named "archive" ends in /archive as well.
+        const isDownload = req.method === 'GET' && StorageApiService.ARCHIVE_ROUTE.test(req.path);
+        if (isDownload || this.hasValidToken(req)) {
             next();
         } else {
             res.status(401).json({error: 'Only the game master may access the storage'});

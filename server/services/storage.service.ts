@@ -5,11 +5,13 @@ import {pipeline, Readable} from 'stream';
 import {promisify} from 'util';
 import {isEqual} from 'lodash';
 import * as Uuid from 'uuid';
+import * as tar from 'tar';
 import {
     CURRENT_GAME_FORMAT_VERSION,
     FileExtensionsService,
     IDirectoryTree,
     IGameBundle,
+    IGameCopyResult,
     IGameDefinition,
     IGameImportResult,
     IGameInfo,
@@ -21,6 +23,7 @@ import {
     IStorageEntry,
     IStorageFolder,
     IStorageLocation,
+    MediaHelper,
     StorageApiHelper
 } from '../../shared/shared';
 import {ConfigService} from './config.service';
@@ -65,9 +68,15 @@ export class StorageService {
     private static instance: StorageService;
     private static readonly MAX_JSON_SIZE_IN_BYTES = 20 * 1024 * 1024;
     private static readonly LATEST = 'latest';
+    private static readonly DOWNLOAD_TICKET_LIFETIME_IN_MS = 60 * 1000;
+    private static readonly NUMBERING_FILE = 'numbering.json';
+    // what an archive of a game holds, see createGameArchive
+    private static readonly ARCHIVE_FOLDERS = ['versions', 'states', StorageApiHelper.GAME_MEDIA_FOLDER];
 
     private readonly config = ConfigService.get();
     private accessToken: string | null = null;
+    // what each download ticket may download, see issueDownloadTicket
+    private readonly downloadTickets = new Map<string, {locationId: string, gameName: string, expiresAt: number}>();
     // the game that is being played, which can't be deleted meanwhile
     private activeGame: IGameStorageRef | null = null;
 
@@ -101,6 +110,31 @@ export class StorageService {
 
     public isValidAccessToken(token: unknown): boolean {
         return this.accessToken != null && token === this.accessToken;
+    }
+
+    /**
+     * A ticket for the browser to download a game's archive with, since it can't send the token header for a download.
+     * It is only good for one download of this game, and only for a minute, but survives the master's connection
+     * dropping, which some browsers do as soon as they leave the page for the download.
+     */
+    public issueDownloadTicket(locationId: string, gameName: string): string {
+        const ticket = Uuid.v4();
+        this.downloadTickets.set(ticket, {locationId, gameName, expiresAt: Date.now() + StorageService.DOWNLOAD_TICKET_LIFETIME_IN_MS});
+        return ticket;
+    }
+
+    /**
+     * Whether the ticket allows downloading this game; it can't be used again afterwards
+     */
+    public redeemDownloadTicket(ticket: unknown, locationId: string, gameName: string): boolean {
+        const now = Date.now();
+        [...this.downloadTickets].filter(([, entry]) => entry.expiresAt < now).forEach(([key]) => this.downloadTickets.delete(key));
+        const entry = typeof ticket === 'string' ? this.downloadTickets.get(ticket) : undefined;
+        if (entry == null || entry.locationId !== locationId || entry.gameName !== gameName) {
+            return false;
+        }
+        this.downloadTickets.delete(ticket as string);
+        return true;
     }
 
     public setActiveGame(ref: IGameStorageRef | null): void {
@@ -291,6 +325,8 @@ export class StorageService {
             }
         }
         const versions: IGameVersionInfo[] = [];
+        // walked only once a version shows media, which keeps listing many games on a slow stick quick
+        let existingMedia: Set<string> | undefined;
         for (const version of await this.listVersionNumbers(dirs.versions)) {
             const definition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, version));
             if (definition != null) {
@@ -298,6 +334,7 @@ export class StorageService {
                     version,
                     savedAt: definition.savedAt,
                     questionCount: definition.questions?.length ?? 0,
+                    missingMediaCount: await this.countMissingMedia(definition, dirs, () => existingMedia, paths => existingMedia = paths),
                     stateCount: states.filter(state => state.gameVersion === version).length
                 });
             }
@@ -340,6 +377,275 @@ export class StorageService {
         LoggerService.log(`Deleted game ${gameName} on ${resolved.location.name}`);
     }
 
+    /**
+     * Copies a game with its versions, states and media to another location, e.g. from a USB stick onto the box, and
+     * with move deletes the original afterwards. The copy is assembled in a hidden folder and only appears under its
+     * name once it is complete, so a stick pulled out meanwhile leaves no half game behind. Within the same location
+     * it needs another name: moving there renames the game, copying makes a duplicate.
+     */
+    public async copyGame(locationId: string, gameName: string, body: {toLocation?: unknown, name?: unknown, move?: unknown}): Promise<IGameCopyResult> {
+        const {toLocation, name = gameName, move = false} = body ?? {};
+        if (typeof toLocation !== 'string' || typeof name !== 'string' || typeof move !== 'boolean') {
+            throw new StorageError(400, 'Where to copy the game to is missing');
+        }
+        const {resolved: source, dirs: sourceDirs} = await this.getExistingGame(locationId, gameName, move);
+        // the state of a game being played changes all the time, so the copy could miss the last points
+        this.checkNotActive(locationId, gameName);
+        const target = await this.getWritableLocation(toLocation);
+        const isSameLocation = target.location.id === source.location.id;
+        if (isSameLocation && name === gameName) {
+            throw new StorageError(400, `${gameName} is already on ${target.location.name}`);
+        }
+        const targetDirs = this.getGameDirectories(target, name);
+        if (await this.exists(targetDirs.root)) {
+            throw new StorageError(409, `There already is a game ${name} on ${target.location.name}`);
+        }
+        if (isSameLocation && move) {
+            try {
+                await fs.rename(sourceDirs.root, targetDirs.root);
+            } catch (e) {
+                throw this.toWriteError(e);
+            }
+            LoggerService.log(`Renamed game ${gameName} on ${source.location.name} to ${name}`);
+            return {...await this.getGameInfo(target, name), originalKept: false};
+        }
+        if (target.location.freeBytes != null && await this.getDirectorySize(sourceDirs.root) > target.location.freeBytes) {
+            throw new StorageError(507, 'Not enough space left');
+        }
+        const temporaryDirectory = this.getTemporaryFile(targetDirs.root);
+        try {
+            await fs.mkdir(target.gamesRoot, {recursive: true});
+            await this.copyGameDirectory(sourceDirs.root, temporaryDirectory);
+            await fs.rename(temporaryDirectory, targetDirs.root);
+        } catch (e) {
+            await this.removeRecursively(temporaryDirectory).catch(() => undefined);
+            throw this.toWriteError(e);
+        }
+        let originalKept = false;
+        if (move) {
+            try {
+                await this.removeRecursively(sourceDirs.root);
+            } catch (e) {
+                // the copy is complete, so it isn't undone, e.g. when the stick was pulled out right after it
+                LoggerService.warn(`Copied ${gameName}, but could not remove the original on ${source.location.name}`, e);
+                originalKept = true;
+            }
+        }
+        LoggerService.log(`${move && !originalKept ? 'Moved' : 'Copied'} game ${gameName} from ${source.location.name} to ${target.location.name} as ${name}`);
+        return {...await this.getGameInfo(target, name), originalKept};
+    }
+
+    /**
+     * Everything of a game: its versions and states (JSON) and its media, but no hidden files like unfinished copies
+     */
+    private async copyGameDirectory(source: string, target: string): Promise<void> {
+        await fs.mkdir(target, {recursive: true});
+        for (const entry of await fs.readdir(source, {withFileTypes: true})) {
+            if (!StorageApiHelper.isValidName(entry.name)) {
+                continue;
+            }
+            if (entry.isDirectory()) {
+                await this.copyGameDirectory(path.join(source, entry.name), path.join(target, entry.name));
+            } else if (entry.isFile()) {
+                await this.copyFileSynced(path.join(source, entry.name), path.join(target, entry.name));
+            }
+        }
+    }
+
+    private async getDirectorySize(directory: string): Promise<number> {
+        let size = 0;
+        for (const entry of await fs.readdir(directory, {withFileTypes: true})) {
+            const entryPath = path.join(directory, entry.name);
+            if (entry.isDirectory()) {
+                size += await this.getDirectorySize(entryPath);
+            } else if (entry.isFile()) {
+                size += (await fs.stat(entryPath)).size;
+            }
+        }
+        return size;
+    }
+
+    // ---- archives ----
+
+    /**
+     * The whole game as a tar.gz archive, to bring it to another box through a device: its versions, states and media,
+     * laid out as in the game's folder. Media hardly compress, so the box's slow CPU only compresses lightly.
+     */
+    public async createGameArchive(locationId: string, gameName: string): Promise<Readable> {
+        const {dirs} = await this.getExistingGame(locationId, gameName);
+        const folders: string[] = [];
+        for (const folder of StorageService.ARCHIVE_FOLDERS) {
+            if (await this.isDirectory(path.join(dirs.root, folder))) {
+                folders.push(folder);
+            }
+        }
+        LoggerService.log(`Creating an archive of ${gameName}`);
+        return Readable.from(tar.create({
+            cwd: dirs.root,
+            gzip: {level: 1},
+            portable: true,
+            // no unfinished uploads or other hidden files
+            filter: entryPath => entryPath.split('/').every(segment => segment === '.' || StorageApiHelper.isValidName(segment))
+        }, folders));
+    }
+
+    /**
+     * Creates a game from an archive of createGameArchive. Only what belongs in a game is taken from it: version and
+     * state files and media files, no links and nothing outside the game's folder. The game only appears under its name
+     * once it is complete and its versions and states could be read.
+     */
+    public async importGameArchive(locationId: string, gameName: string, content: Readable, contentLength: number | undefined): Promise<IGameImportResult> {
+        const resolved = await this.getWritableLocation(locationId);
+        const dirs = this.getGameDirectories(resolved, gameName);
+        if (await this.exists(dirs.root)) {
+            throw new StorageError(409, `There already is a game ${gameName}`);
+        }
+        const freeBytes = resolved.location.freeBytes;
+        if (contentLength != null && freeBytes != null && contentLength > freeBytes) {
+            throw new StorageError(507, `Not enough space on ${resolved.location.name}`);
+        }
+        const skipped: string[] = [];
+        let extractedBytes = 0;
+        let isTooLarge = false;
+        const temporaryDirectory = this.getTemporaryFile(dirs.root);
+        let unpack: tar.Unpack | undefined;
+        try {
+            await fs.mkdir(temporaryDirectory, {recursive: true});
+            unpack = new tar.Unpack({
+                cwd: temporaryDirectory,
+                strict: true,
+                // the files belong to the server's user with its permissions, whoever packed them
+                preserveOwner: false,
+                filter: (entryPath, entry) => {
+                    const normalized = this.normalizeRelativePath(entryPath.replace(/^\.\//, ''));
+                    const type = 'type' in entry ? entry.type : undefined;
+                    if (!this.isArchiveEntryOfGame(normalized, type)) {
+                        // hidden files like the ._ files of macOS aren't worth mentioning
+                        if (normalized !== '' && !path.posix.basename(normalized).startsWith('.')) {
+                            skipped.push(normalized);
+                        }
+                        return false;
+                    }
+                    extractedBytes += entry.size ?? 0;
+                    if (freeBytes != null && extractedBytes > freeBytes) {
+                        isTooLarge = true;
+                        return false;
+                    }
+                    return true;
+                }
+            });
+            await pipelineAsync(content, unpack);
+            // it has closed, nothing is written anymore
+            unpack = undefined;
+            if (isTooLarge) {
+                throw new StorageError(507, `Not enough space on ${resolved.location.name}`);
+            }
+            const temporaryDirs = {...dirs, root: temporaryDirectory, versions: path.join(temporaryDirectory, 'versions'),
+                states: path.join(temporaryDirectory, 'states'), media: path.join(temporaryDirectory, StorageApiHelper.GAME_MEDIA_FOLDER)};
+            await this.checkArchivedGame(temporaryDirs);
+            // the stick may be pulled out right after the upload
+            await this.syncDirectory(temporaryDirectory);
+            await fs.rename(temporaryDirectory, dirs.root);
+        } catch (e) {
+            await this.removeUnpacked(unpack, temporaryDirectory);
+            if (e instanceof StorageError) {
+                throw e;
+            }
+            if (e?.code?.startsWith?.('TAR_') || e?.code === 'Z_DATA_ERROR' || e?.code === 'Z_BUF_ERROR') {
+                throw new StorageError(400, 'This is not an archive of a game');
+            }
+            throw this.toWriteError(e);
+        }
+        LoggerService.log(`Imported the archive of ${gameName} on ${resolved.location.name}, skipped: ${skipped.length}`);
+        return {gameName, missingMedia: [], skippedEntries: skipped};
+    }
+
+    /**
+     * Removes what was extracted of a broken archive. When the archive breaks off, the extraction may still be writing
+     * the last files, which would recreate folders being deleted, so this waits for it to end and tries again; unpack is
+     * only given then.
+     */
+    private async removeUnpacked(unpack: tar.Unpack | undefined, directory: string): Promise<void> {
+        if (unpack != null) {
+            await new Promise<void>(resolve => {
+                const timeout = setTimeout(resolve, 5000);
+                unpack.once('close', () => { clearTimeout(timeout); resolve(); });
+            });
+        }
+        for (let attempt = 1; attempt <= 5; attempt++) {
+            try {
+                await this.removeRecursively(directory);
+                if (!await this.exists(directory)) {
+                    return;
+                }
+            } catch (e) {
+                // still being written to
+            }
+            await new Promise(resolve => setTimeout(resolve, 200 * attempt));
+        }
+        LoggerService.warn(`Could not remove ${directory}`);
+    }
+
+    /**
+     * Whether an entry of an archive is part of a game: a version, a state, or media or folders below media
+     */
+    private isArchiveEntryOfGame(entryPath: string, type: string | undefined): boolean {
+        const segments = entryPath.split('/');
+        if (!segments.every(segment => StorageApiHelper.isValidName(segment))) {
+            return false;
+        }
+        const [folder, ...rest] = segments;
+        if (type === 'Directory') {
+            return StorageService.ARCHIVE_FOLDERS.includes(folder) && (rest.length === 0 || folder === StorageApiHelper.GAME_MEDIA_FOLDER);
+        }
+        if (type !== 'File' && type !== 'OldFile' && type !== 'ContiguousFile') {
+            return false;
+        }
+        if (folder === 'versions') {
+            return rest.length === 1 && (/^[1-9][0-9]*\.json$/.test(rest[0]) || rest[0] === StorageService.NUMBERING_FILE);
+        }
+        if (folder === 'states') {
+            return rest.length === 1 && rest[0].endsWith(StorageApiHelper.JSON_EXTENSION);
+        }
+        return folder === StorageApiHelper.GAME_MEDIA_FOLDER && rest.length > 0
+            && FileExtensionsService.isSupportedExtension(path.extname(rest[rest.length - 1]));
+    }
+
+    /**
+     * Reads the versions and states of an extracted archive, so a broken one doesn't become a game
+     */
+    private async checkArchivedGame(dirs: IGameDirectories): Promise<void> {
+        for (const directory of [dirs.versions, dirs.states, dirs.media]) {
+            await fs.mkdir(directory, {recursive: true});
+        }
+        const versions = await this.listVersionNumbers(dirs.versions);
+        if (versions.length === 0) {
+            throw new StorageError(400, 'The archive has no version of a game');
+        }
+        for (const version of versions) {
+            const definition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, version));
+            if (definition?.kind !== 'game' || definition.version !== version || !Array.isArray(definition.questions)) {
+                throw new StorageError(400, `Version ${version} in the archive is broken`);
+            }
+        }
+        for (const name of await this.listJsonNames(dirs.states)) {
+            const state = await this.readJsonOrNull<IGameInstanceState>(path.join(dirs.states, name + StorageApiHelper.JSON_EXTENSION));
+            if (state?.kind !== 'state' || !versions.includes(state.gameVersion)) {
+                throw new StorageError(400, `The state ${name} in the archive is broken`);
+            }
+        }
+    }
+
+    private async syncDirectory(directory: string): Promise<void> {
+        for (const entry of await fs.readdir(directory, {withFileTypes: true})) {
+            if (entry.isDirectory()) {
+                await this.syncDirectory(path.join(directory, entry.name));
+            } else if (entry.isFile()) {
+                await this.syncFile(path.join(directory, entry.name));
+            }
+        }
+    }
+
     // ---- versions ----
 
     private getVersionFile(dirs: IGameDirectories, version: number): string {
@@ -356,6 +662,20 @@ export class StorageService {
     private async getLatestVersionNumber(dirs: IGameDirectories): Promise<number | null> {
         const versions = await this.listVersionNumbers(dirs.versions);
         return versions.length > 0 ? versions[versions.length - 1] : null;
+    }
+
+    /**
+     * Remembers the highest version number a game ever had, so a deleted version's number isn't given to other
+     * questions later, e.g. while a downloaded copy of it is still around. It travels with the game in its versions.
+     */
+    private getNumberingFile(dirs: IGameDirectories): string {
+        return path.join(dirs.versions, StorageService.NUMBERING_FILE);
+    }
+
+    private async getHighestVersionNumber(dirs: IGameDirectories): Promise<number> {
+        const numbering = await this.readJsonOrNull<{highestVersion?: unknown}>(this.getNumberingFile(dirs));
+        const recorded = Number.isInteger(numbering?.highestVersion) ? numbering.highestVersion as number : 0;
+        return Math.max(recorded, await this.getLatestVersionNumber(dirs) ?? 0);
     }
 
     public async getVersion(locationId: string, gameName: string, version: string): Promise<IGameDefinition> {
@@ -388,7 +708,7 @@ export class StorageService {
                 return {...await this.getVersionInfo(resolved, gameName, latest), unchanged: true};
             }
         }
-        const version = (latest ?? 0) + 1;
+        const version = await this.getHighestVersionNumber(dirs) + 1;
         const definition: IGameDefinition = {
             formatVersion: CURRENT_GAME_FORMAT_VERSION,
             kind: 'game',
@@ -401,12 +721,54 @@ export class StorageService {
         return {...await this.getVersionInfo(resolved, gameName, version), unchanged: false};
     }
 
+    private async countMissingMedia(definition: IGameDefinition, dirs: IGameDirectories, getPaths: () => Set<string> | undefined,
+                                    setPaths: (paths: Set<string>) => void): Promise<number> {
+        const showsMedia = (definition.questions ?? []).some(question => question.mediaDetails?.fileSrc || question.mediaDetails?.slides?.length);
+        if (!showsMedia) {
+            return 0;
+        }
+        if (getPaths() == null) {
+            setPaths(await this.listMediaPaths(dirs.media));
+        }
+        return MediaHelper.findMissingMedia(definition.questions, getPaths()).length;
+    }
+
+    /**
+     * The media in a game's media folder as paths relative to it, to tell which media of its questions are missing:
+     * the files the file server serves, and the folders with such files in them, like the media tree (buildTree) has
+     * them, which the master checks before a game starts
+     */
+    private async listMediaPaths(directory: string, relativePath = '', paths = new Set<string>()): Promise<Set<string>> {
+        let entries;
+        try {
+            entries = await fs.readdir(directory, {withFileTypes: true});
+        } catch (e) {
+            return paths;
+        }
+        for (const entry of entries) {
+            if (!StorageApiHelper.isValidName(entry.name)) {
+                continue;
+            }
+            const entryPath = StorageApiHelper.joinPath(relativePath, entry.name);
+            if (entry.isDirectory()) {
+                const countBefore = paths.size;
+                await this.listMediaPaths(path.join(directory, entry.name), entryPath, paths);
+                if (paths.size > countBefore) {
+                    paths.add(entryPath);
+                }
+            } else if (entry.isFile() && FileExtensionsService.isSupportedExtension(path.extname(entry.name))) {
+                paths.add(entryPath);
+            }
+        }
+        return paths;
+    }
+
     private async getVersionInfo(resolved: IResolvedLocation, gameName: string, version: number): Promise<IGameVersionInfo> {
         return (await this.getGameInfo(resolved, gameName)).versions.find(info => info.version === version);
     }
 
     /**
-     * Only versions no state plays can be deleted, and never the latest, which new games start with
+     * Only versions no state plays can be deleted. Their numbers aren't used again, see getNumberingFile.
      */
     public async deleteVersion(locationId: string, gameName: string, version: string): Promise<void> {
         const {resolved, dirs} = await this.getExistingGame(locationId, gameName, true);
@@ -415,12 +777,11 @@ export class StorageService {
         if (versionInfo == null) {
             throw new StorageError(404, `${gameName} has no version ${version}`);
         }
-        if (versionInfo.version === info.latestVersion) {
-            throw new StorageError(409, 'The latest version can\'t be deleted');
-        }
         if (versionInfo.stateCount > 0 || (this.isActive(locationId, gameName) && this.activeGame.gameVersion === versionInfo.version)) {
             throw new StorageError(409, `Version ${version} is played in ${versionInfo.stateCount} state(s)`);
         }
+        const highestVersion = await this.getHighestVersionNumber(dirs);
+        await this.writeJsonAtomically(this.getNumberingFile(dirs), {highestVersion}, true);
         await fs.unlink(this.getVersionFile(dirs, versionInfo.version));
     }
 
@@ -464,6 +825,28 @@ export class StorageService {
         return this.makeUniqueName(dirs.states, base, StorageApiHelper.JSON_EXTENSION);
     }
 
+    public async renameState(locationId: string, gameName: string, stateName: string, newName: unknown): Promise<void> {
+        if (typeof newName !== 'string') {
+            throw new StorageError(400, 'The new name is missing');
+        }
+        const {resolved, dirs} = await this.getExistingGame(locationId, gameName, true);
+        this.checkNotActive(locationId, gameName, stateName);
+        const source = this.getStateFile(dirs, stateName);
+        const target = this.getStateFile(dirs, newName);
+        if (!await this.isFile(source)) {
+            throw new StorageError(404, `There is no state ${stateName}`);
+        }
+        if (await this.exists(target)) {
+            throw new StorageError(409, `There already is a state ${newName}`);
+        }
+        try {
+            await fs.rename(source, target);
+        } catch (e) {
+            throw this.toWriteError(e);
+        }
+        LoggerService.log(`Renamed state ${stateName} of ${gameName} on ${resolved.location.name} to ${newName}`);
+    }
+
     public async deleteState(locationId: string, gameName: string, stateName: string): Promise<void> {
         const {dirs} = await this.getExistingGame(locationId, gameName, true);
         this.checkNotActive(locationId, gameName, stateName);
@@ -489,7 +872,15 @@ export class StorageService {
 
     public async listGameMedia(locationId: string, gameName: string, relativePath: string): Promise<IStorageFolder> {
         const {dirs} = await this.getGameMediaRoot(locationId, gameName);
-        return this.listFolder(dirs.media, relativePath);
+        const folder = await this.listFolder(dirs.media, relativePath);
+        const usage = await this.readMediaUsage(dirs);
+        for (const entry of folder.entries) {
+            const usedBy = this.getVersionsShowing(usage, StorageApiHelper.joinPath(folder.path, entry.name));
+            if (usedBy.length > 0) {
+                entry.usedByVersions = usedBy;
+            }
+        }
+        return folder;
     }
 
     public async uploadGameMedia(locationId: string, gameName: string, relativePath: string, content: Readable, overwrite: boolean,
@@ -525,27 +916,45 @@ export class StorageService {
     /**
      * Deletes a media file or folder of a game, unless one of the game's versions shows it
      */
-    public async deleteGameMedia(locationId: string, gameName: string, relativePath: string): Promise<void> {
-        const {resolved, dirs} = await this.getGameMediaRoot(locationId, gameName, true);
-        const target = this.resolvePath(dirs.media, relativePath);
-        if (target === dirs.media) {
-            throw new StorageError(400, 'The media folder itself can\'t be deleted');
-        }
-        const normalized = this.normalizeRelativePath(relativePath);
-        const usedBy: number[] = [];
+    /**
+     * The media paths each version shows, to tell which media can't be changed: versions never change, so their media
+     * have to stay where they are
+     */
+    private async readMediaUsage(dirs: IGameDirectories): Promise<{version: number, paths: string[]}[]> {
+        const usage: {version: number, paths: string[]}[] = [];
         for (const version of await this.listVersionNumbers(dirs.versions)) {
             const definition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, version));
             const paths: string[] = [];
             for (const question of definition?.questions ?? []) {
                 paths.push(question.mediaDetails?.fileSrc, ...(question.mediaDetails?.slides ?? []));
             }
-            if (paths.some(p => p === normalized || p?.startsWith(normalized + '/'))) {
-                usedBy.push(version);
-            }
+            usage.push({version, paths: paths.filter(p => !!p).map(p => this.normalizeRelativePath(p))});
         }
+        return usage;
+    }
+
+    /**
+     * The versions that show the file, or media in the folder
+     */
+    private getVersionsShowing(usage: {version: number, paths: string[]}[], relativePath: string): number[] {
+        const normalized = this.normalizeRelativePath(relativePath);
+        return usage.filter(entry => entry.paths.some(p => p === normalized || p.startsWith(normalized + '/'))).map(entry => entry.version);
+    }
+
+    private async checkNotShown(dirs: IGameDirectories, relativePath: string): Promise<void> {
+        const usedBy = this.getVersionsShowing(await this.readMediaUsage(dirs), relativePath);
         if (usedBy.length > 0) {
-            throw new StorageError(409, `Version ${usedBy.join(', ')} of the game shows ${path.basename(target)}`);
+            throw new StorageError(409, `Version ${usedBy.join(', ')} of the game shows ${path.posix.basename(relativePath)}`);
         }
+    }
+
+    public async deleteGameMedia(locationId: string, gameName: string, relativePath: string): Promise<void> {
+        const {resolved, dirs} = await this.getGameMediaRoot(locationId, gameName, true);
+        const target = this.resolvePath(dirs.media, relativePath);
+        if (target === dirs.media) {
+            throw new StorageError(400, 'The media folder itself can\'t be deleted');
+        }
+        await this.checkNotShown(dirs, relativePath);
         let stats;
         try {
             stats = await fs.stat(target);
@@ -559,6 +968,49 @@ export class StorageService {
             await fs.unlink(target);
         }
         LoggerService.log(`Deleted ${relativePath} in ${gameName} on ${resolved.location.name}`);
+    }
+
+    /**
+     * Renames or moves a file or folder within the game's media; toPath is its new path, folder and name. Media that a
+     * version shows stay where they are.
+     */
+    public async moveGameMedia(locationId: string, gameName: string, relativePath: string, toPath: unknown): Promise<IStorageEntry> {
+        if (typeof toPath !== 'string') {
+            throw new StorageError(400, 'Where to move it to is missing');
+        }
+        const {resolved, dirs} = await this.getGameMediaRoot(locationId, gameName, true);
+        const source = this.resolvePath(dirs.media, relativePath);
+        const target = this.resolvePath(dirs.media, toPath);
+        if (source === dirs.media || target === dirs.media) {
+            throw new StorageError(400, 'The media folder itself can\'t be moved');
+        }
+        let stats;
+        try {
+            stats = await fs.stat(source);
+        } catch (e) {
+            throw new StorageError(404, `There is no ${relativePath}`);
+        }
+        if (stats.isDirectory() ? this.isInside(target, source) : !FileExtensionsService.isSupportedExtension(path.extname(target))) {
+            throw new StorageError(400, stats.isDirectory() ? 'A folder can\'t go into itself' : `${path.basename(target)} is no supported media file`);
+        }
+        if (await this.exists(target)) {
+            throw new StorageError(409, `There already is ${path.basename(target)}`);
+        }
+        await this.checkNotShown(dirs, relativePath);
+        try {
+            await fs.mkdir(path.dirname(target), {recursive: true});
+            await fs.rename(source, target);
+        } catch (e) {
+            throw this.toWriteError(e);
+        }
+        LoggerService.log(`Moved ${relativePath} in ${gameName} on ${resolved.location.name} to ${toPath}`);
+        const targetStats = await fs.stat(target);
+        return {
+            name: path.basename(target),
+            type: stats.isDirectory() ? 'directory' : 'file',
+            size: stats.isDirectory() ? undefined : targetStats.size,
+            modified: targetStats.mtime.toISOString()
+        };
     }
 
     /**

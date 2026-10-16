@@ -2,13 +2,11 @@ import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {GameService} from '../../services/game.service';
 import {MatDialog} from '@angular/material/dialog';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {IAutosaveInfoPacket, StorageApiHelper} from '../../../../../shared/shared';
+import {IAutosaveInfoPacket} from '../../../../../shared/shared';
 import {DialogTeamsComponent} from '../dialog-teams/dialog-teams.component';
-import {StorageService} from '../../services/storage.service';
 import {FormatHelper} from '../../helper/format.helper';
-import {GameFileHelper} from '../../helper/game-file.helper';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
+import {EGameStatesMaster} from '../enums/EGameStatesMaster';
 
 @Component({
     selector: 'app-toolbar-master',
@@ -17,7 +15,7 @@ import {baseUrlMaster, pathsMaster} from '../paths-master';
     standalone: false
 })
 export class ToolbarMasterComponent implements OnInit, OnDestroy {
-  // the autosave status of the running game and downloading it
+  // the autosave status of the running game
   @Input() showSaveIcon = false;
   @Input() showReleaseBuzzerLockIcon = false;
   // only once the game is set up, since the setup has its own teams step
@@ -28,7 +26,7 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   public autosave: IAutosaveInfoPacket = null;
   private subscription: Subscription;
 
-  constructor(private game: GameService, private dialog: MatDialog, private storage: StorageService, private snackBar: MatSnackBar) { }
+  constructor(private game: GameService, private dialog: MatDialog) { }
 
   public openTeamsDialog(): void {
     this.dialog.open(DialogTeamsComponent);
@@ -55,31 +53,15 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
       : `Wird automatisch gespeichert: ${where}`;
   }
 
-  public getName(): string {
-    return this.game.getGameName();
+  /**
+   * The start page is only there while no game is set up, like the route guard says
+   */
+  public canGoHome(): boolean {
+    return this.game.getGameState() === EGameStatesMaster.RECEIVED_PRESETUP_DATA;
   }
 
-  /**
-   * Downloads the game with its state as it was saved last, e.g. as a backup on this device
-   */
-  public async exportGameState(): Promise<void> {
-    const ref = this.autosave?.storage;
-    if (ref == null) {
-      return;
-    }
-    try {
-      const location = await this.storage.getLocation(ref.locationId);
-      if (location == null) {
-        throw new Error('Der Speicherort ist nicht mehr da.');
-      }
-      const gameRef = {location, gameName: ref.gameName};
-      const definition = await this.storage.getVersion(gameRef, ref.gameVersion);
-      const state = await this.storage.getState(gameRef, ref.stateName);
-      GameFileHelper.download(`${ref.gameName} - ${ref.stateName}${StorageApiHelper.JSON_EXTENSION}`,
-        GameFileHelper.makeBundle(ref.gameName, definition, state, ref.stateName));
-    } catch (e) {
-      this.snackBar.open('Der Spielstand konnte nicht heruntergeladen werden: ' + StorageService.getErrorMessage(e), 'OK', {duration: 6000});
-    }
+  public getName(): string {
+    return this.game.getGameName();
   }
 
   public resetServer(): void {

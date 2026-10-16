@@ -6,6 +6,7 @@ import {FileExtensionsService, IStorageEntry, IStorageFolder, IStorageLocation, 
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {FormatHelper} from '../../helper/format.helper';
 import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
+import {DialogEditMediaComponent, IDialogEditMediaData, IDialogEditMediaResult} from '../dialog-edit-media/dialog-edit-media.component';
 
 interface IUpload {
   file: File;
@@ -204,24 +205,18 @@ export class MediaBrowserComponent implements OnChanges {
     }
   }
 
-  public async delete(entry: IStorageEntry): Promise<void> {
-    const isFolder = entry.type === 'directory';
-    const confirmed = await this.confirm(isFolder ? 'Ordner löschen' : 'Datei löschen', isFolder
-      ? `Möchtest du den Ordner „${entry.name}“ mit allen Medien darin löschen? Das lässt sich nicht rückgängig machen.`
-      : `Möchtest du „${entry.name}“ löschen? Das lässt sich nicht rückgängig machen.`,
-      'Löschen');
-    if (!confirmed) {
-      return;
+  /**
+   * Renames, moves or deletes a file or folder in a dialog; media a version shows can only be looked at there
+   */
+  public async edit(entry: IStorageEntry): Promise<void> {
+    const result = await this.dialog.open<DialogEditMediaComponent, IDialogEditMediaData, IDialogEditMediaResult>(DialogEditMediaComponent, {
+      data: {game: this.game, folderPath: this.folder.path, entry},
+      width: '520px'
+    }).afterClosed().toPromise();
+    if (result) {
+      this.snackBar.open(result.action === 'moved' ? `„${result.name}“ wurde gespeichert.` : `„${result.name}“ wurde gelöscht.`, 'OK', {duration: 4000});
+      await this.open(this.folder.path);
     }
-    try {
-      await this.storage.deleteGameMedia(this.game, this.getEntryPath(entry));
-    } catch (e) {
-      const message = StorageService.isConflict(e)
-        ? `„${entry.name}“ wird noch von einer Version des Spiels gezeigt (${StorageService.getErrorMessage(e)}). Lösche erst die Versionen, die es zeigen, oder entferne es aus den Fragen.`
-        : StorageService.getErrorMessage(e);
-      this.snackBar.open(message, 'OK', {duration: 8000});
-    }
-    await this.open(this.folder.path);
   }
 
   private confirm(title: string, message: string, confirmText: string): Promise<boolean> {

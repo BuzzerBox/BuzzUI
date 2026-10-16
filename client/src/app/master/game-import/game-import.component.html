@@ -1,8 +1,32 @@
 <div class="import">
-  <input type="file" #importInput hidden accept=".json,application/json" (change)="onFileSelected($any($event.target).files); importInput.value = ''">
-  <button mat-stroked-button [disabled]="!location?.writable" (click)="importInput.click()">
-    <mat-icon>upload_file</mat-icon> Spiel oder alten Spielstand von diesem Gerät importieren
+  <input type="file" #importInput hidden accept=".gz,.tgz,application/gzip,.json,application/json" (change)="onFileSelected($any($event.target).files); importInput.value = ''">
+  <button mat-stroked-button [disabled]="!location?.writable || uploadProgress !== null" (click)="importInput.click()"
+          title="Ein Spiel von diesem Gerät: ein heruntergeladenes Archiv, eine Spieldatei oder einen alten Spielstand">
+    <mat-icon>upload_file</mat-icon> Spiel hochladen
   </button>
+
+  @if (archive) {
+    <div class="details">
+      <p>Ganzes Spiel mit allen Versionen, Spielständen und Medien ({{getArchiveSize()}})</p>
+      <form class="name" (ngSubmit)="import()">
+        <mat-form-field>
+          <mat-label>Name des Spiels</mat-label>
+          <input matInput name="gameName" [(ngModel)]="gameName" required [disabled]="importing">
+          @if (gameName && getSanitizedName() !== gameName) {
+            <mat-hint>Wird gespeichert als „{{getSanitizedName()}}“</mat-hint>
+          }
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="importing || !getSanitizedName()">Importieren</button>
+        <button mat-button type="button" [disabled]="importing" (click)="reset()">Abbrechen</button>
+      </form>
+      @if (uploadProgress !== null) {
+        <div class="progress">
+          <mat-progress-bar [mode]="uploadProgress < 0.99 ? 'determinate' : 'indeterminate'" [value]="uploadProgress * 100"></mat-progress-bar>
+          <span>{{uploadProgress < 0.99 ? 'Wird hochgeladen … ' + getPercent() : 'Wird geprüft und gespeichert …'}}</span>
+        </div>
+      }
+    </div>
+  }
 
   @if (bundle) {
     <div class="details">
@@ -33,6 +57,16 @@
   }
   @if (result) {
     <p class="success"><mat-icon>check_circle</mat-icon>„{{result.gameName}}“ wurde importiert.</p>
+    @if (result.skippedEntries?.length > 0) {
+      <div class="warning">
+        <p><mat-icon>warning</mat-icon>Diese Dateien im Archiv gehören nicht zu einem Spiel und wurden weggelassen:</p>
+        <ul>
+          @for (entry of result.skippedEntries; track entry) {
+            <li><code>{{entry}}</code></li>
+          }
+        </ul>
+      </div>
+    }
     @if (result.missingMedia.length > 0) {
       <div class="warning">
         <p><mat-icon>warning</mat-icon>Diese Medien wurden nicht gefunden:</p>

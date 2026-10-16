@@ -78,7 +78,8 @@
           </span>
           <span matListItemLine>{{getDetails(entry)}}</span>
           @if (canWrite()) {
-            <button matListItemMeta mat-icon-button (click)="delete(entry)" title="Löschen"><mat-icon>delete</mat-icon></button>
+            <button matListItemMeta mat-icon-button (click)="edit(entry)" title="Umbenennen, verschieben oder löschen"
+                    aria-label="Umbenennen, verschieben oder löschen"><mat-icon>{{entry.usedByVersions?.length ? 'lock' : 'edit'}}</mat-icon></button>
           } @else if (!isManaging()) {
             <button matListItemMeta mat-stroked-button (click)="pick(entry)">
               <mat-icon>add</mat-icon> {{entry.type === 'directory' ? 'Ordner übernehmen' : 'Übernehmen'}}

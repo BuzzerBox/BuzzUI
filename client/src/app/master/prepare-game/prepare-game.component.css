@@ -65,3 +65,22 @@ h2 {
   gap: 8px;
   margin-top: 16px;
 }
+
+.missing-media {
+  margin: 0 0 1em;
+  padding: 8px 16px;
+  border: 1px solid #ef6c00;
+  border-radius: 8px;
+  background: #fff3e0;
+}
+
+.missing-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.missing-title mat-icon {
+  color: #ef6c00;
+}

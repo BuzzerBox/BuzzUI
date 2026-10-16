@@ -1,12 +1,14 @@
 import {Component, OnInit} from '@angular/core';
 import {Router} from '@angular/router';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
-import {IBuzzer, IGameDefinition, IGameInstanceState, IGameState, ITeam, StorageApiHelper} from '../../../../../shared/shared';
+import {MatDialog} from '@angular/material/dialog';
+import {IBuzzer, IDirectoryTree, IGameDefinition, IGameInstanceState, IGameState, ITeam, MediaHelper, StorageApiHelper} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
 import {IPrepareNavigationState} from '../game-navigation';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
+import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
 
 interface ITeamRow {
   buzzer: IBuzzer;
@@ -14,6 +16,11 @@ interface ITeamRow {
   // the team of the continued state that is on this buzzer, if any
   team?: ITeam;
   controlName: string;
+}
+
+interface IMissingMedia {
+  questionNumber: number;
+  path: string;
 }
 
 /**
@@ -41,8 +48,11 @@ export class PrepareGameComponent implements OnInit {
   public stateName = new UntypedFormControl(GameFileHelper.makeStateName(), Validators.required);
   public error: string = null;
   public starting = false;
+  // media the questions show that aren't in the game's media folder, e.g. deleted or never copied in
+  public missingMedia: IMissingMedia[] = [];
+  public mediaCheckError: string = null;
 
-  constructor(private game: GameService, private storage: StorageService, private router: Router) {
+  constructor(private game: GameService, private storage: StorageService, private router: Router, private dialog: MatDialog) {
     game.useAsMaster();
     this.navigation = (history.state as IPrepareNavigationState)?.gameName ? history.state : null;
   }
@@ -67,6 +77,28 @@ export class PrepareGameComponent implements OnInit {
       return;
     }
     this.initTeams();
+    await this.findMissingMedia();
+  }
+
+  private async findMissingMedia(): Promise<void> {
+    let tree: IDirectoryTree;
+    try {
+      tree = await this.storage.getGameMediaTree(this.ref);
+    } catch (e) {
+      this.mediaCheckError = StorageService.getErrorMessage(e);
+      return;
+    }
+    const existing = new Set<string>();
+    const collect = (node: IDirectoryTree) => {
+      existing.add(node.path);
+      node.children?.forEach(collect);
+    };
+    collect(tree);
+    this.missingMedia = MediaHelper.findMissingMedia(this.definition.questions, existing);
+  }
+
+  public getMissingQuestionNumbers(): string {
+    return [...new Set(this.missingMedia.map(media => media.questionNumber))].join(', ');
   }
 
   public isContinuing(): boolean {
@@ -85,8 +117,8 @@ export class PrepareGameComponent implements OnInit {
     const controls: Record<string, UntypedFormControl> = {};
     for (const row of this.rows) {
       const control = new UntypedFormControl(row.team?.name ?? 'Team ' + (row.buzzerIndex + 1), Validators.required);
-      // a continued game keeps its teams; a new one starts with all buzzers
-      if (this.isContinuing() && row.team == null) {
+      // a continued game keeps its teams; a new one starts with as few as can play, the others are added by hand
+      if (this.isContinuing() ? row.team == null : row.buzzerIndex >= this.MIN_TEAMS) {
         control.disable();
       }
       controls[row.controlName] = control;
@@ -139,7 +171,7 @@ export class PrepareGameComponent implements OnInit {
   }
 
   public async start(): Promise<void> {
-    if (!this.canStart()) {
+    if (!this.canStart() || !await this.confirmMissingMedia()) {
       return;
     }
     this.starting = true;
@@ -170,5 +202,22 @@ export class PrepareGameComponent implements OnInit {
       stateName: this.isContinuing() ? this.navigation.stateName : this.getStateName()
     }, !this.isContinuing());
     // the server's answer takes the master to the start of the game
+  }
+
+  /**
+   * Whether to start although media are missing; the screens would show nothing for them
+   */
+  private async confirmMissingMedia(): Promise<boolean> {
+    if (this.missingMedia.length === 0) {
+      return true;
+    }
+    const count = this.missingMedia.length === 1 ? 'Eine Mediendatei fehlt' : `${this.missingMedia.length} Mediendateien fehlen`;
+    return this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
+      data: {
+        title: 'Medien fehlen',
+        message: `${count} (Frage ${this.getMissingQuestionNumbers()}). Diese Fragen zeigen dann nichts an. Möchtest du trotzdem beginnen?`,
+        confirmText: 'Trotzdem beginnen'
+      }
+    }).afterClosed().toPromise().then(result => !!result);
   }
 }

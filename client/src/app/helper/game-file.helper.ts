@@ -79,7 +79,14 @@ export class GameFileHelper {
    * A file name without its extension, as a valid name
    */
   public static getBaseName(fileName: string): string {
-    return StorageApiHelper.sanitizeName(fileName.replace(/\.json$/i, '')) || 'Importiertes Spiel';
+    return StorageApiHelper.sanitizeName(fileName.replace(/(\.buzzerbox)?\.(tar\.gz|tgz)$|\.json$/i, '')) || 'Importiertes Spiel';
+  }
+
+  /**
+   * Whether the file is an archive of a whole game with its media, rather than a game file or savegame (JSON)
+   */
+  public static isArchive(fileName: string): boolean {
+    return /\.(tar\.gz|tgz)$/i.test(fileName);
   }
 
   /**

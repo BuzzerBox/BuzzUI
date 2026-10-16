@@ -12,6 +12,11 @@ export interface IStorageEntry {
      * As an ISO date
      */
     modified: string;
+    /**
+     * Only in a game's media: the versions that show the file, or media in the folder. Versions never change, so it
+     * can't be renamed, moved or deleted while they are there.
+     */
+    usedByVersions?: number[];
 }
 
 /**

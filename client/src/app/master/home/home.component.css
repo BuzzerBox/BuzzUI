@@ -47,3 +47,12 @@ h1 {
   line-height: 1.4;
   opacity: 0.8;
 }
+
+/* the installed version, out of the way */
+.version {
+  position: fixed;
+  right: 8px;
+  bottom: 4px;
+  font-size: 0.7em;
+  opacity: 0.6;
+}

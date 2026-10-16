@@ -1,10 +1,11 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
 import {IStorageLocation} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
-import {GameListComponent} from '../game-list/game-list.component';
+import {TGameListMode} from '../game-list/game-list.component';
 
 /**
- * Chooses a stored game to start anew, or one of its states to continue
+ * Chooses a stored game to start anew (mode=new, the default), or a state to continue (mode=continue)
  */
 @Component({
     selector: 'app-load-game',
@@ -13,10 +14,11 @@ import {GameListComponent} from '../game-list/game-list.component';
     standalone: false
 })
 export class LoadGameComponent {
-  @ViewChild(GameListComponent) gameList: GameListComponent;
   public location: IStorageLocation = null;
+  public readonly mode: TGameListMode;
 
-  constructor(game: GameService) {
+  constructor(game: GameService, route: ActivatedRoute) {
     game.useAsMaster();
+    this.mode = route.snapshot.queryParamMap.get('mode') === 'continue' ? 'continue' : 'new';
   }
 }

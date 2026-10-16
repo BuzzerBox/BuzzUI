@@ -1,4 +1,4 @@
-@if (info?.enabled) {
+@if (isShown()) {
   <mat-card class="update-card" appearance="outlined">
     <mat-card-header>
       <mat-icon mat-card-avatar>system_update</mat-icon>
@@ -44,12 +44,7 @@
         </p>
       }
 
-      @if (info.bundles.length === 0) {
-        <p class="hint">
-          Für ein Update lege auf einem USB-Stick einen Ordner <code>updates</code> an, kopiere die Datei
-          <code>buzzerbox-update-&lt;version&gt;.tar</code> hinein und stecke den Stick in die BuzzerBox.
-        </p>
-      } @else {
+      @if (info.bundles.length > 0) {
         <mat-list>
           @for (bundle of info.bundles; track bundle.fileName) {
             <mat-list-item>

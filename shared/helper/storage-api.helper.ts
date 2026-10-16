@@ -1,6 +1,7 @@
 /**
  * The storage API of the file server, for the games on the box and the USB sticks. Every request needs the token the
- * master got in an IStorageAccessPacket in the header TOKEN_HEADER.
+ * master got in an IStorageAccessPacket in the header TOKEN_HEADER. The download of an archive, which the browser does
+ * itself without the header, takes a one-time ticket as the query parameter DOWNLOAD_TICKET_QUERY_PARAMETER instead.
  *
  * A game is a folder with its versions (versions/<n>.json, IGameDefinition), states (states/<name>.json,
  * IGameInstanceState) and media (media/). On the box, the games are in "<storage.boxPath>/games", on a USB stick in
@@ -11,28 +12,42 @@
  * - GET    {BASE_PATH}/locations/:id/games                           → IGameInfo[], by name
  * - POST   {BASE_PATH}/locations/:id/games/:game                     creates an empty game
  * - DELETE {BASE_PATH}/locations/:id/games/:game                     deletes it with its versions, states and media
+ * - POST   {BASE_PATH}/locations/:id/games/:game/archive-ticket      → {ticket}, good for one download of the archive
+ *                                                                      within a minute
+ * - GET    {BASE_PATH}/locations/:id/games/:game/archive?ticket=     → the game with its versions, states and media as
+ *                                                                      a tar.gz file, to bring it to another box
+ * - POST   {BASE_PATH}/locations/:id/games/:game/copy                ← {toLocation, name?, move?}; copies it with its
+ *                                                                      versions, states and media to another location,
+ *                                                                      move deletes the original; within the same
+ *                                                                      location move renames it; → IGameInfo of the copy
  * - GET    {BASE_PATH}/locations/:id/games/:game/versions/:version   → IGameDefinition; :version can be "latest"
  * - POST   {BASE_PATH}/locations/:id/games/:game/versions            ← {questions}; → IGameVersionInfo of the new
  *                                                                      version, or of the latest if nothing changed
- * - DELETE {BASE_PATH}/locations/:id/games/:game/versions/:version   only versions without states, not the latest
+ * - DELETE {BASE_PATH}/locations/:id/games/:game/versions/:version   only versions without states
  * - GET    {BASE_PATH}/locations/:id/games/:game/states/:state       → IGameInstanceState
+ * - POST   {BASE_PATH}/locations/:id/games/:game/states/:state/rename ← {name}
  * - DELETE {BASE_PATH}/locations/:id/games/:game/states/:state
  * - GET    {BASE_PATH}/locations/:id/games/:game/media-tree          → IDirectoryTree, paths relative to the media
  * - GET    {BASE_PATH}/locations/:id/games/:game/media?path=         → IStorageFolder
  * - PUT    {BASE_PATH}/locations/:id/games/:game/media?path=a/b.mp4  ← the file; ?overwrite=true replaces one
  * - POST   {BASE_PATH}/locations/:id/games/:game/folders?path=       creates a folder
  * - DELETE {BASE_PATH}/locations/:id/games/:game/media?path=         a file or folder no version uses
+ * - POST   {BASE_PATH}/locations/:id/games/:game/media/move?path=    ← {toPath}; renames or moves a file or folder no
+ *                                                                      version uses; → IStorageEntry
  * - POST   {BASE_PATH}/locations/:id/games/:game/media/copy?path=    ← {fromLocation, fromPath}; copies a file or folder
  *                                                                      of a USB stick's other media into the folder
  * - GET    {BASE_PATH}/locations/:id/media?path=                     → IStorageFolder of a USB stick's other media
  * - POST   {BASE_PATH}/locations/:id/import?name=                    ← IGameBundle, whose media may be URLs of
  *                                                                      media on the box; → IGameImportResult
+ * - POST   {BASE_PATH}/locations/:id/import-archive?name=            ← an archive of a game; → IGameImportResult
  *
  * Errors are answered with a status code and {error: string}, 409 if the target already exists or is in use.
  */
 export class StorageApiHelper {
     public static readonly BASE_PATH = '/storage';
     public static readonly TOKEN_HEADER = 'X-BuzzerBox-Token';
+    public static readonly DOWNLOAD_TICKET_QUERY_PARAMETER = 'ticket';
+    public static readonly GAME_ARCHIVE_EXTENSION = '.buzzerbox.tar.gz';
     public static readonly BOX_LOCATION_ID = 'box';
     public static readonly USB_LOCATION_ID_PREFIX = 'usb:';
     /**

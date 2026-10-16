@@ -11,3 +11,15 @@ h1 {
 .hint {
   color: rgba(0, 0, 0, 0.6);
 }
+
+.create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.create .import {
+  flex: 1 1 20em;
+}

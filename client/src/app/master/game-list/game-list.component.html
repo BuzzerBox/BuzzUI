@@ -2,10 +2,99 @@
   <p class="error"><mat-icon>error</mat-icon>{{error}}</p>
 }
 @if (games) {
+  @switch (mode) {
+  @case ('new') {
+    @if (getStartableGames().length === 0) {
+      <p class="hint">
+        Auf {{getLocationText()}} ist noch kein gespeichertes Spiel. Erstelle eines in „Spiele verwalten“ oder lade es dort hoch.
+      </p>
+    } @else {
+      <mat-list>
+        @for (game of getStartableGames(); track game.name) {
+          <mat-list-item>
+            <mat-icon matListItemIcon>quiz</mat-icon>
+            <span matListItemTitle>
+              {{game.name}}
+              @if (game.inUse) {
+                <span class="badge">wird gespielt</span>
+              }
+              @if (isBroken(getLatest(game))) {
+                <span class="badge broken" [matTooltip]="getBrokenHint(getLatest(game))"><mat-icon inline>broken_image</mat-icon> Medien fehlen</span>
+              }
+            </span>
+            <span matListItemLine>{{getSummary(game)}}</span>
+            <span matListItemMeta class="item-actions">
+              <!-- a split button: the main part starts the latest version, the arrow offers all versions -->
+              <span class="split-button">
+                <button mat-flat-button color="primary" [class.split-main]="game.versions.length > 1" (click)="startNew(game)">
+                  <mat-icon>play_arrow</mat-icon> Beginnen
+                </button>
+                @if (game.versions.length > 1) {
+                  <button mat-flat-button color="primary" class="split-toggle" [matMenuTriggerFor]="versionMenu"
+                          title="Eine andere Version beginnen" aria-label="Eine andere Version beginnen">
+                    <mat-icon>arrow_drop_down</mat-icon>
+                  </button>
+                  <!-- in the same block as its trigger, which can't see template references of other blocks -->
+                  <mat-menu #versionMenu="matMenu" xPosition="before" class="version-menu">
+                    @for (version of game.versions; track version.version) {
+                      <button mat-menu-item (click)="startNew(game, version.version)" [matTooltip]="isBroken(version) ? getBrokenHint(version) : ''">
+                        <mat-icon [class.broken-icon]="isBroken(version)">{{isBroken(version) ? 'broken_image' : 'history'}}</mat-icon>
+                        <span class="version-item">
+                          <span>Version {{version.version}}</span>
+                          <span class="version-date">{{formatDate(version.savedAt)}}</span>
+                          @if (version.version === game.latestVersion) {
+                            <span class="badge">aktuell</span>
+                          }
+                          @if (isBroken(version)) {
+                            <span class="badge broken">Medien fehlen</span>
+                          }
+                        </span>
+                      </button>
+                    }
+                  </mat-menu>
+                }
+              </span>
+            </span>
+          </mat-list-item>
+        }
+      </mat-list>
+    }
+  }
+  @case ('continue') {
+    @if (getStates().length === 0) {
+      <p class="hint">Auf {{getLocationText()}} gibt es noch keine Spielstände. Beginne ein neues Spiel, dann wird es dabei gespeichert.</p>
+    } @else {
+      <mat-list>
+        @for (entry of getStates(); track entry.game.name + '/' + entry.state.name) {
+          <mat-list-item>
+            <mat-icon matListItemIcon>{{entry.state.finished ? 'flag' : 'bookmark'}}</mat-icon>
+            <span matListItemTitle>
+              {{entry.state.name}}
+              @if (isBroken(getVersion(entry.game, entry.state.gameVersion))) {
+                <span class="badge broken" [matTooltip]="getBrokenHint(getVersion(entry.game, entry.state.gameVersion))"><mat-icon inline>broken_image</mat-icon> Medien fehlen</span>
+              }
+            </span>
+            <span matListItemLine>
+              {{entry.game.name}} · {{getStateDetails(entry.game, entry.state)}}
+              @if (entry.state.gameVersion !== entry.game.latestVersion) {
+                · spielt Version {{entry.state.gameVersion}}
+              }
+            </span>
+            <span matListItemMeta class="item-actions">
+              <button mat-flat-button color="primary" (click)="continueState(entry.game, entry.state)">
+                <mat-icon>{{entry.state.finished ? 'replay' : 'play_arrow'}}</mat-icon> {{entry.state.finished ? 'Wieder öffnen' : 'Fortsetzen'}}
+              </button>
+            </span>
+          </mat-list-item>
+        }
+      </mat-list>
+    }
+  }
+  @default {
   @if (games.length === 0) {
     <p class="hint">
-      Auf {{location.type === 'box' ? 'der BuzzerBox' : 'dem USB-Stick ' + location.name}} sind noch keine Spiele.
-      Erstelle eines auf der Startseite oder importiere eine Datei.
+      Auf {{getLocationText()}} sind noch keine Spiele.
+      Erstelle ein neues oder lade eines hoch.
     </p>
   } @else {
     <mat-accordion multi>
@@ -23,19 +112,21 @@
 
           <ng-template matExpansionPanelContent>
             <div class="actions">
-              @if (game.latestVersion !== null) {
-                <button mat-flat-button color="primary" (click)="startNew(game)"><mat-icon>play_arrow</mat-icon> Neues Spiel beginnen</button>
-              }
-              @if (location.writable) {
-                <button mat-stroked-button (click)="edit(game)"><mat-icon>edit</mat-icon> Bearbeiten</button>
-              }
               @if (manage) {
                 @if (game.latestVersion !== null) {
-                  <button mat-stroked-button [disabled]="busy" (click)="download(game)"><mat-icon>download</mat-icon> Herunterladen</button>
+                  <button mat-stroked-button (click)="downloadArchive(game)"
+                          title="Das ganze Spiel mit allen Versionen, Spielständen und Medien, um es auf eine andere BuzzerBox zu bringen">
+                    <mat-icon>download</mat-icon> Herunterladen
+                  </button>
+                  <button mat-stroked-button [disabled]="busy" (click)="download(game)" title="Nur die Fragen der neuesten Version, als JSON-Datei">
+                    <mat-icon>description</mat-icon> Ohne Medien herunterladen
+                  </button>
                 }
-                @if (location.writable) {
-                  <button mat-stroked-button color="warn" [disabled]="game.inUse" (click)="deleteGame(game)"><mat-icon>delete</mat-icon> Löschen</button>
-                }
+                <span [matTooltip]="game.inUse ? 'Das Spiel wird gerade gespielt.' : 'Umbenennen, verschieben, kopieren oder löschen'">
+                  <button mat-stroked-button [disabled]="game.inUse" (click)="editGame(game)">
+                    <mat-icon>drive_file_rename_outline</mat-icon> Verwalten
+                  </button>
+                </span>
               }
             </div>
 
@@ -47,27 +138,24 @@
                 @for (state of game.states; track state.name) {
                   <mat-list-item>
                     <mat-icon matListItemIcon>{{state.finished ? 'flag' : 'bookmark'}}</mat-icon>
-                    <span matListItemTitle>{{state.name}}</span>
+                    <span matListItemTitle>
+                      {{state.name}}
+                      @if (isBroken(getVersion(game, state.gameVersion))) {
+                        <span class="badge broken" [matTooltip]="getBrokenHint(getVersion(game, state.gameVersion))"><mat-icon inline>broken_image</mat-icon> Medien fehlen</span>
+                      }
+                    </span>
                     <span matListItemLine>
                       {{getStateDetails(game, state)}}
                       @if (state.gameVersion !== game.latestVersion) {
                         · spielt Version {{state.gameVersion}}
                       }
                     </span>
-                    @if (state.teams.length > 0) {
-                      <span matListItemLine class="teams">{{getTeams(state)}}</span>
+                    @if (manage && location.writable) {
+                      <span matListItemMeta class="item-actions">
+                        <button mat-icon-button (click)="editState(game, state)" title="Umbenennen oder löschen"
+                                aria-label="Umbenennen oder löschen"><mat-icon>edit</mat-icon></button>
+                      </span>
                     }
-                    <span matListItemMeta class="item-actions">
-                      <button mat-stroked-button color="primary" (click)="continueState(game, state)">
-                        <mat-icon>{{state.finished ? 'replay' : 'play_arrow'}}</mat-icon> {{state.finished ? 'Wieder öffnen' : 'Fortsetzen'}}
-                      </button>
-                      @if (manage) {
-                        <button mat-icon-button [disabled]="busy" (click)="download(game, state)" title="Herunterladen"><mat-icon>download</mat-icon></button>
-                        @if (location.writable) {
-                          <button mat-icon-button (click)="deleteState(game, state)" title="Löschen"><mat-icon>delete</mat-icon></button>
-                        }
-                      }
-                    </span>
                   </mat-list-item>
                 }
               </mat-list>
@@ -77,6 +165,9 @@
               <h3>Versionen</h3>
               @if (game.versions.length === 0) {
                 <p class="hint">Das Spiel wurde noch nicht gespeichert.</p>
+                @if (location.writable) {
+                  <button mat-stroked-button (click)="deriveVersion(game)"><mat-icon>edit_note</mat-icon> Fragen erstellen</button>
+                }
               } @else {
                 <mat-list>
                   @for (version of game.versions; track version.version) {
@@ -87,13 +178,26 @@
                         @if (version.version === game.latestVersion) {
                           <span class="badge">aktuell</span>
                         }
+                        @if (isBroken(version)) {
+                          <span class="badge broken" [matTooltip]="getBrokenHint(version)"><mat-icon inline>broken_image</mat-icon> Medien fehlen</span>
+                        }
                       </span>
                       <span matListItemLine>
                         {{version.questionCount}} Fragen · gespeichert {{formatDate(version.savedAt)}}
                         · {{version.stateCount === 1 ? '1 Spielstand' : version.stateCount + ' Spielstände'}}
                       </span>
-                      @if (location.writable && canDeleteVersion(game, version)) {
-                        <button matListItemMeta mat-icon-button (click)="deleteVersion(game, version)" title="Löschen"><mat-icon>delete</mat-icon></button>
+                      @if (location.writable) {
+                        <span matListItemMeta class="item-actions">
+                          <button mat-stroked-button (click)="deriveVersion(game, version)"
+                                  title="Öffnet den Editor mit den Fragen dieser Version; beim Speichern entsteht eine neue Version">
+                            <mat-icon>edit_note</mat-icon> Neue Version daraus
+                          </button>
+                          <!-- a disabled button gets no mouse events, so the span shows why -->
+                          <span [matTooltip]="getDeleteVersionHint(version)">
+                            <button mat-icon-button [disabled]="!canDeleteVersion(version)" (click)="deleteVersion(game, version)"
+                                    [attr.aria-label]="getDeleteVersionHint(version)"><mat-icon>delete</mat-icon></button>
+                          </span>
+                        </span>
                       }
                     </mat-list-item>
                   }
@@ -107,5 +211,7 @@
         </mat-expansion-panel>
       }
     </mat-accordion>
+  }
+  }
   }
 }

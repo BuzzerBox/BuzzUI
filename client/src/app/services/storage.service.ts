@@ -6,6 +6,7 @@ import {
   IDirectoryTree,
   IGameBundle,
   IGameDefinition,
+  IGameCopyResult,
   IGameImportResult,
   IGameInfo,
   IGameInstanceState,
@@ -25,6 +26,11 @@ import {GameService} from './game.service';
 export interface IUploadProgress {
   progress: number;
   entry?: IStorageEntry;
+}
+
+export interface IArchiveImportProgress {
+  progress: number;
+  result?: IGameImportResult;
 }
 
 /**
@@ -76,6 +82,13 @@ export class StorageService {
 
   public static getLocationLabel(location: IStorageLocation): string {
     return location.type === 'box' ? 'BuzzerBox' : 'USB-Stick ' + location.name;
+  }
+
+  /**
+   * The location as it follows "auf", e.g. "auf der BuzzerBox"
+   */
+  public static getLocationText(location: IStorageLocation): string {
+    return location.type === 'box' ? 'der BuzzerBox' : 'dem USB-Stick ' + location.name;
   }
 
   /**
@@ -147,6 +160,45 @@ export class StorageService {
   }
 
   /**
+   * Where the browser downloads the game as an archive with its versions, states and media. The browser can't send the
+   * token header for a download, so the URL has a ticket for one download within a minute.
+   */
+  public async getGameArchiveUrl(ref: IGameRef): Promise<string> {
+    const {ticket} = await this.http.post<{ticket: string}>(this.gameUrl(ref, 'archive-ticket'), null, {headers: this.headers()}).toPromise();
+    const params = new HttpParams().set(StorageApiHelper.DOWNLOAD_TICKET_QUERY_PARAMETER, ticket);
+    return this.gameUrl(ref, 'archive') + '?' + params.toString();
+  }
+
+  /**
+   * Uploads an archive of getGameArchiveUrl, which becomes a new game
+   */
+  public importGameArchive(location: IStorageLocation, name: string, file: File): Observable<IArchiveImportProgress> {
+    const request = new HttpRequest('POST', this.url('locations', location.id, 'import-archive'), file, {
+      headers: this.headers().set('Content-Type', 'application/gzip'),
+      params: new HttpParams().set('name', name),
+      reportProgress: true
+    });
+    return this.http.request<IGameImportResult>(request).pipe(
+      filter((event: HttpEvent<IGameImportResult>) => event.type === HttpEventType.UploadProgress || event.type === HttpEventType.Response),
+      map(event => {
+        if (event.type === HttpEventType.Response) {
+          return {progress: 1, result: event.body};
+        }
+        const total = event.type === HttpEventType.UploadProgress ? event.total : undefined;
+        // the box still checks and saves the game after the upload
+        return {progress: total ? Math.min(event.loaded / total, 0.99) : 0};
+      })
+    );
+  }
+
+  /**
+   * Copies a game with its versions, states and media to another location; move deletes the original afterwards
+   */
+  public copyGame(ref: IGameRef, to: IStorageLocation, name: string, move: boolean): Promise<IGameCopyResult> {
+    return this.http.post<IGameCopyResult>(this.gameUrl(ref, 'copy'), {toLocation: to.id, name, move}, {headers: this.headers()}).toPromise();
+  }
+
+  /**
    * @param version a version number, or "latest"
    */
   public getVersion(ref: IGameRef, version: number | 'latest'): Promise<IGameDefinition> {
@@ -170,6 +222,10 @@ export class StorageService {
 
   public deleteState(ref: IGameRef, stateName: string): Promise<void> {
     return this.http.delete<void>(this.gameUrl(ref, 'states', stateName), {headers: this.headers()}).toPromise();
+  }
+
+  public renameState(ref: IGameRef, stateName: string, newName: string): Promise<void> {
+    return this.http.post<void>(this.gameUrl(ref, 'states', stateName, 'rename'), {name: newName}, {headers: this.headers()}).toPromise();
   }
 
   /**
@@ -226,6 +282,18 @@ export class StorageService {
   public async deleteGameMedia(ref: IGameRef, path: string): Promise<void> {
     await this.http.delete<void>(this.gameUrl(ref, 'media'), {headers: this.headers(), params: new HttpParams().set('path', path)}).toPromise();
     this.gameMediaChangedSubject.next(ref);
+  }
+
+  /**
+   * Renames or moves a file or folder of the game's media; toPath is its new folder and name
+   */
+  public async moveGameMedia(ref: IGameRef, path: string, toPath: string): Promise<IStorageEntry> {
+    const entry = await this.http.post<IStorageEntry>(this.gameUrl(ref, 'media', 'move'), {toPath}, {
+      headers: this.headers(),
+      params: new HttpParams().set('path', path)
+    }).toPromise();
+    this.gameMediaChangedSubject.next(ref);
+    return entry;
   }
 
   /**
