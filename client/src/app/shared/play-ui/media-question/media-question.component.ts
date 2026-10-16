@@ -37,6 +37,8 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
         this.preloadNextSlide();
         switch (packet.mediaQuestionState.mediaState) {
           // this component is reused when the next question also has media, so hide whatever was shown before
+          // PAUSED hides the media too (the master's button hides an image with it, and questions may start with it); a
+          // paused video keeps showing its picture though
           case EMediaStates.NO_MEDIA:
           case EMediaStates.HIDDEN:
           case EMediaStates.PAUSED:

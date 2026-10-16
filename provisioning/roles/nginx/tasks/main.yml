@@ -1,0 +1,20 @@
+# nginx serves the client from the current release
+
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Serve the client
+  ansible.builtin.copy:
+    dest: /etc/nginx/sites-available/default
+    content: "{{ lookup('file', playbook_dir ~ '/../install/.assets/configs/nginx/sites-available-default.conf')
+                 | replace('__INSTALL_DIR__', buzzerbox_install_dir) }}"
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Enable nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    enabled: true

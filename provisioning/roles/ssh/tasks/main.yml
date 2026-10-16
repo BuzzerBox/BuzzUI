@@ -1,0 +1,48 @@
+# SSH for maintenance (e.g. running this playbook against a box). It is only on when ssh_authorized_keys is set, and
+# only for buzzerbox_admin_user with a key.
+
+- name: Set up SSH access
+  when: ssh_authorized_keys | length > 0
+  block:
+    - name: Create the admin user
+      ansible.builtin.user:
+        name: "{{ buzzerbox_admin_user }}"
+        shell: /bin/bash
+        password_lock: true
+        groups: [sudo]
+        append: true
+
+    - name: Install the authorized keys
+      ansible.posix.authorized_key:
+        user: "{{ buzzerbox_admin_user }}"
+        key: "{{ ssh_authorized_keys | join('\n') }}"
+        exclusive: true
+
+    - name: Let the admin user use sudo without a password
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/buzzerbox-admin
+        content: "{{ buzzerbox_admin_user }} ALL=(ALL) NOPASSWD: ALL\n"
+        mode: "0440"
+        validate: visudo -cf %s
+
+    - name: Allow keys only
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/buzzerbox.conf
+        content: |
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          PermitRootLogin no
+          AllowUsers {{ buzzerbox_admin_user }}
+        mode: "0644"
+      notify: Reload ssh
+
+    - name: Enable SSH
+      ansible.builtin.systemd_service:
+        name: ssh.service
+        enabled: true
+
+- name: Disable SSH
+  ansible.builtin.systemd_service:
+    name: ssh.service
+    enabled: false
+  when: ssh_authorized_keys | length == 0

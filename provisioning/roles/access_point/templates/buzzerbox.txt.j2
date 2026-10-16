@@ -1,0 +1,16 @@
+# Settings of this BuzzerBox. The box reads them on every start, so change them here and restart the box.
+# You can edit this file on any computer: it is on the boot partition ("bootfs") of the SD card or the eMMC.
+# Lines are KEY=value without quotes. Delete a line or leave a value empty to use the default shown here.
+
+# Name of the box's WiFi network (1-32 characters)
+WIFI_SSID={{ wifi_ssid }}
+# Password of the WiFi network (8-63 characters)
+WIFI_PASSPHRASE={{ wifi_passphrase }}
+# Country the box is used in, as a two-letter code (DE, AT, CH, GB, ...). It decides which WiFi channels are allowed.
+WIFI_COUNTRY_CODE={{ wifi_country_code }}
+# WiFi channel, 1-13
+WIFI_CHANNEL={{ wifi_channel }}
+# Address of the box in its WiFi network. Devices get addresses .50 to .150 of the same /24 network.
+SERVER_IP_ADDRESS={{ server_ip_address }}
+# Names that devices on the WiFi can open the box under, separated by spaces
+SERVER_HOSTNAMES={{ server_hostnames | join(' ') }}

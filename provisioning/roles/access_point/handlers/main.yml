@@ -1,0 +1,8 @@
+# On a running box: apply the settings and let NetworkManager load the changed connection. This drops the devices on
+# the box's WiFi, possibly including the one running Ansible, so it isn't waited for. The WiFi country on the kernel
+# command line only counts after a reboot.
+- name: Apply the settings
+  ansible.builtin.shell: sleep 2 && /usr/local/sbin/buzzerbox-apply-settings && nmcli connection reload && nmcli connection up BuzzerBox
+  async: 60
+  poll: 0
+  when: not ansible_facts.is_chroot

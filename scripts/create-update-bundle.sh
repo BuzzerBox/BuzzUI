@@ -5,6 +5,8 @@
 #   ./create-update-bundle.sh --unsigned
 # The key can also be passed as BUZZERBOX_UPDATE_SIGNING_KEY. Create one with: node update-signing.js generate-key
 # A box installs an unsigned bundle only after the master confirmed a warning.
+# The signature is checked against install/.assets/update-public-key.pem, the key the boxes have, or against
+# BUZZERBOX_UPDATE_PUBLIC_KEY if set, so a bundle that the boxes would refuse is not created.
 #
 # The bundle holds manifest.json (version and checksum of the payload), its signature manifest.sig and payload.tar.gz,
 # which is unpacked into releases/<version> on the box: frontend/, backend/ (with node_modules) and hooks/.
@@ -27,6 +29,7 @@ ROOT_DIR="$(cd .. && pwd)"
 COMPILATIONS_DIR="${ROOT_DIR}/install/.assets/compilations"
 OUTPUT_DIR="${ROOT_DIR}/updates"
 VERSION="$(node -p "require('${ROOT_DIR}/version.json').version")"
+PUBLIC_KEY="${BUZZERBOX_UPDATE_PUBLIC_KEY:-${ROOT_DIR}/install/.assets/update-public-key.pem}"
 
 sh ./create-installation-files.sh
 
@@ -62,6 +65,12 @@ VERSION="${VERSION}" PAYLOAD_SHA256="${PAYLOAD_SHA256}" COMMIT="${COMMIT}" node 
 BUNDLE_FILES=(manifest.json payload.tar.gz)
 if [ -n "${SIGNING_KEY}" ]; then
   node update-signing.js sign "${SIGNING_KEY}" "${WORK_DIR}/manifest.json" "${WORK_DIR}/manifest.sig"
+  if [ -f "${PUBLIC_KEY}" ]; then
+    node update-signing.js verify "${PUBLIC_KEY}" "${WORK_DIR}/manifest.json" "${WORK_DIR}/manifest.sig" \
+      || { echo "The private key does not belong to ${PUBLIC_KEY}, so the boxes would refuse the bundle"; exit 1; }
+  else
+    echo "Warning: there is no public key at ${PUBLIC_KEY} to check the signature with"
+  fi
   BUNDLE_FILES=(manifest.json manifest.sig payload.tar.gz)
 fi
 

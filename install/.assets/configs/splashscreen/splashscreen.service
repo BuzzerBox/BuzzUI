@@ -7,6 +7,8 @@ After=local-fs.target
 ExecStart=/usr/bin/fbi -d /dev/fb0 --noverbose -a __SPLASH_IMAGE_TARGET_LOCATION__
 StandardInput=tty
 StandardOutput=tty
+# fbi exits with 42 when it is stopped, e.g. by the kiosk
+SuccessExitStatus=42
 
 [Install]
 WantedBy=sysinit.target

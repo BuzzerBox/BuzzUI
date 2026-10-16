@@ -219,14 +219,25 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
 
   /**
    * Whether the screens show the media, as decided in MediaQuestionComponent: while it plays, and a slideshow also
-   * once it is complete. The screens then show the answers below the media.
+   * once it is complete. A video keeps showing its picture once it was started, also paused and finished. The screens
+   * then show the answers below the media.
    */
   public isMediaShown(): boolean {
-    if (!this.question?.mediaDetails) {
+    const media = this.question?.mediaDetails;
+    if (!media) {
       return false;
     }
-    return this.mediaState === EMediaStates.PLAYING || this.mediaState === EMediaStates.RESET
-      || (this.mediaState === EMediaStates.FINISHED && MediaHelper.isSlideshow(this.question.mediaDetails));
+    switch (this.mediaState) {
+      case EMediaStates.PLAYING:
+      case EMediaStates.RESET:
+        return true;
+      case EMediaStates.PAUSED:
+        return MediaHelper.isVideo(media);
+      case EMediaStates.FINISHED:
+        return MediaHelper.isSlideshow(media) || MediaHelper.isVideo(media);
+      default:
+        return false;
+    }
   }
 
   public getAnswers(): IAnswer[] {

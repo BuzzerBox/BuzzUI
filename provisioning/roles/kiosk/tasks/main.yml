@@ -1,0 +1,89 @@
+# The screen: Chromium in kiosk mode on the HDMI output, in the cage Wayland compositor. There is no desktop.
+
+- name: Install cage, Chromium and the audio stack
+  ansible.builtin.apt:
+    # PipeWire plays the media's audio over HDMI
+    name: [cage, chromium, pipewire, pipewire-pulse, wireplumber, fonts-noto-color-emoji]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install the PAM configuration of the kiosk session
+  ansible.builtin.copy:
+    src: buzzerbox-kiosk.pam
+    dest: /etc/pam.d/buzzerbox-kiosk
+    mode: "0644"
+
+# cage always draws a mouse cursor, even without a mouse. It only loads the cursor theme "default", so the kiosk gets its
+# own XCURSOR_PATH with a "default" theme whose cursor is one transparent pixel (files/hidden-cursor, an Xcursor file).
+# Chromium inherits it, so a mouse plugged in stays invisible too.
+- name: Create the directory of the cursor theme
+  ansible.builtin.file:
+    path: /usr/share/buzzerbox/cursors/default/cursors
+    state: directory
+    mode: "0755"
+
+- name: Install the invisible cursor theme
+  ansible.builtin.copy:
+    src: hidden-cursor
+    dest: /usr/share/buzzerbox/cursors/default/cursors/default
+    mode: "0644"
+
+- name: Use it for the other cursor names
+  ansible.builtin.file:
+    src: default
+    dest: "/usr/share/buzzerbox/cursors/default/cursors/{{ item }}"
+    state: link
+  loop: [left_ptr, arrow, pointer, text, xterm, hand2, crosshair]
+
+- name: Describe the cursor theme
+  ansible.builtin.copy:
+    dest: /usr/share/buzzerbox/cursors/default/index.theme
+    content: |
+      [Icon Theme]
+      Name=default
+      Comment=An invisible mouse cursor for the BuzzerBox kiosk
+    mode: "0644"
+
+# WirePlumber picks the HDMI card's profile when it starts, and without a TV that is "off". It doesn't switch the
+# profile again by itself (api.acp.auto-profile is false by default), so a TV switched on after the box stayed silent.
+# Its default volume of 40 % is raised to 100 %: the master and the TV set how loud it is.
+- name: Create the directory of WirePlumber's settings
+  ansible.builtin.file:
+    path: /etc/wireplumber/wireplumber.conf.d
+    state: directory
+    mode: "0755"
+
+- name: Switch the HDMI sound on when a TV is connected later, at full volume
+  ansible.builtin.copy:
+    dest: /etc/wireplumber/wireplumber.conf.d/50-buzzerbox-hdmi.conf
+    content: |
+      # see provisioning/roles/kiosk: the HDMI cards switch from "off" to HDMI by themselves when a TV reports in,
+      # at full volume
+      wireplumber.settings = {
+        device.routes.default-sink-volume = 1.0
+      }
+      monitor.alsa.rules = [
+        {
+          matches = [ { device.name = "~alsa_card\\.platform-.*\\.hdmi" } ]
+          actions = { update-props = { api.acp.auto-profile = true, api.acp.auto-port = true } }
+        }
+      ]
+    mode: "0644"
+
+- name: Install the kiosk service
+  ansible.builtin.template:
+    src: buzzerbox-kiosk.service.j2
+    dest: /etc/systemd/system/buzzerbox-kiosk.service
+    mode: "0644"
+
+- name: Enable the kiosk service
+  ansible.builtin.systemd_service:
+    name: buzzerbox-kiosk.service
+    enabled: true
+    daemon_reload: "{{ not ansible_facts.is_chroot }}"
+
+- name: Boot into the kiosk
+  ansible.builtin.file:
+    src: /usr/lib/systemd/system/graphical.target
+    dest: /etc/systemd/system/default.target
+    state: link

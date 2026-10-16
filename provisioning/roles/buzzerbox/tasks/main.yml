@@ -1,0 +1,114 @@
+# The BuzzerBox software in the release layout of the USB updates (see the README): releases/<version>, with current
+# linking to the one that runs. The helper, the service and the sudo rule are the same files that install/ and the update
+# bundles use, so they stay in install/.assets.
+
+- name: Look for an installed release
+  ansible.builtin.stat:
+    path: "{{ buzzerbox_install_dir }}/current"
+  register: current_release
+
+# A box that runs a release keeps it: newer ones come as update bundles, which also bring their own helper and service.
+- name: Install the first release
+  when: not current_release.stat.exists
+  block:
+    - name: Check that a release is given
+      ansible.builtin.assert:
+        that: buzzerbox_release_archive | length > 0
+        fail_msg: There is no release on this box yet, so set buzzerbox_release_archive (see image/build-image.sh)
+
+    - name: Read the version of the release
+      ansible.builtin.set_fact:
+        release_version: "{{ buzzerbox_release_archive | basename | regex_replace('^buzzerbox-release-(.*)\\.tar\\.gz$', '\\1') }}"
+
+    - name: Create the release directory
+      ansible.builtin.file:
+        path: "{{ buzzerbox_install_dir }}/releases/{{ release_version }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Unpack the release
+      ansible.builtin.unarchive:
+        src: "{{ buzzerbox_release_archive }}"
+        dest: "{{ buzzerbox_install_dir }}/releases/{{ release_version }}"
+        owner: root
+        group: root
+
+    - name: Make the release the current one
+      ansible.builtin.file:
+        src: "releases/{{ release_version }}"
+        dest: "{{ buzzerbox_install_dir }}/current"
+        state: link
+        owner: root
+        group: root
+
+# Root owns the releases, as the update helper (which runs as root) installs them: the server, which runs as the user,
+# can read its code but not change it, nor swap a release for another one.
+- name: Let root own the installation directory
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ buzzerbox_install_dir }}"
+    - "{{ buzzerbox_install_dir }}/releases"
+
+- name: Create the directories of the update helper and the server
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.owner | default('root') }}"
+    mode: "0755"
+  loop:
+    - path: /etc/buzzerbox
+    # update-status.json, written by the helper
+    - path: /var/lib/buzzerbox
+    # save games and media kept on the box (storage.boxPath in config.json)
+    - path: /var/lib/buzzerbox/storage
+      owner: "{{ buzzerbox_user }}"
+
+- name: Install the update helper
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/buzzerbox-update
+    content: "{{ lookup('file', playbook_dir ~ '/../install/.assets/scripts/buzzerbox-update.sh')
+                 | replace('__INSTALL_DIR__', buzzerbox_install_dir) }}\n"
+    mode: "0755"
+
+- name: Let the server start updates
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/buzzerbox-update
+    content: "{{ lookup('file', playbook_dir ~ '/../install/.assets/configs/sudoers/buzzerbox-update')
+                 | replace('pi ALL', buzzerbox_user ~ ' ALL') }}\n"
+    mode: "0440"
+    validate: visudo -cf %s
+
+- name: Install the public key that updates are checked with
+  ansible.builtin.copy:
+    src: "{{ buzzerbox_update_public_key }}"
+    dest: /etc/buzzerbox/update-public-key.pem
+    mode: "0644"
+  when: buzzerbox_update_public_key is file
+
+- name: Warn that updates can't be installed
+  ansible.builtin.debug:
+    msg: "{{ buzzerbox_update_public_key }} is missing, so this box can't install updates until the key is in /etc/buzzerbox"
+  when: buzzerbox_update_public_key is not file
+
+- name: Install the server service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/buzzerbox-server.service
+    content: "{{ lookup('file', playbook_dir ~ '/../install/.assets/configs/systemd/buzzerbox-server.service')
+                 | replace('__INSTALL_DIR__', buzzerbox_install_dir)
+                 | replace('User=pi', 'User=' ~ buzzerbox_user) }}\n"
+    mode: "0644"
+  notify: Restart the server
+
+- name: Enable the server service
+  ansible.builtin.systemd_service:
+    name: buzzerbox-server.service
+    enabled: true
+    daemon_reload: "{{ not ansible_facts.is_chroot }}"

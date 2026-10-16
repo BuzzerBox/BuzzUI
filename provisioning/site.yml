@@ -1,0 +1,15 @@
+# Turns Raspberry Pi OS Lite (64-bit, Trixie) into a BuzzerBox.
+# image/build-image.sh runs it in a chroot of the base image. It can also run against boxes over SSH, see the README.
+- name: Set up a BuzzerBox
+  hosts: all
+  become: true
+  roles:
+    - base
+    - node
+    - nginx
+    - buzzerbox
+    - access_point
+    - usb_automount
+    - splash
+    - kiosk
+    - ssh

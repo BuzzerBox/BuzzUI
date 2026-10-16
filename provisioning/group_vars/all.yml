@@ -1,0 +1,38 @@
+# Settings for every BuzzerBox. The image build and ansible-playbook against running boxes both use them.
+
+# the user that runs the server and the kiosk. USB sticks are mounted at /media/<user>, see config.json fileServer
+buzzerbox_user: pi
+buzzerbox_install_dir: /home/pi/BuzzerBox
+buzzerbox_hostname: buzzerbox
+
+# the release that a fresh box starts with: a tarball of install/.assets/compilations (frontend/ and backend/) that
+# image/build-image.sh creates. Boxes that already run a release keep it, later releases come as USB update bundles.
+buzzerbox_release_archive: ""
+# public key that update bundles are checked with (see the README). Without it, the box can't install updates.
+buzzerbox_update_public_key: "{{ playbook_dir }}/../install/.assets/update-public-key.pem"
+
+# Node.js comes from nodejs.org, pinned by version and checksum, since Debian's packages are older than the LTS
+node_version: "24.21.0"
+node_sha256: "6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2"
+
+# HDMI output that is forced on even without a screen at boot, see roles/base
+display_mode: "1920x1080@60"
+# hides the kernel messages and the console cursor during boot, so the splash screen stays clean
+quiet_boot: true
+
+# Per-box settings: these are only the defaults. Each box reads its own values from buzzerbox.txt on the boot partition
+# (see roles/access_point/templates/buzzerbox.txt.j2), so they can be changed after flashing.
+wifi_ssid: BuzzerBoxNetwork
+wifi_passphrase: 12TheBuzzerBox_IncredibleNetwork34
+wifi_country_code: DE
+wifi_channel: 8
+server_ip_address: 10.0.0.5
+# the names that devices on the box's WiFi can open the master under
+server_hostnames:
+  - buzzer.box
+  - buzzerbox.local
+
+# SSH is off unless keys are given here. They are installed for buzzerbox_admin_user, who may use sudo; the server's
+# user gets no SSH access. Passwords are never accepted.
+ssh_authorized_keys: []
+buzzerbox_admin_user: admin
