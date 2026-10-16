@@ -54,6 +54,19 @@ import {ConfigService} from './config.service';
 
 export type ZeroVoidCallback = () => void;
 
+/**
+ * Why the server does not let this device be the master, see EGameStatesMaster.REJECTED
+ */
+export interface IMasterRejection {
+  // the other master is in a game, not just setting one up
+  isGameRunning: boolean;
+  // the other device took over from this one, which then doesn't try to get back in by itself
+  takenOver: boolean;
+}
+
+// how long a refused master waits before it tries again, which lets it in once the other master is gone
+const MASTER_RETRY_DELAY_MS = 3000;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -86,6 +99,10 @@ export class GameService implements OnDestroy {
   // the token for the storage API, which the server gives the master only
   private storageTokenSubject = new BehaviorSubject<string | null>(null);
   private autosaveInfoSubject = new ReplaySubject<IAutosaveInfoPacket>(1);
+  private masterRejection: IMasterRejection | null = null;
+  private masterRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  // registering again after a reconnect has to take over as well, see registerMaster()
+  private takeOverRequested = false;
 
   constructor(
     private webSocketService: WebSocketService,
@@ -140,8 +157,10 @@ export class GameService implements OnDestroy {
           break;
         case EGameStatesMaster.REJECTED:
           // the server closes the connection of a refused master; trying again lets it in once the other master is gone
-          this.setNewGameState(EGameStatesMaster.STARTING);
-          this.registerMaster();
+          if (!this.masterRejection?.takenOver) {
+            clearTimeout(this.masterRetryTimer);
+            this.masterRetryTimer = setTimeout(() => this.registerAgainAsMaster(), MASTER_RETRY_DELAY_MS);
+          }
           break;
         default:
           // the server keeps a running game for a master that rejoins, which a reload does
@@ -153,7 +172,29 @@ export class GameService implements OnDestroy {
 
   private registerMaster(): void {
     // the box has no clock it can rely on, see ClockService
-    this.webSocketService.send<IRegisterMasterPacket>({packetType: EPacketTypes.REGISTER_MASTER, clientTime: Date.now()});
+    this.webSocketService.send<IRegisterMasterPacket>({
+      packetType: EPacketTypes.REGISTER_MASTER,
+      clientTime: Date.now(),
+      takeOver: this.takeOverRequested || undefined
+    });
+  }
+
+  /**
+   * For a refused master: tries to become the master again, or takes over from the master that is connected
+   */
+  public registerAgainAsMaster(takeOver = false): void {
+    if (this.currentGameStateInAutomaton !== EGameStatesMaster.REJECTED) {
+      return;
+    }
+    clearTimeout(this.masterRetryTimer);
+    this.masterRetryTimer = null;
+    this.takeOverRequested = takeOver;
+    this.setNewGameState(EGameStatesMaster.STARTING);
+    this.registerMaster();
+  }
+
+  public getMasterRejection(): IMasterRejection | null {
+    return this.masterRejection;
   }
 
   private onMessage(message: IGamePacket): void {
@@ -217,6 +258,9 @@ export class GameService implements OnDestroy {
       case EPacketTypes.AUTOSAVE_INFO:
         this.autosaveInfoSubject.next(message as IAutosaveInfoPacket);
         break;
+      case EPacketTypes.MASTER_TAKEN_OVER:
+        this.handleMasterTakenOver();
+        break;
       default:
         break;
     }
@@ -264,15 +308,28 @@ export class GameService implements OnDestroy {
       .includes(this.currentGameStateInAutomaton);
   }
 
-  private handleMasterRegistrationResponse(packet): void {
+  private handleMasterRegistrationResponse(packet: IResponsePacket): void {
+    this.takeOverRequested = false;
     if (packet.wasSuccessful) {
+      this.masterRejection = null;
       if (this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
         this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
       }
     } else {
+      this.masterRejection = {isGameRunning: !!packet.isGameRunning, takenOver: false};
       this.setNewGameState(EGameStatesMaster.REJECTED);
       this.redirect(pathsMaster.masterAlreadyRegistered);
     }
+  }
+
+  private handleMasterTakenOver(): void {
+    if (!this.initedAsMaster) {
+      return;
+    }
+    const wasInGame = [EGameStatesMaster.READY_TO_START, EGameStatesMaster.PLAYING].includes(this.currentGameStateInAutomaton);
+    this.masterRejection = {isGameRunning: wasInGame, takenOver: true};
+    this.setNewGameState(EGameStatesMaster.REJECTED);
+    this.redirect(pathsMaster.masterAlreadyRegistered);
   }
 
   public getGameState(): EGameStatesMaster {

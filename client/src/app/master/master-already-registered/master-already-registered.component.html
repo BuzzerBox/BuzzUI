@@ -1,1 +1,50 @@
-<p>master-already-registered works!</p>
+<div class="page">
+  <mat-card class="card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="icon">devices</mat-icon>
+      <mat-card-title>
+        {{getRejection().takenOver ? 'Ein anderes Gerät hat die Steuerung übernommen' : 'Ein anderes Gerät steuert gerade die BuzzerBox'}}
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (getRejection().takenOver) {
+        <p>
+          Dieses Gerät steuert die BuzzerBox nicht mehr.
+          @if (getRejection().isGameRunning) {
+            Das Spiel läuft auf dem anderen Gerät weiter.
+          }
+          Du kannst die Steuerung jederzeit zurückholen.
+        </p>
+      } @else {
+        <p>
+          Es kann immer nur ein Gerät die BuzzerBox steuern.
+          @if (getRejection().isGameRunning) {
+            Dort läuft gerade ein Spiel.
+          }
+        </p>
+        <p>
+          Warst du das selbst, und das Gerät hatte kurz kein WLAN oder wurde neu geladen? Dann geht es in ein paar
+          Sekunden von selbst weiter.
+        </p>
+        <div class="retrying">
+          <mat-spinner diameter="20"></mat-spinner>
+          <span>Versucht es laufend erneut …</span>
+        </div>
+      }
+    </mat-card-content>
+    <mat-card-actions class="actions">
+      <button mat-flat-button color="primary" (click)="takeOver()">
+        <mat-icon>swap_horiz</mat-icon>
+        {{getRejection().takenOver ? 'Steuerung zurückholen' : 'Steuerung übernehmen'}}
+      </button>
+      <button mat-stroked-button (click)="retry()">
+        <mat-icon>refresh</mat-icon>
+        Erneut versuchen
+      </button>
+      <button mat-button (click)="useAsScreen()">
+        <mat-icon>tv</mat-icon>
+        Als Anzeige verwenden
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>
