@@ -13,6 +13,37 @@
     dest: /etc/pam.d/buzzerbox-kiosk
     mode: "0644"
 
+# cage always draws a mouse cursor, even without a mouse. It only loads the cursor theme "default", so the kiosk gets its
+# own XCURSOR_PATH with a "default" theme whose cursor is one transparent pixel (files/hidden-cursor, an Xcursor file).
+# Chromium inherits it, so a mouse plugged in stays invisible too.
+- name: Create the directory of the cursor theme
+  ansible.builtin.file:
+    path: /usr/share/buzzerbox/cursors/default/cursors
+    state: directory
+    mode: "0755"
+
+- name: Install the invisible cursor theme
+  ansible.builtin.copy:
+    src: hidden-cursor
+    dest: /usr/share/buzzerbox/cursors/default/cursors/default
+    mode: "0644"
+
+- name: Use it for the other cursor names
+  ansible.builtin.file:
+    src: default
+    dest: "/usr/share/buzzerbox/cursors/default/cursors/{{ item }}"
+    state: link
+  loop: [left_ptr, arrow, pointer, text, xterm, hand2, crosshair]
+
+- name: Describe the cursor theme
+  ansible.builtin.copy:
+    dest: /usr/share/buzzerbox/cursors/default/index.theme
+    content: |
+      [Icon Theme]
+      Name=default
+      Comment=An invisible mouse cursor for the BuzzerBox kiosk
+    mode: "0644"
+
 - name: Install the kiosk service
   ansible.builtin.template:
     src: buzzerbox-kiosk.service.j2
