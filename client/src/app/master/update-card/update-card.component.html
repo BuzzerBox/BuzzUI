@@ -64,7 +64,7 @@
                 @if (confirmFileName === bundle.fileName && isSigned(bundle)) {
                   <button mat-button (click)="confirmFileName = null">Abbrechen</button>
                   <button mat-flat-button color="primary" (click)="install(bundle)">Jetzt installieren</button>
-                } @else if (confirmFileName !== bundle.fileName) {
+                } @else if (confirmFileName !== bundle.fileName && !isInstalled(bundle)) {
                   <button mat-stroked-button [disabled]="isUpdating()" (click)="askToConfirm(bundle)">Installieren</button>
                 }
               </span>

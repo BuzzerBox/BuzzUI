@@ -64,7 +64,14 @@ export class UpdateCardComponent implements OnInit, OnDestroy {
     if (bundle.isNewer) {
       return 'neuer';
     }
-    return bundle.version === this.info.installedVersion ? 'installiert' : 'älter';
+    return this.isInstalled(bundle) ? 'installiert' : 'älter';
+  }
+
+  /**
+   * Reinstalling the running version is left to the command line on the box (buzzerbox-update install), as a repair
+   */
+  public isInstalled(bundle: IUpdateBundle): boolean {
+    return bundle.version === this.info.installedVersion;
   }
 
   public isSigned(bundle: IUpdateBundle): boolean {
