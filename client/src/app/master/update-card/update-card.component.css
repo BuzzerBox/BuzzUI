@@ -1,7 +1,6 @@
-/* on wide screens, the install buttons would otherwise end up far away from the version they belong to */
+/* as wide as the row of buttons above it on the home page, and the same gap */
 .update-card {
   margin: 16px 0;
-  max-width: 720px;
 }
 
 .status {
@@ -20,10 +19,6 @@
 
 .warning mat-icon {
   color: #e65100;
-}
-
-.hint {
-  color: rgba(0, 0, 0, 0.6);
 }
 
 .label {

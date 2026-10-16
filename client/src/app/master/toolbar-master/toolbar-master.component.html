@@ -2,11 +2,23 @@
   <!--<button mat-icon-button class="example-icon" aria-label="Example icon-button with menu icon">
   <mat-icon>menu</mat-icon>
 </button>-->
-<img class="logo" src="assets/images/logo.png" alt="">
-<span class="brand"><span class="brand-bold">Buzzer</span>Box</span>
+<ng-template #brand>
+  <img class="logo" src="assets/images/logo.png" alt="">
+  <span class="brand"><span class="brand-bold">Buzzer</span>Box</span>
+</ng-template>
+@if (canGoHome()) {
+  <a class="home-link" [routerLink]="homeUrl" title="Zur Startseite"><ng-container *ngTemplateOutlet="brand"></ng-container></a>
+} @else {
+  <ng-container *ngTemplateOutlet="brand"></ng-container>
+}
 <span class="divider"></span>
 <span>{{getName()}}</span>
 <span class="example-spacer"></span>
+@if (showHomeIcon) {
+  <a mat-icon-button [routerLink]="homeUrl" title="Zur Startseite">
+    <mat-icon>home</mat-icon>
+  </a>
+}
 @if (showReleaseBuzzerLockIcon) {
   <button mat-icon-button (click)="releaseBuzzerLock()" title="Buzzerlock freigeben">
     <mat-icon>lock_open</mat-icon>
@@ -21,8 +33,8 @@
   <mat-icon>restart_alt</mat-icon>
 </button>
 @if (showSaveIcon) {
-  <button mat-icon-button (click)="exportGameState()" title="Spielstand speichern">
-    <mat-icon>save</mat-icon>
-  </button>
+  <mat-icon class="autosave" [class.autosave-error]="autosave?.error" [matTooltip]="getAutosaveText()" [attr.aria-label]="getAutosaveText()">
+    {{!autosave?.storage ? 'cloud_off' : autosave.error ? 'sync_problem' : 'cloud_done'}}
+  </mat-icon>
 }
 </mat-toolbar>

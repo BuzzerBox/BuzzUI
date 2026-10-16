@@ -1,0 +1,18 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  font-weight: 400;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+app-game-import {
+  display: block;
+  margin-top: 16px;
+}

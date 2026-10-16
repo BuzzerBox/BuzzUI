@@ -1,4 +1,5 @@
 import express, {Express} from "express";
+import cors from "cors";
 
 export class MainExpressService {
     private static instance: MainExpressService;
@@ -6,6 +7,8 @@ export class MainExpressService {
 
     private constructor() {
         this.main = express();
+        // the client is served from another port, or another host in dev
+        this.main.use(cors());
     }
 
     public static get(): MainExpressService {

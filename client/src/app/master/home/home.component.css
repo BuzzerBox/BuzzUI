@@ -1,0 +1,58 @@
+.home {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+h1 {
+  font-weight: 400;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.action {
+  height: auto;
+  min-height: 200px;
+  padding: 24px 16px;
+  white-space: normal;
+}
+
+/* the button's label is the whole card */
+.action ::ng-deep .mdc-button__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.action-icon {
+  width: 56px;
+  height: 56px;
+  font-size: 56px;
+  margin: 0;
+}
+
+.action-title {
+  font-size: 1.4em;
+  font-weight: 500;
+}
+
+.action-text {
+  font-size: 0.95em;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+/* the installed version, out of the way */
+.version {
+  position: fixed;
+  right: 8px;
+  bottom: 4px;
+  font-size: 0.7em;
+  opacity: 0.6;
+}

@@ -1,0 +1,82 @@
+<div class="import">
+  <input type="file" #importInput hidden accept=".gz,.tgz,application/gzip,.json,application/json" (change)="onFileSelected($any($event.target).files); importInput.value = ''">
+  <button mat-stroked-button [disabled]="!location?.writable || uploadProgress !== null" (click)="importInput.click()"
+          title="Ein Spiel von diesem Gerät: ein heruntergeladenes Archiv, eine Spieldatei oder einen alten Spielstand">
+    <mat-icon>upload_file</mat-icon> Spiel hochladen
+  </button>
+
+  @if (archive) {
+    <div class="details">
+      <p>Ganzes Spiel mit allen Versionen, Spielständen und Medien ({{getArchiveSize()}})</p>
+      <form class="name" (ngSubmit)="import()">
+        <mat-form-field>
+          <mat-label>Name des Spiels</mat-label>
+          <input matInput name="gameName" [(ngModel)]="gameName" required [disabled]="importing">
+          @if (gameName && getSanitizedName() !== gameName) {
+            <mat-hint>Wird gespeichert als „{{getSanitizedName()}}“</mat-hint>
+          }
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="importing || !getSanitizedName()">Importieren</button>
+        <button mat-button type="button" [disabled]="importing" (click)="reset()">Abbrechen</button>
+      </form>
+      @if (uploadProgress !== null) {
+        <div class="progress">
+          <mat-progress-bar [mode]="uploadProgress < 0.99 ? 'determinate' : 'indeterminate'" [value]="uploadProgress * 100"></mat-progress-bar>
+          <span>{{uploadProgress < 0.99 ? 'Wird hochgeladen … ' + getPercent() : 'Wird geprüft und gespeichert …'}}</span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (bundle) {
+    <div class="details">
+      <p>
+        {{bundle.game.questions.length}} Fragen
+        @if (bundle.state) {
+          und ein Spielstand ({{bundle.state.teams.length}} Teams, bei Frage {{bundle.state.gameState.currentQuestionNumber + 1}})
+        }
+      </p>
+      <form class="name" (ngSubmit)="import()">
+        <mat-form-field>
+          <mat-label>Name des Spiels</mat-label>
+          <input matInput name="gameName" [(ngModel)]="gameName" required>
+          @if (gameName && getSanitizedName() !== gameName) {
+            <mat-hint>Wird gespeichert als „{{getSanitizedName()}}“</mat-hint>
+          }
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="importing || !getSanitizedName()">Importieren</button>
+        <button mat-button type="button" (click)="reset()">Abbrechen</button>
+        @if (importing) {
+          <mat-spinner diameter="24"></mat-spinner>
+        }
+      </form>
+    </div>
+  }
+  @if (error) {
+    <p class="error"><mat-icon>error</mat-icon>{{error}}</p>
+  }
+  @if (result) {
+    <p class="success"><mat-icon>check_circle</mat-icon>„{{result.gameName}}“ wurde importiert.</p>
+    @if (result.skippedEntries?.length > 0) {
+      <div class="warning">
+        <p><mat-icon>warning</mat-icon>Diese Dateien im Archiv gehören nicht zu einem Spiel und wurden weggelassen:</p>
+        <ul>
+          @for (entry of result.skippedEntries; track entry) {
+            <li><code>{{entry}}</code></li>
+          }
+        </ul>
+      </div>
+    }
+    @if (result.missingMedia.length > 0) {
+      <div class="warning">
+        <p><mat-icon>warning</mat-icon>Diese Medien wurden nicht gefunden:</p>
+        <ul>
+          @for (media of result.missingMedia; track media) {
+            <li><code>{{media}}</code></li>
+          }
+        </ul>
+        <p>Lade Dateien mit diesen Namen in die Medien des Spiels hoch, oder stecke den USB-Stick mit den Medien ein und importiere die Datei noch einmal.</p>
+      </div>
+    }
+  }
+</div>

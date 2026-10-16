@@ -32,6 +32,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./media:/srv/media:ro
+      # what the master stores on the "box": save games and uploaded media
+      - storage:/srv/storage
 
   client:
     image: ghcr.io/buzzerbox/buzzui-client:test
@@ -39,3 +41,4 @@ services:
 
 volumes:
   caddy-data:
+  storage:

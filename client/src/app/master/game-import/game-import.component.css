@@ -1,0 +1,46 @@
+/* next to the button that creates a game, so level with it */
+.import {
+  margin: 0 0 8px;
+}
+
+.details, .name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.details {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.name mat-form-field {
+  min-width: 20em;
+}
+
+.error, .success, .warning p:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error {
+  color: #c62828;
+}
+
+.success mat-icon {
+  color: #2e7d32;
+}
+
+.warning mat-icon {
+  color: #ef6c00;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 32em;
+}

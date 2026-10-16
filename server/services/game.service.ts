@@ -33,6 +33,8 @@ import {
     ISetQuestionPacket,
     ISetupPacket,
     IStartGamePacket,
+    IStorageAccessPacket,
+    IAutosaveInfoPacket,
     ITeam,
     ITeamSetPointsPacket,
     IUpdateInfoPacket,
@@ -50,6 +52,9 @@ import {ConfigService} from './config.service';
 import {toInteger} from 'lodash';
 import {ObjectHelper} from '../../shared/helper/object.helper';
 import {UpdateService} from './update.service';
+import {StorageService} from './storage.service';
+import {AutosaveService} from './autosave.service';
+import {ClockService} from './clock.service';
 
 enum LOOKUP_TEAM_CODE {
     BY_KEYPRESS,
@@ -72,6 +77,8 @@ export class GameService {
     private keypressLocked = false;
     // whether the master that rejoined left a game that was already running, so starting it again continues it
     private resumesRunningGame = false;
+    // whether the game was ended, for its saved state
+    private gameFinished = false;
     private keyOrByteCodesInUse: string[] = [];
     private ignoredKeypresses: string[] = [];
     // TODO: maybe rename it to lastBuzzerPressed to reflect an upcoming change in behavior for this field
@@ -93,6 +100,7 @@ export class GameService {
         SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
         SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
         UpdateService.get().observeInfo().subscribe(info => this.sendToMaster<IUpdateInfoPacket>(info));
+        AutosaveService.get().observeInfo().subscribe(info => this.sendToMaster<IAutosaveInfoPacket>(info));
     }
 
     public static get(): GameService {
@@ -115,6 +123,10 @@ export class GameService {
             // a broken packet must not take the server and the running game down
             try {
                 this.onPacket(con, sub, packet);
+                // most packets change the game; the autosave only writes once things calm down
+                if (this.isGameSetUp()) {
+                    AutosaveService.get().changed();
+                }
             } catch (e) {
                 LoggerService.error(`Could not handle packet ${JSON.stringify(packet)}`, e);
             }
@@ -163,9 +175,18 @@ export class GameService {
         }
     }
 
+    private isGameSetUp(): boolean {
+        return [EGameStates.WAITING_FOR_START, EGameStates.PLAYING, EGameStates.LOST_MASTER, EGameStates.END].includes(this.currentStateInAutomaton);
+    }
+
+    private makeAutosaveSnapshot() {
+        return {teams: this.teams, gameState: this.currentGameState, finished: this.gameFinished};
+    }
+
     private onMasterConnectionDestroy(): void {
         LoggerService.log('Connection to master was closed');
         this.webSocketConnectionMaster = null;
+        StorageService.get().revokeAccessToken();
         if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_SETUP) {
             this.setNewState(EGameStates.WAITING_FOR_MASTER);
         } else if (this.currentStateInAutomaton === EGameStates.END) {
@@ -241,7 +262,13 @@ export class GameService {
             // a savegame can't lock the buzzers, only a buzzer press can
             this.currentGameState.setBuzzerLock = this.keypressLocked;
             this.resumesRunningGame = false;
+            this.gameFinished = false;
             this.setNewState(EGameStates.WAITING_FOR_START);
+            if (packet.storage != null) {
+                AutosaveService.get().begin(packet.storage, !!packet.isNewState, this.makeAutosaveSnapshot.bind(this));
+            } else {
+                AutosaveService.get().end();
+            }
         }
         this.sendToMaster<IResponsePacket>(responsePacket);
 
@@ -251,6 +278,12 @@ export class GameService {
     private onRegisterMasterPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterMasterPacket): void {
         if (this.webSocketConnectionMaster == null) {
             this.webSocketConnectionMaster = con;
+            ClockService.get().setClientTime(packet.clientTime);
+            // before anything that takes the master to pages that use the storage
+            this.sendToMaster<IStorageAccessPacket>({
+                packetType: EPacketTypes.STORAGE_ACCESS,
+                token: StorageService.get().issueAccessToken()
+            });
             // TODO: maybe also allow EGameStates.END as state for this one?
             if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_MASTER) {
                 this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
@@ -280,6 +313,7 @@ export class GameService {
             this.webSocketConnectionMaster.addOnCloseCallback(this.onMasterConnectionDestroy.bind(this))
             this.webSocketConnectionMaster.addOnCloseCallback(() => sub.unsubscribe());
             this.sendToMaster<IUpdateInfoPacket>(UpdateService.get().getInfo());
+            this.sendToMaster<IAutosaveInfoPacket>(AutosaveService.get().getInfo());
         } else {
             con.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, false));
             con.close();
@@ -492,6 +526,7 @@ export class GameService {
 
     private onEndGamePacket(packet: IEndGamePacket): void {
         this.setNewState(EGameStates.END);
+        this.gameFinished = true;
         this.sendToAllScreens(packet);
     }
 
@@ -534,6 +569,8 @@ export class GameService {
     }
 
     private resetServerData(): void {
+        // saves the game as it was, before it is cleared
+        AutosaveService.get().end();
         this.teams = [];
         this.questions = [];
         this.setKeypressLocked(false)
@@ -799,6 +836,9 @@ export class GameService {
             // like a broken packet, a failing buzzer press must not take the server down
             try {
                 this.onSerialByteIn(byte);
+                if (this.isGameSetUp()) {
+                    AutosaveService.get().changed();
+                }
             } catch (e) {
                 LoggerService.error(`Could not handle serial byte ${byte}`, e);
             }

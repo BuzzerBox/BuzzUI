@@ -7,7 +7,8 @@ import {GameService} from '../../services/game.service';
 
 /**
  * Shows the installed version and the update bundles on the USB sticks, and installs one of them. Installing restarts
- * the server, so this is only shown while no game is set up.
+ * the server, so this is only shown while no game is set up. Without a bundle the card is hidden, unless an update is
+ * running or the page has to be reloaded after one.
  */
 @Component({
     selector: 'app-update-card',
@@ -50,6 +51,11 @@ export class UpdateCardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
+  }
+
+  public isShown(): boolean {
+    return this.info?.enabled
+      && (this.info.bundles.length > 0 || this.isUpdating() || this.isPageOutdated() || this.startError != null);
   }
 
   public isUpdating(): boolean {

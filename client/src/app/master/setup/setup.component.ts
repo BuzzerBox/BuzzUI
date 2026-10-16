@@ -1,15 +1,21 @@
-import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
+import {Router} from '@angular/router';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
-import {GameService, IGameStateAsJson} from '../../services/game.service';
-import {MatCheckbox} from '@angular/material/checkbox';
-import {ITeam, IQuestion, IAnswer, IGameState, IMediaQuestionState, PacketHelper} from '../../../../../shared/shared';
+import {GameService} from '../../services/game.service';
+import {MatStepper} from '@angular/material/stepper';
+import {IQuestion, IAnswer, IMediaQuestionState, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {IUploadFormData} from '../interfaces/IUploadFormData';
-import {FileService} from '../../services/file.service';
 import {IMediaSelection} from '../interfaces/IMediaSelection';
 import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-configuration/media-question-display-order-configuration.component';
+import {IGameRef, StorageService} from '../../services/storage.service';
+import {IEditorNavigationState, INewGameNavigationState, IPrepareNavigationState} from '../game-navigation';
+import {baseUrlMaster, pathsMaster} from '../paths-master';
 
+/**
+ * The editor of a game: its name and where it is stored, and its questions. Saving adds a new version of the game;
+ * the teams are chosen when it is played.
+ */
 @Component({
     selector: 'app-setup',
     templateUrl: './setup.component.html',
@@ -17,77 +23,121 @@ import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-con
     standalone: false
 })
 export class SetupComponent implements OnInit {
-  public readonly FORM_GROUP_NAME_TEAMS = 'teamsFormGroup';
   public readonly ANSWER_FORM_GROUP_BASE_NAME = 'answer';
 
   @ViewChild('questionForm') questionForm;
+  @ViewChild(MatStepper) stepper: MatStepper;
+  // the editor is opened from the game manager, which it goes back to
+  public readonly managerUrl = '/' + baseUrlMaster + pathsMaster.storage;
 
-  public teamsFormGroup: UntypedFormGroup;
+  // the game that is edited; null until a new game was created
+  public ref: IGameRef = null;
+  // the version the questions were loaded from, null for a new game
+  public loadedVersion: number = null;
+  // to tell when an older version is the base
+  public latestVersion: number = null;
+  public loading = false;
+  public loadError: string = null;
+  // for a new game
+  public newGameName = new UntypedFormControl('', Validators.required);
+  public newGameLocation: IStorageLocation = null;
+  public createError: string = null;
+  public creating = false;
+  // after saving
+  public savedVersion: number = null;
+  public saving = false;
+  public saveError: string = null;
+
   public questionsFormGroup: UntypedFormGroup;
-  public teamNameSuggestions: string[];
-  public teamFormControlNames: string[];
   public questionFormGroupNames: string[];
-  private mapTeamFormControlNameToBuzzerIndex: Map<string, number>;
-  // points of the teams of an imported savegame, by team form control name
-  private importedPoints: Map<string, number>;
-  // progress of an imported savegame; null for a new game
-  private importedGameState: IGameState | null = null;
   public questionInitialConfig: IMediaQuestionState[];
 
   step = 0;
 
+  private readonly navigation: IEditorNavigationState | null;
+  // where a new game goes first, the location chosen in the game manager
+  public readonly newGameLocationId: string | null;
 
-  constructor(private game: GameService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
+  constructor(private game: GameService, private storage: StorageService, private snackBar: MatSnackBar, private router: Router) {
     game.useAsMaster();
+    this.navigation = (history.state as IEditorNavigationState)?.gameName ? history.state : null;
+    this.newGameLocationId = (history.state as INewGameNavigationState)?.newGameLocationId ?? null;
   }
 
-  ngOnInit(): void {
-    this.initTeamsFormControls();
+  async ngOnInit(): Promise<void> {
     this.initQuestionsFormControls();
+    if (this.navigation != null) {
+      await this.loadGame(this.navigation);
+    }
   }
 
-  public onChangeTeamCheckbox(cb: MatCheckbox, tb: HTMLInputElement, formGroupName: string): void {
-    if (cb.checked) {
-      this.teamsFormGroup.get(formGroupName).enable();
-      tb.focus();
-    } else {
-      this.teamsFormGroup.get(formGroupName).disable();
+  public isNewGame(): boolean {
+    return this.navigation == null;
+  }
+
+  private async loadGame(navigation: IEditorNavigationState): Promise<void> {
+    this.loading = true;
+    try {
+      const location = await this.storage.getLocation(navigation.locationId);
+      if (location == null) {
+        throw new Error('Der Speicherort ist nicht mehr da. Wurde der USB-Stick abgezogen?');
+      }
+      const ref: IGameRef = {location, gameName: navigation.gameName};
+      const info = await this.storage.getGame(ref);
+      if (info == null) {
+        throw new Error(`Das Spiel ${navigation.gameName} gibt es nicht mehr.`);
+      }
+      const baseVersion = navigation.baseVersion ?? info.latestVersion;
+      if (baseVersion != null) {
+        if (!info.versions.some(version => version.version === baseVersion)) {
+          throw new Error(`Version ${baseVersion} von ${navigation.gameName} gibt es nicht mehr.`);
+        }
+        const definition = await this.storage.getVersion(ref, baseVersion);
+        this.loadedVersion = definition.version;
+        this.latestVersion = info.latestVersion;
+        this.initQuestionsFormControls(definition.questions);
+      }
+      this.ref = ref;
+      // continue with the questions
+      setTimeout(() => this.stepper?.next());
+    } catch (e) {
+      this.loadError = StorageService.getErrorMessage(e);
+    } finally {
+      this.loading = false;
     }
+  }
+
+  public getSanitizedNewGameName(): string {
+    return StorageApiHelper.sanitizeName(this.newGameName.value ?? '');
   }
 
   /**
-   * Offers one team per available buzzer. With imported teams, each one is put on its buzzer and buzzers without a
-   * team are deactivated.
+   * Creates the folder of a new game, so media can be added to it right away
    */
-  private initTeamsFormControls(importedTeams: ITeam[] | null = null): void {
-    this.teamFormControlNames = [];
-    this.teamNameSuggestions = [];
-    this.mapTeamFormControlNameToBuzzerIndex = new Map<string, number>();
-    this.importedPoints = new Map<string, number>();
-    const teamFormControls: {
-      [key: string]: AbstractControl;
-    } = {};
-    const availableBuzzers = this.game.getPresetupData().availableBuzzers;
-    for (let i = 0; i < availableBuzzers.length; i++) {
-      const teamNameSuggestion = 'Team ' + (i + 1);
-      this.teamNameSuggestions.push(teamNameSuggestion);
-      const formControlName = 'team' + (i + 1);
-      this.teamFormControlNames.push(formControlName);
-      this.mapTeamFormControlNameToBuzzerIndex.set(formControlName, i);
-      const formControlForTeam = new UntypedFormControl(teamNameSuggestion);
-      if (importedTeams != null) {
-        const importedTeam = importedTeams.find(team => team.buzzerIndex === i);
-        if (importedTeam != null) {
-          formControlForTeam.setValue(importedTeam.name);
-          this.importedPoints.set(formControlName, importedTeam.points ?? 0);
-        } else if (i >= 2) {
-          // since two teams are mandatory, only all up from the third one can be deactivated
-          formControlForTeam.disable();
-        }
-      }
-      teamFormControls[formControlName] = formControlForTeam;
+  public async createGame(): Promise<void> {
+    const name = this.getSanitizedNewGameName();
+    if (!name || this.newGameLocation == null || this.creating) {
+      return;
     }
-    this.teamsFormGroup = new UntypedFormGroup(teamFormControls);
+    this.creating = true;
+    this.createError = null;
+    const ref: IGameRef = {location: this.newGameLocation, gameName: name};
+    try {
+      await this.storage.createGame(ref);
+      this.ref = ref;
+      this.newGameName.disable();
+      setTimeout(() => this.stepper?.next());
+    } catch (e) {
+      this.createError = StorageService.isConflict(e)
+        ? `Auf ${this.getLocationText(this.newGameLocation)} gibt es schon ein Spiel „${name}“. Wähle einen anderen Namen oder bearbeite es in der Spielverwaltung.`
+        : StorageService.getErrorMessage(e);
+    } finally {
+      this.creating = false;
+    }
+  }
+
+  public getLocationText(location: IStorageLocation): string {
+    return location.type === 'box' ? 'der BuzzerBox' : 'dem USB-Stick ' + location.name;
   }
 
   private initQuestionsFormControls(importedQuestions: IQuestion[] | null = null): void {
@@ -132,8 +182,6 @@ export class SetupComponent implements OnInit {
     event.stopPropagation();
     const deletedControl = this.questionsFormGroup.get(this.questionFormGroupNames[index]) as UntypedFormGroup;
     const deletedInitialConfig = this.questionInitialConfig[index];
-    const gameStateBeforeDeletion = this.importedGameState;
-    this.remapImportedQuestionNumber(oldIndex => oldIndex === index ? null : oldIndex < index ? oldIndex : oldIndex - 1);
     this.questionInitialConfig = this.questionInitialConfig.filter((_, i) => i !== index);
     const remainingNames = this.questionFormGroupNames.filter((_, i) => i !== index);
     const newGroup = new UntypedFormGroup({});
@@ -175,7 +223,6 @@ export class SetupComponent implements OnInit {
         deletedInitialConfig,
         ...this.questionInitialConfig.slice(index)
       ];
-      this.importedGameState = gameStateBeforeDeletion;
       this.step = index;
     });
   }
@@ -184,9 +231,6 @@ export class SetupComponent implements OnInit {
     if (event.previousIndex === event.currentIndex) {
       return;
     }
-    const newOrderOfOldIndices = this.questionFormGroupNames.map((_, i) => i);
-    moveItemInArray(newOrderOfOldIndices, event.previousIndex, event.currentIndex);
-    this.remapImportedQuestionNumber(oldIndex => newOrderOfOldIndices.indexOf(oldIndex));
     moveItemInArray(this.questionFormGroupNames, event.previousIndex, event.currentIndex);
     moveItemInArray(this.questionInitialConfig, event.previousIndex, event.currentIndex);
     const newGroup = new UntypedFormGroup({});
@@ -202,31 +246,6 @@ export class SetupComponent implements OnInit {
     this.step = event.currentIndex;
   }
 
-  /**
-   * An imported game refers to its current question by position, so it has to follow when questions are deleted or
-   * moved. If the current question itself is deleted, the game continues with the one that takes its place.
-   * @param newIndexOf maps a question's old position to its new one, or to null if it was deleted
-   */
-  private remapImportedQuestionNumber(newIndexOf: (oldIndex: number) => number | null): void {
-    if (this.importedGameState == null) {
-      return;
-    }
-    const newIndex = newIndexOf(this.importedGameState.currentQuestionNumber);
-    if (newIndex != null) {
-      this.importedGameState = {...this.importedGameState, currentQuestionNumber: newIndex};
-    } else {
-      // answers, marked teams and media state belonged to the deleted question
-      this.importedGameState = {
-        ...this.importedGameState,
-        loggedAnswers: [],
-        activatedAnswers: [],
-        markedTeamIds: [],
-        setBuzzerLock: false,
-        mediaQuestionState: PacketHelper.getDefaultMediaState()
-      };
-    }
-  }
-
   public addQuestionToFormGroup(): void {
     const qfc: UntypedFormGroup = this.createQuestionFormGroup();
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
@@ -239,8 +258,9 @@ export class SetupComponent implements OnInit {
   private createQuestionFormGroup(): UntypedFormGroup {
     return new UntypedFormGroup({
       text: new UntypedFormControl(null, Validators.required),
+      // relative to the game's media folder
       mediaSrc: new UntypedFormControl(''),
-      // only for slideshows: the image URLs, mediaSrc is then the folder
+      // only for slideshows: the images, mediaSrc is then the folder
       slides: new UntypedFormControl(null),
       answers: new UntypedFormGroup({
         answer0: this.createFormGroupForAnswer(),
@@ -289,57 +309,6 @@ export class SetupComponent implements OnInit {
     return this.questionFormGroupNames.length;
   }
 
-  public getNumberOfActiveTeams(): number {
-    let count = 0;
-    for (const name of this.teamFormControlNames) {
-      if (!this.teamsFormGroup.get(name).disabled) {
-        count++;
-      }
-    }
-    return count;
-  }
-
-  public startGame(): void {
-    const teams: ITeam[] = this.buildSetupTeamsObject();
-    const questions: IQuestion[] = this.buildSetupQuestionsObject();
-    this.game.setupGame(teams, questions, this.getGameStateForSetup(questions.length));
-  }
-
-  /**
-   * The progress of an imported game, kept inside the question list; undefined for a new game.
-   */
-  private getGameStateForSetup(numberOfQuestions: number): IGameState | undefined {
-    if (this.importedGameState == null) {
-      return undefined;
-    }
-    const lastQuestionNumber = Math.max(0, numberOfQuestions - 1);
-    if (this.importedGameState.currentQuestionNumber > lastQuestionNumber) {
-      return {...this.importedGameState, currentQuestionNumber: lastQuestionNumber};
-    }
-    return this.importedGameState;
-  }
-
-  private buildSetupTeamsObject(): ITeam[] {
-    const ret: ITeam[] = [];
-    for (const name of this.teamFormControlNames) {
-      if (!this.teamsFormGroup.get(name).disabled) {
-        const buzzerIndex = this.mapTeamFormControlNameToBuzzerIndex.get(name);
-        const buzzerId = this.game.getPresetupData().availableBuzzers[buzzerIndex].id;
-        const team: ITeam = {
-          name: this.teamsFormGroup.get(name).value,
-          buzzerId,
-          teamId: buzzerId, // use the buzzerId for now
-          buzzerIndex
-        };
-        if (this.importedPoints.has(name)) {
-          team.points = this.importedPoints.get(name);
-        }
-        ret.push(team);
-      }
-    }
-    return ret;
-  }
-
   private buildSetupQuestionsObject(): IQuestion[] {
     const ret: IQuestion[] = [];
     this.questionFormGroupNames.forEach((name, index) => {
@@ -385,54 +354,43 @@ export class SetupComponent implements OnInit {
     return ret;
   }
 
-  public downloadSetupAsJson(): void {
-    const questions: IQuestion[] = this.buildSetupQuestionsObject();
-    this.game.downloadGameStateAsJson('buzzer-game-setup.json', this.buildSetupTeamsObject(), questions,
-      this.getGameStateForSetup(questions.length) ?? null);
+  /**
+   * Saves the questions as a new version of the game, if they changed
+   */
+  public async saveGame(): Promise<void> {
+    if (this.ref == null || this.saving) {
+      return;
+    }
+    this.saving = true;
+    this.saveError = null;
+    try {
+      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject());
+      this.savedVersion = result.version;
+      this.loadedVersion = result.version;
+      this.snackBar.open(result.unchanged ? `Nichts geändert, es bleibt bei Version ${result.version}.` : `Version ${result.version} wurde gespeichert.`,
+        'OK', {duration: 4000});
+    } catch (e) {
+      this.saveError = StorageService.getErrorMessage(e);
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  /**
+   * Plays the saved version, choosing the teams first
+   */
+  public playSavedVersion(): void {
+    const state: IPrepareNavigationState = {locationId: this.ref.location.id, gameName: this.ref.gameName, gameVersion: this.savedVersion};
+    this.router.navigate([baseUrlMaster + pathsMaster.prepare], {state});
+  }
+
+  public onQuestionsChanged(): void {
+    // the saved version no longer is what is shown
+    this.savedVersion = null;
   }
 
   public getGameName(): string {
     return this.game.getGameName();
-  }
-
-  public onSaveGameFileSelected(uploadEvent: IUploadFormData): void {
-    if (uploadEvent.data) {
-      this.snackBar.open('Datei wird importiert, bitte warten...');
-      // if typed as File, the fileReader.readAsText complains
-      const configFile: any = uploadEvent.data;
-      const fileReader = new FileReader();
-      fileReader.readAsText(configFile as Blob, 'UTF-8');
-      fileReader.onload = async () => {
-        try {
-          const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
-          const numberOfSavedTeams = importedState.teams?.length ?? 0;
-          await this.game.importGameStateFromJson(importedState, false);
-
-          this.importedGameState = this.game.getGameStateData();
-          this.initTeamsFormControls(this.game.getTeams());
-          this.initQuestionsFormControls(this.game.getQuestions());
-          const numberOfDroppedTeams = numberOfSavedTeams - this.game.getTeams().length;
-          const message = numberOfDroppedTeams > 0
-            ? `Datei importiert. ${numberOfDroppedTeams} Team(s) ohne passenden Buzzer wurden entfernt.`
-            : 'Datei erfolgreich importiert.';
-          this.snackBar.open(message, 'OK', {
-            duration: 5000
-          });
-        } catch (e) {
-          console.error(e);
-          this.snackBar.open('Die Datei konnte nicht importiert werden.', 'OK', {
-            duration: 5000
-          });
-        }
-      };
-    } else {
-      this.importedGameState = null;
-      this.initTeamsFormControls();
-      this.initQuestionsFormControls();
-      this.snackBar.open('Konfiguration zurückgesetzt.', 'OK', {
-        duration: 5000
-      });
-    }
   }
 
   // TODO: implement it in a correct way, this is just because of the haste
@@ -459,8 +417,8 @@ export class SetupComponent implements OnInit {
     const questionFormGroup = this.questionsFormGroup.controls['question' + event.question];
     const selection = event.selection;
     if (selection?.path) {
-      questionFormGroup.get('mediaSrc').setValue(FileService.buildFullPathString(selection.path));
-      questionFormGroup.get('slides').setValue(selection.slides?.map(path => FileService.buildFullPathString(path)) ?? null);
+      questionFormGroup.get('mediaSrc').setValue(selection.path);
+      questionFormGroup.get('slides').setValue(selection.slides ?? null);
     } else {
       questionFormGroup.get('mediaSrc').setValue('');
       questionFormGroup.get('slides').setValue(null);
@@ -482,6 +440,4 @@ export class SetupComponent implements OnInit {
   changeQuestionConfig(event: { config: IMediaQuestionState; question: number }): void {
     this.questionInitialConfig[event.question] = event.config;
   }
-
-
 }

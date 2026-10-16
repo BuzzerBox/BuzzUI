@@ -4,6 +4,14 @@
   margin-right: 12px;
 }
 
+/* the logo and name lead to the start page while no game is running */
+.home-link {
+  display: flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
 .brand {
   font-weight: 300;
 }
@@ -21,4 +29,13 @@
 
 .example-spacer {
   flex: 1 1 auto;
+}
+
+.autosave {
+  margin: 0 8px;
+  opacity: 0.9;
+}
+
+.autosave-error {
+  color: #ffab40;
 }

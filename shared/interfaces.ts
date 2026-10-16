@@ -33,6 +33,12 @@ import {IUpdateBundle} from './interfaces/IUpdateBundle';
 import {IUpdateStatus} from './interfaces/IUpdateStatus';
 import {IUpdateInfoPacket} from './interfaces/IUpdateInfoPacket';
 import {IInstallUpdatePacket} from './interfaces/IInstallUpdatePacket';
+import {IStorageAccessPacket} from './interfaces/IStorageAccessPacket';
+import {IStorageLocation, TStorageLocationType} from './interfaces/IStorageLocation';
+import {IGameDefinition, IGameInstanceState, IGameBundle, CURRENT_GAME_FORMAT_VERSION} from './interfaces/IGameDefinition';
+import {IGameInfo, IGameVersionInfo, IGameStateInfo, IGameStorageRef, IGameImportResult, IGameCopyResult} from './interfaces/IGameInfo';
+import {IAutosaveInfoPacket} from './interfaces/IAutosaveInfoPacket';
+import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
 
 export {
 	IDirectoryTree,
@@ -70,5 +76,21 @@ export {
 	IUpdateBundle,
 	IUpdateStatus,
 	IUpdateInfoPacket,
-	IInstallUpdatePacket
+	IInstallUpdatePacket,
+	IStorageAccessPacket,
+	IStorageLocation,
+	TStorageLocationType,
+	IGameDefinition,
+	IGameInstanceState,
+	IGameBundle,
+	CURRENT_GAME_FORMAT_VERSION,
+	IGameInfo,
+	IGameCopyResult,
+	IGameVersionInfo,
+	IGameStateInfo,
+	IGameStorageRef,
+	IGameImportResult,
+	IAutosaveInfoPacket,
+	IStorageEntry,
+	IStorageFolder
 }

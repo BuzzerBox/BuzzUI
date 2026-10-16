@@ -1,0 +1,23 @@
+<app-toolbar-master></app-toolbar-master>
+<div class="home">
+  <h1>Willkommen bei {{getGameName()}}!</h1>
+  <div class="actions">
+    <a mat-raised-button color="primary" class="action" [routerLink]="loadGameUrl" [queryParams]="{mode: 'new'}" [disabled]="hasGames === false">
+      <mat-icon class="action-icon">play_circle</mat-icon>
+      <span class="action-title">Neues Spiel</span>
+      <span class="action-text">{{hasGames === false ? 'Noch keine gespeicherten Spiele, erstelle eines in „Spiele verwalten“' : 'Ein gespeichertes Quiz von vorne beginnen'}}</span>
+    </a>
+    <a mat-raised-button class="action" [routerLink]="loadGameUrl" [queryParams]="{mode: 'continue'}" [disabled]="hasStates === false">
+      <mat-icon class="action-icon">history</mat-icon>
+      <span class="action-title">Spiel fortsetzen</span>
+      <span class="action-text">{{hasStates === false ? 'Noch keine Spielstände, sie entstehen beim Spielen' : 'Einen früheren Spielstand weiterspielen, wo aufgehört wurde'}}</span>
+    </a>
+    <a mat-raised-button class="action" [routerLink]="storageUrl">
+      <mat-icon class="action-icon">perm_media</mat-icon>
+      <span class="action-title">Spiele verwalten</span>
+      <span class="action-text">Spiele erstellen und bearbeiten, ihre Spielstände und Medien verwalten, importieren und herunterladen</span>
+    </a>
+  </div>
+  <app-update-card></app-update-card>
+</div>
+<span class="version">Version {{getVersion()}}</span>

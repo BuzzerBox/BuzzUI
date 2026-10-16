@@ -43,6 +43,9 @@ echo "Installing the update helper..."
 sed "s|__INSTALL_DIR__|${INSTALL_DIR}|g" "${ASSETS_DIR}/scripts/buzzerbox-update.sh" > "${HELPER}"
 chmod 755 "${HELPER}"
 mkdir -p /var/lib/buzzerbox /etc/buzzerbox /etc/sudoers.d
+# the save games and media the master stores on the box (config.json: storage.boxPath)
+mkdir -p /var/lib/buzzerbox/storage
+chown pi:pi /var/lib/buzzerbox/storage
 if [ -f "${ASSETS_DIR}/update-public-key.pem" ]; then
   install -m 644 "${ASSETS_DIR}/update-public-key.pem" /etc/buzzerbox/update-public-key.pem
 else

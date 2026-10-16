@@ -1,0 +1,27 @@
+.locations {
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.location {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.details {
+  font-size: 0.85em;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c62828;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}

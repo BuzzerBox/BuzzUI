@@ -2,6 +2,7 @@ import {Injectable, isDevMode} from '@angular/core';
 import config from '../../../../config.json';
 import configDev from '../../../../config.dev.json';
 import { defaultsDeep } from 'lodash-es';
+import {StorageApiHelper} from '../../../../shared/shared';
 
 @Injectable({
   providedIn: 'root'
@@ -59,6 +60,17 @@ export class ConfigService {
       return window.location.origin + fileServer.publicPath;
     }
     return 'http://' + this.getServerAddress() + ':' + fileServer.port + fileServer.publicPath;
+  }
+
+  /**
+   * The URL of the storage API (see StorageApiHelper), on the same port as the media
+   */
+  public static getStorageUrl(): string {
+    const fileServer = this.get().fileServer;
+    if (this.get().reverseProxy) {
+      return window.location.origin + StorageApiHelper.BASE_PATH;
+    }
+    return 'http://' + this.getServerAddress() + ':' + fileServer.port + StorageApiHelper.BASE_PATH;
   }
 
   public static isDevMode(): boolean {

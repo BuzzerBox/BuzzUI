@@ -9,6 +9,8 @@ config.dev.json
 
 # Media files
 server/media/
+# the box's storage in dev (config.dev.json.example)
+server/box-storage/
 
 # macOS
 .DS_Store

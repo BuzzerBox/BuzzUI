@@ -1,0 +1,99 @@
+.title-icon {
+  margin-right: 8px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  background: #e8eaf6;
+  color: #3f51b5;
+}
+
+/* a version (or a state of it) whose media are missing */
+.badge.broken {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: #ffebee;
+  color: #c62828;
+  font-weight: 500;
+}
+
+/* also in the version menu, whose items color their icons themselves */
+.broken-icon, .mat-mdc-menu-item .broken-icon {
+  color: #c62828;
+}
+
+.actions, .item-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+h3 {
+  margin: 20px 0 4px;
+  font-weight: 500;
+}
+
+mat-list-item {
+  height: auto !important;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c62828;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.split-button {
+  display: inline-flex;
+}
+
+.split-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* the 1px gap shows as a thin line between the two parts */
+.split-toggle {
+  min-width: 0;
+  padding: 0 4px;
+  margin-left: 1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.split-toggle mat-icon {
+  margin: 0;
+}
+
+/* the menu of earlier versions opens in an overlay outside this component, so it needs ::ng-deep; wider than the
+   menu's default, so a version fits on one line */
+::ng-deep .version-menu.mat-mdc-menu-panel {
+  min-width: 340px;
+  max-width: 480px;
+}
+
+.version-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.version-date {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.version-item .badge {
+  margin-left: 0;
+}

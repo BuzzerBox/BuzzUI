@@ -12,6 +12,10 @@
 	handle /media* {
 		reverse_proxy server:4202
 	}
+	# save games and uploads, see shared/helper/storage-api.helper.ts
+	handle /storage* {
+		reverse_proxy server:4202
+	}
 	handle {
 		reverse_proxy client:80
 	}

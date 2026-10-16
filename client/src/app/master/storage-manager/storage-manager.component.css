@@ -1,0 +1,25 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  font-weight: 400;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.create .import {
+  flex: 1 1 20em;
+}

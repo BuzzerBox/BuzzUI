@@ -2,11 +2,17 @@
   "server": {
     "address": "localhost"
   },
+  "fileServer": {
+    "localPath": "media"
+  },
   "enableBrowserKeypressEvents": true,
   "serial": {
     "address": "/tmp/ttyV0"
   },
   "update": {
     "enabled": false
+  },
+  "storage": {
+    "boxPath": "box-storage"
   }
 }

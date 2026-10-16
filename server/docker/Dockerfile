@@ -24,6 +24,8 @@ WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/server/dist ./dist
+# the box's storage (config.test.json), owned by node so a new volume there is writable
+RUN mkdir -p /srv/storage && chown node:node /srv/storage
 USER node
 # 4201: WebSocket, 4202: media file server
 EXPOSE 4201 4202
