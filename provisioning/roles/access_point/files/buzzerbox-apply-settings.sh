@@ -28,8 +28,14 @@ declare -A settings
 # file::string
 # ?validate::boolean::false: whether to check the values (the defaults are trusted)
 readSettings() {
-  local file="$1" validate="${2:-false}" key value
-  while IFS='=' read -r key value || [ -n "${key}" ]; do
+  local file="$1" validate="${2:-false}" line key value
+  while IFS= read -r line || [ -n "${line}" ]; do
+    # split on the first "=" only: IFS='=' read would drop a trailing "=" of the value (e.g. of a passphrase)
+    if [[ "${line}" != *=* ]]; then
+      continue
+    fi
+    key="${line%%=*}"
+    value="${line#*=}"
     key="${key//$'\r'/}"
     value="${value//$'\r'/}"
     # trim spaces around the key and the value
@@ -100,6 +106,16 @@ else
   cp "${DEFAULTS_FILE}" "${SETTINGS_FILE}"
 fi
 COUNTRY="${settings[WIFI_COUNTRY_CODE]^^}"
+# Channels 12 and 13 are allowed in most countries, but not in these: the access point would not come up at all
+CHANNEL="${settings[WIFI_CHANNEL]}"
+case "${COUNTRY}" in
+  US|CA|TW)
+    if [ "${CHANNEL}" -gt 11 ]; then
+      log "WiFi channel ${CHANNEL} is not allowed in ${COUNTRY}, using channel 11"
+      CHANNEL=11
+    fi
+    ;;
+esac
 IP="${settings[SERVER_IP_ADDRESS]}"
 SUBNET_PREFIX="${IP%.*}"
 
@@ -108,7 +124,7 @@ CONNECTION="$(nmcli --offline connection add \
   connection.id BuzzerBox connection.uuid "${CONNECTION_UUID}" connection.autoconnect yes \
   type wifi ifname wlan0 \
   802-11-wireless.mode ap 802-11-wireless.ssid "${settings[WIFI_SSID]}" \
-  802-11-wireless.band bg 802-11-wireless.channel "${settings[WIFI_CHANNEL]}" \
+  802-11-wireless.band bg 802-11-wireless.channel "${CHANNEL}" \
   wifi-sec.key-mgmt wpa-psk wifi-sec.psk "${settings[WIFI_PASSPHRASE]}" \
   wifi-sec.proto rsn wifi-sec.pairwise ccmp wifi-sec.group ccmp wifi-sec.pmf disable \
   ipv4.method shared ipv4.addresses "${IP}/24" \
@@ -122,16 +138,41 @@ for hostname in "${HOSTNAMES[@]}"; do
   echo "address=/${hostname}/${IP}"
 done | writeIfChanged "${DNSMASQ_FILE}" 644 || true
 
+# The box itself needs the hostnames too: the master stores media as full URLs on the host it was opened under (e.g.
+# http://buzzer.box:4202/media/...), and the kiosk loads them. The box doesn't ask that dnsmasq, so they go into
+# /etc/hosts, on the loopback address so that they work while the WiFi is down.
+HOSTS_MARKER="# buzzerbox-settings"
+{
+  grep -v -F "${HOSTS_MARKER}" /etc/hosts
+  echo "127.0.0.1	${HOSTNAMES[*]}	${HOSTS_MARKER}"
+} | writeIfChanged /etc/hosts 644 || true
+
 # The WiFi country: for this boot through iw, and for the next ones (before NetworkManager) on the kernel command line,
 # as raspi-config does it
 iw reg set "${COUNTRY}" || log "Could not set the WiFi country to ${COUNTRY}"
 CMDLINE="$(cat "${CMDLINE_FILE}")"
-NEW_CMDLINE="$(echo "${CMDLINE}" | sed -E 's/ ?cfg80211\.ieee80211_regdom=[^ ]*//g') cfg80211.ieee80211_regdom=${COUNTRY}"
+# changed where it is, so that the order the playbook (roles/base) writes stays the same
+if [[ " ${CMDLINE} " == *" cfg80211.ieee80211_regdom="* ]]; then
+  NEW_CMDLINE="$(echo "${CMDLINE}" | sed -E "s/(^| )cfg80211\.ieee80211_regdom=[^ ]*/\1cfg80211.ieee80211_regdom=${COUNTRY}/g")"
+else
+  NEW_CMDLINE="${CMDLINE} cfg80211.ieee80211_regdom=${COUNTRY}"
+fi
 if [ "${NEW_CMDLINE}" != "${CMDLINE}" ]; then
   # FAT has no file modes
   echo "${NEW_CMDLINE}" > "${CMDLINE_FILE}.tmp"
   mv -f "${CMDLINE_FILE}.tmp" "${CMDLINE_FILE}"
   log "Set the WiFi country ${COUNTRY} on the kernel command line"
 fi
-# Raspberry Pi OS keeps WiFi blocked until a country is set
+# Raspberry Pi OS keeps WiFi blocked until a country is set. Unblocking it for this boot is not enough: systemd-rfkill
+# restores the saved state when the WiFi chip shows up, and NetworkManager keeps its own switch, which it turns off
+# while WiFi is blocked. So the saved states are cleared as well, as raspi-config does it.
 rfkill unblock wifi || true
+for state in /var/lib/systemd/rfkill/*:wlan; do
+  if [ -f "${state}" ]; then
+    echo 0 > "${state}"
+  fi
+done
+NM_STATE=/var/lib/NetworkManager/NetworkManager.state
+if [ -f "${NM_STATE}" ]; then
+  sed -i 's/^WirelessEnabled=.*/WirelessEnabled=true/' "${NM_STATE}"
+fi

@@ -34,3 +34,11 @@
     name: buzzerbox-settings.service
     enabled: true
     daemon_reload: "{{ not ansible_facts.is_chroot }}"
+
+# It holds network-online.target back until every connection is up (e.g. a DHCP lease on Ethernet), and nginx waits for
+# that target, and the kiosk for nginx: the screen came up about 4 s later than needed. Nothing on the box needs to be
+# "online": the access point is its own network, and the server and nginx only listen.
+- name: Don't wait for the network to be online
+  ansible.builtin.systemd_service:
+    name: NetworkManager-wait-online.service
+    enabled: false
