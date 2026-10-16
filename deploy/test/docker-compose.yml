@@ -1,10 +1,14 @@
 # Test environment: the latest main, built by .github/workflows/test-images.yml.
 #
 # On the test host (Docker with the compose plugin):
-#   1. Copy this directory there, put sample media into ./media and create .env from .env.example
+#   1. Copy this directory there, put sample media into ./media/Teststick and create .env from .env.example.
+#      Every folder in ./media is a USB stick to the server, as below /media/pi on the box.
 #   2. docker compose up -d
-#   3. Run ./update.sh from cron to deploy new images, e.g. every 5 minutes:
+#   3. Run ./update.sh from cron to deploy new images, e.g. every 5 minutes. It also takes the Caddyfile and this
+#      file from main:
 #        */5 * * * * cd /opt/buzzerbox-test && ./update.sh >> update.log 2>&1
+#   4. To get an example game, import example-game/Beispielspiel.json in the storage manager into the BuzzerBox.
+#      Its media point to the stock media in ./media/Teststick, which the import copies into the game.
 #
 # Only Caddy is reachable from outside (ports 80 and 443). It asks for the login from .env and
 # forwards to the server and client, so open only those two ports in the firewall.
