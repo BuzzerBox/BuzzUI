@@ -5,6 +5,21 @@ import {Injectable} from '@angular/core';
 import {EGameStatesMaster} from '../enums/EGameStatesMaster';
 import {pathsMaster} from '../paths-master';
 
+/**
+ * The pages the master may show in each state; the first one is where it goes when it opens any other page
+ */
+const pathsForState: Record<EGameStatesMaster, string[]> = {
+  [EGameStatesMaster.STARTING]: [pathsMaster.start],
+  [EGameStatesMaster.MASTER_ACCEPTED]: [pathsMaster.start],
+  // like the setup, these are only there while no game is set up
+  [EGameStatesMaster.RECEIVED_PRESETUP_DATA]: [pathsMaster.home, pathsMaster.setup, pathsMaster.loadGame, pathsMaster.prepare, pathsMaster.storage],
+  [EGameStatesMaster.READY_TO_START]: [pathsMaster.readyToStart],
+  [EGameStatesMaster.PLAYING]: [pathsMaster.play],
+  // the play page shows the scores then
+  [EGameStatesMaster.END]: [pathsMaster.play],
+  [EGameStatesMaster.REJECTED]: [pathsMaster.masterAlreadyRegistered]
+};
+
 @Injectable()
 export class RouteGuard  {
   constructor(private game: GameService, private router: Router) {
@@ -14,73 +29,12 @@ export class RouteGuard  {
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     const path = route.url;
     const currentPath = path[path.length - 1].path;
-
-    switch (currentPath) {
-      case pathsMaster.start:
-        return this.handleStartRoute();
-      case pathsMaster.setup:
-      case pathsMaster.home:
-      case pathsMaster.loadGame:
-      case pathsMaster.prepare:
-      case pathsMaster.storage:
-        // like the setup, these are only there while no game is set up
-        return this.handleSetupRoute();
-      case pathsMaster.masterAlreadyRegistered:
-        return this.handleMasterAlreadyRegistered();
-      case pathsMaster.readyToStart:
-        return this.handleReadyToStartRoute();
-      case pathsMaster.play:
-        return this.handlePlayRoute();
-      default:
-        return false;
-    }
-  }
-
-  private handleStartRoute(): boolean | UrlTree {
-    if (this.game.getGameState() === EGameStatesMaster.STARTING || this.game.getGameState() === EGameStatesMaster.MASTER_ACCEPTED) {
-      return true;
-    } else {
-      return this.redirect(pathsMaster.masterAlreadyRegistered);
-    }
-  }
-
-  private handleSetupRoute(): boolean | UrlTree {
-    if (this.game.getGameState() === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
-      return true;
-    } else {
-      return this.redirectToStart();
-    }
-  }
-
-  private redirectToStart(): UrlTree {
-    return this.redirect(pathsMaster.start);
-  }
-
-  private handleMasterAlreadyRegistered(): boolean | UrlTree {
-    if (this.game.getGameState() === EGameStatesMaster.END) {
-      return true;
-    } else {
-      return this.redirectToStart();
-    }
+    const allowedPaths = pathsForState[this.game.getGameState()] ?? [pathsMaster.start];
+    // a page of another state leads to the one of the current state, which always lets the master in
+    return allowedPaths.includes(currentPath) || this.redirect(allowedPaths[0]);
   }
 
   private redirect(target: string): UrlTree {
     return this.router.createUrlTree(['master/' + target]);
-  }
-
-  private handleReadyToStartRoute(): boolean | UrlTree {
-    if (this.game.getGameState() === EGameStatesMaster.READY_TO_START) {
-      return true;
-    } else {
-      return this.redirectToStart();
-    }
-  }
-
-  private handlePlayRoute(): boolean | UrlTree {
-    if (this.game.getGameState() === EGameStatesMaster.PLAYING) {
-      return true;
-    } else {
-      return this.redirectToStart();
-    }
   }
 }

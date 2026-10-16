@@ -138,6 +138,11 @@ export class GameService implements OnDestroy {
           // no game was set up yet, so registering again keeps what was entered in the setup so far
           this.registerMaster();
           break;
+        case EGameStatesMaster.REJECTED:
+          // the server closes the connection of a refused master; trying again lets it in once the other master is gone
+          this.setNewGameState(EGameStatesMaster.STARTING);
+          this.registerMaster();
+          break;
         default:
           // the server keeps a running game for a master that rejoins, which a reload does
           window.location.reload();
@@ -265,7 +270,7 @@ export class GameService implements OnDestroy {
         this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
       }
     } else {
-      this.setNewGameState(EGameStatesMaster.END);
+      this.setNewGameState(EGameStatesMaster.REJECTED);
       this.redirect(pathsMaster.masterAlreadyRegistered);
     }
   }
@@ -565,11 +570,16 @@ export class GameService implements OnDestroy {
     }
   }
 
+  /**
+   * Ends the game; the server then sends the presetup data again, which takes the master to the start page
+   */
   public resetServer(): void {
+    this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
+    this.joinedRunningGame = false;
+    // the game data stays until the next setup replaces it, since the play page is shown until then
     this.webSocketService.send<IResetServerPacket>({
       packetType: EPacketTypes.RESET_SERVER
     });
-    this.router.navigate(['/choose']);
   }
 
   private isUsedAsScreen(): boolean {
