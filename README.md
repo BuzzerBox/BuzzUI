@@ -52,7 +52,7 @@ box, create the file `/etc/buzzerbox/require-signed-updates`.
 Older installations run the server from the desktop autostart and have no update helper. Copy the `install/` directory
 (with `.assets/update-public-key.pem`) onto the box and run `sudo ./enable-usb-updates.sh` once. It moves the installed
 software to `releases/legacy`, sets up the `buzzerbox-server` service, the update helper and its sudo rule. Then install
-the first bundle by hand: `sudo buzzerbox-update install /media/pi/<stick>/buzzerbox-update-<version>.tar`.
+the first bundle by hand: `sudo buzzerbox-update install /media/pi/<stick>/updates/buzzerbox-update-<version>.tar`.
 
 ### How it works
 The software lives in `${INSTALL_DIR}/releases/<version>`, and `${INSTALL_DIR}/current` links to the release that runs:
