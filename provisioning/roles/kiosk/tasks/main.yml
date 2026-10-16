@@ -44,6 +44,32 @@
       Comment=An invisible mouse cursor for the BuzzerBox kiosk
     mode: "0644"
 
+# WirePlumber picks the HDMI card's profile when it starts, and without a TV that is "off". It doesn't switch the
+# profile again by itself (api.acp.auto-profile is false by default), so a TV switched on after the box stayed silent.
+# Its default volume of 40 % is raised to 100 %: the master and the TV set how loud it is.
+- name: Create the directory of WirePlumber's settings
+  ansible.builtin.file:
+    path: /etc/wireplumber/wireplumber.conf.d
+    state: directory
+    mode: "0755"
+
+- name: Switch the HDMI sound on when a TV is connected later, at full volume
+  ansible.builtin.copy:
+    dest: /etc/wireplumber/wireplumber.conf.d/50-buzzerbox-hdmi.conf
+    content: |
+      # see provisioning/roles/kiosk: the HDMI cards switch from "off" to HDMI by themselves when a TV reports in,
+      # at full volume
+      wireplumber.settings = {
+        device.routes.default-sink-volume = 1.0
+      }
+      monitor.alsa.rules = [
+        {
+          matches = [ { device.name = "~alsa_card\\.platform-.*\\.hdmi" } ]
+          actions = { update-props = { api.acp.auto-profile = true, api.acp.auto-port = true } }
+        }
+      ]
+    mode: "0644"
+
 - name: Install the kiosk service
   ansible.builtin.template:
     src: buzzerbox-kiosk.service.j2

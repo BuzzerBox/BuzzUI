@@ -5,6 +5,10 @@ Wants=udisks2.service
 
 [Service]
 User={{ buzzerbox_user }}
+# A power cut leaves the mount points of the sticks behind (udisks only remembers them in /run), and a stick plugged in
+# again would be mounted at <label>1 instead, where the media paths of the games don't point. So empty ones go ("+": as
+# root, "-": a mounted stick's directory can't be removed, which is fine).
+ExecStartPre=-+/usr/bin/find /media/{{ buzzerbox_user }} -mindepth 1 -maxdepth 1 -type d -empty -delete
 ExecStart=/usr/bin/udiskie --automount --no-notify --no-tray --no-password-prompt --no-config
 Restart=always
 RestartSec=2
