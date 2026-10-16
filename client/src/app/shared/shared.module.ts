@@ -24,6 +24,7 @@ import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.componen
 import {MatIconModule} from '@angular/material/icon';
 import {MatSliderModule} from '@angular/material/slider';
 import {FitTextDirective} from './fit-text.directive';
+import {LoadingSpinnerComponent} from './loading-spinner/loading-spinner.component';
 
 @NgModule({
     declarations: [
@@ -37,7 +38,8 @@ import {FitTextDirective} from './fit-text.directive';
         BuzzerLockComponent,
         MediaQuestionComponent,
         MediaRemoteComponent,
-        FitTextDirective
+        FitTextDirective,
+        LoadingSpinnerComponent
     ],
     imports: [
         CommonModule,
@@ -52,7 +54,8 @@ import {FitTextDirective} from './fit-text.directive';
         VgOverlayPlayModule,
         VgBufferingModule,
         MatIconModule,
-        MatSliderModule
+        MatSliderModule,
+        MatProgressSpinnerModule
     ],
     exports: [
         PlayUiComponent,
@@ -61,7 +64,8 @@ import {FitTextDirective} from './fit-text.directive';
         AnswerOptionsComponent,
         DialogConfirmEndingGameComponent,
         MediaQuestionComponent,
-        MediaRemoteComponent
+        MediaRemoteComponent,
+        LoadingSpinnerComponent
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

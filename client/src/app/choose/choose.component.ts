@@ -8,6 +8,8 @@ import {ConfigService} from '../services/config.service';
     standalone: false
 })
 export class ChooseComponent implements OnInit {
+  // the server ignores the dev board's buzzer presses unless browser keypresses are enabled
+  public readonly isDevBoardAvailable = ConfigService.get().enableBrowserKeypressEvents;
 
   constructor() {
   }

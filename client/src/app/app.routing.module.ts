@@ -15,7 +15,11 @@ export const routes: Routes = [
     loadChildren: () => import('./screen/screen.module').then(m => m.ScreenModule)
   },
   { path: 'choose', component: ChooseComponent },
-  { path: '', redirectTo: 'choose', pathMatch: 'full' }
+  { path: '', redirectTo: 'choose', pathMatch: 'full' },
+  {
+    path: 'dev-board',
+    loadChildren: () => import('./virtual-dev-board/virtual-dev-board.module').then(m => m.VirtualDevBoardModule)
+  }
 ];
 
 

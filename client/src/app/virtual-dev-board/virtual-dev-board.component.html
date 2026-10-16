@@ -1,0 +1,16 @@
+@if (isConnected$ | async) {
+  <div id="container" class="center-center">
+    <div id="buzzer-buttons-container">
+      @for (buzzer of buzzers; track $index) {
+        <div class="buzzer-button" (mousedown)="sendBuzzerPress($index)">
+          {{ $index + 1 }}
+        </div>
+      }
+    </div>
+    <div id="release-lock-button-container">
+      <mat-button-toggle id="release-lock-button" (mousedown)="sendReleaseLockButtonPress()">Release Lock</mat-button-toggle>
+    </div>
+  </div>
+} @else {
+  <app-loading-spinner text="Warte auf Verbindung zu Server!"></app-loading-spinner>
+}
