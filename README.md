@@ -20,8 +20,9 @@ The supported settings are shown below:
 ### Raspberry Pi 4 `Buster`
 
 ## Updating a BuzzerBox
-A BuzzerBox installs updates from a USB stick. Put the update bundle `buzzerbox-update-<version>.tar` on a stick (at
-the top level or in any folder), plug it into the box and open the master page. While no game is set up, the first
+A BuzzerBox installs updates from a USB stick. Create a folder named `updates` at the top level of the stick, put the
+update bundle `buzzerbox-update-<version>.tar` into it (`<stick>/updates/buzzerbox-update-<version>.tar`), plug the
+stick into the box and open the master page. Bundles anywhere else on the stick are not found. While no game is set up, the first
 setup step shows the installed version and the bundles on the stick; *Installieren* installs one. The box checks the
 bundle's signature, switches to the new version and restarts the server. If the new version does not start, it goes
 back to the previous one on its own. Screens reload by themselves; the master page offers to reload.
@@ -56,7 +57,8 @@ the first bundle by hand: `sudo buzzerbox-update install /media/pi/<stick>/buzze
 ### How it works
 The software lives in `${INSTALL_DIR}/releases/<version>`, and `${INSTALL_DIR}/current` links to the release that runs:
 nginx serves `current/frontend` and the systemd service `buzzerbox-server` runs `current/backend`. The server looks for
-bundles in `fileServer.localPath` and the folders right below it (`update` in `config.json`) and starts
+bundles in the `updates` folder of each stick, i.e. in `<fileServer.localPath>/<stick>/updates` (`update` in
+`config.json`), and only while no game is set up, so it leaves the sticks alone during a game. It starts
 `/usr/local/sbin/buzzerbox-update` (`install/.assets/scripts/buzzerbox-update.sh`) through sudo. The helper runs as its
 own systemd unit, since it restarts the server, and reports to `/var/lib/buzzerbox/update-status.json`, which the
 server reads again after the restart. Each bundle's `hooks/post-install.sh` also brings the helper and the service of

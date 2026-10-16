@@ -22,6 +22,10 @@ PUBLIC_KEY="${BUZZERBOX_UPDATE_PUBLIC_KEY:-/etc/buzzerbox/update-public-key.pem}
 # when this file exists, --allow-unsigned is ignored
 REQUIRE_SIGNED_FILE="/etc/buzzerbox/require-signed-updates"
 ALLOW_UNSIGNED=""
+# what install() is doing, for undoing it when it stops unexpectedly (see failIfStillRunning)
+INSTALLING_VERSION=""
+PREVIOUS_VERSION=""
+IS_NEW_RELEASE_IN_PLACE=""
 STATE_DIR="${BUZZERBOX_STATE_DIR:-/var/lib/buzzerbox}"
 STATUS_FILE="${STATE_DIR}/update-status.json"
 LOCK_FILE="/run/buzzerbox-update.lock"
@@ -120,7 +124,8 @@ unpackBundle() {
   local version sha256 fileNameVersion
   version="$(node -e 'console.log(require(process.argv[1]).version)' "${work}/manifest.json")"
   sha256="$(node -e 'console.log(require(process.argv[1]).payloadSha256)' "${work}/manifest.json")"
-  if ! [[ "${version}" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+  # starting with a digit, so it can't be "." or "..", which would point releases/<version> elsewhere
+  if ! [[ "${version}" =~ ^[0-9][0-9A-Za-z.+-]*$ ]]; then
     log "The bundle has an invalid version '${version}'"
     return 1
   fi
@@ -154,6 +159,51 @@ cleanUpReleases() {
   done
 }
 
+# Undoes installing a version: current goes back to the version that ran before, the release the new files replaced
+# comes back, and new files that replaced nothing are removed, so that a later rollback can't go to them.
+# version::string: the version that was being installed
+# previous::string: the version that ran before
+# isInPlace::string: whether the new files were already moved to releases/<version>
+undoInstall() {
+  local version="$1" previous="$2" isInPlace="$3" replaced="${RELEASES_DIR}/.replaced-$1"
+  if [ -n "${previous}" ] && [ "${previous}" != "${version}" ] && [ -d "${RELEASES_DIR}/${previous}" ]; then
+    switchTo "${previous}"
+  fi
+  if [ -d "${replaced}" ]; then
+    rm -rf "${RELEASES_DIR:?}/${version}"
+    mv -T "${replaced}" "${RELEASES_DIR}/${version}"
+    if [ "$(currentVersion)" = "$(basename "${replaced}")" ]; then
+      switchTo "${version}"
+    fi
+  elif [ -n "${isInPlace}" ] && [ "$(currentVersion)" != "${version}" ]; then
+    rm -rf "${RELEASES_DIR:?}/${version}"
+  fi
+  systemctl reload nginx || true
+}
+
+# An update that was interrupted while reinstalling the running version leaves current on the copy of the release it
+# replaces (see install), which comes back
+restoreReplacedRelease() {
+  local current
+  current="$(currentVersion)"
+  if [[ "${current}" == .replaced-* ]]; then
+    undoInstall "${current#.replaced-}" "" ""
+  fi
+}
+
+# Runs when install() exits. If the script stopped on an unexpected error (set -e), the status would otherwise stay
+# running, the master would wait for an update that is gone, and current could point to files that were never checked.
+failIfStillRunning() {
+  set +e
+  if grep -q '"state":"running"' "${STATUS_FILE}" 2> /dev/null; then
+    if [ -n "${INSTALLING_VERSION}" ]; then
+      undoInstall "${INSTALLING_VERSION}" "${PREVIOUS_VERSION}" "${IS_NEW_RELEASE_IN_PLACE}"
+      systemctl restart "${SERVICE}" 9>&-
+    fi
+    writeStatus failed "${INSTALLING_VERSION}" "The update stopped unexpectedly, version $(currentVersion) is running. See: journalctl -t buzzerbox-update"
+  fi
+}
+
 install() {
   local bundle="$1"
   exec 9> "${LOCK_FILE}"
@@ -161,6 +211,7 @@ install() {
     log "Another update is running"
     return 1
   fi
+  trap failIfStillRunning EXIT
   # the overlay file system of raspi-config keeps changes in memory only, so an update would be gone after a reboot
   if [ -z "${BUZZERBOX_ALLOW_OVERLAY_ROOT:-}" ] && awk '$2 == "/" && $3 == "overlay" {found = 1} END {exit !found}' /proc/mounts; then
     writeStatus failed "" "The root file system is read-only (overlay file system), so updates cannot be installed"
@@ -170,6 +221,7 @@ install() {
 
   local previous staging unpacked version unsigned errors
   previous="$(currentVersion)"
+  PREVIOUS_VERSION="${previous}"
   writeStatus running "" "Checking the bundle"
   mkdir -p "${RELEASES_DIR}"
   staging="$(mktemp -d "${RELEASES_DIR}/.staging-XXXXXX")"
@@ -185,16 +237,28 @@ install() {
   cat "${errors}" >&2
   rm -f "${errors}"
   read -r version unsigned <<< "${unpacked}"
+  INSTALLING_VERSION="${version}"
   writeStatus running "${version}" "Installing"
   log "Installing version ${version}${unsigned:+ WITHOUT A VALID SIGNATURE} (installed: ${previous:-none})"
 
-  if [ "${version}" = "${previous}" ]; then
-    # reinstalling the running version: let current point to the new files while the old ones are replaced
-    switchTo "$(basename "${staging}")"
+  # A release of the same version is kept until the new files run, e.g. when reinstalling the running version, so that
+  # it comes back if they don't. The copy is made of hard links, which costs no space, and its name starts with a dot,
+  # so it is not taken for a release. current points to it while the release is replaced, so it never points to
+  # nothing or to files that were not checked.
+  local replaced="${RELEASES_DIR}/.replaced-${version}"
+  rm -rf "${replaced}" "${replaced}.copying"
+  if [ -d "${RELEASES_DIR}/${version}" ]; then
+    # only a complete copy gets the name, since undoInstall would replace the release with it
+    cp -al "${RELEASES_DIR}/${version}" "${replaced}.copying"
+    mv -T "${replaced}.copying" "${replaced}"
+    if [ "${version}" = "${previous}" ]; then
+      switchTo "$(basename "${replaced}")"
+    fi
+    rm -rf "${RELEASES_DIR:?}/${version}"
   fi
-  rm -rf "${RELEASES_DIR:?}/${version}"
   chmod 755 "${staging}"
   mv -T "${staging}" "${RELEASES_DIR}/${version}"
+  IS_NEW_RELEASE_IN_PLACE=1
   switchTo "${version}"
 
   if [ -x "${RELEASES_DIR}/${version}/hooks/post-install.sh" ]; then
@@ -205,6 +269,7 @@ install() {
   systemctl reload nginx || true
 
   if restartAndCheck; then
+    rm -rf "${replaced}"
     writeStatus succeeded "${version}" "${unsigned:+Installed without a valid signature}"
     log "Version ${version} is running"
     cleanUpReleases "${previous}"
@@ -212,12 +277,9 @@ install() {
   fi
 
   log "Version ${version} did not start"
+  undoInstall "${version}" "${previous}" 1
   if [ -n "${previous}" ] && [ -d "${RELEASES_DIR}/${previous}" ]; then
-    switchTo "${previous}"
-    systemctl reload nginx || true
     restartAndCheck || log "The previous version ${previous} does not start either"
-    # so that a later rollback can't go to it
-    rm -rf "${RELEASES_DIR:?}/${version}"
     writeStatus rolled-back "${version}" "Version ${previous} runs again. See: journalctl -u ${SERVICE}"
   else
     writeStatus failed "${version}" "The new version did not start. See: journalctl -u ${SERVICE}"
@@ -229,7 +291,12 @@ install() {
 # holding the lock was interrupted.
 recover() {
   exec 9> "${LOCK_FILE}"
-  if flock -n 9 && grep -q '"state":"running"' "${STATUS_FILE}" 2>/dev/null; then
+  if ! flock -n 9; then
+    return 0
+  fi
+  # the server starts after this, so a failure here must not stop it
+  restoreReplacedRelease || log "Could not restore the release an interrupted update replaced"
+  if grep -q '"state":"running"' "${STATUS_FILE}" 2>/dev/null; then
     writeStatus failed "" "The update was interrupted, version $(currentVersion) is running"
   fi
 }
@@ -265,9 +332,17 @@ case "${COMMAND}" in
   start)
     [ -n "${1:-}" ] || { log "Usage: $0 start [--allow-unsigned] <bundle>"; exit 1; }
     bundle="$(realpath "$1")"
+    # refused before writing the status, which belongs to the update that is running
+    exec 9> "${LOCK_FILE}"
+    if ! flock -n 9; then
+      log "Another update is running"
+      exit 1
+    fi
+    exec 9>&-
     writeStatus running "" "Starting"
-    # the update restarts the server that calls this, so it has to run outside of the server's service
-    if ! systemd-run --unit="buzzerbox-update-$(date +%s)" --collect --quiet "$(realpath "$0")" install \
+    # the update restarts the server that calls this, so it has to run outside of the server's service.
+    # The PID keeps the unit name unique when two updates are started within a second.
+    if ! systemd-run --unit="buzzerbox-update-$(date +%s)-$$" --collect --quiet "$(realpath "$0")" install \
         ${ALLOW_UNSIGNED:+--allow-unsigned} "${bundle}"; then
       writeStatus failed "" "The update could not be started"
       exit 1

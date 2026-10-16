@@ -5,8 +5,8 @@ import {EUpdateSignatures} from '../shared';
  */
 export interface IUpdateBundle {
     /**
-     * Path of the bundle relative to the directory the server looks for bundles in. The master sends it back to
-     * install the bundle.
+     * Path of the bundle relative to the directory the USB sticks are mounted in (<stick>/updates/<file>). The master
+     * sends it back to install the bundle.
      */
     fileName: string;
     /**

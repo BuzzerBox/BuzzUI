@@ -73,4 +73,4 @@ if [ -n "${SIGNING_KEY}" ]; then
 else
   echo "Created ${BUNDLE} (commit ${COMMIT}, NOT SIGNED: the box warns before installing it)."
 fi
-echo "Copy it onto a USB stick (top level or any folder) and plug it into the box."
+echo "Copy it into a folder named updates at the top level of a USB stick and plug the stick into the box."

@@ -182,6 +182,8 @@ export class GameService {
         LoggerService.log(`setting new state: ${EGameStates[newState]}`);
         this.previousStateInAutomaton = this.currentStateInAutomaton;
         this.currentStateInAutomaton = newState;
+        // the master can only install updates while setting up
+        UpdateService.get().setPolling(newState === EGameStates.WAITING_FOR_SETUP);
     }
 
     private getBuzzerConfig(): IBuzzer[] {
@@ -287,10 +289,10 @@ export class GameService {
     /**
      * Installing an update restarts the server, so it is only allowed while no game is set up
      */
-    private onInstallUpdatePacket(packet: IInstallUpdatePacket): void {
+    private async onInstallUpdatePacket(packet: IInstallUpdatePacket): Promise<void> {
         const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
             ? 'Updates can only be installed while no game is set up'
-            : UpdateService.get().install(packet.fileName, packet.allowUnsigned === true);
+            : await UpdateService.get().install(packet.fileName, packet.allowUnsigned === true);
         if (reason != null) {
             LoggerService.warn(`Not installing update ${packet.fileName}: ${reason}`);
         }

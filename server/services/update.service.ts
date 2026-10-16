@@ -25,7 +25,10 @@ import {LoggerService} from './logger.service';
 export class UpdateService {
     private static instance: UpdateService;
     private static readonly POLLING_INTERVAL_IN_MS = 5000;
-    private static readonly BUNDLE_FILE_NAME = /^buzzerbox-update-([0-9A-Za-z.+-]+)\.tar$/;
+    // the version starts with a digit, so it can't be "." or ".." (the helper installs to releases/<version>)
+    private static readonly BUNDLE_FILE_NAME = /^buzzerbox-update-([0-9][0-9A-Za-z.+-]*)\.tar$/;
+    // bundles are only looked for in this folder at the top level of a USB stick (in any case, as on FAT sticks)
+    private static readonly BUNDLE_FOLDER_NAME = 'updates';
     // the result of an update is only of interest right after it
     private static readonly STATUS_MAX_AGE_IN_MS = 30 * 60 * 1000;
     private static readonly TAR_BLOCK_SIZE = 512;
@@ -34,17 +37,19 @@ export class UpdateService {
 
     private readonly config = ConfigService.get().update;
     private readonly infoSubject: BehaviorSubject<IUpdateInfoPacket>;
-    // set when starting the helper failed, which it then can't write to its status file itself
-    private startFailedStatus: IUpdateStatus;
     // the manifest and signature of each bundle, read again only when the file changes
     private manifestCache = new Map<string, {stamp: string, manifest?: Buffer, signature?: Buffer}>();
+    // read once, since the server restarts with every update that could bring a new one
+    private publicKey: crypto.KeyObject | undefined;
+    private pollingInterval: ReturnType<typeof setInterval> | undefined;
+    // a refresh waits for the USB sticks, so refreshes are run one after the other, or an older one could win
+    private isRefreshing = false;
+    private isRefreshRequested = false;
+    // between starting the helper and it having written that it runs
+    private isStarting = false;
 
     private constructor() {
         this.infoSubject = new BehaviorSubject<IUpdateInfoPacket>(this.makeInfo([], undefined));
-        if (this.config.enabled) {
-            this.refresh();
-            setInterval(() => this.refresh(), UpdateService.POLLING_INTERVAL_IN_MS);
-        }
     }
 
     public static get(): UpdateService {
@@ -70,14 +75,35 @@ export class UpdateService {
     }
 
     /**
-     * Starts installing one of the bundles that were found. The helper runs on its own, so this returns as soon as it
+     * Looks for bundles regularly while this is set, i.e. while the master can install updates. Otherwise the USB
+     * sticks are left alone, e.g. while a game plays media from them.
+     */
+    public setPolling(isPolling: boolean): void {
+        if (!this.config.enabled || isPolling === (this.pollingInterval != null)) {
+            return;
+        }
+        if (isPolling) {
+            this.refresh();
+            this.pollingInterval = setInterval(() => this.refresh(), UpdateService.POLLING_INTERVAL_IN_MS);
+        } else {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = undefined;
+        }
+    }
+
+    /**
+     * Starts installing one of the bundles that were found. The helper runs on its own, so this resolves as soon as it
      * was started.
      * @param allowUnsigned install the bundle even without a valid signature, which the master was warned about
      * @return why the installation could not be started, or null if it was
      */
-    public install(fileName: string, allowUnsigned = false): string | null {
+    public async install(fileName: string, allowUnsigned = false): Promise<string | null> {
         if (!this.config.enabled) {
             return 'Updates are disabled on this server';
+        }
+        // the helper refuses a second update as well, but starting it would overwrite the status of the running one
+        if (this.isStarting || this.getInfo().status?.state === EUpdateStates.RUNNING) {
+            return 'Another update is being installed';
         }
         // only bundles that were found may be installed, so the master can't pass an arbitrary path
         const bundle = this.getInfo().bundles.find(b => b.fileName === fileName);
@@ -88,31 +114,48 @@ export class UpdateService {
         if (!isSigned && !allowUnsigned) {
             return `The update bundle ${fileName} has no valid signature`;
         }
-        // a second update while one is running is refused by the helper, which also notices one that was interrupted.
         // The helper checks the signature again, so a bundle that was replaced in the meantime is not installed unsigned.
         const [command, ...args] = this.config.command;
         const bundlePath = path.join(this.getBundleDirectory(), fileName);
         LoggerService.log(`Installing update bundle ${bundlePath}${isSigned ? '' : ' WITHOUT A VALID SIGNATURE'}`);
-        this.startFailedStatus = undefined;
-        execFile(command, [...args, ...(isSigned ? [] : ['--allow-unsigned']), bundlePath], (error, stdout, stderr) => {
-            if (error) {
-                LoggerService.error('Could not start the update', error, stderr);
-                this.startFailedStatus = {
-                    state: EUpdateStates.FAILED,
-                    message: (stderr || error.message).trim(),
-                    time: new Date().toISOString()
-                };
-            }
+        this.isStarting = true;
+        try {
+            return await new Promise<string | null>(resolve => {
+                execFile(command, [...args, ...(isSigned ? [] : ['--allow-unsigned']), bundlePath], (error, stdout, stderr) => {
+                    if (error) {
+                        LoggerService.error('Could not start the update', error, stderr);
+                    }
+                    resolve(error ? (stderr || error.message).trim() : null);
+                });
+            });
+        } finally {
+            this.isStarting = false;
             this.refresh();
-        });
-        return null;
+        }
     }
 
     private getBundleDirectory(): string {
         return this.config.bundleDirectory || ConfigService.get().fileServer.localPath;
     }
 
-    private async refresh(): Promise<void> {
+    private refresh(): void {
+        if (this.isRefreshing) {
+            this.isRefreshRequested = true;
+            return;
+        }
+        this.isRefreshing = true;
+        this.updateInfo()
+            .catch(e => LoggerService.error('Could not look for update bundles', e))
+            .finally(() => {
+                this.isRefreshing = false;
+                if (this.isRefreshRequested) {
+                    this.isRefreshRequested = false;
+                    this.refresh();
+                }
+            });
+    }
+
+    private async updateInfo(): Promise<void> {
         const [bundles, status] = await Promise.all([this.findBundles(), this.readStatus()]);
         const info = this.makeInfo(bundles, status);
         if (!isEqual(info, this.getInfo())) {
@@ -131,20 +174,24 @@ export class UpdateService {
     }
 
     /**
-     * Looks for bundles in the bundle directory and the directories right below it, where the USB sticks are mounted
+     * Looks for bundles in the updates folder of each USB stick, i.e. in <bundle directory>/<stick>/updates
      */
     private async findBundles(): Promise<IUpdateBundle[]> {
         const fileNames: string[] = [];
         const directory = this.getBundleDirectory();
-        for (const entry of await this.readDirectory(directory)) {
-            if (entry.isDirectory()) {
-                for (const subEntry of await this.readDirectory(path.join(directory, entry.name))) {
-                    if (subEntry.isFile()) {
-                        fileNames.push(path.join(entry.name, subEntry.name));
+        for (const stick of await this.readDirectory(directory)) {
+            if (!stick.isDirectory()) {
+                continue;
+            }
+            for (const folder of await this.readDirectory(path.join(directory, stick.name))) {
+                if (!folder.isDirectory() || folder.name.toLowerCase() !== UpdateService.BUNDLE_FOLDER_NAME) {
+                    continue;
+                }
+                for (const entry of await this.readDirectory(path.join(directory, stick.name, folder.name))) {
+                    if (entry.isFile()) {
+                        fileNames.push(path.join(stick.name, folder.name, entry.name));
                     }
                 }
-            } else if (entry.isFile()) {
-                fileNames.push(entry.name);
             }
         }
         const publicKey = await this.readPublicKey();
@@ -168,11 +215,14 @@ export class UpdateService {
     }
 
     private async readPublicKey(): Promise<crypto.KeyObject | undefined> {
-        try {
-            return crypto.createPublicKey(await fs.readFile(this.config.publicKeyFile));
-        } catch (e) {
-            return undefined;
+        if (this.publicKey == null) {
+            try {
+                this.publicKey = crypto.createPublicKey(await fs.readFile(this.config.publicKeyFile));
+            } catch (e) {
+                // the box has no key (yet), so signatures can't be checked
+            }
         }
+        return this.publicKey;
     }
 
     /**
@@ -236,7 +286,9 @@ export class UpdateService {
                 if (bytesRead < blockSize || header.every(byte => byte === 0)) {
                     break;
                 }
-                const name = header.toString('utf8', 0, 100).split('\0')[0].replace(/^\.\//, '');
+                // taken as it is: the helper extracts exactly these names, so a bundle packed as ./manifest.json
+                // must not look valid here
+                const name = header.toString('utf8', 0, 100).split('\0')[0];
                 const size = parseInt(header.toString('ascii', 124, 136).split('\0')[0].trim() || '0', 8);
                 if (isNaN(size)) {
                     break;
@@ -265,16 +317,18 @@ export class UpdateService {
     }
 
     private async readStatus(): Promise<IUpdateStatus | undefined> {
-        let status: IUpdateStatus = this.startFailedStatus;
-        if (status == null) {
-            try {
-                status = JSON.parse(await fs.readFile(this.config.statusFile, 'utf8'));
-            } catch (e) {
-                // there was no update yet
-                return undefined;
-            }
+        let status: IUpdateStatus;
+        try {
+            status = JSON.parse(await fs.readFile(this.config.statusFile, 'utf8'));
+        } catch (e) {
+            // there was no update yet, or the file is being replaced
+            return undefined;
         }
-        const age = Date.now() - new Date(status.time).getTime();
-        return age <= UpdateService.STATUS_MAX_AGE_IN_MS ? status : undefined;
+        const time = new Date(status?.time).getTime();
+        if (typeof status?.state !== 'string' || isNaN(time)) {
+            LoggerService.warn(`Ignoring the update status file ${this.config.statusFile}, which is not valid`);
+            return undefined;
+        }
+        return Date.now() - time <= UpdateService.STATUS_MAX_AGE_IN_MS ? status : undefined;
     }
 }
