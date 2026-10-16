@@ -21,6 +21,8 @@ export class WebSocketService implements OnDestroy {
   // all messages from the server, across reconnects
   private messages = new Subject<IWebSocketMessage>();
   private reconnects = new Subject<void>();
+  // set only while the reconnect handlers run, see connect()
+  private reconnectingSubject: WebSocketSubject<IWebSocketMessage> | null = null;
   private wasConnected = false;
   private isDestroyed = false;
 
@@ -37,6 +39,11 @@ export class WebSocketService implements OnDestroy {
   }
 
   public async send<T extends IWebSocketMessage>(webSocketMessage: T): Promise<void> {
+    // what the reconnect handlers send goes out right away, ahead of the messages that waited for the connection
+    if (this.reconnectingSubject) {
+      this.reconnectingSubject.next(webSocketMessage);
+      return;
+    }
     // This will send a message to the server once a connection is made. Remember, value is serialized with JSON.stringify by default!
     (await this.connection).next(webSocketMessage);
   }
@@ -71,17 +78,29 @@ export class WebSocketService implements OnDestroy {
         // the server greets every new connection, so the first message means it is up
         if (!isOpen) {
           isOpen = true;
-          this.resolveConnection(subject);
-          if (this.wasConnected) {
-            this.reconnects.next();
-          }
-          this.wasConnected = true;
+          this.onOpened(subject);
         }
         this.messages.next(message);
       },
       error: error => this.onConnectionLost(websocketAddress, isOpen, error),
       complete: () => this.onConnectionLost(websocketAddress, isOpen)
     });
+  }
+
+  private onOpened(subject: WebSocketSubject<IWebSocketMessage>): void {
+    if (this.wasConnected) {
+      // The server forgot this client with the old connection, so the handlers introduce it again (e.g. register the
+      // master) before the messages that waited for the connection go out: the server would ignore a master's message
+      // that arrives before the master is registered again.
+      this.reconnectingSubject = subject;
+      try {
+        this.reconnects.next();
+      } finally {
+        this.reconnectingSubject = null;
+      }
+    }
+    this.resolveConnection(subject);
+    this.wasConnected = true;
   }
 
   private onConnectionLost(websocketAddress: string, wasOpen: boolean, error?: unknown): void {
