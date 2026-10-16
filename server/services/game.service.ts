@@ -7,6 +7,7 @@ import {
     EGradeResults,
     GameStateHelper,
     EMediaStates,
+    MediaHelper,
     EPacketTypes,
     EQuestionAnswerStates,
     IAnswer,
@@ -834,13 +835,15 @@ export class GameService {
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.sendToMaster<ISetBuzzerLockPacket>(buzzerLockPacket)
         // only pause the media: keep question/answer visibility as it is, but leave fullscreen so the screens show who buzzed.
-        // Only media that is shown gets paused (and stays on the screens); media that isn't shown yet stays hidden.
+        // Only a video or audio that plays is paused. An image or slideshow keeps its state: PAUSED would hide it, as it
+        // is what the master hides it with.
         const mediaQuestionState = this.currentGameState.mediaQuestionState;
-        const isMediaShown = mediaQuestionState?.mediaState === EMediaStates.PLAYING
-            || mediaQuestionState?.mediaState === EMediaStates.RESET;
+        const isPlaying = (mediaQuestionState?.mediaState === EMediaStates.PLAYING
+                || mediaQuestionState?.mediaState === EMediaStates.RESET)
+            && MediaHelper.isPlayable(this.getCurrentQuestion()?.mediaDetails);
         const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacketFromQuestionState({
             ...mediaQuestionState,
-            mediaState: isMediaShown ? EMediaStates.PAUSED : mediaQuestionState?.mediaState,
+            mediaState: isPlaying ? EMediaStates.PAUSED : mediaQuestionState?.mediaState,
             fullscreen: false
         });
         this.onUpdateMediaStatePacket(mediaStateUpdatePacket);

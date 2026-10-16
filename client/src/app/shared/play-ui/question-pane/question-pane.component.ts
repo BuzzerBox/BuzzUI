@@ -218,9 +218,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Whether the screens show the media, as decided in MediaQuestionComponent: while it plays and while it is paused
-   * (only media that was shown gets paused), and a slideshow also once it is complete. A video keeps showing its
-   * picture once it has finished, too. The screens then show the answers below the media.
+   * Whether the screens show the media, as decided in MediaQuestionComponent: while it plays, and a slideshow also
+   * once it is complete. A video keeps showing its picture once it was started, also paused and finished. The screens
+   * then show the answers below the media.
    */
   public isMediaShown(): boolean {
     const media = this.question?.mediaDetails;
@@ -230,8 +230,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     switch (this.mediaState) {
       case EMediaStates.PLAYING:
       case EMediaStates.RESET:
-      case EMediaStates.PAUSED:
         return true;
+      case EMediaStates.PAUSED:
+        return MediaHelper.isVideo(media);
       case EMediaStates.FINISHED:
         return MediaHelper.isSlideshow(media) || MediaHelper.isVideo(media);
       default:
