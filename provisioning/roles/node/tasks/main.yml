@@ -15,16 +15,27 @@
         checksum: "sha256:{{ node_sha256 }}"
         mode: "0644"
 
+    # the archive's files belong to uid 1001, which is the admin user's (roles/ssh) on the box: root runs this node
     - name: Unpack Node.js {{ node_version }}
       ansible.builtin.unarchive:
         src: "/var/cache/node-v{{ node_version }}-linux-arm64.tar.xz"
         dest: /opt
         remote_src: true
+        extra_opts: [--no-same-owner]
 
     - name: Remove the downloaded archive
       ansible.builtin.file:
         path: "/var/cache/node-v{{ node_version }}-linux-arm64.tar.xz"
         state: absent
+
+# boxes set up before --no-same-owner keep the archive's owner otherwise
+- name: Let root own Node.js {{ node_version }}
+  ansible.builtin.file:
+    path: "/opt/node-v{{ node_version }}-linux-arm64"
+    state: directory
+    owner: root
+    group: root
+    recurse: true
 
 # buzzerbox-server.service and the update helper run /usr/bin/node
 - name: Link node into /usr/bin

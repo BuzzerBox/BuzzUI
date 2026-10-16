@@ -15,5 +15,9 @@ sed "s|__INSTALL_DIR__|${INSTALL_DIR}|g" "${HOOKS_DIR}/buzzerbox-update.sh" > /u
 chmod 755 /usr/local/sbin/buzzerbox-update.new
 mv -f /usr/local/sbin/buzzerbox-update.new /usr/local/sbin/buzzerbox-update
 
-sed "s|__INSTALL_DIR__|${INSTALL_DIR}|g" "${HOOKS_DIR}/buzzerbox-server.service" > /etc/systemd/system/buzzerbox-server.service
+# the service file says User=pi, but a box set up with another user (buzzerbox_user in provisioning/) keeps its own
+SERVICE_FILE=/etc/systemd/system/buzzerbox-server.service
+SERVER_USER="$(sed -n 's/^User=//p' "${SERVICE_FILE}" 2> /dev/null | head -n 1)"
+sed -e "s|__INSTALL_DIR__|${INSTALL_DIR}|g" -e "s|^User=.*|User=${SERVER_USER:-pi}|" "${HOOKS_DIR}/buzzerbox-server.service" \
+  > "${SERVICE_FILE}"
 systemctl daemon-reload

@@ -24,31 +24,33 @@
       ansible.builtin.file:
         path: "{{ buzzerbox_install_dir }}/releases/{{ release_version }}"
         state: directory
-        owner: "{{ buzzerbox_user }}"
-        group: "{{ buzzerbox_user }}"
+        owner: root
+        group: root
         mode: "0755"
 
     - name: Unpack the release
       ansible.builtin.unarchive:
         src: "{{ buzzerbox_release_archive }}"
         dest: "{{ buzzerbox_install_dir }}/releases/{{ release_version }}"
-        owner: "{{ buzzerbox_user }}"
-        group: "{{ buzzerbox_user }}"
+        owner: root
+        group: root
 
     - name: Make the release the current one
       ansible.builtin.file:
         src: "releases/{{ release_version }}"
         dest: "{{ buzzerbox_install_dir }}/current"
         state: link
-        owner: "{{ buzzerbox_user }}"
-        group: "{{ buzzerbox_user }}"
+        owner: root
+        group: root
 
-- name: Let the user own the installation directory
+# Root owns the releases, as the update helper (which runs as root) installs them: the server, which runs as the user,
+# can read its code but not change it, nor swap a release for another one.
+- name: Let root own the installation directory
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: "{{ buzzerbox_user }}"
-    group: "{{ buzzerbox_user }}"
+    owner: root
+    group: root
     mode: "0755"
   loop:
     - "{{ buzzerbox_install_dir }}"
