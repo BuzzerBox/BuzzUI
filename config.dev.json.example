@@ -2,6 +2,9 @@
   "server": {
     "address": "localhost"
   },
+  "fileServer": {
+    "localPath": "media"
+  },
   "enableBrowserKeypressEvents": true,
   "serial": {
     "address": "/tmp/ttyV0"

@@ -160,6 +160,15 @@ games/<Name>/                      on the box: <storage.boxPath>/games (default 
   can use the storage: the server hands it a token over the WebSocket, which the storage API (`/storage` on the media
   port, see `shared/helper/storage-api.helper.ts`) checks.
 
+Every folder in `fileServer.localPath` (`/media/pi` on the box, where the sticks are mounted) is a USB stick. For local
+development, `config.dev.json.example` sets it to `server/media`, so each folder in it stands for one stick:
+
+```
+server/media/DevStick/             a stick named "DevStick"
+  buzzerbox-games/                 its games
+  Audio/, Bilder/, …               its other media, which can be copied into a game
+```
+
 ## WiFi
 WiFi default name's `BuzzerBoxNetwork` and the default password is `12TheBuzzerBox_IncredibleNetwork34`, but these can
 be set in `setup.env`.
