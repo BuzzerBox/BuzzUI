@@ -10,6 +10,10 @@ export class MediaHelper {
         return !!media?.slides?.length;
     }
 
+    public static isVideo(media: IMediaDetails | undefined): boolean {
+        return !this.isSlideshow(media) && !!media?.fileSrc && FileExtensionsService.isVideo(media.fileSrc);
+    }
+
     /**
      * Whether the media ends, so a question and answers can wait for it: video, audio and slideshows
      */

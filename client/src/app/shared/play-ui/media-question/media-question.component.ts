@@ -39,8 +39,11 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
           // this component is reused when the next question also has media, so hide whatever was shown before
           case EMediaStates.NO_MEDIA:
           case EMediaStates.HIDDEN:
-          case EMediaStates.PAUSED:
             this.pausePlayback();
+            break;
+          // e.g. when a team buzzes: the media stops but stays on the screen, an image as well as a video's picture
+          case EMediaStates.PAUSED:
+            this.stopPlayback();
             break;
           case EMediaStates.PLAYING:
             this.startPlayback();
@@ -150,10 +153,17 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   }
 
   pausePlayback(): void {
+    this.stopPlayback();
+    this.mediaVisible = false;
+  }
+
+  /**
+   * Stops a video or audio, but keeps showing what is shown
+   */
+  stopPlayback(): void {
     if (this.api && this.api.getDefaultMedia()) {
       this.api.getDefaultMedia().pause();
     }
-    this.mediaVisible = false;
   }
 
   restartPlayback(): void {

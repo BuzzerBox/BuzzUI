@@ -833,10 +833,14 @@ export class GameService {
         this.sendToMaster<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.sendToMaster<ISetBuzzerLockPacket>(buzzerLockPacket)
-        // only pause the media: keep question/answer visibility as it is, but leave fullscreen so the screens show who buzzed
+        // only pause the media: keep question/answer visibility as it is, but leave fullscreen so the screens show who buzzed.
+        // Only media that is shown gets paused (and stays on the screens); media that isn't shown yet stays hidden.
+        const mediaQuestionState = this.currentGameState.mediaQuestionState;
+        const isMediaShown = mediaQuestionState?.mediaState === EMediaStates.PLAYING
+            || mediaQuestionState?.mediaState === EMediaStates.RESET;
         const mediaStateUpdatePacket = PacketHelper.makeMediaStatePacketFromQuestionState({
-            ...this.currentGameState.mediaQuestionState,
-            mediaState: EMediaStates.PAUSED,
+            ...mediaQuestionState,
+            mediaState: isMediaShown ? EMediaStates.PAUSED : mediaQuestionState?.mediaState,
             fullscreen: false
         });
         this.onUpdateMediaStatePacket(mediaStateUpdatePacket);

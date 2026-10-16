@@ -5,10 +5,12 @@
         <vg-controls vgFor="my-video" [vgAutohide]="true" [vgAutohideTime]="0">
         </vg-controls>
       }
+      <!-- disableRemotePlayback: without it, Chromium puts a cast button on the video -->
       <video #myMedia
         [vgMedia]="myMedia"
         id="my-video"
         preload="auto"
+        disableRemotePlayback
         [src]="media.fileSrc">
       </video>
     </vg-player>
@@ -26,6 +28,7 @@
         [vgMedia]="myAudio"
         id="my-audio"
         preload="auto"
+        disableRemotePlayback
         [src]="media.fileSrc">
       </audio>
     </vg-player>
