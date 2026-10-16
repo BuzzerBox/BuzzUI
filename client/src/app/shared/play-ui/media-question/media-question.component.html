@@ -1,15 +1,51 @@
-<vg-player (onPlayerReady)="onPlayerReady($event)" class="player" *ngIf="isVideo()">
-  <vg-controls vgFor="my-video" [vgAutohide]="true" [vgAutohideTime]="0">
-  </vg-controls>
+<div class="media-area" [class.fullscreen]="fullscreen">
+  @if (isVideo()) {
+    <vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
+      @if (mediaVisible) {
+        <vg-controls vgFor="my-video" [vgAutohide]="true" [vgAutohideTime]="0">
+        </vg-controls>
+      }
+      <video #myMedia
+        [vgMedia]="myMedia"
+        id="my-video"
+        preload="auto"
+        [src]="media.fileSrc">
+      </video>
+    </vg-player>
+  }
 
-  <video #myMedia
-         [vgMedia]="myMedia"
-         id="my-video"
-         preload="auto"
-         [src]="media.fileSrc">
-  </video>
-</vg-player>
+  <!-- a separate player per media type, so switching between them gets a fresh player and onPlayerReady -->
+  @if (isAudio()) {
+    <vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
+      @if (mediaVisible) {
+        <div class="audio-visual">
+          <mat-icon>music_note</mat-icon>
+        </div>
+      }
+      <audio #myAudio
+        [vgMedia]="myAudio"
+        id="my-audio"
+        preload="auto"
+        [src]="media.fileSrc">
+      </audio>
+    </vg-player>
+  }
 
-<div class="player" *ngIf="isImage() && mediaVisible">
-  <img [src]="media.fileSrc" alt="The image for this question">
+  @if (isPlayable() && soundBlocked && mediaVisible) {
+    <div class="sound-blocked">
+      <mat-icon>volume_off</mat-icon> Klicken, um den Ton einzuschalten
+    </div>
+  }
+
+  @if (isSlideshow() && mediaVisible) {
+    <div class="player">
+      <img [src]="getCurrentSlide()" alt="Bild {{slideIndex + 1}} von {{media.slides.length}} zu dieser Frage">
+    </div>
+  }
+
+  @if (isImage() && mediaVisible) {
+    <div class="player">
+      <img [src]="media.fileSrc" alt="The image for this question">
+    </div>
+  }
 </div>

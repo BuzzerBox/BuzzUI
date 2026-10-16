@@ -4,28 +4,32 @@
     <ng-template matStepLabel>Hallo!</ng-template>
     <p>Hallo und herzlichen willkommen zum Setup von <b>{{getGameName()}}</b>!</p>
     <p>Hier kannst du ein vorbereitetes Quiz oder einen alten Spielstand importieren.
-    <app-file-upload-form (data)="onSaveGameFileSelected($event)"></app-file-upload-form>
-    <p>Wenn du ein neues Spiel vorbereiten willst, klicke unten auf <em>Weiter</em>.</p>
-    <div>
-      <button mat-button matStepperNext>Weiter</button>
-    </div>
-  </mat-step>
-  <mat-step [stepControl]="teamsFormGroup">
-    <ng-template matStepLabel>Teams</ng-template>
-<!--    <ng-template matStepContent>-->
-<!--    <ng-template [ngIf]="teamFormControlNames != null">-->
-<!--    <ng-template>-->
+      <app-file-upload-form (data)="onSaveGameFileSelected($event)"></app-file-upload-form>
+      <p>Wenn du ein neues Spiel vorbereiten willst, klicke unten auf <em>Weiter</em>.</p>
+      <div>
+        <button mat-button matStepperNext>Weiter</button>
+      </div>
+    </mat-step>
+    <mat-step [stepControl]="teamsFormGroup">
+      <ng-template matStepLabel>Teams</ng-template>
+      <!--    <ng-template matStepContent>-->
+      <!--    <ng-template [ngIf]="teamFormControlNames != null">-->
+      <!--    <ng-template>-->
       <p>Waehle die Teams</p>
       <form [formGroup]="teamsFormGroup">
         <mat-list role="list">
-          <mat-list-item role="listitem" *ngFor="let teamFormControlName of teamFormControlNames; let i = index">
-            <mat-icon mat-list-icon>people</mat-icon>
-            <mat-form-field>
-              <mat-label>{{teamNameSuggestions[i]}}</mat-label>
-              <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
-            </mat-form-field>
-            <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="true" *ngIf="i >= 2">Aktivieren</mat-checkbox>
-          </mat-list-item>
+          @for (teamFormControlName of teamFormControlNames; track teamFormControlName; let i = $index) {
+            <mat-list-item role="listitem">
+              <mat-icon mat-list-icon>people</mat-icon>
+              <mat-form-field>
+                <mat-label>{{teamNameSuggestions[i]}}</mat-label>
+                <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
+              </mat-form-field>
+              @if (i >= 2) {
+                <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="teamsFormGroup.get(teamFormControlName).enabled">Aktivieren</mat-checkbox>
+              }
+            </mat-list-item>
+          }
         </mat-list>
 
         <div>
@@ -33,43 +37,57 @@
           <button mat-button matStepperNext [disabled]="!teamsFormGroup.valid">Weiter</button>
         </div>
       </form>
-<!--    </ng-template>-->
+    <!--    </ng-template>-->
   </mat-step>
-<!--  <mat-step [stepControl]="questionsFormGroup" label="Fragen">-->
-  <mat-step [stepControl]="testObs | async" label="Fragen">
-<!--    <ng-template [ngIf]="showQuestions">-->
-<!--    <ng-template>-->
-      <form #questionForm [formGroup]="questionsFormGroup" id="questionForm">
-<!--    <form #questionForm [formGroup]="testObs | async" id="questionForm">-->
-        <mat-accordion class="example-headers-align">
-          <mat-expansion-panel hideToggle *ngFor="let questionFormGroupName of questionFormGroupNames; let i = index" [expanded]="step === i" (opened)="setStep(i)">
+  <!--  <mat-step [stepControl]="questionsFormGroup" label="Fragen">-->
+  <mat-step [stepControl]="questionsFormGroup" label="Fragen">
+    <!--    <ng-template [ngIf]="showQuestions">-->
+    <!--    <ng-template>-->
+    <form #questionForm [formGroup]="questionsFormGroup" id="questionForm">
+      <!--    <form #questionForm [formGroup]="testObs | async" id="questionForm">-->
+      <mat-accordion class="example-headers-align" cdkDropList (cdkDropListDropped)="dropQuestion($event)">
+        @for (questionFormGroupName of questionFormGroupNames; track questionFormGroupName; let i = $index) {
+          <mat-expansion-panel hideToggle [expanded]="step === i" (opened)="setStep(i)" cdkDrag>
             <mat-expansion-panel-header>
               <mat-panel-title>
+                <mat-icon cdkDragHandle class="drag-handle" title="Frage verschieben">drag_indicator</mat-icon>
                 Frage {{i + 1}}
               </mat-panel-title>
               <mat-panel-description>
-                &nbsp; <!-- TODO I'm sure there is a cleaner way to check this-->
-                <mat-icon *ngIf="questionsFormGroup.controls[questionFormGroupName] && questionsFormGroup.controls[questionFormGroupName].valid" class="green-icon">check_circle</mat-icon>
+                <span class="panel-header-icons">
+                  @if (getCustomPoints(questionFormGroupName) !== null) {
+                    <span class="panel-header-points">{{getCustomPoints(questionFormGroupName)}} Punkte</span>
+                  }
+                  @if (questionsFormGroup.controls[questionFormGroupName] && questionsFormGroup.controls[questionFormGroupName].valid) {
+                    <mat-icon class="green-icon">check_circle</mat-icon>
+                  }
+                  <button mat-icon-button (click)="removeQuestion(i, $event)" title="Frage löschen">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </span>
               </mat-panel-description>
-
             </mat-expansion-panel-header>
-
-            <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
+            <div class="row-layout" [formGroupName]="questionFormGroupName">
               <mat-form-field >
                 <mat-label>Fragetext</mat-label>
                 <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
               </mat-form-field>
-              <mat-checkbox formControlName="answersVisible" #self (click)="toggleShowAnswers(self, questionFormGroupName)">Zeige Antwortmöglichkeiten</mat-checkbox>
+              <mat-form-field class="points">
+                <mat-label>Punkte</mat-label>
+                <input matInput type="number" min="1" step="1" formControlName="points">
+                <mat-error>Ganze Zahl ab 1</mat-error>
+              </mat-form-field>
+              <mat-checkbox formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">Zeige Antwortmöglichkeiten</mat-checkbox>
               <!--          <button mat-raised-button>Frage entfernen</button>-->
             </div>
-            <div fxLayout="row" fxLayoutAlign="start none" [formGroupName]="questionFormGroupName">
+            <div class="row-layout" [formGroupName]="questionFormGroupName">
               <input type = "hidden" formControlName="mediaSrc">
             </div>
-              <!--          <button mat-raised-button>Frage entfernen</button>-->
-            <div class="answers" fxLayout="column" fxLayoutAlign="center start" [formGroupName]="questionFormGroupName">
+            <!--          <button mat-raised-button>Frage entfernen</button>-->
+            <div class="answers" [formGroupName]="questionFormGroupName">
               <div formGroupName="answers">
                 <!--            first answer-->
-                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer0">
+                <div class="row-layout" formGroupName="answer0">
                   <mat-form-field>
                     <mat-label>Antwort 1</mat-label>
                     <input matInput formControlName="text">
@@ -77,7 +95,7 @@
                   <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
                 </div>
                 <!--            second answer-->
-                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer1">
+                <div class="row-layout" formGroupName="answer1">
                   <mat-form-field>
                     <mat-label>Antwort 2</mat-label>
                     <input matInput formControlName="text">
@@ -85,7 +103,7 @@
                   <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
                 </div>
                 <!--            third answer-->
-                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer2">
+                <div class="row-layout" formGroupName="answer2">
                   <mat-form-field>
                     <mat-label>Antwort 3</mat-label>
                     <input matInput formControlName="text">
@@ -93,7 +111,7 @@
                   <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
                 </div>
                 <!--            fourth answer-->
-                <div fxLayout="row" fxLayoutAlign="start none" formGroupName="answer3">
+                <div class="row-layout" formGroupName="answer3">
                   <mat-form-field>
                     <mat-label>Antwort 4</mat-label>
                     <input matInput formControlName="text">
@@ -102,31 +120,40 @@
                 </div>
               </div>
             </div>
-            <app-select-media [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({path: $event, question: i})"></app-select-media>
+            <app-select-media [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i})"></app-select-media>
+            <div class="row-layout" [formGroupName]="questionFormGroupName">
+              <mat-form-field class="notes">
+                <mat-label>Notizen für die Spielleitung (optional)</mat-label>
+                <textarea matInput formControlName="notes" cdkTextareaAutosize cdkAutosizeMinRows="2"></textarea>
+                <mat-hint>Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige</mat-hint>
+              </mat-form-field>
+            </div>
+            <app-media-question-display-order-configuration *ngIf="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" [initialConfig]="questionInitialConfig[i]" [isSlideshow]="isSlideshow(questionFormGroupName)" [mediaSrc]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
             <mat-action-row>
               <button mat-button color="primary" (click)="addQuestionToFormGroup()">Add Question</button>
             </mat-action-row>
           </mat-expansion-panel>
-        </mat-accordion>
-        <!--<button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>-->
+        }
+      </mat-accordion>
+      <!--<button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>-->
 
-        <div>
-          <button mat-button matStepperPrevious>Zurück</button>
-          <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">Weiter</button>
-        </div>
-      </form>
-<!--    </ng-template>-->
-  </mat-step>
-  <mat-step>
-    <ng-template matStepLabel>Fertig</ng-template>
-    <!-- <ng-template matStepContent> -->
-      <p>Das Spiel wurde konfiguriert. Es spielen <b>{{getNumberOfActiveTeams()}} Team(s)</b> und es gibt <b>{{getNumberOfQuestions()}} Frage(n)</b>.</p>
       <div>
         <button mat-button matStepperPrevious>Zurück</button>
-        <a mat-button (click)="hasReachedLastStep = true" [href]="downloadSetupAsJson()" download="buzzer-game-setup.json">Konfiguration Herunterladen</a>
-        <button mat-button (click)="startGame()">Spiel starten</button>
+        <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">Weiter</button>
       </div>
-    <!-- </ng-template> -->
-  </mat-step>
+    </form>
+  <!--    </ng-template>-->
+</mat-step>
+<mat-step>
+  <ng-template matStepLabel>Fertig</ng-template>
+  <!-- <ng-template matStepContent> -->
+  <p>Das Spiel wurde konfiguriert. Es spielen <b>{{getNumberOfActiveTeams()}} Team(s)</b> und es gibt <b>{{getNumberOfQuestions()}} Frage(n)</b>.</p>
+  <div>
+    <button mat-button matStepperPrevious>Zurück</button>
+    <button mat-button (click)="downloadSetupAsJson()">Konfiguration Herunterladen</button>
+    <button mat-button (click)="startGame()">Spiel starten</button>
+  </div>
+<!-- </ng-template> -->
+</mat-step>
 </mat-horizontal-stepper>
 

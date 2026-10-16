@@ -1,5 +1,4 @@
 import http, {Server} from "http";
-import {MainExpressService} from "./main-express.service";
 
 export class HttpServerService {
     private static instance: HttpServerService;
@@ -8,7 +7,12 @@ export class HttpServerService {
     private isStarted: boolean;
 
     private constructor() {
-        this.server = http.createServer(MainExpressService.get().getMain);
+        // this server only carries the WebSocket connections (see WebSocketService); the media are on their own port
+        this.server = http.createServer((req, res) => {
+            res.statusCode = 426;
+            res.setHeader('Upgrade', 'websocket');
+            res.end();
+        });
         this.isStarted = false;
     }
 

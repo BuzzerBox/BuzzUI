@@ -2,12 +2,16 @@ import {EPacketTypes} from './enums/EPacketTypes';
 import {EGameStates} from './enums/EGameStates';
 import {EKeyBinds} from './enums/EKeyBinds';
 import {EAnswerStates} from './enums/EAnswerStates';
-import {EVideoStates} from './enums/EVideoStates';
+import {EMediaStates} from './enums/EMediaStates';
+import {EQuestionAnswerStates} from './enums/EQuestionAnswerStates';
+import {EGradeResults} from './enums/EGradeResults';
 
 export {
 	EPacketTypes,
 	EGameStates,
 	EKeyBinds,
 	EAnswerStates,
-	EVideoStates
+	EMediaStates,
+	EQuestionAnswerStates,
+	EGradeResults
 }

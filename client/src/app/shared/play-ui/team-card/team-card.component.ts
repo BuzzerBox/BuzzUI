@@ -1,24 +1,31 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostBinding, Input, OnDestroy, OnInit} from '@angular/core';
 import {ITeam, IMarkTeamPacket} from '../../../../../../shared/shared';
-import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
+import {GameService} from '../../../services/game.service';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {Subscription} from 'rxjs';
 
 @Component({
-  selector: 'app-team-card',
-  templateUrl: './team-card.component.html',
-  styleUrls: ['./team-card.component.css']
+    selector: 'app-team-card',
+    templateUrl: './team-card.component.html',
+    styleUrls: ['./team-card.component.css'],
+    standalone: false
 })
 export class TeamCardComponent implements OnInit, OnDestroy {
   @Input() team: ITeam;
   @Input() isMaster = false;
 
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
+  }
+
   private markTeamPacketsSubscription: Subscription;
   public isMarked = false;
 
-  constructor(private game: ClientGameMasterAndScreenService) { }
+  constructor(private game: GameService) { }
 
   ngOnInit(): void {
+    // after a reload or a master rejoining, show the team that buzzed
+    this.isMarked = !!this.game.getGameStateData()?.markedTeamIds?.includes(this.team.teamId);
     this.markTeamPacketsSubscription = this.game.observeMarkTeamPackets().subscribe(this.onMarkTeamPacket.bind(this));
   }
 
@@ -28,6 +35,17 @@ export class TeamCardComponent implements OnInit, OnDestroy {
 
   public removePoint(): void {
     this.game.removePoint(this.team);
+  }
+
+  /**
+   * What the current question is worth
+   */
+  public getQuestionPoints(): number {
+    return GameService.getQuestionPoints(this.game.getCurrentQuestion());
+  }
+
+  public addQuestionPoints(): void {
+    this.game.addPoints(this.team, this.getQuestionPoints());
   }
 
   public getName(): string {

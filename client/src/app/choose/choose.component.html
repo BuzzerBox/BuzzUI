@@ -1,5 +1,7 @@
-<div fxLayout="column" fxLayoutAlign="space-between stretch" class="container">
+<div class="container">
   <button mat-raised-button color="primary" routerLink="/master">Registriere als Mastergerät</button>
   <button mat-raised-button color="primary" routerLink="/screen">Registriere als Anzeigegerät</button>
-  <button mat-raised-button color="primary" routerLink="/dev-board">Benutze virtuelles DevBoard</button>
+  @if (isDevBoardAvailable) {
+    <button mat-raised-button color="primary" routerLink="/dev-board">Benutze virtuelles DevBoard</button>
+  }
 </div>

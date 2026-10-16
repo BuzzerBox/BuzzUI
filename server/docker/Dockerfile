@@ -1,30 +1,30 @@
-ARG DIR_SERVER=server
-ARG WORK_DIR=/usr/buzzerWebUI/$DIR_SERVER
-ARG ARCH=amd64
+# Build from the repo root, since the server compiles in shared/ and config.json:
+#   docker build -f server/docker/Dockerfile .
+# Pass --build-arg CONFIG_OVERRIDE=config.test.json to merge that file into config.json.
+ARG NODE_VERSION=22
 
-# In this image, we transpile the typescript to javascript
-FROM $ARCH/node:current-alpine3.13 as node
-ARG ARCH
-LABEL version="0.0.1"
-LABEL description="Image for the buzzer web UI backend server"
-ARG WORK_DIR
-ARG DIR_SERVER
-WORKDIR $WORK_DIR
-# copy the package.json and ther ts.config into the image
-COPY $DIR_SERVER/package.json ./
-COPY $DIR_SERVER/tsconfig.json ./
-# then run npm install in productive mode to install all dependencies of the project
-#RUN npm i  --production
-RUN npm i
-# Add all the content to the WORKDIR
-COPY $DIR_SERVER ./
-COPY shared ../shared/
-COPY config.json ../
-# finally transpile the source
-RUN npx tsc --outDir ./dist
-RUN echo $(ls)
-# RUN npx tsc
-# RUN the server
-CMD ["node","./dist/server/main.js"]
-# Expose the port to make communication with the API from the outside world possible
-EXPOSE 4201
+FROM node:${NODE_VERSION}-bookworm-slim AS build
+WORKDIR /app/server
+COPY server/package.json server/package-lock.json ./
+RUN npm ci
+COPY shared ../shared
+COPY config.json config.test.json config.dev.json.example ../
+COPY scripts/merge-config.js ../scripts/
+ARG CONFIG_OVERRIDE=
+# config.dev.json is imported by the code (it is only used with --dev=1), so it has to exist
+RUN cp ../config.dev.json.example ../config.dev.json \
+ && if [ -n "$CONFIG_OVERRIDE" ]; then node ../scripts/merge-config.js ../config.json "../$CONFIG_OVERRIDE"; fi
+COPY server ./
+RUN npm run transpile
+
+FROM node:${NODE_VERSION}-bookworm-slim
+LABEL org.opencontainers.image.description="BuzzerBox game server"
+ENV NODE_ENV=production
+WORKDIR /app/server
+COPY server/package.json server/package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=build /app/server/dist ./dist
+USER node
+# 4201: WebSocket, 4202: media file server
+EXPOSE 4201 4202
+CMD ["node", "dist/server/main.js"]

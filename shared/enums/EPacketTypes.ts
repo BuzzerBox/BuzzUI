@@ -23,4 +23,7 @@ export enum EPacketTypes {
     SET_BUZZER_LOCK,
     WEBSOCKET_CONNECTION_SUCCESSFUL, // no interface exists for this one!
     UPDATE_MEDIA_STATE,
+    SET_MEDIA_VOLUME,
+    GRADE_ANSWER,
+    UPDATE_TEAMS,
 }

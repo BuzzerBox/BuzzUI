@@ -1,10 +1,10 @@
 {
-  "gameName": "Buzzer Game",
+  "gameName": "Game",
   "masterName": "Master",
   "screenName": "Screen",
   "server": {
     "port": 4201,
-    "address": "10.0.0.5",
+    "address": "",
     "webSocketProtocol": "ws",
     "retryIntervalInMS": "500"
   },
@@ -89,5 +89,6 @@
     "stuffingBit": 0,
     "eol": 255
   },
-  "enableBrowserKeypressEvents": false
+  "enableBrowserKeypressEvents": false,
+  "reverseProxy": false
 }

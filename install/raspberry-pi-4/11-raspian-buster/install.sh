@@ -63,6 +63,8 @@ ensureBackup "${HOSTAPD_CONF_PATH}";
 sudo cp "${ASSETS_DIR}/configs/hostapd/hostapd.conf" "${HOSTAPD_CONF_PATH}"
 replaceInFile "${HOSTAPD_CONF_PATH}" "__WIFI_SSID__" "${WIFI_SSID}";
 appendContentToFile "${ASSETS_DIR}/configs/dnsmasq/dnsmasq.conf-appendix" "${DNSMASQ_CONF_PATH}";
+# hand out addresses in the /24 network of the server, see create-ad-hoc-network.sh
+sudo sed -i "s|__SUBNET_PREFIX__|${SERVER_IP_ADDRESS%.*}|g" "${DNSMASQ_CONF_PATH}"
 
 HOSTS_FILE="/etc/hosts"
 
@@ -112,9 +114,10 @@ echo "Adding custom boot logo/splash screen..."
 appendTextToFile "disable_splash=1" "${BOOT_CONFIG_FILE}";
 # todo is it ok to skip step with cmdline?
 sudo apt install fbi -y
-# TODO create path var
-sudo mkdir -p /file/systemd/system
-sudo cp "${ASSETS_DIR}/configs/splashscreen/splashscreen.service" /file/systemd/system/splashscreen.service
+SPLASH_SERVICE_PATH="/etc/systemd/system/splashscreen.service"
+sudo cp "${ASSETS_DIR}/configs/splashscreen/splashscreen.service" "${SPLASH_SERVICE_PATH}"
+replaceInFile "${SPLASH_SERVICE_PATH}" "__SPLASH_IMAGE_TARGET_LOCATION__" "${SPLASH_IMAGE_TARGET_LOCATION}";
+sudo mkdir -p "$(dirname "${SPLASH_IMAGE_TARGET_LOCATION}")"
 sudo cp "${ASSETS_DIR}/images/logo.png" "${SPLASH_IMAGE_TARGET_LOCATION}"
 sudo apt-get update
 sudo systemctl enable splashscreen
@@ -132,9 +135,9 @@ replaceInFile "/home/pi/.config/lxpanel/LXDE-pi/panels/panel" "autohide=0" "auto
 # thanks to mleffler @ https://www.raspberrypi.org/forums/viewtopic.php?t=137124#p1546958
 # disabling trash icon to clean up the desktop
 echo "Cleaning up desktop by hiding unnecessary icons..."
-# TODO use replaceInFile
-sudo sed -i 's/show_trash=0/show_trash=1/' /home/pi/.config/pcmanfm/LXDE-pi/desktopps -items-0.conf
-sudo sed -i 's/show_mounts=0/show_mounts=1/' /home/pi/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
+DESKTOP_ITEMS_FILE="/home/pi/.config/pcmanfm/LXDE-pi/desktop-items-0.conf"
+setInConfigFile "${DESKTOP_ITEMS_FILE}" "show_trash" "0";
+setInConfigFile "${DESKTOP_ITEMS_FILE}" "show_mounts" "0";
 
 
 # install unclutter, to be able to hide mouse

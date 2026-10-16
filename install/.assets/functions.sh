@@ -153,7 +153,11 @@ export -f setInConfigFile;
 # file::string: path to the file
 # -> booleanNum: 1 if the string exists in the file, 0 if not
 isStringInFile() {
-  if grep -Fxq "$FILENAME" my_list.txt
+  # VAR
+  lookup="$1";
+  file="$2";
+
+  if grep -Fq -- "${lookup}" "${file}"
   then
       return 1;
   else

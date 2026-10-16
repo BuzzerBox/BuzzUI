@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import { StartComponent } from './start/start.component';
 import {MasterRoutingModule} from './master.routing.module';
 import { SetupComponent } from './setup/setup.component';
@@ -14,7 +14,6 @@ import {MatStepperModule} from '@angular/material/stepper';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatCheckboxModule} from '@angular/material/checkbox';
-import {FlexModule} from '@angular/flex-layout';
 import { StartGameComponent } from './start-game/start-game.component';
 import { PlayComponent } from './play/play.component';
 import {MatCardModule} from '@angular/material/card';
@@ -27,7 +26,12 @@ import {MatExpansionModule} from '@angular/material/expansion';
 import {SelectMediaComponent} from './select-media/select-media.component';
 import {FileUploadFormComponent} from './file-upload-form/file-upload-form.component';
 import {MatTreeModule} from '@angular/material/tree';
+import {DragDropModule} from '@angular/cdk/drag-drop';
 import { FileDropEventsDirective } from './file-drop-events.directive';
+import { MediaQuestionDisplayOrderConfigurationComponent } from './media-question-display-order-configuration/media-question-display-order-configuration.component';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {MatDialogModule} from '@angular/material/dialog';
+import {DialogTeamsComponent} from './dialog-teams/dialog-teams.component';
 
 @NgModule({
   declarations: [
@@ -40,10 +44,12 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     PlayComponent,
     SelectMediaComponent,
     FileUploadFormComponent,
-    FileDropEventsDirective
+    FileDropEventsDirective,
+    DialogTeamsComponent,
   ],
   imports: [
     CommonModule,
+    AsyncPipe,
     MasterRoutingModule,
     MatToolbarModule,
     MatIconModule,
@@ -53,7 +59,6 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
-    FlexModule,
     MatCardModule,
     SharedModule,
     MatBottomSheetModule,
@@ -62,6 +67,10 @@ import { FileDropEventsDirective } from './file-drop-events.directive';
     MatListModule,
     MatExpansionModule,
     MatTreeModule,
+    DragDropModule,
+    MatButtonToggleModule,
+    MatDialogModule,
+    MediaQuestionDisplayOrderConfigurationComponent,
   ],
   exports: [
     StartComponent

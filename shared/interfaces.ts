@@ -7,6 +7,9 @@ import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {IQuestion} from './interfaces/IQuestion';
 import {IMediaDetails} from './interfaces/IMediaDetails';
+import {IMediaQuestionState} from './interfaces/IMediaQuestionState';
+import {IMediaVolume} from './interfaces/IMediaVolume';
+import {ISetMediaVolumePacket} from './interfaces/ISetMediaVolumePacket';
 import {ISetupPacket} from './interfaces/ISetupPacket';
 import {IAnswer} from './interfaces/IAnswer';
 import {INewMasterAccepted} from './interfaces/INewMasterAccepted';
@@ -24,6 +27,8 @@ import {IMarkTeamPacket} from './interfaces/IMarkTeamPacket';
 import {ISetBuzzerLockPacket} from './interfaces/ISetBuzzerLockPacket';
 import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
 import {IDirectoryTree} from './interfaces/IDirectoryTree';
+import {IGradeAnswerPacket} from './interfaces/IGradeAnswerPacket';
+import {IUpdateTeamsPacket} from './interfaces/IUpdateTeamsPacket';
 
 export {
 	IDirectoryTree,
@@ -52,5 +57,10 @@ export {
 	IKeypressOnScreenPacket,
 	IMarkTeamPacket,
 	CURRENT_SAVEGAME_VERSION,
-	ISetBuzzerLockPacket
+	ISetBuzzerLockPacket,
+	IMediaQuestionState,
+	IMediaVolume,
+	ISetMediaVolumePacket,
+	IGradeAnswerPacket,
+	IUpdateTeamsPacket
 }

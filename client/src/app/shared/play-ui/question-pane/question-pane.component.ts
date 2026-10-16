@@ -1,55 +1,134 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
-import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
-import {IAnswer, IQuestion, IAnswerSetStatePacket, EAnswerStates, EVideoStates} from '../../../../../../shared/shared';
+import {Component, HostBinding, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+import {GameService} from '../../../services/game.service';
+import {
+  EAnswerStates,
+  EGradeResults,
+  EMediaStates,
+  EQuestionAnswerStates,
+  FileExtensionsService,
+  GameStateHelper,
+  MediaHelper,
+  IAnswer,
+  IAnswerSetStatePacket,
+  IGradeAnswerPacket,
+  IMarkTeamPacket,
+  IQuestion
+} from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
   AnswerOptionsComponent,
   EDecisionBottomSheetAnswerOptions,
   IBottomSheetsAnswerOptionsData
 } from '../bottom-sheets/answer-options/answer-options.component';
-import {Observable, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
 import {ArraysHelper} from '../../../helper/arrays.helper';
+import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {DialogGradeAnswerComponent, IDialogGradeAnswerData} from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
 
 @Component({
-  selector: 'app-question-pane',
-  templateUrl: './question-pane.component.html',
-  styleUrls: ['./question-pane.component.css']
+    selector: 'app-question-pane',
+    templateUrl: './question-pane.component.html',
+    styleUrls: ['./question-pane.component.css'],
+    standalone: false
 })
 export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
+  private static readonly FLASH_WRONG_DURATION_IN_MS = 1000;
   @Input() isMaster = false;
   @Input() question: IQuestion;
 
-  private readonly STYLE_CLASS_ANSWER_LOGGED_IN = 'logged-in';
-  private readonly STYLE_CLASS_ANSWER_CORRECT = 'correct';
-  private readonly STYLE_CLASS_ANSWER_WRONG = 'wrong';
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
+  }
 
   private loggedInAnswers: IAnswer[];
   private activatedAnswers: IAnswer[];
   private correctAnswersThatAreLeft: number;
   private allCorrectAnswersFoundSnackBar: MatSnackBarRef<TextOnlySnackBar>;
   private answerSetStatePacketSubscription: Subscription;
-  public showAnswers: boolean;
+  private mediaUpdateSubscription: Subscription;
+  private markTeamSubscription: Subscription;
+  private gradeAnswerSubscription: Subscription;
+  // only on the master: grading the answer of the team that buzzed
+  private gradeDialogRef: MatDialogRef<DialogGradeAnswerComponent, EGradeResults>;
+  private gradeDialogTeamId: string;
+  // set for a moment after a wrong answer, which lets the answers flash red
+  public flashWrong = false;
+  private flashWrongTimeout: ReturnType<typeof setTimeout>;
+  // whether the question and the answers are visible on the screens; the master always sees both
+  public showAnswers = true;
+  public showQuestion = true;
+  // the states these were derived from, to tell the master why something is hidden
+  private questionState: EQuestionAnswerStates;
+  private answerState: EQuestionAnswerStates;
+  // whether the screens show the question's media, see isMediaShown()
+  private mediaState: EMediaStates;
 
-  constructor(private game: ClientGameMasterAndScreenService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar) { }
+  constructor(private game: GameService, private bottomSheets: MatBottomSheet, private snackBar: MatSnackBar, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     // Not needed here since ngOnChange is fired even upon the first instantiation
-    if (!this.isMaster) {
-      this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
+    // the master gets these too, when grading reveals the correct answers
+    this.answerSetStatePacketSubscription = this.game.observeAnswerSetStatePacket().subscribe(this.handleAnswerSetStatePacket.bind(this));
+    this.gradeAnswerSubscription = this.game.observeGradeAnswerPackets().subscribe(this.handleGradeAnswerPacket.bind(this));
+    if (this.isMaster) {
+      this.markTeamSubscription = this.game.observeMarkTeamPackets().subscribe(this.handleMarkTeamPacket.bind(this));
+      // after a reload or rejoining, a team may have buzzed already
+      const gameState = this.game.getGameStateData();
+      if (gameState?.setBuzzerLock && gameState.markedTeamIds?.length === 1) {
+        this.openGradeDialog(gameState.markedTeamIds[0]);
+      }
     }
-    this.showAnswers = !this.question.mediaDetails  && this.question.show as boolean;
-    this.game.observeMediaStateUpdates().subscribe(
+    if (this.question.initialConfig) {
+      this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
+      this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
+      this.questionState = this.question.initialConfig.questionState;
+      this.mediaState = this.question.initialConfig.mediaState;
+      this.answerState = this.question.initialConfig.answerState;
+    }
+    this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
       (packet) => {
-        switch (packet.newState) {
-          case EVideoStates.FINISHED:
-            this.showAnswers = this.question.show as boolean;
+        this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
+        this.questionState = packet.mediaQuestionState.questionState;
+        this.mediaState = packet.mediaQuestionState.mediaState;
+        this.answerState = packet.mediaQuestionState.answerState;
+        switch (packet.mediaQuestionState.answerState) {
+          case EQuestionAnswerStates.SHOWN:
+            // questions without answer options (unchecked in setup) never show their answers
+            this.showAnswers = !!this.question?.show;
             break;
           default:
-            this.showAnswers = !this.question.mediaDetails && this.question.show as boolean;
+            this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
         }
       }
     );
+    this.restoreQuestionProgress();
+  }
+
+  /**
+   * After a reload or a master rejoining, show the answers that were already logged in or revealed for this question
+   */
+  private restoreQuestionProgress(): void {
+    const gameState = this.game.getGameStateData();
+    if (this.question == null || this.question !== this.game.getCurrentQuestion()) {
+      return;
+    }
+    for (const loggedAnswer of gameState?.loggedAnswers ?? []) {
+      const answer = this.findAnswer(loggedAnswer);
+      if (answer != null && !this.loggedInAnswers.includes(answer)) {
+        this.loggedInAnswers.push(answer);
+      }
+    }
+    for (const activatedAnswer of gameState?.activatedAnswers ?? []) {
+      const answer = this.findAnswer(activatedAnswer);
+      if (answer != null && !this.activatedAnswers.includes(answer)) {
+        this.activatedAnswers.push(answer);
+        if (answer.isCorrect) {
+          this.correctAnswersThatAreLeft--;
+        }
+      }
+    }
   }
 
   public reset(): void {
@@ -77,8 +156,77 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.game.getQuestions().length;
   }
 
+  /**
+   * What the question is worth, e.g. "3 Punkte"; only shown if some question in the game is not worth the default 1
+   */
+  public getPointsLabel(): string | null {
+    if (!this.game.hasCustomQuestionPoints()) {
+      return null;
+    }
+    const points = GameService.getQuestionPoints(this.question);
+    return points === 1 ? '1 Punkt' : `${points} Punkte`;
+  }
+
   public getQuestionText(): string {
     return this.question?.text;
+  }
+
+  // The master shows and hides the question and the answers on the screens with their status labels. Like the
+  // media, these states only exist for media questions, and answers turned off in setup can't be shown.
+  public canToggleQuestion(): boolean {
+    return this.isMaster && !!this.question?.mediaDetails;
+  }
+
+  public canToggleAnswers(): boolean {
+    return this.canToggleQuestion() && !!this.question?.show;
+  }
+
+  public toggleQuestionVisibility(): void {
+    if (!this.canToggleQuestion()) {
+      return;
+    }
+    this.game.changeMediaState({questionState: this.showQuestion ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
+  }
+
+  public toggleAnswersVisibility(): void {
+    if (!this.canToggleAnswers()) {
+      return;
+    }
+    this.game.changeMediaState({answerState: this.showAnswers ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
+  }
+
+  public getQuestionVisibilityLabel(): string {
+    return this.getVisibilityLabel(this.showQuestion, this.questionState);
+  }
+
+  public getAnswersVisibilityLabel(): string {
+    return this.getVisibilityLabel(this.showAnswers, this.answerState);
+  }
+
+  private getVisibilityLabel(visible: boolean, state: EQuestionAnswerStates): string {
+    if (visible) {
+      return 'Auf der Anzeige sichtbar';
+    }
+    const media = this.question?.mediaDetails;
+    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && MediaHelper.hasEnd(media)) {
+      if (MediaHelper.isSlideshow(media)) {
+        return 'Auf der Anzeige verborgen – erscheint nach der Bildserie';
+      }
+      return 'Auf der Anzeige verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(media.fileSrc) ? 'Audio' : 'Video');
+    }
+    return 'Auf der Anzeige verborgen';
+  }
+
+  /**
+   * Whether the screens show the media, as decided in MediaQuestionComponent: while it plays, and a slideshow also
+   * once it is complete. The screens then show the answers below the media.
+   */
+  public isMediaShown(): boolean {
+    if (!this.question?.mediaDetails) {
+      return false;
+    }
+    return this.mediaState === EMediaStates.PLAYING || this.mediaState === EMediaStates.RESET
+      || (this.mediaState === EMediaStates.FINISHED && MediaHelper.isSlideshow(this.question.mediaDetails));
   }
 
   public getAnswers(): IAnswer[] {
@@ -86,7 +234,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   public onClickAnswer(answer, button: HTMLButtonElement): void {
-    if (!this.isMaster || this.activatedAnswers.includes(answer) || this.correctAnswersThatAreLeft === 0) {
+    // answers hidden on the screens can be seen but not used by the master
+    if (!this.isMaster || !this.showAnswers || this.activatedAnswers.includes(answer) || this.correctAnswersThatAreLeft === 0) {
       return;
     }
 
@@ -99,13 +248,13 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       if (decision != null) {
         switch (decision) {
           case EDecisionBottomSheetAnswerOptions.ACTIVATE:
-            this.activateAnswer(answer, button);
+            this.activateAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.LOG_IN:
-            this.logInAnswer(answer, button);
+            this.logInAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.LOG_OUT:
-            this.logOutAnswer(answer, button);
+            this.logOutAnswer(answer);
             break;
           case EDecisionBottomSheetAnswerOptions.NOTHING:
           default:
@@ -118,28 +267,31 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  public logInAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.add(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public isLoggedIn(answer: IAnswer): boolean {
+    return this.loggedInAnswers.includes(answer);
+  }
+
+  public isActivated(answer: IAnswer): boolean {
+    return this.activatedAnswers.includes(answer);
+  }
+
+  public logInAnswer(answer: IAnswer, setInService: boolean = true): void {
     this.loggedInAnswers.push(answer);
     if (setInService) {
       this.game.logInAnswer(answer);
     }
   }
 
-  public logOutAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public logOutAnswer(answer: IAnswer, setInService: boolean = true): void {
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
     if (setInService) {
       this.game.logOutAnswer(answer);
     }
   }
 
-  public activateAnswer(answer: IAnswer, button: HTMLButtonElement, setInService: boolean = true): void {
-    button.classList.remove(this.STYLE_CLASS_ANSWER_LOGGED_IN);
+  public activateAnswer(answer: IAnswer, setInService: boolean = true): void {
     ArraysHelper.remove<IAnswer>(this.loggedInAnswers, answer);
-    let style: string;
     if (answer.isCorrect) {
-      style = this.STYLE_CLASS_ANSWER_CORRECT;
       this.correctAnswersThatAreLeft--;
       if (this.correctAnswersThatAreLeft === 0 && this.isMaster) {
         this.allCorrectAnswersFoundSnackBar = this.snackBar.open('Alle richtigen Antworten wurden aufgedeckt.', 'Okay');
@@ -147,15 +299,12 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
           sub.unsubscribe();
           this.allCorrectAnswersFoundSnackBar = null;
         });
-      } else if (this.isMaster) {
+      } else if (this.isMaster && setInService) {
         // if there are correct answers left, manually release the buzzer lock
         this.game.sendUnmarkAllTeamsPacket();
         this.game.setBuzzerLock(false);
       }
-    } else {
-      style = this.STYLE_CLASS_ANSWER_WRONG;
     }
-    button.classList.add(style);
     this.activatedAnswers.push(answer);
     if (setInService) {
       this.game.activateAnswer(answer);
@@ -167,29 +316,78 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
-    const answer = packet.answer;
-    const button: HTMLButtonElement = document.getElementById('button' + this.getAnswerIndex(answer)) as HTMLButtonElement;
+    // use this question's own answer object, the button styles are looked up by reference
+    const answer = this.findAnswer(packet.answer);
+    if (answer == null) {
+      return;
+    }
     if (packet.state === EAnswerStates.LOG_IN) {
-      this.logInAnswer(answer, button, false);
+      this.logInAnswer(answer, false);
     } else if (packet.state === EAnswerStates.LOG_OUT) {
-      this.logOutAnswer(answer, button, false);
+      this.logOutAnswer(answer, false);
     } else if (packet.state === EAnswerStates.ACTIVATE) {
-      this.activateAnswer(answer, button, false);
+      this.activateAnswer(answer, false);
     }
   }
 
-  private getAnswerIndex(answer: IAnswer): number {
-    for (let i = 0; i < this.question.answers.length; i++) {
-      if (answer.isCorrect === this.question.answers[i].isCorrect && answer.text === this.question.answers[i].text) {
-        return i;
-      }
+  private findAnswer(answer: IAnswer): IAnswer | undefined {
+    return this.question?.answers.find(a => GameStateHelper.isSameAnswer(a, answer));
+  }
+
+  /**
+   * A team buzzed: the master grades its answer. The dialog goes away once the team is no longer marked, e.g. when the
+   * buzzers were released or the question changed.
+   */
+  private handleMarkTeamPacket(packet: IMarkTeamPacket): void {
+    if (packet.unmarkAll || (!packet.mark && packet.teamId === this.gradeDialogTeamId)) {
+      this.closeGradeDialog();
+    } else if (packet.mark) {
+      this.openGradeDialog(packet.teamId);
     }
+  }
+
+  private openGradeDialog(teamId: string): void {
+    const team = this.game.findTeam(teamId);
+    if (team == null) {
+      return;
+    }
+    this.closeGradeDialog();
+    this.gradeDialogTeamId = teamId;
+    const dialogRef = this.dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, EGradeResults>(DialogGradeAnswerComponent, {
+      data: {teamName: team.name, points: GameService.getQuestionPoints(this.question)}
+    });
+    this.gradeDialogRef = dialogRef;
+    dialogRef.afterClosed().subscribe(result => {
+      if (this.gradeDialogRef === dialogRef) {
+        this.gradeDialogRef = null;
+        this.gradeDialogTeamId = null;
+      }
+      // closing it without a grade (or because the team is no longer marked) leaves everything as it is
+      if (result != null) {
+        // a correct answer lights up where the answer options are shown
+        this.game.gradeAnswer(teamId, result, this.showAnswers && !!this.question?.show);
+      }
+    });
+  }
+
+  private closeGradeDialog(): void {
+    this.gradeDialogRef?.close();
+  }
+
+  private handleGradeAnswerPacket(packet: IGradeAnswerPacket): void {
+    if (packet.result !== EGradeResults.WRONG) {
+      return;
+    }
+    clearTimeout(this.flashWrongTimeout);
+    this.flashWrong = true;
+    this.flashWrongTimeout = setTimeout(() => this.flashWrong = false, QuestionPaneComponent.FLASH_WRONG_DURATION_IN_MS);
   }
 
   ngOnDestroy(): void {
-    if (this.answerSetStatePacketSubscription != null) {
-      this.answerSetStatePacketSubscription.unsubscribe();
-    }
+    SubscriptionsHelper.cleanUpSubscriptions(this.answerSetStatePacketSubscription, this.mediaUpdateSubscription,
+      this.markTeamSubscription, this.gradeAnswerSubscription);
+    clearTimeout(this.flashWrongTimeout);
+    this.closeGradeDialog();
   }
 
   public isQuestionExisting(): boolean {

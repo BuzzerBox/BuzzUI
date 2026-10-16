@@ -1,22 +1,26 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {ClientGameMasterAndScreenService} from '../../../services/game-client/client-game-master-and-screen.service';
+import {Component, HostBinding, Input, OnInit} from '@angular/core';
+import {GameService} from '../../../services/game.service';
 import {ITeam} from '../../../../../../shared/shared';
 
 @Component({
-  selector: 'app-score-board',
-  templateUrl: './score-board.component.html',
-  styleUrls: ['./score-board.component.css']
+    selector: 'app-score-board',
+    templateUrl: './score-board.component.html',
+    styleUrls: ['./score-board.component.css'],
+    standalone: false
 })
 export class ScoreBoardComponent implements OnInit {
   @Input() isMaster = false;
 
-  constructor(private game: ClientGameMasterAndScreenService) { }
-
-  ngOnInit(): void {
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
   }
 
-  public getTeamsOrderedByScore(): ITeam[] {
-    return this.game.getTeamsOrderedByScore();
+  public sortedTeams: ITeam[] = [];
+
+  constructor(private game: GameService) { }
+
+  ngOnInit(): void {
+    this.sortedTeams = this.game.getTeamsOrderedByScore();
   }
 
   public resetServer(): void {

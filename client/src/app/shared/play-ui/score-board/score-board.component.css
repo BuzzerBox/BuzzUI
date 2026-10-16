@@ -2,12 +2,16 @@
   position: relative !important;
 }
 
+/* centered without left: 50%, which would also limit the card to half of the width */
 mat-card.scores {
   max-width: 95%;
+  width: fit-content;
   position: absolute;
-  left: 50%;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   top: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
 }
 
 .score-entry {
@@ -28,4 +32,38 @@ mat-card.scores {
 }
 .placed {
   font-size: large;
+}
+
+/* screens: sized in --u (see the play UI), so up to ten teams fit on any screen */
+:host(.screen) mat-card.scores {
+  max-height: 96%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 4);
+}
+
+:host(.screen) mat-card-title {
+  font-size: calc(var(--u) * 5);
+  line-height: 1.2;
+}
+
+:host(.screen) .score-entry {
+  margin: 0.3em 0;
+  line-height: 1.2;
+}
+
+:host(.screen) .placed-1 {
+  font-size: calc(var(--u) * 6.5);
+}
+
+:host(.screen) .placed-2 {
+  font-size: calc(var(--u) * 5.5);
+}
+
+:host(.screen) .placed-3 {
+  font-size: calc(var(--u) * 4.8);
+}
+
+:host(.screen) .placed {
+  font-size: calc(var(--u) * 4);
 }

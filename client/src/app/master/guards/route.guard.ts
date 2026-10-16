@@ -1,13 +1,13 @@
-import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree} from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import {Observable} from 'rxjs';
-import {ClientGameMasterAndScreenService} from '../../services/game-client/client-game-master-and-screen.service';
+import {GameService} from '../../services/game.service';
 import {Injectable} from '@angular/core';
 import {EGameStatesMaster} from '../enums/EGameStatesMaster';
 import {pathsMaster} from '../paths-master';
 
 @Injectable()
-export class RouteGuard implements CanActivate {
-  constructor(private game: ClientGameMasterAndScreenService, private router: Router) {
+export class RouteGuard  {
+  constructor(private game: GameService, private router: Router) {
     game.useAsMaster();
   }
 
@@ -67,7 +67,7 @@ export class RouteGuard implements CanActivate {
     if (this.game.getGameState() === EGameStatesMaster.READY_TO_START) {
       return true;
     } else {
-      this.redirectToStart();
+      return this.redirectToStart();
     }
   }
 
@@ -75,7 +75,7 @@ export class RouteGuard implements CanActivate {
     if (this.game.getGameState() === EGameStatesMaster.PLAYING) {
       return true;
     } else {
-      this.redirectToStart();
+      return this.redirectToStart();
     }
   }
 }

@@ -5,11 +5,10 @@ import {TeamCardComponent} from './play-ui/team-card/team-card.component';
 import {QuestionPaneComponent} from './play-ui/question-pane/question-pane.component';
 import {AnswerOptionsComponent} from './play-ui/bottom-sheets/answer-options/answer-options.component';
 import {DialogConfirmEndingGameComponent} from './play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
-import {MatGridListModule} from '@angular/material/grid-list';
+import {DialogGradeAnswerComponent} from './play-ui/dialogs/dialog-grade-answer/dialog-grade-answer.component';
 import {MatCardModule} from '@angular/material/card';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
-import {FlexModule} from '@angular/flex-layout';
 import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
 import {MatListModule} from '@angular/material/list';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
@@ -23,27 +22,29 @@ import {VgOverlayPlayModule} from '@videogular/ngx-videogular/overlay-play';
 import {VgBufferingModule} from '@videogular/ngx-videogular/buffering';
 import {MediaRemoteComponent} from './play-ui/media-remote/media-remote.component';
 import {MatIconModule} from '@angular/material/icon';
-import { LoadingSpinnerComponent } from './loading-spinner/loading-spinner.component';
+import {MatSliderModule} from '@angular/material/slider';
+import {FitTextDirective} from './fit-text.directive';
+import {LoadingSpinnerComponent} from './loading-spinner/loading-spinner.component';
 
 @NgModule({
-  declarations: [
-    PlayUiComponent,
-    TeamCardComponent,
-    QuestionPaneComponent,
-    AnswerOptionsComponent,
-    DialogConfirmEndingGameComponent,
-    ScoreBoardComponent,
-    BuzzerLockComponent,
-    MediaQuestionComponent,
-    MediaRemoteComponent,
-    LoadingSpinnerComponent
-  ],
+    declarations: [
+        PlayUiComponent,
+        TeamCardComponent,
+        QuestionPaneComponent,
+        AnswerOptionsComponent,
+        DialogConfirmEndingGameComponent,
+        DialogGradeAnswerComponent,
+        ScoreBoardComponent,
+        BuzzerLockComponent,
+        MediaQuestionComponent,
+        MediaRemoteComponent,
+        FitTextDirective,
+        LoadingSpinnerComponent
+    ],
     imports: [
         CommonModule,
-        FlexModule,
         MatButtonModule,
         MatCardModule,
-        MatGridListModule,
         MatDialogModule,
         MatBottomSheetModule,
         MatListModule,
@@ -53,21 +54,19 @@ import { LoadingSpinnerComponent } from './loading-spinner/loading-spinner.compo
         VgOverlayPlayModule,
         VgBufferingModule,
         MatIconModule,
+        MatSliderModule,
         MatProgressSpinnerModule
     ],
-  exports: [
-    PlayUiComponent,
-    TeamCardComponent,
-    QuestionPaneComponent,
-    AnswerOptionsComponent,
-    DialogConfirmEndingGameComponent,
-    MediaQuestionComponent,
-    MediaRemoteComponent,
-    LoadingSpinnerComponent
-  ],
-  entryComponents: [
-    DialogConfirmEndingGameComponent
-  ],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    exports: [
+        PlayUiComponent,
+        TeamCardComponent,
+        QuestionPaneComponent,
+        AnswerOptionsComponent,
+        DialogConfirmEndingGameComponent,
+        MediaQuestionComponent,
+        MediaRemoteComponent,
+        LoadingSpinnerComponent
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class SharedModule { }

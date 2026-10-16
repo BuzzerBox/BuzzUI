@@ -1,2 +1,14 @@
-**/dist/*
-**/node_modules/*
+**/dist
+**/node_modules
+**/.angular
+.git
+.github
+.idea
+.run
+.claude
+install/.assets/compilations
+server/media
+deploy
+# local dev config: the images create their own from config.dev.json.example
+config.dev.json
+**/.DS_Store

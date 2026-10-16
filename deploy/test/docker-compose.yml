@@ -1,0 +1,41 @@
+# Test environment: the latest main, built by .github/workflows/test-images.yml.
+#
+# On the test host (Docker with the compose plugin):
+#   1. Copy this directory there, put sample media into ./media and create .env from .env.example
+#   2. docker compose up -d
+#   3. Run ./update.sh from cron to deploy new images, e.g. every 5 minutes:
+#        */5 * * * * cd /opt/buzzerbox-test && ./update.sh >> update.log 2>&1
+#
+# Only Caddy is reachable from outside (ports 80 and 443). It asks for the login from .env and
+# forwards to the server and client, so open only those two ports in the firewall.
+# Open https://<SITE_ADDRESS>/ in a browser. Buzzers are the number keys on a screen (/screen/),
+# Q is the soft release.
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # the TLS certificates, so they survive restarts
+      - caddy-data:/data
+    depends_on:
+      - server
+      - client
+
+  server:
+    image: ghcr.io/buzzerbox/buzzui-server:test
+    restart: unless-stopped
+    volumes:
+      - ./media:/srv/media:ro
+
+  client:
+    image: ghcr.io/buzzerbox/buzzui-client:test
+    restart: unless-stopped
+
+volumes:
+  caddy-data:

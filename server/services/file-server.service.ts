@@ -31,6 +31,9 @@ export class FileServerService {
             })
             MainExpressService.get().getMain().get(serverPath, (req, res) => {
                 const tree = dirTree(localPath, {attributes:['extension', 'size', 'type'], normalizePath: true});
+                if (tree === null) {
+                    return res.status(404).json({ error: `Media path not found: ${localPath}` });
+                }
                 console.log(tree.children.length);
                 return res.json(this.cleanPath(tree, localPath));
             })
@@ -40,13 +43,14 @@ export class FileServerService {
 
     // This is an ugly hack.
     private cleanPath(tree: IDirectoryTree, localPath): IDirectoryTree {
+        const normalizedLocalPath = localPath.replace(/^\.\//, '');
         if(tree.path) {
-            tree.path = tree.path.replace(localPath, "");
+            tree.path = tree.path.replace(normalizedLocalPath, "");
         }
         const children = [];
         if (tree.children && tree.children.length > 0) {
             for (const child of tree.children) {
-                const subtree = this.cleanPath(child, localPath);
+                const subtree = this.cleanPath(child, normalizedLocalPath);
                 if (subtree) {
                     children.push(subtree);
                 }
@@ -59,7 +63,7 @@ export class FileServerService {
         } else if (tree.children && tree.children.length === 0) {
             return undefined;
         } else if (tree.type === 'file') {
-            if (FileExtensionsService.getExtensions().includes(tree.extension)) {
+            if (FileExtensionsService.isSupportedExtension(tree.extension)) {
                 return tree;
             } else {
                 return undefined;

@@ -10,3 +10,13 @@
   top: 50%;
   transform: translate(-50%, -50%);
 }
+
+.container {
+  height: 100vh;
+}
+
+.message {
+  margin: 0;
+  font-size: max(16px, min(3vh, 3vw));
+  text-align: center;
+}

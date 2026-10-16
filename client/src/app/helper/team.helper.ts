@@ -25,7 +25,8 @@ export class TeamHelper {
 
   public static getTeamsWithMostPoints(teams: ITeam[]): ITeam[] {
     console.dir(teams);
-    let points = 0;
+    // points can be negative, so even a team below 0 can have the most
+    let points = -Infinity;
     let teamsWithMostPoints: ITeam[] = [];
     for (const team of teams) {
       if (team.points > points) {

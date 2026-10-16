@@ -5,7 +5,8 @@ p {
 }
 
 button {
-  height: 2em;
-  font-size: xxx-large;
+  font-size: xxx-large !important;
+  height: auto !important;
+  padding: 0.5em 1em !important;
   margin: 5em;
 }

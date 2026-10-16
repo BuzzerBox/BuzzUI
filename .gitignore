@@ -1,2 +1,17 @@
 .idea
 /install/.assets/compilations/
+
+# Claude
+.claude/settings.local.json
+
+# Local config
+config.dev.json
+
+# Media files
+server/media/
+
+# macOS
+.DS_Store
+
+# Test environment secrets
+deploy/test/.env

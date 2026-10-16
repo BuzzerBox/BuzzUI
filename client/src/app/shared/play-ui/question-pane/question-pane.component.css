@@ -1,49 +1,240 @@
+:host {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 mat-card-header {
   font-size: xxx-large;
 }
 
+.question-points {
+  display: inline-block;
+  margin-left: 0.5em;
+  padding: 0.1em 0.5em;
+  border-radius: 1em;
+  background-color: #ffc107;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 0.7em;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 mat-card-content {
-  font-size: xx-large;
+  /* xx-large on big screens, smaller on small ones so everything fits without scrolling */
+  font-size: clamp(16px, 3vh, 32px);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-mat-grid-list {
-  margin-top: 1em !important;
+/*
+ * Two columns of answers with 2:1 tiles while there is room. On small screens the grid shrinks to the height that is
+ * left, and the answer text scales with it (cqh: 1% of the grid's height). Below its minimum height the question
+ * card scrolls instead.
+ */
+.answer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: minmax(0, 1fr);
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  flex: 0 1 auto;
+  min-height: 160px;
+  margin-top: 0.5em;
+  container-type: size;
 }
 
-mat-grid-tile {
-  /*padding: 50px;*/
+.answer-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
 }
 
-button {
-  height: 95%;
-  width: 90%;
-  box-sizing: content-box;
-  font-size: xx-large;
+.answer-cell button {
+  height: 90% !important;
+  width: 95%;
+  overflow: hidden;
+  font-size: clamp(12px, 9cqh, 32px) !important;
+  line-height: 1.2;
   transition: background-color 500ms ease-in;
   white-space: normal;
 }
 
 .logged-in {
-  background-color: aqua;
+  background-color: aqua !important;
 }
 
 .wrong {
-  background-color: orangered;
+  background-color: orangered !important;
 }
 
 .correct {
-  background-color: forestgreen;
+  background-color: forestgreen !important;
+}
+
+/* after a wrong answer, all answers turn red for a moment (the buttons fade in and out with their transition) */
+.answer-grid.flash-wrong .answer-cell button {
+  background-color: orangered !important;
 }
 
 
 .videooptions {
   display: grid;
+  /* the media area takes the height left below the question */
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .top, .bottom {
   grid-area: 1 / 1;
+  min-height: 0;
 }
 
 .top {
-  /*opacity: 0.5;*/
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* master only: whether the question and the answers are visible on the screens; clicking toggles it */
+button.screen-visibility {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  height: auto;
+  min-height: 48px;
+  margin: 8px 0;
+  padding: 4px 16px;
+  border: 1px solid currentColor;
+  border-radius: 24px;
+  font: inherit;
+  font-size: large;
+  white-space: normal;
+  color: #1e6b34;
+  background-color: #e6f4ea;
+  cursor: pointer;
+}
+
+button.screen-visibility:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+button.screen-visibility:disabled {
+  cursor: default;
+}
+
+.visibility-action {
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid currentColor;
+  font-weight: bold;
+}
+
+.screen-visibility.hidden-on-screen {
+  color: #8a4300;
+  background-color: #fff1e0;
+}
+
+.hidden-on-screen-content {
+  opacity: 0.7;
+  outline: 2px dashed #8a4300;
+  outline-offset: 4px;
+}
+
+/* master only: the question's notes, like presenter notes */
+.notes {
+  margin-top: 16px;
+  padding: 8px 16px 12px;
+  border-left: 4px solid #c9a400;
+  border-radius: 4px;
+  background-color: #fff8d6;
+  color: #3d3200;
+  font-size: large;
+}
+
+.notes-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.notes-text {
+  white-space: pre-wrap;
+}
+
+/*
+ * Screens: sized in --u (see the play UI). The question text and the answers use the largest size that fits their
+ * box (appFitText), so long texts get smaller instead of being cut off.
+ */
+:host(.screen) mat-card-header {
+  padding: calc(var(--u) * 1.2) calc(var(--u) * 1.6) 0;
+}
+
+:host(.screen) mat-card-title {
+  font-size: calc(var(--u) * 3.2);
+  line-height: 1.2;
+}
+
+:host(.screen) mat-card-content {
+  font-size: calc(var(--u) * 5);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1.6) calc(var(--u) * 1.6);
+}
+
+:host(.screen) .question-text {
+  flex: 0 1 auto;
+  max-height: 30%;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+/* without answer options, the question has more room */
+:host(.screen) .question-text.without-answers {
+  max-height: 60%;
+}
+
+/* the answers fill the height that is left instead of keeping a fixed shape */
+:host(.screen) .answer-grid {
+  flex: 1 1 0;
+  aspect-ratio: auto;
+  min-height: 0;
+  margin-top: var(--u);
+}
+
+/* the largest size; longer answers get smaller to fit their tile */
+:host(.screen) .answer-cell button {
+  font-size: max(12px, min(10cqh, 6cqw)) !important;
+}
+
+/* while the media is shown, the answers are in a band below it instead of on top of it */
+:host(.screen) .videooptions.below-media {
+  grid-template-rows: minmax(0, 1fr) auto;
+  row-gap: var(--u);
+}
+
+:host(.screen) .videooptions.below-media .bottom {
+  grid-area: 1 / 1;
+}
+
+:host(.screen) .videooptions.below-media .top {
+  grid-area: 2 / 1;
+}
+
+:host(.screen) .videooptions.below-media .answer-grid {
+  flex: none;
+  height: calc(var(--u) * 28);
+  margin-top: 0;
+}
+
+/* the tiles are lower here, so their text is sized to a larger share of the band's height */
+:host(.screen) .videooptions.below-media .answer-cell button {
+  font-size: max(12px, min(18cqh, 6cqw)) !important;
 }

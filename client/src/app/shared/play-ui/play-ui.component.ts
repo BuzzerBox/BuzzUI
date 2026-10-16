@@ -1,5 +1,5 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {ClientGameMasterAndScreenService} from '../../services/game-client/client-game-master-and-screen.service';
+import {Component, HostBinding, Input, OnDestroy, OnInit} from '@angular/core';
+import {GameService} from '../../services/game.service';
 import {
   ITeam,
   IQuestion,
@@ -9,20 +9,36 @@ import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-
 import {MatDialog} from '@angular/material/dialog';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../helper/subscriptions.helper';
+import {ConfigService} from '../../services/config.service';
 
 @Component({
-  selector: 'app-play-ui',
-  templateUrl: './play-ui.component.html',
-  styleUrls: ['./play-ui.component.css']
+    selector: 'app-play-ui',
+    templateUrl: './play-ui.component.html',
+    styleUrls: ['./play-ui.component.css'],
+    standalone: false
 })
 export class PlayUiComponent implements OnInit, OnDestroy {
   @Input() isMaster = false;
 
+  // the screens scale everything with their size, see the stylesheet
+  @HostBinding('class.screen') get isScreen(): boolean {
+    return !this.isMaster;
+  }
+
+  /**
+   * Rows of team cards on each side of the screens; at least 4, so a few teams don't get huge cards
+   */
+  @HostBinding('style.--team-rows') get teamRows(): number {
+    return Math.max(4, Math.ceil((this.getTeams()?.length ?? 0) / 2));
+  }
+
   public currentQuestion: IQuestion;
   public isGameOver = false;
   private setQuestionPacketSubscription: Subscription;
+  // kept to remove the very same listener again
+  private readonly keydownListener = (event: KeyboardEvent) => this.handleKeyboardEvent(event);
 
-  constructor(private game: ClientGameMasterAndScreenService, private dialog: MatDialog) { }
+  constructor(private game: GameService, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     this.currentQuestion = this.game.getCurrentQuestion();
@@ -32,7 +48,10 @@ export class PlayUiComponent implements OnInit, OnDestroy {
       // There is some angular directive to achieve the binding of a listener (@HostListener) but it is not possible to remove that binding
       // or have it react to some boolean state but we only need it if this component is used from a screen, thus I prefer the "old" JS-way
       // of adding an event listener
-      document.addEventListener('keypress', this.handleKeyboardEvent.bind(this));
+      // keys only work as buzzers where the config allows it, see enableBrowserKeypressEvents
+      if (ConfigService.get().enableBrowserKeypressEvents) {
+        document.addEventListener('keydown', this.keydownListener);
+      }
     }
   }
 
@@ -83,7 +102,7 @@ export class PlayUiComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     SubscriptionsHelper.cleanUpSubscriptions(this.setQuestionPacketSubscription);
     if (!this.isMaster) {
-      document.removeEventListener('keypress', this.handleKeyboardEvent.bind(this));
+      document.removeEventListener('keydown', this.keydownListener);
     }
   }
 

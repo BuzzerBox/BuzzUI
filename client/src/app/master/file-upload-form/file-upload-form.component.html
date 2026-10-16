@@ -1,17 +1,21 @@
 <!-- Based on https://github.com/progtarek/angular-drag-n-drop-directive -->
-<div class="container" appFileDropEvents (fileDropped)="onFileDropped($event)" *ngIf="file === undefined">
-  <input type="file" #fileDropRef id="fileDropRef" multiple (change)="fileBrowseHandler($event.target.files)" />
-  <mat-icon aria-hidden="false" aria-label="Upload Icon">upload</mat-icon>
-  <h3>Datei hier platzieren</h3>
-  <h3>oder</h3>
-  <button mat-stroked-button color="primary">Datei suchen</button>
-</div>
+@if (file === undefined) {
+  <div class="container" appFileDropEvents (fileDropped)="onFileDropped($event)">
+    <input type="file" #fileDropRef id="fileDropRef" multiple (change)="fileBrowseHandler($event.target.files)" />
+    <mat-icon aria-hidden="false" aria-label="Upload Icon">upload</mat-icon>
+    <h3>Datei hier platzieren</h3>
+    <h3>oder</h3>
+    <button mat-stroked-button color="primary">Datei suchen</button>
+  </div>
+}
 
-<div class="container" appFileDropEvents (fileDropped)="onFileDropped($event)" *ngIf="file !== undefined">
-  <mat-icon aria-hidden="false" aria-label="Data">insert_drive_file</mat-icon>
-  <h3>{{ file?.name}}</h3>
-  <h3>{{ formatBytes(file?.size) }}</h3>
-  <button mat-stroked-button color="primary" (click)="deleteFile()" >Reset</button>
-</div>
+@if (file !== undefined) {
+  <div class="container" appFileDropEvents (fileDropped)="onFileDropped($event)">
+    <mat-icon aria-hidden="false" aria-label="Data">insert_drive_file</mat-icon>
+    <h3>{{ file?.name}}</h3>
+    <h3>{{ formatBytes(file?.size) }}</h3>
+    <button mat-stroked-button color="primary" (click)="deleteFile()" >Reset</button>
+  </div>
+}
 
 

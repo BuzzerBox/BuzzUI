@@ -1,18 +1,20 @@
 import {ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
-import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
-import {ClientGameMasterAndScreenService, IGameStateAsJson} from '../../services/game-client/client-game-master-and-screen.service';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
+import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
+import {GameService, IGameStateAsJson} from '../../services/game.service';
 import {MatCheckbox} from '@angular/material/checkbox';
-import {ITeam, IQuestion, IAnswer} from '../../../../../shared/shared';
-import {SafeUrl} from '@angular/platform-browser';
-import {Observable, Subject} from 'rxjs';
+import {ITeam, IQuestion, IAnswer, IGameState, IMediaQuestionState, PacketHelper} from '../../../../../shared/shared';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
 import {FileService} from '../../services/file.service';
+import {IMediaSelection} from '../interfaces/IMediaSelection';
+import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-configuration/media-question-display-order-configuration.component';
 
 @Component({
-  selector: 'app-setup',
-  templateUrl: './setup.component.html',
-  styleUrls: ['./setup.component.css']
+    selector: 'app-setup',
+    templateUrl: './setup.component.html',
+    styleUrls: ['./setup.component.css'],
+    standalone: false
 })
 export class SetupComponent implements OnInit {
   public readonly FORM_GROUP_NAME_TEAMS = 'teamsFormGroup';
@@ -20,26 +22,26 @@ export class SetupComponent implements OnInit {
 
   @ViewChild('questionForm') questionForm;
 
-  public testSub: Subject<FormGroup> = new Subject<FormGroup>();
-  public testObs: Observable<FormGroup> = this.testSub.asObservable();
-
-  public teamsFormGroup: FormGroup;
-  public questionsFormGroup: FormGroup;
+  public teamsFormGroup: UntypedFormGroup;
+  public questionsFormGroup: UntypedFormGroup;
   public teamNameSuggestions: string[];
   public teamFormControlNames: string[];
   public questionFormGroupNames: string[];
-  private mapTeamFormControlNameToBuzzerId: Map<string, string>;
-  public hasReachedLastStep = false;
+  private mapTeamFormControlNameToBuzzerIndex: Map<string, number>;
+  // points of the teams of an imported savegame, by team form control name
+  private importedPoints: Map<string, number>;
+  // progress of an imported savegame; null for a new game
+  private importedGameState: IGameState | null = null;
+  public questionInitialConfig: IMediaQuestionState[];
 
   step = 0;
 
 
-  constructor(private game: ClientGameMasterAndScreenService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
+  constructor(private game: GameService, private cd: ChangeDetectorRef, private snackBar: MatSnackBar) {
     game.useAsMaster();
   }
 
   ngOnInit(): void {
-    this.mapTeamFormControlNameToBuzzerId = new Map<string, string>();
     this.initTeamsFormControls();
     this.initQuestionsFormControls();
   }
@@ -53,131 +55,219 @@ export class SetupComponent implements OnInit {
     }
   }
 
-  private initTeamsFormControls(loadedFromFile: boolean = false): void {
-    // TODO refine such that there is no duplicated code
+  /**
+   * Offers one team per available buzzer. With imported teams, each one is put on its buzzer and buzzers without a
+   * team are deactivated.
+   */
+  private initTeamsFormControls(importedTeams: ITeam[] | null = null): void {
     this.teamFormControlNames = [];
     this.teamNameSuggestions = [];
+    this.mapTeamFormControlNameToBuzzerIndex = new Map<string, number>();
+    this.importedPoints = new Map<string, number>();
     const teamFormControls: {
       [key: string]: AbstractControl;
     } = {};
-    const presetupData = this.game.getPresetupData();
-    if (loadedFromFile && this.game.getTeams() != null) {
-      for (let i = 0; i < this.game.getTeams().length; i++) {
-        const formControlName = 'team' + (i + 1);
-        this.teamFormControlNames.push(formControlName);
-        this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
-        const name: string = this.game.getTeams()[i].name;
-        this.teamNameSuggestions.push(name);
-        const formControlForTeam = new FormControl(name);
-        teamFormControls[formControlName] = formControlForTeam;
-      }
-    } else {
-      this.teamNameSuggestions = [];
-      for (let i = 0; i < presetupData.availableBuzzers.length; i++) {
-        const teamNameSuggestion = 'Team ' + (i + 1);
-        this.teamNameSuggestions.push(teamNameSuggestion);
-        const formControlName = 'team' + (i + 1);
-        this.teamFormControlNames.push(formControlName);
-        this.mapTeamFormControlNameToBuzzerId.set(formControlName, presetupData.availableBuzzers[i].id);
-        const formControlForTeam = new FormControl(teamNameSuggestion);
-        // const formControlForTeam = new FormControl();
-        if (i >= 2) {
-          // since two teams are mandatory, only all up from the third one get disabled
-          // formControlForTeam.disable();
+    const availableBuzzers = this.game.getPresetupData().availableBuzzers;
+    for (let i = 0; i < availableBuzzers.length; i++) {
+      const teamNameSuggestion = 'Team ' + (i + 1);
+      this.teamNameSuggestions.push(teamNameSuggestion);
+      const formControlName = 'team' + (i + 1);
+      this.teamFormControlNames.push(formControlName);
+      this.mapTeamFormControlNameToBuzzerIndex.set(formControlName, i);
+      const formControlForTeam = new UntypedFormControl(teamNameSuggestion);
+      if (importedTeams != null) {
+        const importedTeam = importedTeams.find(team => team.buzzerIndex === i);
+        if (importedTeam != null) {
+          formControlForTeam.setValue(importedTeam.name);
+          this.importedPoints.set(formControlName, importedTeam.points ?? 0);
+        } else if (i >= 2) {
+          // since two teams are mandatory, only all up from the third one can be deactivated
+          formControlForTeam.disable();
         }
-        teamFormControls[formControlName] = formControlForTeam;
       }
+      teamFormControls[formControlName] = formControlForTeam;
     }
-    this.teamsFormGroup = new FormGroup(teamFormControls);
+    this.teamsFormGroup = new UntypedFormGroup(teamFormControls);
   }
 
-  private initQuestionsFormControls(loadedFile: boolean = false): void {
-    if (loadedFile) {
-      // reset everything
-      this.questionsFormGroup = new FormGroup({});
-      this.questionFormGroupNames = [];
-
-      for (let i = 0; i < this.game.getQuestions().length; i++) {
-        const q: IQuestion = this.game.getQuestions()[i];
-        const fgn = 'question' + i;
-        this.questionFormGroupNames.push(fgn);
-        let mediaSrc = '';
-
-        if (q.mediaDetails) {
-          mediaSrc = q.mediaDetails.fileSrc;
-        }
-
-        this.questionsFormGroup.setControl(fgn, new FormGroup({
-          text: new FormControl(q.text),
-          mediaSrc: new FormControl(mediaSrc),
-          answers: new FormGroup({
-            answer0: new FormGroup({
-              text: new FormControl(q.answers[0].text),
-              isCorrect: new FormControl(q.answers[0].isCorrect)
-            }),
-            answer1: new FormGroup({
-              text: new FormControl(q.answers[1].text),
-              isCorrect: new FormControl(q.answers[1].isCorrect)
-            }),
-            answer2: new FormGroup({
-              text: new FormControl(q.answers[2].text),
-              isCorrect: new FormControl(q.answers[2].isCorrect)
-            }),
-            answer3: new FormGroup({
-              text: new FormControl(q.answers[3].text),
-              isCorrect: new FormControl(q.answers[3].isCorrect)
-            })
-          }),
-          answersVisible: new FormControl(q.show)
-        }));
-        console.log("this.questionsFormGroup", this.questionsFormGroup);
-        if (!q.show) {
-          this.applyShowAnswersState(fgn, false);
-        }
-        // this.addQuestionToFormGroup();
-      }
-    } else {
-      this.questionsFormGroup = new FormGroup({});
-      this.questionFormGroupNames = [];
+  private initQuestionsFormControls(importedQuestions: IQuestion[] | null = null): void {
+    this.questionsFormGroup = new UntypedFormGroup({});
+    this.questionFormGroupNames = [];
+    this.questionInitialConfig = [];
+    if (!importedQuestions?.length) {
       this.addQuestionToFormGroup();
+      return;
+    }
+    importedQuestions.forEach((q, i) => {
+      const fgn = 'question' + i;
+      this.questionFormGroupNames.push(fgn);
+      this.questionInitialConfig.push(q.initialConfig);
+
+      const showAnswers = !!q.show;
+      // setups saved before answers were kept filled answers of questions without answer options with placeholders
+      const answers: IAnswer[] = (q.answers ?? []).map(a => !showAnswers && a.text === 'bla' && a.isCorrect ? {text: '', isCorrect: false} : a);
+      const answersValue: Record<string, IAnswer> = {};
+      answers.slice(0, 4).forEach((a, j) => answersValue[this.ANSWER_FORM_GROUP_BASE_NAME + j] = {text: a.text, isCorrect: !!a.isCorrect});
+
+      // built like a new question so the imported one gets the same validators
+      const questionFormGroup = this.createQuestionFormGroup();
+      questionFormGroup.patchValue({
+        text: q.text,
+        mediaSrc: q.mediaDetails?.fileSrc ?? '',
+        slides: q.mediaDetails?.slides ?? null,
+        answers: answersValue,
+        answersVisible: showAnswers,
+        notes: q.notes ?? '',
+        points: GameService.getQuestionPoints(q)
+      });
+      this.questionsFormGroup.setControl(fgn, questionFormGroup);
+      if (!showAnswers) {
+        this.applyShowAnswersState(fgn, false);
+      }
+    });
+    this.setStep(0);
+  }
+
+  public removeQuestion(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    const deletedControl = this.questionsFormGroup.get(this.questionFormGroupNames[index]) as UntypedFormGroup;
+    const deletedInitialConfig = this.questionInitialConfig[index];
+    const gameStateBeforeDeletion = this.importedGameState;
+    this.remapImportedQuestionNumber(oldIndex => oldIndex === index ? null : oldIndex < index ? oldIndex : oldIndex - 1);
+    this.questionInitialConfig = this.questionInitialConfig.filter((_, i) => i !== index);
+    const remainingNames = this.questionFormGroupNames.filter((_, i) => i !== index);
+    const newGroup = new UntypedFormGroup({});
+    const newNames: string[] = [];
+    for (let i = 0; i < remainingNames.length; i++) {
+      const newName = 'question' + i;
+      newNames.push(newName);
+      newGroup.addControl(newName, this.questionsFormGroup.get(remainingNames[i]) as UntypedFormGroup);
+    }
+    this.questionFormGroupNames = newNames;
+    this.questionsFormGroup = newGroup;
+    if (index < this.step) {
+      this.step--;
+    }
+    if (this.step >= this.questionFormGroupNames.length) {
+      this.step = Math.max(0, this.questionFormGroupNames.length - 1);
+    }
+
+    const snackBarRef = this.snackBar.open(`Frage ${index + 1} gelöscht`, 'Rückgängig', { duration: 5000 });
+    snackBarRef.onAction().subscribe(() => {
+      const restoredNames: string[] = [];
+      const restoredGroup = new UntypedFormGroup({});
+      for (let i = 0; i < index; i++) {
+        const name = 'question' + i;
+        restoredNames.push(name);
+        restoredGroup.addControl(name, this.questionsFormGroup.get(this.questionFormGroupNames[i]) as UntypedFormGroup);
+      }
+      restoredNames.push('question' + index);
+      restoredGroup.addControl('question' + index, deletedControl);
+      for (let i = index; i < this.questionFormGroupNames.length; i++) {
+        const name = 'question' + (i + 1);
+        restoredNames.push(name);
+        restoredGroup.addControl(name, this.questionsFormGroup.get(this.questionFormGroupNames[i]) as UntypedFormGroup);
+      }
+      this.questionFormGroupNames = restoredNames;
+      this.questionsFormGroup = restoredGroup;
+      this.questionInitialConfig = [
+        ...this.questionInitialConfig.slice(0, index),
+        deletedInitialConfig,
+        ...this.questionInitialConfig.slice(index)
+      ];
+      this.importedGameState = gameStateBeforeDeletion;
+      this.step = index;
+    });
+  }
+
+  public dropQuestion(event: CdkDragDrop<string[]>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const newOrderOfOldIndices = this.questionFormGroupNames.map((_, i) => i);
+    moveItemInArray(newOrderOfOldIndices, event.previousIndex, event.currentIndex);
+    this.remapImportedQuestionNumber(oldIndex => newOrderOfOldIndices.indexOf(oldIndex));
+    moveItemInArray(this.questionFormGroupNames, event.previousIndex, event.currentIndex);
+    moveItemInArray(this.questionInitialConfig, event.previousIndex, event.currentIndex);
+    const newGroup = new UntypedFormGroup({});
+    const newNames: string[] = [];
+    for (let i = 0; i < this.questionFormGroupNames.length; i++) {
+      const newName = 'question' + i;
+      const control = this.questionsFormGroup.get(this.questionFormGroupNames[i]) as UntypedFormGroup;
+      newNames.push(newName);
+      newGroup.addControl(newName, control);
+    }
+    this.questionFormGroupNames = newNames;
+    this.questionsFormGroup = newGroup;
+    this.step = event.currentIndex;
+  }
+
+  /**
+   * An imported game refers to its current question by position, so it has to follow when questions are deleted or
+   * moved. If the current question itself is deleted, the game continues with the one that takes its place.
+   * @param newIndexOf maps a question's old position to its new one, or to null if it was deleted
+   */
+  private remapImportedQuestionNumber(newIndexOf: (oldIndex: number) => number | null): void {
+    if (this.importedGameState == null) {
+      return;
+    }
+    const newIndex = newIndexOf(this.importedGameState.currentQuestionNumber);
+    if (newIndex != null) {
+      this.importedGameState = {...this.importedGameState, currentQuestionNumber: newIndex};
+    } else {
+      // answers, marked teams and media state belonged to the deleted question
+      this.importedGameState = {
+        ...this.importedGameState,
+        loggedAnswers: [],
+        activatedAnswers: [],
+        markedTeamIds: [],
+        setBuzzerLock: false,
+        mediaQuestionState: PacketHelper.getDefaultMediaState()
+      };
     }
   }
 
   public addQuestionToFormGroup(): void {
-    const qfc: FormGroup = this.createQuestionFormGroup();
+    const qfc: UntypedFormGroup = this.createQuestionFormGroup();
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
+    this.questionInitialConfig.push(undefined);
     this.questionsFormGroup.addControl(formGroupName, qfc);
     this.setStep(this.questionFormGroupNames.length - 1);
   }
 
-  private createQuestionFormGroup(): FormGroup {
-    return new FormGroup({
-      text: new FormControl(null, Validators.required),
-      mediaSrc: new FormControl({value: '', disabled: true}),
-      answers: new FormGroup({
+  private createQuestionFormGroup(): UntypedFormGroup {
+    return new UntypedFormGroup({
+      text: new UntypedFormControl(null, Validators.required),
+      mediaSrc: new UntypedFormControl(''),
+      // only for slideshows: the image URLs, mediaSrc is then the folder
+      slides: new UntypedFormControl(null),
+      answers: new UntypedFormGroup({
         answer0: this.createFormGroupForAnswer(),
         answer1: this.createFormGroupForAnswer(),
         answer2: this.createFormGroupForAnswer(),
         answer3: this.createFormGroupForAnswer()
       }, {validators: this.atLeastOneCorrectAnswer()}),
-      answersVisible: new FormControl(true)
+      answersVisible: new UntypedFormControl(true),
+      notes: new UntypedFormControl(''),
+      // whole points, at least 1
+      points: new UntypedFormControl(1, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)])
     });
   }
 
-  private createFormGroupForAnswer(): FormGroup {
-    return new FormGroup({
-      text: new FormControl(null, Validators.required),
-      isCorrect: new FormControl(false)
+  private createFormGroupForAnswer(): UntypedFormGroup {
+    return new UntypedFormGroup({
+      text: new UntypedFormControl(null, Validators.required),
+      isCorrect: new UntypedFormControl(false)
     });
   }
 
-  public getQuestionFormGroup(name: string): FormGroup {
-    return this.questionsFormGroup.get(name) as FormGroup;
+  public getQuestionFormGroup(name: string): UntypedFormGroup {
+    return this.questionsFormGroup.get(name) as UntypedFormGroup;
   }
 
-  public getAnswerFromGroup(questionName: string): FormGroup {
-    return this.getQuestionFormGroup(questionName).get('answers') as FormGroup;
+  public getAnswerFromGroup(questionName: string): UntypedFormGroup {
+    return this.getQuestionFormGroup(questionName).get('answers') as UntypedFormGroup;
   }
 
   private atLeastOneCorrectAnswer(): ValidatorFn {
@@ -212,19 +302,39 @@ export class SetupComponent implements OnInit {
   public startGame(): void {
     const teams: ITeam[] = this.buildSetupTeamsObject();
     const questions: IQuestion[] = this.buildSetupQuestionsObject();
-    this.game.setupGame(teams, questions, this.game.getGameStateData());
+    this.game.setupGame(teams, questions, this.getGameStateForSetup(questions.length));
+  }
+
+  /**
+   * The progress of an imported game, kept inside the question list; undefined for a new game.
+   */
+  private getGameStateForSetup(numberOfQuestions: number): IGameState | undefined {
+    if (this.importedGameState == null) {
+      return undefined;
+    }
+    const lastQuestionNumber = Math.max(0, numberOfQuestions - 1);
+    if (this.importedGameState.currentQuestionNumber > lastQuestionNumber) {
+      return {...this.importedGameState, currentQuestionNumber: lastQuestionNumber};
+    }
+    return this.importedGameState;
   }
 
   private buildSetupTeamsObject(): ITeam[] {
     const ret: ITeam[] = [];
     for (const name of this.teamFormControlNames) {
       if (!this.teamsFormGroup.get(name).disabled) {
-        const buzzerId = this.mapTeamFormControlNameToBuzzerId.get(name);
-        ret.push({
+        const buzzerIndex = this.mapTeamFormControlNameToBuzzerIndex.get(name);
+        const buzzerId = this.game.getPresetupData().availableBuzzers[buzzerIndex].id;
+        const team: ITeam = {
           name: this.teamsFormGroup.get(name).value,
           buzzerId,
-          teamId: buzzerId // use the buzzerId for now
-        });
+          teamId: buzzerId, // use the buzzerId for now
+          buzzerIndex
+        };
+        if (this.importedPoints.has(name)) {
+          team.points = this.importedPoints.get(name);
+        }
+        ret.push(team);
       }
     }
     return ret;
@@ -232,16 +342,17 @@ export class SetupComponent implements OnInit {
 
   private buildSetupQuestionsObject(): IQuestion[] {
     const ret: IQuestion[] = [];
-    for (const name of this.questionFormGroupNames) {
-      const questionFormGroup: FormGroup = this.questionsFormGroup.get(name) as FormGroup;
+    this.questionFormGroupNames.forEach((name, index) => {
+      const questionFormGroup: UntypedFormGroup = this.questionsFormGroup.get(name) as UntypedFormGroup;
       const questionText: string = questionFormGroup.get('text').value.toString();
       const mediaSrc: string = questionFormGroup.get('mediaSrc').value.toString();
       const answers: IAnswer[] = [];
       for (let i = 0; i < 4; i++) {
-        const answerFormGroup: FormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as FormGroup;
+        const answerFormGroup: UntypedFormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as UntypedFormGroup;
         answers.push({
-          text: answerFormGroup.get('text').value.toString(),
-          isCorrect: answerFormGroup.get('isCorrect').value
+          // answers of questions without answer options may never have been filled in
+          text: (answerFormGroup.get('text').value ?? '').toString(),
+          isCorrect: !!answerFormGroup.get('isCorrect').value
         });
       }
       const question: IQuestion = {
@@ -249,32 +360,41 @@ export class SetupComponent implements OnInit {
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
       };
+      const points = Number(questionFormGroup.get('points').value);
+      // the default of 1 point is left out, like in savegames from before points could be set
+      if (points !== 1) {
+        question.points = points;
+      }
+      const notes: string = (questionFormGroup.get('notes').value ?? '').toString().trim();
+      if (notes) {
+        question.notes = notes;
+      }
       if (mediaSrc) {
         question.mediaDetails = {
           fileSrc: mediaSrc
         };
+        const slides: string[] | null = questionFormGroup.get('slides').value;
+        if (slides?.length) {
+          question.mediaDetails.slides = slides;
+        }
+        // the config component only emits once the user changes something, so fall back to the default it shows
+        question.initialConfig = this.questionInitialConfig[index] ?? {...DEFAULT_MEDIA_QUESTION_CONFIG};
       }
       ret.push(question);
-    }
+    });
     return ret;
   }
 
-  public downloadSetupAsJson(): SafeUrl {
-    if (!this.hasReachedLastStep) {
-      return null;
-    }
-    const teams: ITeam[] = this.buildSetupTeamsObject();
+  public downloadSetupAsJson(): void {
     const questions: IQuestion[] = this.buildSetupQuestionsObject();
-    this.game.setGameData(teams, questions);
-    return this.game.exportGameStateAsJson();
+    this.game.downloadGameStateAsJson('buzzer-game-setup.json', this.buildSetupTeamsObject(), questions,
+      this.getGameStateForSetup(questions.length) ?? null);
   }
 
   public getGameName(): string {
     return this.game.getGameName();
   }
 
-  // TODO: check that there are not more teams in the savegame as there are buzzers now. If there are, show some dialog to choose
-  //  teams to be kept
   public onSaveGameFileSelected(uploadEvent: IUploadFormData): void {
     if (uploadEvent.data) {
       this.snackBar.open('Datei wird importiert, bitte warten...');
@@ -283,20 +403,30 @@ export class SetupComponent implements OnInit {
       const fileReader = new FileReader();
       fileReader.readAsText(configFile as Blob, 'UTF-8');
       fileReader.onload = async () => {
+        try {
+          const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
+          const numberOfSavedTeams = importedState.teams?.length ?? 0;
+          await this.game.importGameStateFromJson(importedState, false);
 
-        const importedState: IGameStateAsJson = JSON.parse(fileReader.result as string);
-        console.dir(importedState);
-        await this.game.importGameStateFromJson(importedState, false);
-
-        // this.game.importGameStateFromJson(importedState);
-
-        this.initTeamsFormControls(true);
-        this.initQuestionsFormControls(true);
-        this.snackBar.open('Datei erfolgreich importiert.', 'OK', {
-          duration: 5000
-        });
+          this.importedGameState = this.game.getGameStateData();
+          this.initTeamsFormControls(this.game.getTeams());
+          this.initQuestionsFormControls(this.game.getQuestions());
+          const numberOfDroppedTeams = numberOfSavedTeams - this.game.getTeams().length;
+          const message = numberOfDroppedTeams > 0
+            ? `Datei importiert. ${numberOfDroppedTeams} Team(s) ohne passenden Buzzer wurden entfernt.`
+            : 'Datei erfolgreich importiert.';
+          this.snackBar.open(message, 'OK', {
+            duration: 5000
+          });
+        } catch (e) {
+          console.error(e);
+          this.snackBar.open('Die Datei konnte nicht importiert werden.', 'OK', {
+            duration: 5000
+          });
+        }
       };
     } else {
+      this.importedGameState = null;
       this.initTeamsFormControls();
       this.initQuestionsFormControls();
       this.snackBar.open('Konfiguration zurückgesetzt.', 'OK', {
@@ -306,53 +436,52 @@ export class SetupComponent implements OnInit {
   }
 
   // TODO: implement it in a correct way, this is just because of the haste
-  public toggleShowAnswers(cb: MatCheckbox, fgn: string): void {
-    const showAnswers = !cb.checked; // it shows the state before the click, so we need to invert it
-    this.applyShowAnswersState(fgn, showAnswers);
-  }
-
-
-  private applyShowAnswersState(fgn: string, showAnswers: boolean): void {
-    const fgq = this.questionsFormGroup.get(fgn);
-    const fga = fgq.get('answers');
-    let text = 'bla';
-    if (showAnswers) {
-      text = '';
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').enable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').enable();
-    } else {
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').disable();
-      fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').disable();
+  /**
+   * Questions without answer options keep their answers in the form, disabled, so turning the option back on restores them.
+   */
+  public applyShowAnswersState(fgn: string, showAnswers: boolean): void {
+    const fga = this.questionsFormGroup.get(fgn).get('answers');
+    for (let i = 0; i < 4; i++) {
+      const answer = fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + i);
+      if (showAnswers) {
+        answer.enable();
+      } else {
+        answer.disable();
+      }
     }
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '0').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '1').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '2').get('isCorrect').setValue(!showAnswers);
-
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('text').setValue(text);
-    fga.get(this.ANSWER_FORM_GROUP_BASE_NAME + '3').get('isCorrect').setValue(!showAnswers);
   }
 
   setStep(index: number): void {
     this.step = index;
   }
 
-  changeMediaSelection(event: { path: string; question: number }, prependPrefix: boolean = true): void {
-    const mediaSrcControl = this.questionsFormGroup.controls['question' + event.question].get('mediaSrc');
-    if (event && event.path) {
-      const path = event.path;
-      mediaSrcControl.setValue(FileService.buildFullPathString(path));
+  changeMediaSelection(event: { selection: IMediaSelection; question: number }): void {
+    const questionFormGroup = this.questionsFormGroup.controls['question' + event.question];
+    const selection = event.selection;
+    if (selection?.path) {
+      questionFormGroup.get('mediaSrc').setValue(FileService.buildFullPathString(selection.path));
+      questionFormGroup.get('slides').setValue(selection.slides?.map(path => FileService.buildFullPathString(path)) ?? null);
     } else {
-      mediaSrcControl.setValue('');
+      questionFormGroup.get('mediaSrc').setValue('');
+      questionFormGroup.get('slides').setValue(null);
     }
   }
+
+  /**
+   * The points of the question if they differ from the default 1, for the panel header; otherwise null
+   */
+  public getCustomPoints(questionFormGroupName: string): number | null {
+    const points = Number(this.questionsFormGroup.controls[questionFormGroupName]?.get('points').value);
+    return Number.isFinite(points) && points !== 1 ? points : null;
+  }
+
+  public isSlideshow(questionFormGroupName: string): boolean {
+    return !!this.questionsFormGroup.controls[questionFormGroupName].get('slides').value?.length;
+  }
+
+  changeQuestionConfig(event: { config: IMediaQuestionState; question: number }): void {
+    this.questionInitialConfig[event.question] = event.config;
+  }
+
 
 }
