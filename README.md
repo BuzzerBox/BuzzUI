@@ -37,7 +37,15 @@ the same by hand.
 Bundles are signed with an Ed25519 key. Create the key pair once with
 `node scripts/update-signing.js generate-key <private-key.pem> install/.assets/update-public-key.pem`, keep the private
 key out of the repository and commit the public key: installations copy it to `/etc/buzzerbox/update-public-key.pem`
-and refuse bundles without a matching signature.
+and warn before installing bundles without a matching signature.
+
+### Bundles without a valid signature
+`scripts/create-update-bundle.sh --unsigned` builds a bundle without a signature, e.g. to try a build on a box. The
+master marks bundles without a valid signature (unsigned, signed with another key, or the box has no public key) and
+installs one only after a big warning that the user has to confirm; over SSH it takes
+`sudo buzzerbox-update install --allow-unsigned <bundle>`. The checksum and the version are still checked. An update
+runs as root, so this lets anyone who can open the master page install any software on the box. To turn it off on a
+box, create the file `/etc/buzzerbox/require-signed-updates`.
 
 ### Boxes installed before USB updates
 Older installations run the server from the desktop autostart and have no update helper. Copy the `install/` directory

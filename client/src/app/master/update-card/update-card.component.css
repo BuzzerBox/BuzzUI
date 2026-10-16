@@ -16,6 +16,10 @@
   color: #c62828;
 }
 
+.warning mat-icon {
+  color: #e65100;
+}
+
 .hint {
   color: rgba(0, 0, 0, 0.6);
 }
@@ -33,4 +37,45 @@
 
 mat-list-item {
   height: auto !important;
+}
+
+.label.unsigned {
+  color: #c62828;
+  font-weight: 500;
+}
+
+.label.unsigned mat-icon {
+  margin-right: 2px;
+}
+
+.unsigned-warning {
+  margin-top: 16px;
+  padding: 16px;
+  border: 2px solid #c62828;
+  border-radius: 8px;
+  background: #ffebee;
+  color: #3e0b0b;
+}
+
+.unsigned-warning-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2em;
+  font-weight: 500;
+  color: #b71c1c;
+}
+
+.unsigned-warning-title mat-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  font-size: 36px;
+}
+
+.unsigned-warning-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }

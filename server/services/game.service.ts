@@ -290,7 +290,7 @@ export class GameService {
     private onInstallUpdatePacket(packet: IInstallUpdatePacket): void {
         const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
             ? 'Updates can only be installed while no game is set up'
-            : UpdateService.get().install(packet.fileName);
+            : UpdateService.get().install(packet.fileName, packet.allowUnsigned === true);
         if (reason != null) {
             LoggerService.warn(`Not installing update ${packet.fileName}: ${reason}`);
         }

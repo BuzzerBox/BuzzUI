@@ -10,4 +10,8 @@ export interface IInstallUpdatePacket extends IGamePacket {
      * The fileName of one of the bundles of the last IUpdateInfoPacket
      */
     fileName: string;
+    /**
+     * Install the bundle even though it has no valid signature, after the master was warned
+     */
+    allowUnsigned?: boolean;
 }

@@ -785,8 +785,11 @@ export class GameService implements OnDestroy {
     return this.installUpdateResponseSubject.asObservable();
   }
 
-  public installUpdate(fileName: string): void {
-    this.webSocketService.send<IInstallUpdatePacket>({packetType: EPacketTypes.INSTALL_UPDATE, fileName});
+  /**
+   * @param allowUnsigned install the bundle even without a valid signature, after the user was warned
+   */
+  public installUpdate(fileName: string, allowUnsigned = false): void {
+    this.webSocketService.send<IInstallUpdatePacket>({packetType: EPacketTypes.INSTALL_UPDATE, fileName, allowUnsigned});
   }
 
   public getGameStateData(): IGameState {

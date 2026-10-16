@@ -6,6 +6,7 @@ import {EMediaStates} from './enums/EMediaStates';
 import {EQuestionAnswerStates} from './enums/EQuestionAnswerStates';
 import {EGradeResults} from './enums/EGradeResults';
 import {EUpdateStates} from './enums/EUpdateStates';
+import {EUpdateSignatures} from './enums/EUpdateSignatures';
 
 export {
 	EPacketTypes,
@@ -15,5 +16,6 @@ export {
 	EMediaStates,
 	EQuestionAnswerStates,
 	EGradeResults,
-	EUpdateStates
+	EUpdateStates,
+	EUpdateSignatures
 }

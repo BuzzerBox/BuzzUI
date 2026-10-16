@@ -2,19 +2,25 @@
 # Builds a signed update bundle updates/buzzerbox-update-<version>.tar that a BuzzerBox installs from a USB stick.
 # The version comes from version.json, so raise it first.
 #   ./create-update-bundle.sh <private-key.pem>
+#   ./create-update-bundle.sh --unsigned
 # The key can also be passed as BUZZERBOX_UPDATE_SIGNING_KEY. Create one with: node update-signing.js generate-key
+# A box installs an unsigned bundle only after the master confirmed a warning.
 #
 # The bundle holds manifest.json (version and checksum of the payload), its signature manifest.sig and payload.tar.gz,
 # which is unpacked into releases/<version> on the box: frontend/, backend/ (with node_modules) and hooks/.
 
 set -euo pipefail
 
-SIGNING_KEY="${1:-${BUZZERBOX_UPDATE_SIGNING_KEY:-}}"
-if [ -z "${SIGNING_KEY}" ] || [ ! -f "${SIGNING_KEY}" ]; then
-  echo "Usage: $0 <private-key.pem>"
-  exit 1
+if [ "${1:-}" = "--unsigned" ]; then
+  SIGNING_KEY=""
+else
+  SIGNING_KEY="${1:-${BUZZERBOX_UPDATE_SIGNING_KEY:-}}"
+  if [ -z "${SIGNING_KEY}" ] || [ ! -f "${SIGNING_KEY}" ]; then
+    echo "Usage: $0 <private-key.pem> | --unsigned"
+    exit 1
+  fi
+  SIGNING_KEY="$(cd "$(dirname "${SIGNING_KEY}")" && pwd)/$(basename "${SIGNING_KEY}")"
 fi
-SIGNING_KEY="$(cd "$(dirname "${SIGNING_KEY}")" && pwd)/$(basename "${SIGNING_KEY}")"
 
 cd "$(dirname "$0")"
 ROOT_DIR="$(cd .. && pwd)"
@@ -53,9 +59,18 @@ VERSION="${VERSION}" PAYLOAD_SHA256="${PAYLOAD_SHA256}" COMMIT="${COMMIT}" node 
   };
   process.stdout.write(JSON.stringify(manifest, null, 2) + "\n");
 ' > "${WORK_DIR}/manifest.json"
-node update-signing.js sign "${SIGNING_KEY}" "${WORK_DIR}/manifest.json" "${WORK_DIR}/manifest.sig"
+BUNDLE_FILES=(manifest.json payload.tar.gz)
+if [ -n "${SIGNING_KEY}" ]; then
+  node update-signing.js sign "${SIGNING_KEY}" "${WORK_DIR}/manifest.json" "${WORK_DIR}/manifest.sig"
+  BUNDLE_FILES=(manifest.json manifest.sig payload.tar.gz)
+fi
 
 mkdir -p "${OUTPUT_DIR}"
 BUNDLE="${OUTPUT_DIR}/buzzerbox-update-${VERSION}.tar"
-tar "${TAR_OPTIONS[@]}" -cf "${BUNDLE}" -C "${WORK_DIR}" manifest.json manifest.sig payload.tar.gz
-echo "Created ${BUNDLE} (commit ${COMMIT}). Copy it onto a USB stick (top level or any folder) and plug it into the box."
+tar "${TAR_OPTIONS[@]}" -cf "${BUNDLE}" -C "${WORK_DIR}" "${BUNDLE_FILES[@]}"
+if [ -n "${SIGNING_KEY}" ]; then
+  echo "Created ${BUNDLE} (commit ${COMMIT}, signed)."
+else
+  echo "Created ${BUNDLE} (commit ${COMMIT}, NOT SIGNED: the box warns before installing it)."
+fi
+echo "Copy it onto a USB stick (top level or any folder) and plug it into the box."

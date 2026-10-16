@@ -2,12 +2,14 @@
 # Installs a signed BuzzerBox update bundle (see scripts/create-update-bundle.sh) and rolls back if the new version does
 # not start. It is installed to /usr/local/sbin/buzzerbox-update and runs as root.
 #
-#   buzzerbox-update start <bundle>    install in the background; what the server calls (through sudo) for the master
-#   buzzerbox-update install <bundle>  install and wait for the result, e.g. over SSH
+#   buzzerbox-update start [--allow-unsigned] <bundle>    install in the background; what the server calls (through
+#                                                       sudo) for the master
+#   buzzerbox-update install [--allow-unsigned] <bundle>  install and wait for the result, e.g. over SSH
 #   buzzerbox-update rollback          go back to the previously installed version
 #   buzzerbox-update status            print the status of the last update
 #   buzzerbox-update recover           mark an update that was interrupted (e.g. by a power cut) as failed
 #
+# --allow-unsigned installs a bundle without a valid signature, unless /etc/buzzerbox/require-signed-updates exists.
 # Releases live in __INSTALL_DIR__/releases/<version>, and __INSTALL_DIR__/current links to the one that runs. nginx
 # serves current/frontend and the buzzerbox-server service runs current/backend.
 
@@ -17,6 +19,9 @@ INSTALL_DIR="${BUZZERBOX_INSTALL_DIR:-__INSTALL_DIR__}"
 RELEASES_DIR="${INSTALL_DIR}/releases"
 CURRENT_LINK="${INSTALL_DIR}/current"
 PUBLIC_KEY="${BUZZERBOX_UPDATE_PUBLIC_KEY:-/etc/buzzerbox/update-public-key.pem}"
+# when this file exists, --allow-unsigned is ignored
+REQUIRE_SIGNED_FILE="/etc/buzzerbox/require-signed-updates"
+ALLOW_UNSIGNED=""
 STATE_DIR="${BUZZERBOX_STATE_DIR:-/var/lib/buzzerbox}"
 STATUS_FILE="${STATE_DIR}/update-status.json"
 LOCK_FILE="/run/buzzerbox-update.lock"
@@ -76,26 +81,41 @@ restartAndCheck() {
 }
 
 # Checks the signature and the checksum of a bundle and unpacks it.
+# Bundles without a valid signature are only unpacked with --allow-unsigned.
 # bundle::string: path to the bundle
 # target::string: empty directory to unpack the release into
-# -> prints the version of the bundle
+# -> prints the version of the bundle, followed by " unsigned" if it has no valid signature
 unpackBundle() {
-  local bundle="$1" target="$2" work="$2/.bundle"
+  local bundle="$1" target="$2" work="$2/.bundle" signatureProblem=""
   mkdir -p "${work}"
-  tar --no-same-owner -xf "${bundle}" -C "${work}" manifest.json manifest.sig payload.tar.gz \
+  tar --no-same-owner -xf "${bundle}" -C "${work}" manifest.json payload.tar.gz \
     || { log "${bundle} is not an update bundle"; return 1; }
+  # unsigned bundles have none
+  tar --no-same-owner -xf "${bundle}" -C "${work}" manifest.sig 2> /dev/null || true
 
-  if [ ! -f "${PUBLIC_KEY}" ]; then
-    log "There is no public key at ${PUBLIC_KEY} to check updates with"
-    return 1
-  fi
+  if [ ! -f "${work}/manifest.sig" ]; then
+    signatureProblem="The bundle is not signed"
+  elif [ ! -f "${PUBLIC_KEY}" ]; then
+    signatureProblem="There is no public key at ${PUBLIC_KEY} to check updates with"
   # node rather than openssl, whose version on Raspbian Buster can't check Ed25519 signatures
-  node -e '
+  elif ! node -e '
     const crypto = require("crypto"), fs = require("fs");
     const [publicKey, manifest, signature] = process.argv.slice(1).map(file => fs.readFileSync(file));
     process.exit(crypto.verify(null, manifest, crypto.createPublicKey(publicKey), signature) ? 0 : 1);
-  ' "${PUBLIC_KEY}" "${work}/manifest.json" "${work}/manifest.sig" \
-    || { log "The signature of the bundle is not valid"; return 1; }
+  ' "${PUBLIC_KEY}" "${work}/manifest.json" "${work}/manifest.sig"; then
+    signatureProblem="The signature of the bundle is not valid"
+  fi
+  if [ -n "${signatureProblem}" ]; then
+    if [ -z "${ALLOW_UNSIGNED}" ]; then
+      log "${signatureProblem}"
+      return 1
+    fi
+    if [ -f "${REQUIRE_SIGNED_FILE}" ]; then
+      log "${signatureProblem}, and this box only installs signed updates (${REQUIRE_SIGNED_FILE})"
+      return 1
+    fi
+    log "WARNING: ${signatureProblem}. Installing it anyway, as requested with --allow-unsigned"
+  fi
 
   local version sha256 fileNameVersion
   version="$(node -e 'console.log(require(process.argv[1]).version)' "${work}/manifest.json")"
@@ -117,7 +137,7 @@ unpackBundle() {
 
   tar --no-same-owner -xzf "${work}/payload.tar.gz" -C "${target}" || { log "The bundle could not be unpacked"; return 1; }
   rm -rf "${work}"
-  echo "${version}"
+  echo "${version}${signatureProblem:+ unsigned}"
 }
 
 # Removes all but the newest releases, but never the current and the previous one
@@ -148,22 +168,25 @@ install() {
     return 1
   fi
 
-  local previous staging version errors
+  local previous staging unpacked version unsigned errors
   previous="$(currentVersion)"
   writeStatus running "" "Checking the bundle"
   mkdir -p "${RELEASES_DIR}"
   staging="$(mktemp -d "${RELEASES_DIR}/.staging-XXXXXX")"
   errors="$(mktemp)"
-  if ! version="$(unpackBundle "${bundle}" "${staging}" 2> "${errors}")"; then
+  if ! unpacked="$(unpackBundle "${bundle}" "${staging}" 2> "${errors}")"; then
     cat "${errors}" >&2
     # the last thing unpackBundle logged is why it failed, which the master shows
     writeStatus failed "" "$(tail -n 1 "${errors}" | sed 's/^buzzerbox-update: //')"
     rm -rf "${staging}" "${errors}"
     return 1
   fi
+  # the warning about a missing signature goes to the journal
+  cat "${errors}" >&2
   rm -f "${errors}"
+  read -r version unsigned <<< "${unpacked}"
   writeStatus running "${version}" "Installing"
-  log "Installing version ${version} (installed: ${previous:-none})"
+  log "Installing version ${version}${unsigned:+ WITHOUT A VALID SIGNATURE} (installed: ${previous:-none})"
 
   if [ "${version}" = "${previous}" ]; then
     # reinstalling the running version: let current point to the new files while the old ones are replaced
@@ -182,7 +205,7 @@ install() {
   systemctl reload nginx || true
 
   if restartAndCheck; then
-    writeStatus succeeded "${version}"
+    writeStatus succeeded "${version}" "${unsigned:+Installed without a valid signature}"
     log "Version ${version} is running"
     cleanUpReleases "${previous}"
     return 0
@@ -231,20 +254,28 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-case "${1:-}" in
+COMMAND="${1:-}"
+shift || true
+if [ "${1:-}" = "--allow-unsigned" ]; then
+  ALLOW_UNSIGNED=1
+  shift
+fi
+
+case "${COMMAND}" in
   start)
-    [ -n "${2:-}" ] || { log "Usage: $0 start <bundle>"; exit 1; }
-    bundle="$(realpath "$2")"
+    [ -n "${1:-}" ] || { log "Usage: $0 start [--allow-unsigned] <bundle>"; exit 1; }
+    bundle="$(realpath "$1")"
     writeStatus running "" "Starting"
     # the update restarts the server that calls this, so it has to run outside of the server's service
-    if ! systemd-run --unit="buzzerbox-update-$(date +%s)" --collect --quiet "$(realpath "$0")" install "${bundle}"; then
+    if ! systemd-run --unit="buzzerbox-update-$(date +%s)" --collect --quiet "$(realpath "$0")" install \
+        ${ALLOW_UNSIGNED:+--allow-unsigned} "${bundle}"; then
       writeStatus failed "" "The update could not be started"
       exit 1
     fi
     ;;
   install)
-    [ -n "${2:-}" ] || { log "Usage: $0 install <bundle>"; exit 1; }
-    install "$(realpath "$2")"
+    [ -n "${1:-}" ] || { log "Usage: $0 install [--allow-unsigned] <bundle>"; exit 1; }
+    install "$(realpath "$1")"
     ;;
   rollback)
     rollback
@@ -256,7 +287,7 @@ case "${1:-}" in
     cat "${STATUS_FILE}" 2>/dev/null || echo "No update was installed yet"
     ;;
   *)
-    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
     exit 1
     ;;
 esac

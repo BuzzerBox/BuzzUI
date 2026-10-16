@@ -1,3 +1,5 @@
+import {EUpdateSignatures} from '../shared';
+
 /**
  * An update bundle (buzzerbox-update-<version>.tar) the server found on a USB stick
  */
@@ -15,4 +17,9 @@ export interface IUpdateBundle {
      * Whether the version is newer than the installed one
      */
     isNewer: boolean;
+    /**
+     * Whether the bundle is signed with the key of the box. Bundles without a valid signature are only installed when
+     * the master explicitly allows it (IInstallUpdatePacket.allowUnsigned).
+     */
+    signature: EUpdateSignatures;
 }
