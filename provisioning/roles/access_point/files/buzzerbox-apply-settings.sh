@@ -1,14 +1,21 @@
 #!/bin/bash
 # Applies the per-box settings from buzzerbox.txt on the boot partition: the WiFi access point of NetworkManager, the
-# names the box answers to in it and the WiFi country. buzzerbox-settings.service runs it on every boot, before
-# NetworkManager starts. Values that are missing or invalid fall back to the defaults in /etc/buzzerbox/settings.defaults,
-# which the setup wrote (provisioning/group_vars/all.yml). Files are only written when something changed.
+# names the box answers to in it, the WiFi country and the WiFi antenna. buzzerbox-settings.service runs it on every
+# boot, before NetworkManager starts, with --boot: only then does it restart the box for a changed antenna. Values that
+# are missing or invalid fall back to the defaults in /etc/buzzerbox/settings.defaults, which the setup wrote
+# (provisioning/group_vars/all.yml). Files are only written when something changed.
 
 set -euo pipefail
+
+BOOT=false
+if [ "${1:-}" = "--boot" ]; then
+  BOOT=true
+fi
 
 DEFAULTS_FILE="/etc/buzzerbox/settings.defaults"
 SETTINGS_FILE="/boot/firmware/buzzerbox.txt"
 CMDLINE_FILE="/boot/firmware/cmdline.txt"
+CONFIG_FILE="/boot/firmware/config.txt"
 CONNECTION_FILE="/etc/NetworkManager/system-connections/buzzerbox-ap.nmconnection"
 DNSMASQ_FILE="/etc/NetworkManager/dnsmasq-shared.d/buzzerbox.conf"
 # fixed, so that the connection file stays the same as long as the settings do
@@ -70,6 +77,7 @@ isValid() {
     WIFI_PASSPHRASE) [[ "${value}" =~ ^[[:print:]]{8,63}$ ]] ;;
     WIFI_COUNTRY_CODE) [[ "${value}" =~ ^[A-Za-z]{2}$ ]] ;;
     WIFI_CHANNEL) [[ "${value}" =~ ^([1-9]|1[0-3])$ ]] ;;
+    WIFI_ANTENNA) [[ "${value,,}" =~ ^(internal|external)$ ]] ;;
     SERVER_IP_ADDRESS)
       [[ "${value}" =~ ^${octet}\.${octet}\.${octet}\.${octet}$ ]] || return 1
       local last="${value##*.}"
@@ -175,4 +183,37 @@ done
 NM_STATE=/var/lib/NetworkManager/NetworkManager.state
 if [ -f "${NM_STATE}" ]; then
   sed -i 's/^WirelessEnabled=.*/WirelessEnabled=true/' "${NM_STATE}"
+fi
+
+# The antenna of a CM4 is chosen in config.txt: dtparam=ant2 is the external one, and without it the internal one is
+# used. So only the external antenna gets a block, under [cm4], which a Raspberry Pi 4 (no connector) skips. The firmware
+# reads config.txt before Linux starts, so the change only counts after a restart. This is last, so that the other
+# settings are written before.
+ANTENNA="${settings[WIFI_ANTENNA],,}"
+ANTENNA_BEGIN="# BEGIN BuzzerBox antenna (buzzerbox-settings)"
+ANTENNA_END="# END BuzzerBox antenna (buzzerbox-settings)"
+CONFIG="$(cat "${CONFIG_FILE}")"
+NEW_CONFIG="$(awk -v begin="${ANTENNA_BEGIN}" -v end="${ANTENNA_END}" \
+  '$0 == begin { skip = 1 } !skip { print } $0 == end { skip = 0 }' <<< "${CONFIG}")"
+if [ "${ANTENNA}" = "external" ]; then
+  NEW_CONFIG+=$'\n'"${ANTENNA_BEGIN}"$'\n[cm4]\ndtparam=ant2\n[all]\n'"${ANTENNA_END}"
+fi
+if [ "${NEW_CONFIG}" != "${CONFIG}" ]; then
+  # FAT has no file modes
+  printf '%s\n' "${NEW_CONFIG}" > "${CONFIG_FILE}.tmp"
+  mv -f "${CONFIG_FILE}.tmp" "${CONFIG_FILE}"
+  sync
+  log "Set the ${ANTENNA} WiFi antenna in ${CONFIG_FILE}"
+  MODEL="$(tr -d '\0' < /proc/device-tree/model 2>/dev/null || true)"
+  if [[ "${MODEL}" != *"Compute Module 4"* ]]; then
+    log "This box (${MODEL:-unknown model}) has no antenna connector, WIFI_ANTENNA only counts on a Compute Module 4"
+  elif [ "${BOOT}" != "true" ]; then
+    log "The antenna changes with the next restart"
+  # only if the file really says so now, or the box would restart over and over
+  elif [ "$(cat "${CONFIG_FILE}")" = "${NEW_CONFIG}" ]; then
+    log "Restarting the box for the new antenna"
+    systemctl --no-block reboot
+  else
+    log "Could not write ${CONFIG_FILE}, keeping the old antenna"
+  fi
 fi

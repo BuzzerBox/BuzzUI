@@ -76,6 +76,7 @@ WIFI_SSID=BuzzerBoxNetwork
 WIFI_PASSPHRASE=12TheBuzzerBox_IncredibleNetwork34
 WIFI_COUNTRY_CODE=DE
 WIFI_CHANNEL=8
+WIFI_ANTENNA=internal
 SERVER_IP_ADDRESS=10.0.0.5
 SERVER_HOSTNAMES=buzzer.box buzzerbox.local
 ```
@@ -84,6 +85,10 @@ Edit it after flashing, or later by putting the card back into a computer (for t
 applies it on every start (`roles/access_point/files/buzzerbox-apply-settings.sh`). Missing or invalid values fall back
 to the defaults in `group_vars/all.yml`, and `journalctl -u buzzerbox-settings` shows why a value was ignored. **Give
 every box its own WiFi password**: the default one is public in this repository.
+
+`WIFI_ANTENNA=external` switches a CM4 to the antenna on its U.FL connector (`dtparam=ant2` in `config.txt`). The
+firmware only reads `config.txt` at boot, so when the setting changes, the box restarts once by itself. A Raspberry Pi 4
+has no antenna connector and ignores the setting.
 
 ## Changing boxes that are in use
 
