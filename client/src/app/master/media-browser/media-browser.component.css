@@ -1,0 +1,80 @@
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.breadcrumbs .current {
+  font-weight: 500;
+  padding: 0 12px;
+}
+
+.separator {
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.drop-zone {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  border: 2px dashed rgba(0, 0, 0, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.drop-zone.fileover {
+  border-color: #3f51b5;
+  background: rgba(63, 81, 181, 0.08);
+}
+
+.new-folder {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.new-folder mat-form-field {
+  min-width: 20em;
+}
+
+mat-list-item {
+  height: auto !important;
+}
+
+mat-progress-bar {
+  width: 20em;
+  max-width: 60vw;
+  margin-top: 6px;
+}
+
+.uploads {
+  margin-top: 8px;
+}
+
+a {
+  color: inherit;
+}
+
+.folder a {
+  font-weight: 500;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c62828;
+}
+
+.error-text {
+  color: #c62828;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}

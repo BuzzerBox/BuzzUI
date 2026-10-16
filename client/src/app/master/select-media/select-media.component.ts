@@ -1,6 +1,10 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges} from '@angular/core';
-import {FileService} from '../../services/file.service';
-import {IDirectoryTree, StringHelper, FileExtensionsService} from '../../../../../shared/shared';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChange, SimpleChanges} from '@angular/core';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {Subscription} from 'rxjs';
+import {IDirectoryTree, StringHelper, FileExtensionsService, StorageApiHelper} from '../../../../../shared/shared';
+import {IGameRef, StorageService} from '../../services/storage.service';
+import {DialogCopyMediaComponent, IDialogCopyMediaData} from '../dialog-copy-media/dialog-copy-media.component';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
 import {IMediaSelection} from '../interfaces/IMediaSelection';
@@ -11,23 +15,84 @@ import {IMediaSelection} from '../interfaces/IMediaSelection';
     styleUrls: ['./select-media.component.css'],
     standalone: false
 })
-export class SelectMediaComponent implements OnInit, OnChanges {
+export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
   treeControl = new NestedTreeControl<IDirectoryTree>(node => node.children);
   dataSource = new MatTreeNestedDataSource<IDirectoryTree>();
   activeNode: IDirectoryTree;
   @Output() locationChange: EventEmitter<IMediaSelection> = new EventEmitter<IMediaSelection>();
+  /**
+   * The selected file or folder, relative to the game's media
+   */
   @Input() fileLocation: string;
+  /**
+   * The game whose media are offered
+   */
+  @Input() game: IGameRef;
   // the selected media file or folder if it isn't in the media folder (e.g. the USB stick is missing)
   public missingLocation: string | null = null;
 
+  public uploading = false;
   private hasFetchedData = false;
+  private fetching: Promise<void> = null;
+  private subscription: Subscription;
 
 
-  constructor(private fileService: FileService, private cdr: ChangeDetectorRef) {
-    this.getMediaDirectory();
+  constructor(private storage: StorageService, private cdr: ChangeDetectorRef, private dialog: MatDialog, private snackBar: MatSnackBar) {
+    // every picker of the game shows media that were added in one of them
+    this.subscription = this.storage.observeGameMediaChanges().subscribe(ref => {
+      if (ref.gameName === this.game?.gameName && ref.location.id === this.game?.location.id) {
+        this.reload();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
+  private async reload(): Promise<void> {
+    this.hasFetchedData = false;
+    await this.getData();
+    if (this.fileLocation) {
+      this.activeNode = (await this.getNodeByFilePath(this.fileLocation, this.dataSource.data[0] ?? null)) ?? undefined;
+      this.missingLocation = this.activeNode == null ? this.fileLocation : null;
+    }
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Uploads files from this device into the game's media
+   */
+  async upload(files: FileList): Promise<void> {
+    this.uploading = true;
+    for (const file of Array.from(files ?? [])) {
+      if (!FileExtensionsService.isSupportedExtension(FileExtensionsService.getExtension(file.name)) || !StorageApiHelper.isValidName(file.name)) {
+        this.snackBar.open(`${file.name} wird übersprungen: Nur Bilder, Videos und Audiodateien mit gültigem Namen können hochgeladen werden.`, 'OK', {duration: 6000});
+        continue;
+      }
+      try {
+        await this.storage.uploadGameMedia(this.game, '', file).toPromise();
+      } catch (e) {
+        const reason = StorageService.isConflict(e) ? 'Es gibt schon eine Datei mit diesem Namen.' : StorageService.getErrorMessage(e);
+        this.snackBar.open(`${file.name} wurde nicht hochgeladen: ${reason}`, 'OK', {duration: 6000});
+      }
+    }
+    this.uploading = false;
+  }
+
+  openCopyDialog(): void {
+    this.dialog.open<DialogCopyMediaComponent, IDialogCopyMediaData>(DialogCopyMediaComponent, {data: {game: this.game}, width: '800px'});
   }
 
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
+    if (changes.game && changes.game.previousValue !== changes.game.currentValue) {
+      if (changes.fileLocation) {
+        this.hasFetchedData = false;
+        await this.getData();
+      } else {
+        await this.reload();
+      }
+    }
     const locationVarName = 'fileLocation';
     if (changes.hasOwnProperty(locationVarName) && changes[locationVarName] != null) {
       const locChangeObject: SimpleChange = changes[locationVarName];
@@ -49,7 +114,14 @@ export class SelectMediaComponent implements OnInit, OnChanges {
   }
 
   async getMediaDirectory(): Promise<void> {
-    const result = await this.fileService.getMediaList();
+    let result: IDirectoryTree = null;
+    if (this.game != null) {
+      try {
+        result = await this.storage.getGameMediaTree(this.game);
+      } catch (e) {
+        console.error('Could not load the media of the game', e);
+      }
+    }
     this.dataSource.data = result != null ? [result] : [];
     this.hasFetchedData = true;
   }
@@ -95,7 +167,9 @@ export class SelectMediaComponent implements OnInit, OnChanges {
 
   private async getData(): Promise<IDirectoryTree> {
     if (!this.hasFetchedData) {
-      await this.getMediaDirectory();
+      // the location and the game come in together, so they are fetched once
+      this.fetching ??= this.getMediaDirectory().finally(() => this.fetching = null);
+      await this.fetching;
     }
     return Promise.resolve(this.dataSource.data[0]);
   }
@@ -105,7 +179,7 @@ export class SelectMediaComponent implements OnInit, OnChanges {
     if (root == null) {
       return null;
     }
-    if (FileService.buildFullPathString(root.path) === filePath) {
+    if (root.path === filePath) {
       return root;
     } else if (root.type === 'directory') {
       for (const child of root.children) {

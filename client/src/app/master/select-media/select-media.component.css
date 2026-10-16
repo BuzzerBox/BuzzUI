@@ -35,3 +35,11 @@
 .slideshow-button {
   margin-left: 16px;
 }
+
+.media-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}

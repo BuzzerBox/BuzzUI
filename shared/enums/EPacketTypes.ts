@@ -28,4 +28,12 @@ export enum EPacketTypes {
     UPDATE_TEAMS,
     UPDATE_INFO,
     INSTALL_UPDATE,
+    /**
+     * Sent from the server to the master when it registers: the token for the storage API (see StorageApiHelper)
+     */
+    STORAGE_ACCESS,
+    /**
+     * Sent from the server to the master when it saved the running game, see IAutosaveInfoPacket
+     */
+    AUTOSAVE_INFO,
 }

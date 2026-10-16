@@ -1,50 +1,45 @@
-<app-toolbar-master></app-toolbar-master>
+<app-toolbar-master [showHomeIcon]="true"></app-toolbar-master>
 <mat-horizontal-stepper linear="true">
-  <mat-step>
-    <ng-template matStepLabel>Hallo!</ng-template>
-    <p>Hallo und herzlichen willkommen zum Setup von <b>{{getGameName()}}</b>!</p>
-    <p>Hier kannst du ein vorbereitetes Quiz oder einen alten Spielstand importieren.
-      <app-file-upload-form (data)="onSaveGameFileSelected($event)"></app-file-upload-form>
-      <p>Wenn du ein neues Spiel vorbereiten willst, klicke unten auf <em>Weiter</em>.</p>
-      <div>
-        <button mat-button matStepperNext>Weiter</button>
-      </div>
-      <app-update-card></app-update-card>
-    </mat-step>
-    <mat-step [stepControl]="teamsFormGroup">
-      <ng-template matStepLabel>Teams</ng-template>
-      <!--    <ng-template matStepContent>-->
-      <!--    <ng-template [ngIf]="teamFormControlNames != null">-->
-      <!--    <ng-template>-->
-      <p>Waehle die Teams</p>
-      <form [formGroup]="teamsFormGroup">
-        <mat-list role="list">
-          @for (teamFormControlName of teamFormControlNames; track teamFormControlName; let i = $index) {
-            <mat-list-item role="listitem">
-              <mat-icon mat-list-icon>people</mat-icon>
-              <mat-form-field>
-                <mat-label>{{teamNameSuggestions[i]}}</mat-label>
-                <input matInput [placeholder]="'Name für ' + teamNameSuggestions[i]" [formControlName]="teamFormControlName" required #textbox>
-              </mat-form-field>
-              @if (i >= 2) {
-                <mat-checkbox #checkbox (change)="onChangeTeamCheckbox(checkbox, textbox, teamFormControlName)" [checked]="teamsFormGroup.get(teamFormControlName).enabled">Aktivieren</mat-checkbox>
-              }
-            </mat-list-item>
+  <mat-step [completed]="ref !== null">
+    <ng-template matStepLabel>Spiel</ng-template>
+    @if (loading) {
+      <mat-spinner diameter="48"></mat-spinner>
+    } @else if (loadError) {
+      <p class="error"><mat-icon>error</mat-icon>{{loadError}}</p>
+      <a mat-stroked-button [routerLink]="homeUrl">Zur Startseite</a>
+    } @else if (isNewGame() && ref === null) {
+      <p>Hallo und herzlich willkommen bei <b>{{getGameName()}}</b>! Gib dem neuen Spiel einen Namen und wähle, wo es
+        gespeichert wird. Seine Medien kommen in denselben Ordner.</p>
+      <form (ngSubmit)="createGame()">
+        <mat-form-field class="game-name">
+          <mat-label>Name des Spiels</mat-label>
+          <input matInput [formControl]="newGameName" required>
+          @if (newGameName.value && getSanitizedNewGameName() !== newGameName.value) {
+            <mat-hint>Wird gespeichert als „{{getSanitizedNewGameName()}}“</mat-hint>
           }
-        </mat-list>
-
+        </mat-form-field>
+        <p class="label">Speichern auf</p>
+        <app-storage-locations (selectedChange)="newGameLocation = $event"></app-storage-locations>
+        @if (createError) {
+          <p class="error"><mat-icon>error</mat-icon>{{createError}}</p>
+        }
         <div>
-          <button mat-button matStepperPrevious>Zurück</button>
-          <button mat-button matStepperNext [disabled]="!teamsFormGroup.valid">Weiter</button>
+          <a mat-button [routerLink]="homeUrl">Zur Startseite</a>
+          <button mat-button type="submit" [disabled]="creating || !getSanitizedNewGameName() || !newGameLocation?.writable">Weiter</button>
         </div>
       </form>
-    <!--    </ng-template>-->
+    } @else if (ref) {
+      <p>Du bearbeitest <b>{{ref.gameName}}</b> auf {{getLocationText(ref.location)}}{{loadedVersion !== null ? ', Version ' + loadedVersion : ''}}.</p>
+      <div>
+        <a mat-button [routerLink]="homeUrl">Zur Startseite</a>
+        <button mat-button matStepperNext>Weiter</button>
+      </div>
+    }
   </mat-step>
-  <!--  <mat-step [stepControl]="questionsFormGroup" label="Fragen">-->
   <mat-step [stepControl]="questionsFormGroup" label="Fragen">
     <!--    <ng-template [ngIf]="showQuestions">-->
     <!--    <ng-template>-->
-    <form #questionForm [formGroup]="questionsFormGroup" id="questionForm">
+    <form #questionForm [formGroup]="questionsFormGroup" id="questionForm" (input)="onQuestionsChanged()" (change)="onQuestionsChanged()">
       <!--    <form #questionForm [formGroup]="testObs | async" id="questionForm">-->
       <mat-accordion class="example-headers-align" cdkDropList (cdkDropListDropped)="dropQuestion($event)">
         @for (questionFormGroupName of questionFormGroupNames; track questionFormGroupName; let i = $index) {
@@ -121,7 +116,7 @@
                 </div>
               </div>
             </div>
-            <app-select-media [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i})"></app-select-media>
+            <app-select-media [game]="ref" [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i}); onQuestionsChanged()"></app-select-media>
             <div class="row-layout" [formGroupName]="questionFormGroupName">
               <mat-form-field class="notes">
                 <mat-label>Notizen für die Spielleitung (optional)</mat-label>
@@ -146,15 +141,20 @@
   <!--    </ng-template>-->
 </mat-step>
 <mat-step>
-  <ng-template matStepLabel>Fertig</ng-template>
-  <!-- <ng-template matStepContent> -->
-  <p>Das Spiel wurde konfiguriert. Es spielen <b>{{getNumberOfActiveTeams()}} Team(s)</b> und es gibt <b>{{getNumberOfQuestions()}} Frage(n)</b>.</p>
+  <ng-template matStepLabel>Speichern</ng-template>
+  <p>Das Spiel hat <b>{{getNumberOfQuestions()}} Frage(n)</b>. Beim Speichern entsteht eine neue Version; Spielstände
+    spielen weiter die Version, mit der sie begonnen wurden.</p>
+  @if (saveError) {
+    <p class="error"><mat-icon>error</mat-icon>{{saveError}}</p>
+  }
   <div>
     <button mat-button matStepperPrevious>Zurück</button>
-    <button mat-button (click)="downloadSetupAsJson()">Konfiguration Herunterladen</button>
-    <button mat-button (click)="startGame()">Spiel starten</button>
+    <button mat-raised-button color="primary" [disabled]="saving || !questionsFormGroup.valid" (click)="saveGame()">Spiel speichern</button>
+    @if (savedVersion !== null) {
+      <button mat-button (click)="playSavedVersion()"><mat-icon>play_arrow</mat-icon> Version {{savedVersion}} spielen</button>
+      <a mat-button [routerLink]="homeUrl">Zur Startseite</a>
+    }
   </div>
-<!-- </ng-template> -->
 </mat-step>
 </mat-horizontal-stepper>
 

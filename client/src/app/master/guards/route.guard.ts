@@ -19,6 +19,11 @@ export class RouteGuard  {
       case pathsMaster.start:
         return this.handleStartRoute();
       case pathsMaster.setup:
+      case pathsMaster.home:
+      case pathsMaster.loadGame:
+      case pathsMaster.prepare:
+      case pathsMaster.storage:
+        // like the setup, these are only there while no game is set up
         return this.handleSetupRoute();
       case pathsMaster.masterAlreadyRegistered:
         return this.handleMasterAlreadyRegistered();

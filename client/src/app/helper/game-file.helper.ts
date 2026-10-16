@@ -1,0 +1,105 @@
+import {
+  CURRENT_GAME_FORMAT_VERSION,
+  CURRENT_SAVEGAME_VERSION,
+  IGameBundle,
+  IGameDefinition,
+  IGameInstanceState,
+  IGameState,
+  IQuestion,
+  ITeam,
+  PacketHelper,
+  StorageApiHelper
+} from '../../../../shared/shared';
+import {FormatHelper} from './format.helper';
+
+/**
+ * A savegame from before games and states were stored apart, as it was downloaded to a device
+ */
+export interface ILegacySaveGame {
+  version: number;
+  teams: ITeam[];
+  question: IQuestion[];
+  gameState: IGameState | null;
+}
+
+export class GameFileHelper {
+  private constructor() {
+    // making it private to avoid this class being instantiated
+  }
+
+  /**
+   * Makes a bundle out of a file from a device: a bundle as it is, or an old savegame converted. Old savegames that
+   * were never played (downloaded from the setup) become a game without state.
+   * @throws Error if it is neither
+   */
+  public static toBundle(json: unknown, fileName: string): IGameBundle {
+    const file = json as Partial<IGameBundle & ILegacySaveGame>;
+    if (file?.kind === 'bundle' && Array.isArray(file.game?.questions)) {
+      return file as IGameBundle;
+    }
+    if ((file?.version === CURRENT_SAVEGAME_VERSION || file?.version === 2) && Array.isArray(file.question)) {
+      return this.convertLegacySaveGame(file as ILegacySaveGame, fileName);
+    }
+    throw new Error('Die Datei ist kein Spiel und kein Spielstand.');
+  }
+
+  private static convertLegacySaveGame(saveGame: ILegacySaveGame, fileName: string): IGameBundle {
+    const now = new Date().toISOString();
+    const game: IGameDefinition = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'game', version: 1, savedAt: now, questions: saveGame.question};
+    const bundle: IGameBundle = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'bundle', gameName: this.getBaseName(fileName), game};
+    let gameState = saveGame.gameState;
+    if (gameState != null) {
+      if (saveGame.version === 2) {
+        // version 2 had mediaState (EVideoStates) instead of mediaQuestionState, see CURRENT_SAVEGAME_VERSION
+        gameState = {...gameState};
+        delete (gameState as {mediaState?: unknown}).mediaState;
+        gameState.mediaQuestionState ??= PacketHelper.getDefaultMediaState();
+        gameState.mediaVolume ??= PacketHelper.getDefaultMediaVolume();
+      }
+      bundle.state = {
+        formatVersion: CURRENT_GAME_FORMAT_VERSION,
+        kind: 'state',
+        gameVersion: 1,
+        createdAt: now,
+        updatedAt: now,
+        finished: false,
+        teams: saveGame.teams ?? [],
+        gameState
+      };
+      bundle.stateName = 'Importiert';
+    }
+    return bundle;
+  }
+
+  public static makeBundle(gameName: string, game: IGameDefinition, state?: IGameInstanceState, stateName?: string): IGameBundle {
+    return {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'bundle', gameName, game, state, stateName};
+  }
+
+  /**
+   * A file name without its extension, as a valid name
+   */
+  public static getBaseName(fileName: string): string {
+    return StorageApiHelper.sanitizeName(fileName.replace(/\.json$/i, '')) || 'Importiertes Spiel';
+  }
+
+  /**
+   * The name a new state gets: when it was started
+   */
+  public static makeStateName(): string {
+    return FormatHelper.makeTimestampedName('Spiel');
+  }
+
+  /**
+   * Saves JSON as a file on this device
+   */
+  public static download(fileName: string, content: unknown): void {
+    const blob = new Blob([JSON.stringify(content)], {type: 'application/json'});
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    // the browser reads the blob asynchronously after the click, so it must not be revoked right away
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+  }
+}

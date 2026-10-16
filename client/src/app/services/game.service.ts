@@ -1,7 +1,8 @@
 import {Injectable, OnDestroy} from '@angular/core';
 import {WebSocketService} from './web-socket.service';
 import {
-  CURRENT_SAVEGAME_VERSION,
+  IAutosaveInfoPacket,
+  IGameStorageRef,
   EAnswerStates,
   EMediaStates,
   EPacketTypes,
@@ -32,6 +33,7 @@ import {
   ISetQuestionPacket,
   ISetupPacket,
   IStartGamePacket,
+  IStorageAccessPacket,
   ITeam,
   ITeamSetPointsPacket,
   IUpdateInfoPacket,
@@ -40,7 +42,7 @@ import {
   IBuzzer,
   PacketHelper
 } from '../../../../shared/shared';
-import {Observable, ReplaySubject, Subject, Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, ReplaySubject, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
@@ -49,16 +51,6 @@ import {TeamHelper} from '../helper/team.helper';
 import * as Uuid from 'uuid';
 import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
 import {ConfigService} from './config.service';
-
-export interface IGameStateAsJson {
-  /**
-   * Can be used to determine what data is actually stored in this and how to extract it
-   */
-  version: number;
-  teams: ITeam[];
-  question: IQuestion[];
-  gameState: IGameState;
-}
 
 export type ZeroVoidCallback = () => void;
 
@@ -91,6 +83,9 @@ export class GameService implements OnDestroy {
   private mediaVolumeSubject = new ReplaySubject<IMediaVolume>(1);
   private updateInfoSubject = new ReplaySubject<IUpdateInfoPacket>(1);
   private installUpdateResponseSubject = new Subject<IResponsePacket>();
+  // the token for the storage API, which the server gives the master only
+  private storageTokenSubject = new BehaviorSubject<string | null>(null);
+  private autosaveInfoSubject = new ReplaySubject<IAutosaveInfoPacket>(1);
 
   constructor(
     private webSocketService: WebSocketService,
@@ -152,7 +147,8 @@ export class GameService implements OnDestroy {
   }
 
   private registerMaster(): void {
-    this.webSocketService.send<IRegisterMasterPacket>({packetType: EPacketTypes.REGISTER_MASTER});
+    // the box has no clock it can rely on, see ClockService
+    this.webSocketService.send<IRegisterMasterPacket>({packetType: EPacketTypes.REGISTER_MASTER, clientTime: Date.now()});
   }
 
   private onMessage(message: IGamePacket): void {
@@ -210,6 +206,12 @@ export class GameService implements OnDestroy {
       case EPacketTypes.UPDATE_INFO:
         this.updateInfoSubject.next(message as IUpdateInfoPacket);
         break;
+      case EPacketTypes.STORAGE_ACCESS:
+        this.storageTokenSubject.next((message as IStorageAccessPacket).token);
+        break;
+      case EPacketTypes.AUTOSAVE_INFO:
+        this.autosaveInfoSubject.next(message as IAutosaveInfoPacket);
+        break;
       default:
         break;
     }
@@ -226,7 +228,7 @@ export class GameService implements OnDestroy {
     if (this.currentGameStateInAutomaton === EGameStatesMaster.MASTER_ACCEPTED) {
       this.setNewGameState(EGameStatesMaster.RECEIVED_PRESETUP_DATA);
       this.presetupData = packet;
-      this.redirect(pathsMaster.setup);
+      this.redirect(pathsMaster.home);
     } else if (this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
       // registered again after a lost connection; a restarted server has new buzzer IDs
       this.presetupData = packet;
@@ -280,7 +282,18 @@ export class GameService implements OnDestroy {
     return this.presetupData;
   }
 
-  public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true): Promise<void> {
+  /**
+   * Sets up a stored game, whose state the server then saves while it is played
+   * @param questions with the URLs of their media
+   * @param gameState undefined for a new state
+   */
+  public setupStoredGame(teams: ITeam[], questions: IQuestion[], gameState: IGameState | undefined, storage: IGameStorageRef,
+                         isNewState: boolean): Promise<void> {
+    return this.setupGame(teams, questions, gameState, true, storage, isNewState);
+  }
+
+  public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true,
+                   storage?: IGameStorageRef, isNewState?: boolean): Promise<void> {
     const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
     // console.log("current 2", currentGameState);
     // if (currentGameState == null) {
@@ -291,7 +304,9 @@ export class GameService implements OnDestroy {
         packetType: EPacketTypes.SETUP_GAME,
         teams,
         questions,
-        currentGameState
+        currentGameState,
+        storage,
+        isNewState
       });
     }
     return promise;
@@ -429,49 +444,25 @@ export class GameService implements OnDestroy {
   }
 
   /**
-   * Saves the current game, or the given data, as a JSON file that can be imported in the setup again.
+   * Puts the teams of a saved state on the buzzers that are available now, since buzzer IDs are new on every server
+   * start. Teams whose buzzer no longer exists are dropped, and so are their marks.
    */
-  public downloadGameStateAsJson(fileName: string, teams: ITeam[] = this.teams, questions: IQuestion[] = this.questions,
-                                 gameState: IGameState = this.currentGameState): void {
-    const gameStateAsJson: IGameStateAsJson = {
-      version: CURRENT_SAVEGAME_VERSION,
-      teams,
-      question: questions,
-      gameState
+  public mapTeamsToBuzzers(teams: ITeam[], gameState?: IGameState): {teams: ITeam[], gameState?: IGameState} {
+    const copies = (teams ?? []).map(team => ({...team}));
+    const savedTeamIds = new Map<ITeam, string>(copies.map(team => [team, team.teamId]));
+    const mappedTeams = this.setCurrentBuzzerIdsToTeams(copies);
+    if (gameState?.markedTeamIds == null) {
+      return {teams: mappedTeams, gameState};
+    }
+    const newTeamIds = new Map<string, string>();
+    mappedTeams.forEach(team => newTeamIds.set(savedTeamIds.get(team), team.teamId));
+    return {
+      teams: mappedTeams,
+      gameState: {
+        ...gameState,
+        markedTeamIds: gameState.markedTeamIds.filter(id => newTeamIds.has(id)).map(id => newTeamIds.get(id))
+      }
     };
-    const json = JSON.stringify(gameStateAsJson);
-    const blob = new Blob([json], {type: 'application/json'});
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    // the browser reads the blob asynchronously after the click, so it must not be revoked right away
-    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-  }
-
-  public importGameStateFromJson(gameState: IGameStateAsJson, sendPacketImmediately: boolean = true): Promise<void> {
-    if (gameState.version !== CURRENT_SAVEGAME_VERSION && gameState.version !== 2) {
-      return Promise.reject(new Error(`Unsupported savegame version ${gameState.version}`));
-    }
-    if (gameState.version === 2 && gameState.gameState) {
-      // version 2 had mediaState (EVideoStates) instead of mediaQuestionState, see CURRENT_SAVEGAME_VERSION
-      delete (gameState.gameState as {mediaState?: unknown}).mediaState;
-      gameState.gameState.mediaQuestionState ??= PacketHelper.getDefaultMediaState();
-      gameState.gameState.mediaVolume ??= PacketHelper.getDefaultMediaVolume();
-    }
-    const savedTeamIds = new Map<ITeam, string>((gameState.teams ?? []).map(team => [team, team.teamId]));
-    gameState.teams = this.setCurrentBuzzerIdsToTeams(gameState.teams ?? []);
-    if (gameState.gameState?.markedTeamIds) {
-      // team IDs are buzzer IDs, which are generated anew on every server start
-      const newTeamIds = new Map<string, string>();
-      gameState.teams.forEach(team => newTeamIds.set(savedTeamIds.get(team), team.teamId));
-      gameState.gameState.markedTeamIds = gameState.gameState.markedTeamIds
-        .filter(id => newTeamIds.has(id))
-        .map(id => newTeamIds.get(id));
-    }
-    this.currentGameState = gameState.gameState;
-    return this.setupGame(gameState.teams, gameState.question, gameState.gameState, sendPacketImmediately);
   }
 
   public getGameName(): string {
@@ -790,6 +781,20 @@ export class GameService implements OnDestroy {
    */
   public installUpdate(fileName: string, allowUnsigned = false): void {
     this.webSocketService.send<IInstallUpdatePacket>({packetType: EPacketTypes.INSTALL_UPDATE, fileName, allowUnsigned});
+  }
+
+  /**
+   * How saving the running game goes, which the server reports
+   */
+  public observeAutosaveInfo(): Observable<IAutosaveInfoPacket> {
+    return this.autosaveInfoSubject.asObservable();
+  }
+
+  /**
+   * The token for the storage API, or null until the server accepted this device as the master
+   */
+  public getStorageToken(): string | null {
+    return this.storageTokenSubject.getValue();
   }
 
   public getGameStateData(): IGameState {

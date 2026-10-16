@@ -1,0 +1,26 @@
+@if (error) {
+  <p class="error"><mat-icon>error</mat-icon>{{error}}</p>
+}
+@if (locations) {
+  <mat-button-toggle-group class="locations" [value]="selected?.id" (change)="selectById($event.value)" aria-label="Speicherort">
+    @for (location of locations; track location.id) {
+      <mat-button-toggle [value]="location.id">
+        <span class="location">
+          <mat-icon>{{location.type === 'box' ? 'inventory_2' : 'usb'}}</mat-icon>
+          <span class="name">{{location.type === 'box' ? 'BuzzerBox' : 'USB-Stick ' + location.name}}</span>
+          <span class="details">
+            {{getSpace(location)}}
+            @if (!location.writable) {
+              <span> · nur lesbar</span>
+            }
+          </span>
+        </span>
+      </mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+  @if (usbOnly && locations.length === 0) {
+    <p class="hint">Es ist kein USB-Stick eingesteckt.</p>
+  } @else if (!usbOnly && locations.length === 1) {
+    <p class="hint">Stecke einen USB-Stick in die BuzzerBox, um Spiele darauf zu speichern oder Medien davon zu übernehmen.</p>
+  }
+}

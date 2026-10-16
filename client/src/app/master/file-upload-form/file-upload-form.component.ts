@@ -1,6 +1,7 @@
 // Based on https://github.com/progtarek/angular-drag-n-drop-directive
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {IUploadFormData} from '../interfaces/IUploadFormData';
+import {FormatHelper} from '../../helper/format.helper';
 
 @Component({
     selector: 'app-file-upload-form',
@@ -46,20 +47,8 @@ export class FileUploadFormComponent implements OnInit {
     }
   }
 
-  /**
-   * format bytes
-   * @param bytes (File size in bytes)
-   * @param decimals (Decimals point)
-   */
-  formatBytes(bytes, decimals = 2): string {
-    if (bytes === 0) {
-      return '0 Bytes';
-    }
-    const k = 1024;
-    const dm = decimals <= 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  formatBytes(bytes: number): string {
+    return FormatHelper.formatBytes(bytes, 2);
   }
 
   ngOnInit(): void {

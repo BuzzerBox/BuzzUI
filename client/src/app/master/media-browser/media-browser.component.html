@@ -1,0 +1,91 @@
+@if (error) {
+  <p class="error"><mat-icon>error</mat-icon>{{error}}</p>
+}
+@if (folder) {
+  <nav class="breadcrumbs" aria-label="Ordner">
+    @for (crumb of getBreadcrumbs(); track crumb.path; let last = $last) {
+      @if (last) {
+        <span class="current">{{crumb.name}}</span>
+      } @else {
+        <button mat-button (click)="open(crumb.path)">{{crumb.name}}</button>
+        <mat-icon class="separator">chevron_right</mat-icon>
+      }
+    }
+  </nav>
+
+  @if (canWrite()) {
+    <div class="drop-zone" appFileDropEvents (fileDropped)="upload($event)">
+      <input type="file" #mediaInput hidden multiple [accept]="acceptedExtensions"
+             (change)="upload($any($event.target).files); mediaInput.value = ''">
+      <mat-icon>cloud_upload</mat-icon>
+      <span>Medien hierher ziehen oder</span>
+      <button mat-stroked-button color="primary" (click)="mediaInput.click()">Dateien auswählen</button>
+      <button mat-stroked-button (click)="startNewFolder()"><mat-icon>create_new_folder</mat-icon> Neuer Ordner</button>
+    </div>
+    @if (newFolderName !== null) {
+      <form class="new-folder" (ngSubmit)="createFolder()">
+        <mat-form-field>
+          <mat-label>Name des neuen Ordners</mat-label>
+          <input matInput name="newFolderName" [(ngModel)]="newFolderName">
+          @if (newFolderName && !isValidFolderName(newFolderName)) {
+            <mat-hint>Der Name darf nicht mit „.“ beginnen und keines der Zeichen \ / : * ? " &lt; &gt; | enthalten.</mat-hint>
+          }
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!isValidFolderName(newFolderName)">Anlegen</button>
+        <button mat-button type="button" (click)="newFolderName = null">Abbrechen</button>
+      </form>
+    }
+  } @else if (isManaging()) {
+    <p class="hint">{{game.location.name}} ist schreibgeschützt, hier kann nichts hochgeladen werden.</p>
+  }
+
+  @if (uploads.length > 0) {
+    <mat-list class="uploads">
+      @for (upload of uploads; track upload) {
+        <mat-list-item>
+          <mat-icon matListItemIcon>{{upload.error ? 'error' : upload.progress >= 1 ? 'check_circle' : 'upload'}}</mat-icon>
+          <span matListItemTitle>{{upload.file.name}}</span>
+          <span matListItemLine>
+            @if (upload.error) {
+              <span class="error-text">Fehlgeschlagen: {{upload.error}}</span>
+            } @else if (upload.progress >= 1) {
+              Hochgeladen ({{formatBytes(upload.file.size)}})
+            } @else {
+              <mat-progress-bar [mode]="upload.progress > 0 ? 'determinate' : 'indeterminate'" [value]="upload.progress * 100"></mat-progress-bar>
+            }
+          </span>
+          @if (upload.error || upload.progress >= 1) {
+            <button matListItemMeta mat-icon-button (click)="dismissUpload(upload)" title="Ausblenden"><mat-icon>close</mat-icon></button>
+          }
+        </mat-list-item>
+      }
+    </mat-list>
+  }
+
+  @if (folder.entries.length === 0) {
+    <p class="hint">Dieser Ordner enthält keine Medien.</p>
+  } @else {
+    <mat-list>
+      @for (entry of folder.entries; track entry.name) {
+        <mat-list-item [class.folder]="entry.type === 'directory'">
+          <mat-icon matListItemIcon>{{getIcon(entry)}}</mat-icon>
+          <span matListItemTitle>
+            @if (entry.type === 'directory') {
+              <a href="" (click)="$event.preventDefault(); open(getEntryPath(entry))">{{entry.name}}</a>
+            } @else {
+              <a [href]="getEntryUrl(entry)" target="_blank" rel="noopener">{{entry.name}}</a>
+            }
+          </span>
+          <span matListItemLine>{{getDetails(entry)}}</span>
+          @if (canWrite()) {
+            <button matListItemMeta mat-icon-button (click)="delete(entry)" title="Löschen"><mat-icon>delete</mat-icon></button>
+          } @else if (!isManaging()) {
+            <button matListItemMeta mat-stroked-button (click)="pick(entry)">
+              <mat-icon>add</mat-icon> {{entry.type === 'directory' ? 'Ordner übernehmen' : 'Übernehmen'}}
+            </button>
+          }
+        </mat-list-item>
+      }
+    </mat-list>
+  }
+}

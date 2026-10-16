@@ -14,7 +14,7 @@
     <button mat-icon-button (click)="changeSelection(undefined)" title="Medium entfernen">
       <mat-icon>remove_circle_outline</mat-icon>
     </button>
-    Das ausgewaehlte Medium {{missingLocation}} wurde nicht gefunden. Ist der USB-Stick eingesteckt?
+    Das ausgewählte Medium {{missingLocation}} ist nicht in den Medien des Spiels. Lade eine Datei mit diesem Namen hoch oder wähle ein anderes Medium.
   </div>
 }
 @if (activeNode === undefined && !missingLocation) {
@@ -22,6 +22,19 @@
     Zu dieser Frage ist kein Medium ausgewaehlt.
   </div>
 }
+
+<div class="media-actions">
+  <input type="file" #mediaUpload hidden multiple (change)="upload($any($event.target).files); mediaUpload.value = ''">
+  <button mat-stroked-button type="button" [disabled]="uploading" (click)="mediaUpload.click()">
+    <mat-icon>upload</mat-icon> Medien hochladen
+  </button>
+  <button mat-stroked-button type="button" (click)="openCopyDialog()">
+    <mat-icon>usb</mat-icon> Vom USB-Stick übernehmen
+  </button>
+  @if (uploading) {
+    <mat-spinner diameter="20"></mat-spinner>
+  }
+</div>
 
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
   <!-- This is the tree node template for files -->

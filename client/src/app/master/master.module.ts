@@ -33,6 +33,20 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDialogModule} from '@angular/material/dialog';
 import {DialogTeamsComponent} from './dialog-teams/dialog-teams.component';
 import {UpdateCardComponent} from './update-card/update-card.component';
+import {FormsModule} from '@angular/forms';
+import {MatTabsModule} from '@angular/material/tabs';
+import {MatRadioModule} from '@angular/material/radio';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {HomeComponent} from './home/home.component';
+import {LoadGameComponent} from './load-game/load-game.component';
+import {StorageManagerComponent} from './storage-manager/storage-manager.component';
+import {StorageLocationsComponent} from './storage-locations/storage-locations.component';
+import {GameListComponent} from './game-list/game-list.component';
+import {GameImportComponent} from './game-import/game-import.component';
+import {PrepareGameComponent} from './prepare-game/prepare-game.component';
+import {DialogCopyMediaComponent} from './dialog-copy-media/dialog-copy-media.component';
+import {MediaBrowserComponent} from './media-browser/media-browser.component';
+import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component';
 
 @NgModule({
   declarations: [
@@ -48,6 +62,16 @@ import {UpdateCardComponent} from './update-card/update-card.component';
     FileDropEventsDirective,
     DialogTeamsComponent,
     UpdateCardComponent,
+    HomeComponent,
+    LoadGameComponent,
+    StorageManagerComponent,
+    StorageLocationsComponent,
+    GameListComponent,
+    GameImportComponent,
+    PrepareGameComponent,
+    DialogCopyMediaComponent,
+    MediaBrowserComponent,
+    DialogConfirmComponent,
   ],
   imports: [
     CommonModule,
@@ -57,6 +81,10 @@ import {UpdateCardComponent} from './update-card/update-card.component';
     MatIconModule,
     MatButtonModule,
     ReactiveFormsModule,
+    FormsModule,
+    MatTabsModule,
+    MatRadioModule,
+    MatProgressBarModule,
     MatStepperModule,
     MatFormFieldModule,
     MatInputModule,

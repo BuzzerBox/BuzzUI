@@ -113,8 +113,8 @@ TODO probably needs to be updated
 ```
 The following key-bindings are available so far: `NUMPAD_0`, `NUMPAD_1`, `NUMPAD_2`, `NUMPAD_3`, `NUMPAD_4`, `NUMPAD_5`, `NUMPAD_6`, `NUMPAD_7`, `NUMPAD_8`, `NUMPAD_9`.
 
-## Media files
-Media for the questions is read from USB sticks plugged into the Pi. Supported file types:
+## Games and media
+Supported media file types:
 
 - Images: `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`, `.avif`
 - Video: `.mp4`, `.m4v`, `.webm`
@@ -134,6 +134,31 @@ ffmpeg -i input.mov -c:v libx264 -profile:v high -level 4.1 -pix_fmt yuv420p \
 
 This scales videos wider than 1920 px down to 1080p and keeps smaller ones as they are. Always test a video on the
 BuzzerBox itself before a game.
+
+The master's start page has three entries: *Spiel erstellen* (the editor), *Spiel starten* and *Spiele & Medien*.
+
+A game is a folder, on the box or on a USB stick:
+
+```
+games/<Name>/                      on the box: <storage.boxPath>/games (default /var/lib/buzzerbox/storage/games)
+  versions/1.json, 2.json, …       on a USB stick: <stick>/buzzerbox-games
+  states/<Name>.json
+  media/
+```
+
+- **Versions:** saving in the editor adds a new version, if anything changed. Versions are never changed afterwards.
+- **States:** each time a game is played gets a state with its teams and progress, which plays the version it was
+  started with. *Spiel starten* lists the states to continue them, or starts a new one with the latest version. The
+  server saves the state automatically while the game is played; the toolbar shows when it was saved last.
+- **Media:** a game's media are in its `media/` folder, and its questions refer to them by paths relative to it, so a
+  game can be copied between the box and a stick as a whole. Media are uploaded from the master's device or copied
+  from a USB stick in the editor and in *Spiele & Medien*. Media that a version shows can't be deleted.
+- **Files on the device:** a game, or a game with a state, can be downloaded as one JSON file (without the media) and
+  imported again. Old savegames (downloaded before games were stored on the box) are imported the same way; their
+  media are copied into the new game if the USB stick with them is plugged in.
+- Only media are served from the game folders, not the versions and states, which hold the answers. Only the master
+  can use the storage: the server hands it a token over the WebSocket, which the storage API (`/storage` on the media
+  port, see `shared/helper/storage-api.helper.ts`) checks.
 
 ## WiFi
 WiFi default name's `BuzzerBoxNetwork` and the default password is `12TheBuzzerBox_IncredibleNetwork34`, but these can

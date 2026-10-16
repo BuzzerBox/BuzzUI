@@ -1,0 +1,67 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+
+h2 {
+  font-weight: 500;
+  font-size: 1.2em;
+  margin-top: 24px;
+}
+
+.summary {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.state-name {
+  min-width: 24em;
+  max-width: 100%;
+}
+
+.team-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1em;
+}
+
+.team-row mat-checkbox {
+  min-width: 8em;
+}
+
+.team-name {
+  flex: 1 1 12em;
+}
+
+.team-points {
+  min-width: 6em;
+}
+
+.inactive .team-points {
+  opacity: 0.6;
+}
+
+.warning {
+  color: orangered;
+  margin: 0 0 0.5em;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c62828;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}

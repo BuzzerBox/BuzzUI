@@ -10,5 +10,8 @@
   },
   "update": {
     "enabled": false
+  },
+  "storage": {
+    "boxPath": "/srv/storage"
   }
 }

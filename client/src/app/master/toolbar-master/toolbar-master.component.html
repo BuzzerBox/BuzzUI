@@ -7,6 +7,11 @@
 <span class="divider"></span>
 <span>{{getName()}}</span>
 <span class="example-spacer"></span>
+@if (showHomeIcon) {
+  <a mat-icon-button [routerLink]="homeUrl" title="Zur Startseite">
+    <mat-icon>home</mat-icon>
+  </a>
+}
 @if (showReleaseBuzzerLockIcon) {
   <button mat-icon-button (click)="releaseBuzzerLock()" title="Buzzerlock freigeben">
     <mat-icon>lock_open</mat-icon>
@@ -21,8 +26,13 @@
   <mat-icon>restart_alt</mat-icon>
 </button>
 @if (showSaveIcon) {
-  <button mat-icon-button (click)="exportGameState()" title="Spielstand speichern">
-    <mat-icon>save</mat-icon>
-  </button>
+  <mat-icon class="autosave" [class.autosave-error]="autosave?.error" [matTooltip]="getAutosaveText()" [attr.aria-label]="getAutosaveText()">
+    {{!autosave?.storage ? 'cloud_off' : autosave.error ? 'sync_problem' : 'cloud_done'}}
+  </mat-icon>
+  @if (autosave?.storage) {
+    <button mat-icon-button (click)="exportGameState()" title="Spielstand auf dieses Gerät herunterladen">
+      <mat-icon>download</mat-icon>
+    </button>
+  }
 }
 </mat-toolbar>

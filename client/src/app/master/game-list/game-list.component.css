@@ -1,0 +1,44 @@
+.title-icon {
+  margin-right: 8px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  background: #e8eaf6;
+  color: #3f51b5;
+}
+
+.actions, .item-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+h3 {
+  margin: 20px 0 4px;
+  font-weight: 500;
+}
+
+mat-list-item {
+  height: auto !important;
+}
+
+.teams {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c62828;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}

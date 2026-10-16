@@ -8,5 +8,8 @@
   },
   "update": {
     "enabled": false
+  },
+  "storage": {
+    "boxPath": "box-storage"
   }
 }

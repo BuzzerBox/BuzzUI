@@ -1,0 +1,13 @@
+<app-toolbar-master [showHomeIcon]="true"></app-toolbar-master>
+<div class="page">
+  <h1>Spiele &amp; Medien</h1>
+  <p class="hint">
+    Jedes Spiel hat einen eigenen Ordner mit seinen Versionen, Spielständen und Medien. Öffne ein Spiel, um seine Medien
+    hochzuladen oder zu löschen.
+  </p>
+  <app-storage-locations (selectedChange)="location = $event"></app-storage-locations>
+  @if (location) {
+    <app-game-import [location]="location" (imported)="onImported()"></app-game-import>
+    <app-game-list [location]="location" [manage]="true"></app-game-list>
+  }
+</div>
