@@ -1,0 +1,12 @@
+[Unit]
+Description=Take the SSH keys from the boot partition
+RequiresMountsFor=/boot/firmware
+Before=ssh.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/buzzerbox-apply-ssh-keys
+
+[Install]
+WantedBy=multi-user.target

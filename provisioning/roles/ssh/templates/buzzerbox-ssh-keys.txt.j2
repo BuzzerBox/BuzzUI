@@ -1,0 +1,10 @@
+# SSH access to this BuzzerBox, for maintenance. Without keys here, SSH is off.
+# You can edit this file on any computer: it is on the boot partition ("bootfs") of the SD card or the eMMC.
+#
+# Add your public key, one per line, e.g. the content of ~/.ssh/id_ed25519.pub:
+#   ssh-ed25519 AAAA... you@laptop
+# Then restart the box, join its WiFi and log in with: ssh {{ buzzerbox_admin_user }}@{{ server_ip_address }}
+# The user {{ buzzerbox_admin_user }} may use sudo. Passwords are never accepted, only these keys.
+# Remove the keys and restart the box to turn SSH off again.
+# Never put a private key here (a file without .pub): anyone with the card could read it.
+

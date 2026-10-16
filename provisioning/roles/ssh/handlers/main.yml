@@ -2,4 +2,6 @@
   ansible.builtin.systemd_service:
     name: ssh.service
     state: reloaded
+    # the condition of ssh.service is a drop-in of the unit
+    daemon_reload: true
   when: not ansible_facts.is_chroot
