@@ -16,13 +16,18 @@ COMPILATIONS_DIR="${ROOT_DIR}/install/.assets/compilations"
 OUTPUT_DIR="${SCRIPT_DIR}/out"
 BUILDER_IMAGE="buzzerbox-image-builder"
 
+usage() {
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+  exit 1
+}
+
 COMPILE=true
 VARS_FILE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --skip-compile) COMPILE=false ;;
-    --vars) VARS_FILE="$(realpath "$2")"; shift ;;
-    *) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    --vars) [ $# -ge 2 ] || usage; VARS_FILE="$(realpath "$2")"; shift ;;
+    *) usage ;;
   esac
   shift
 done
