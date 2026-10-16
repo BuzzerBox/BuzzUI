@@ -26,6 +26,8 @@ wifi_ssid: BuzzerBoxNetwork
 wifi_passphrase: 12TheBuzzerBox_IncredibleNetwork34
 wifi_country_code: DE
 wifi_channel: 8
+# internal or external, see roles/access_point/templates/buzzerbox.txt.j2
+wifi_antenna: internal
 server_ip_address: 10.0.0.5
 # the names that devices on the box's WiFi can open the master under
 server_hostnames:

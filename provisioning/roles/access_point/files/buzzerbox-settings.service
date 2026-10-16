@@ -7,7 +7,7 @@ Wants=network-pre.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/local/sbin/buzzerbox-apply-settings
+ExecStart=/usr/local/sbin/buzzerbox-apply-settings --boot
 
 [Install]
 WantedBy=multi-user.target
