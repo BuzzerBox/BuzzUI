@@ -1,0 +1,15 @@
+[Unit]
+Description=BuzzerBox game server
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=__INSTALL_DIR__/current/backend/server
+# runs as root ("+"): marks an update that a power cut interrupted as failed
+ExecStartPre=+/usr/local/sbin/buzzerbox-update recover
+ExecStart=/usr/bin/node __INSTALL_DIR__/current/backend/server/main.js
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

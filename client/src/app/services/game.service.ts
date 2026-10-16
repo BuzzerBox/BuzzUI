@@ -15,6 +15,7 @@ import {
   IGamePacket,
   IGameState,
   IGradeAnswerPacket,
+  IInstallUpdatePacket,
   IKeypressOnScreenPacket,
   IMarkTeamPacket,
   IMediaQuestionState,
@@ -33,6 +34,7 @@ import {
   IStartGamePacket,
   ITeam,
   ITeamSetPointsPacket,
+  IUpdateInfoPacket,
   IUpdateMediaStatePacket,
   IUpdateTeamsPacket,
   IBuzzer,
@@ -87,6 +89,8 @@ export class GameService implements OnDestroy {
   private setBuzzerLockSubject: Subject<ISetBuzzerLockPacket>;
   private updateMediaStateSubject = new ReplaySubject<IUpdateMediaStatePacket>(1);
   private mediaVolumeSubject = new ReplaySubject<IMediaVolume>(1);
+  private updateInfoSubject = new ReplaySubject<IUpdateInfoPacket>(1);
+  private installUpdateResponseSubject = new Subject<IResponsePacket>();
 
   constructor(
     private webSocketService: WebSocketService,
@@ -203,6 +207,9 @@ export class GameService implements OnDestroy {
       case EPacketTypes.UPDATE_TEAMS:
         this.handleUpdateTeamsPacket(message as IUpdateTeamsPacket);
         break;
+      case EPacketTypes.UPDATE_INFO:
+        this.updateInfoSubject.next(message as IUpdateInfoPacket);
+        break;
       default:
         break;
     }
@@ -239,6 +246,8 @@ export class GameService implements OnDestroy {
       this.handleGameSetupResponse(packet);
     } else if (packet.responseTo === EPacketTypes.START_GAME && this.currentGameStateInAutomaton === EGameStatesMaster.READY_TO_START) {
       this.handleStartGameResponse(packet);
+    } else if (packet.responseTo === EPacketTypes.INSTALL_UPDATE) {
+      this.installUpdateResponseSubject.next(packet);
     }
   }
 
@@ -763,6 +772,24 @@ export class GameService implements OnDestroy {
 
   public releaseBuzzerLock(): void {
     this.webSocketService.send<ISetBuzzerLockPacket>(PacketHelper.makeBuzzerLockPacket(false));
+  }
+
+  /**
+   * The installed version and the update bundles on the USB sticks, which the server sends to the master
+   */
+  public observeUpdateInfo(): Observable<IUpdateInfoPacket> {
+    return this.updateInfoSubject.asObservable();
+  }
+
+  public observeInstallUpdateResponses(): Observable<IResponsePacket> {
+    return this.installUpdateResponseSubject.asObservable();
+  }
+
+  /**
+   * @param allowUnsigned install the bundle even without a valid signature, after the user was warned
+   */
+  public installUpdate(fileName: string, allowUnsigned = false): void {
+    this.webSocketService.send<IInstallUpdatePacket>({packetType: EPacketTypes.INSTALL_UPDATE, fileName, allowUnsigned});
   }
 
   public getGameStateData(): IGameState {

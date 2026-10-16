@@ -8,7 +8,7 @@ WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci
 COPY shared ../shared
-COPY config.json config.test.json config.dev.json.example ../
+COPY config.json config.test.json config.dev.json.example version.json ../
 COPY scripts/merge-config.js ../scripts/
 ARG CONFIG_OVERRIDE=
 # config.dev.json is imported by the code (it is only used with --dev=1), so it has to exist

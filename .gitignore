@@ -15,3 +15,6 @@ server/media/
 
 # Test environment secrets
 deploy/test/.env
+
+# Update bundles (scripts/create-update-bundle.sh)
+/updates/

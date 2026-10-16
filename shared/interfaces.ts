@@ -29,6 +29,10 @@ import {IUpdateMediaStatePacket} from './interfaces/IUpdateMediaStatePacket';
 import {IDirectoryTree} from './interfaces/IDirectoryTree';
 import {IGradeAnswerPacket} from './interfaces/IGradeAnswerPacket';
 import {IUpdateTeamsPacket} from './interfaces/IUpdateTeamsPacket';
+import {IUpdateBundle} from './interfaces/IUpdateBundle';
+import {IUpdateStatus} from './interfaces/IUpdateStatus';
+import {IUpdateInfoPacket} from './interfaces/IUpdateInfoPacket';
+import {IInstallUpdatePacket} from './interfaces/IInstallUpdatePacket';
 
 export {
 	IDirectoryTree,
@@ -62,5 +66,9 @@ export {
 	IMediaVolume,
 	ISetMediaVolumePacket,
 	IGradeAnswerPacket,
-	IUpdateTeamsPacket
+	IUpdateTeamsPacket,
+	IUpdateBundle,
+	IUpdateStatus,
+	IUpdateInfoPacket,
+	IInstallUpdatePacket
 }

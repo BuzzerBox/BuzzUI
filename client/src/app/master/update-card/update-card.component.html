@@ -1,0 +1,100 @@
+@if (info?.enabled) {
+  <mat-card class="update-card" appearance="outlined">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>system_update</mat-icon>
+      <mat-card-title>Software-Update</mat-card-title>
+      <mat-card-subtitle>Installierte Version {{info.installedVersion}}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (isUpdating()) {
+        <div class="status">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>
+            Das Update{{info.status?.version ? ' auf ' + info.status.version : ''}} wird installiert. Die BuzzerBox
+            startet dabei neu, diese Seite verbindet sich danach von selbst wieder. Bitte den USB-Stick nicht abziehen.
+          </span>
+        </div>
+      } @else {
+        @switch (info.status?.state) {
+          @case (EUpdateStates.SUCCEEDED) {
+            <p class="status success"><mat-icon>check_circle</mat-icon>Version {{info.status.version}} wurde installiert.</p>
+            @if (info.status.message) {
+              <p class="status warning"><mat-icon>warning</mat-icon>{{info.status.message}}</p>
+            }
+          }
+          @case (EUpdateStates.FAILED) {
+            <p class="status error"><mat-icon>error</mat-icon>Das Update ist fehlgeschlagen: {{info.status.message}}</p>
+          }
+          @case (EUpdateStates.ROLLED_BACK) {
+            <p class="status error">
+              <mat-icon>error</mat-icon>
+              Version {{info.status.version}} ließ sich nicht starten, deshalb läuft wieder die vorherige Version.
+              {{info.status.message}}
+            </p>
+          }
+        }
+      }
+      @if (startError) {
+        <p class="status error"><mat-icon>error</mat-icon>{{startError}}</p>
+      }
+      @if (isPageOutdated()) {
+        <p class="status">
+          Diese Seite gehört noch zu Version {{pageVersion}}.
+          <button mat-stroked-button (click)="reload()">Neu laden</button>
+        </p>
+      }
+
+      @if (info.bundles.length === 0) {
+        <p class="hint">
+          Für ein Update lege auf einem USB-Stick einen Ordner <code>updates</code> an, kopiere die Datei
+          <code>buzzerbox-update-&lt;version&gt;.tar</code> hinein und stecke den Stick in die BuzzerBox.
+        </p>
+      } @else {
+        <mat-list>
+          @for (bundle of info.bundles; track bundle.fileName) {
+            <mat-list-item>
+              <span matListItemTitle>
+                Version {{bundle.version}} <span class="label" [class.newer]="bundle.isNewer">{{getBundleLabel(bundle)}}</span>
+                @if (!isSigned(bundle)) {
+                  <span class="label unsigned"><mat-icon inline>warning</mat-icon>{{getSignatureProblem(bundle)}}</span>
+                }
+              </span>
+              <span matListItemLine>{{bundle.fileName}}</span>
+              <span matListItemMeta>
+                @if (confirmFileName === bundle.fileName && isSigned(bundle)) {
+                  <button mat-button (click)="confirmFileName = null">Abbrechen</button>
+                  <button mat-flat-button color="primary" (click)="install(bundle)">Jetzt installieren</button>
+                } @else if (confirmFileName !== bundle.fileName && !isInstalled(bundle)) {
+                  <button mat-stroked-button [disabled]="isUpdating()" (click)="askToConfirm(bundle)">Installieren</button>
+                }
+              </span>
+            </mat-list-item>
+          }
+        </mat-list>
+        @if (getUnsignedBundleToConfirm(); as bundle) {
+          <div class="unsigned-warning" role="alert">
+            <div class="unsigned-warning-title">
+              <mat-icon>warning</mat-icon>
+              <span>Achtung: Version {{bundle.version}} hat keine gültige Signatur ({{getSignatureProblem(bundle)}})</span>
+            </div>
+            <p>
+              Es lässt sich nicht prüfen, ob dieses Update von den Entwicklern der BuzzerBox stammt und unverändert ist.
+              Ein Update läuft mit vollen Rechten auf der BuzzerBox: Ein fehlerhaftes oder manipuliertes Update kann sie
+              unbrauchbar machen, gespeicherte Spiele und Medien auslesen oder löschen und Schadsoftware installieren.
+            </p>
+            <p><strong>Installiere es nur, wenn du genau weißt, woher die Datei stammt.</strong></p>
+            <mat-checkbox [checked]="isRiskAccepted" (change)="isRiskAccepted = $event.checked">
+              Ich habe die Warnung gelesen und will das Update trotzdem installieren.
+            </mat-checkbox>
+            <div class="unsigned-warning-actions">
+              <button mat-button (click)="confirmFileName = null">Abbrechen</button>
+              <button mat-flat-button color="warn" [disabled]="!isRiskAccepted || isUpdating()" (click)="install(bundle)">
+                Trotzdem installieren
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}

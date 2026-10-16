@@ -26,4 +26,6 @@ export enum EPacketTypes {
     SET_MEDIA_VOLUME,
     GRADE_ANSWER,
     UPDATE_TEAMS,
+    UPDATE_INFO,
+    INSTALL_UPDATE,
 }

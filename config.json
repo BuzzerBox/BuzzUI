@@ -90,5 +90,17 @@
     "eol": 255
   },
   "enableBrowserKeypressEvents": false,
-  "reverseProxy": false
+  "reverseProxy": false,
+  "update": {
+    "enabled": true,
+    "bundleDirectory": "",
+    "command": [
+      "sudo",
+      "-n",
+      "/usr/local/sbin/buzzerbox-update",
+      "start"
+    ],
+    "statusFile": "/var/lib/buzzerbox/update-status.json",
+    "publicKeyFile": "/etc/buzzerbox/update-public-key.pem"
+  }
 }

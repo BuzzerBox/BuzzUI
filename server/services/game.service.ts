@@ -17,6 +17,7 @@ import {
     IGamePacket,
     IGameState,
     IGradeAnswerPacket,
+    IInstallUpdatePacket,
     IKeypressOnScreenPacket,
     IMarkTeamPacket,
     INewMasterAccepted,
@@ -33,6 +34,7 @@ import {
     IStartGamePacket,
     ITeam,
     ITeamSetPointsPacket,
+    IUpdateInfoPacket,
     IUpdateMediaStatePacket,
     IUpdateTeamsPacket,
     PacketHelper
@@ -46,6 +48,7 @@ import {SerialPortService} from './serial-port.service';
 import {ConfigService} from './config.service';
 import {toInteger} from 'lodash';
 import {ObjectHelper} from '../../shared/helper/object.helper';
+import {UpdateService} from './update.service';
 
 enum LOOKUP_TEAM_CODE {
     BY_KEYPRESS,
@@ -88,6 +91,7 @@ export class GameService {
         this.getBuzzerConfig();
         SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
         SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
+        UpdateService.get().observeInfo().subscribe(info => this.sendToMaster<IUpdateInfoPacket>(info));
     }
 
     public static get(): GameService {
@@ -153,6 +157,8 @@ export class GameService {
             this.onGradeAnswerPacket(packet as IGradeAnswerPacket);
         } else if (packet.packetType === EPacketTypes.UPDATE_TEAMS) {
             this.onUpdateTeamsPacket(packet as IUpdateTeamsPacket);
+        } else if (packet.packetType === EPacketTypes.INSTALL_UPDATE) {
+            this.onInstallUpdatePacket(packet as IInstallUpdatePacket);
         }
     }
 
@@ -176,6 +182,8 @@ export class GameService {
         LoggerService.log(`setting new state: ${EGameStates[newState]}`);
         this.previousStateInAutomaton = this.currentStateInAutomaton;
         this.currentStateInAutomaton = newState;
+        // the master can only install updates while setting up
+        UpdateService.get().setPolling(newState === EGameStates.WAITING_FOR_SETUP);
     }
 
     private getBuzzerConfig(): IBuzzer[] {
@@ -270,11 +278,25 @@ export class GameService {
 
             this.webSocketConnectionMaster.addOnCloseCallback(this.onMasterConnectionDestroy.bind(this))
             this.webSocketConnectionMaster.addOnCloseCallback(() => sub.unsubscribe());
+            this.sendToMaster<IUpdateInfoPacket>(UpdateService.get().getInfo());
         } else {
             con.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, false));
             con.close();
             sub.unsubscribe();
         }
+    }
+
+    /**
+     * Installing an update restarts the server, so it is only allowed while no game is set up
+     */
+    private async onInstallUpdatePacket(packet: IInstallUpdatePacket): Promise<void> {
+        const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
+            ? 'Updates can only be installed while no game is set up'
+            : await UpdateService.get().install(packet.fileName, packet.allowUnsigned === true);
+        if (reason != null) {
+            LoggerService.warn(`Not installing update ${packet.fileName}: ${reason}`);
+        }
+        this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, reason == null, reason ?? undefined));
     }
 
     private onStartGamePacket(packet: IStartGamePacket): void {

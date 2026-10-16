@@ -1,0 +1,87 @@
+/* on wide screens, the install buttons would otherwise end up far away from the version they belong to */
+.update-card {
+  margin: 16px 0;
+  max-width: 720px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success mat-icon {
+  color: #2e7d32;
+}
+
+.error mat-icon {
+  color: #c62828;
+}
+
+.warning mat-icon {
+  color: #e65100;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.label {
+  margin-left: 8px;
+  font-size: 0.8em;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.label.newer {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+mat-list-item {
+  height: auto !important;
+}
+
+mat-list-item + mat-list-item {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.label.unsigned {
+  color: #c62828;
+  font-weight: 500;
+}
+
+.label.unsigned mat-icon {
+  margin-right: 2px;
+}
+
+.unsigned-warning {
+  margin-top: 16px;
+  padding: 16px;
+  border: 2px solid #c62828;
+  border-radius: 8px;
+  background: #ffebee;
+  color: #3e0b0b;
+}
+
+.unsigned-warning-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2em;
+  font-weight: 500;
+  color: #b71c1c;
+}
+
+.unsigned-warning-title mat-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  font-size: 36px;
+}
+
+.unsigned-warning-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}

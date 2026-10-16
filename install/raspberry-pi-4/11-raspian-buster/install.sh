@@ -40,14 +40,13 @@ sudo mkdir -p "${NGINX_DIR}" -v
 yes | sudo cp -f "${ASSETS_DIR}/configs/nginx/${NGINX_CONF_FILE}" "${NGINX_DIR}"
 replaceInFile "${NGINX_DIR}" "__INSTALL_DIR__" "${INSTALL_DIR}";
 
-echo "Copying BuzzerBox Frontend's files to nginx's serve folder..."
-mkdir -p "${INSTALL_DIR}/frontend"
-cp -r "${ASSETS_DIR}/compilations/frontend" "${INSTALL_DIR}"
-
-echo "Copying BuzzerBox Server's files ..."
-sudo mkdir -p "${INSTALL_DIR}/backend"
-cp -r "${ASSETS_DIR}/compilations/backend" "${INSTALL_DIR}"
-sudo npm --prefix "${INSTALL_DIR}/backend/server" i
+# the release layout lets updates replace the software, see enable-usb-updates.sh
+VERSION="$(node -e 'console.log(require(process.argv[1]).version)' "${ASSETS_DIR}/compilations/backend/version.json")"
+echo "Copying BuzzerBox ${VERSION} to ${INSTALL_DIR}/releases/${VERSION}..."
+mkdir -p "${INSTALL_DIR}/releases/${VERSION}"
+# the backend comes with its node_modules (see scripts/create-installation-files.sh)
+cp -r "${ASSETS_DIR}/compilations/frontend" "${ASSETS_DIR}/compilations/backend" "${INSTALL_DIR}/releases/${VERSION}/"
+ln -sfn "releases/${VERSION}" "${INSTALL_DIR}/current"
 
 
 
@@ -163,7 +162,11 @@ echo "Copying autostart script..."
 cat "${ASSETS_DIR}/scripts/autostart.sh" | sudo tee "${AUTOSTART_SCRIPT_LOCATION}"
 sed -i "s|__INSTALL_DIR__|${INSTALL_DIR}|" "${AUTOSTART_SCRIPT_LOCATION}"
 
+echo "Setting up the server service and USB updates..."
+"${ROOT_DIR}/enable-usb-updates.sh"
+
 # TODO activate overlay fs
+# (updates need a writable ${INSTALL_DIR} and /var/lib/buzzerbox, see buzzerbox-update.sh)
 
 # let the terminal stay open for debug purposes
 read -p "Installation routine has finished. Press any key to reboot ..."
