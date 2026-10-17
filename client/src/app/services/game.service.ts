@@ -46,7 +46,7 @@ import {BehaviorSubject, Observable, ReplaySubject, Subject, Subscription} from 
 import {Router} from '@angular/router';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {Logger} from '../helper/logger';
-import {pathsMaster} from '../master/paths-master';
+import {baseUrlMaster, pathsMaster} from '../master/paths-master';
 import {TeamHelper} from '../helper/team.helper';
 import * as Uuid from 'uuid';
 import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
@@ -335,7 +335,7 @@ export class GameService implements OnDestroy {
       this.setNewGameState(EGameStatesMaster.RECEIVED_PRESETUP_DATA);
       this.presetupData = packet;
       // the game of before a reset or a takeover is over; the play page shows it until it is left
-      this.redirect(pathsMaster.home).then(() => this.clearGameData());
+      this.redirect(baseUrlMaster + pathsMaster.home).then(() => this.clearGameData());
     } else if (this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
       // registered again after a lost connection; a restarted server has new buzzer IDs
       this.presetupData = packet;
@@ -377,7 +377,7 @@ export class GameService implements OnDestroy {
     } else {
       this.masterRejection = {isGameRunning: !!packet.isGameRunning, takenOver: false};
       this.setNewGameState(EGameStatesMaster.REJECTED);
-      this.redirect(pathsMaster.masterAlreadyRegistered);
+      this.redirect(baseUrlMaster + pathsMaster.masterAlreadyRegistered);
     }
   }
 
@@ -391,7 +391,7 @@ export class GameService implements OnDestroy {
     this.storageTokenSubject.next(null);
     this.autosaveInfoSubject.next({packetType: EPacketTypes.AUTOSAVE_INFO, storage: null});
     this.setNewGameState(EGameStatesMaster.REJECTED);
-    this.redirect(pathsMaster.masterAlreadyRegistered);
+    this.redirect(baseUrlMaster + pathsMaster.masterAlreadyRegistered);
   }
 
   /**
@@ -446,7 +446,7 @@ export class GameService implements OnDestroy {
   private handleGameSetupResponse(packet: IResponsePacket): void {
     if (packet.wasSuccessful) {
       this.setNewGameState(EGameStatesMaster.READY_TO_START);
-      this.redirect(pathsMaster.readyToStart);
+      this.redirect(baseUrlMaster + pathsMaster.readyToStart);
     } else {
       // TODO: what to do if game setup was not successful?
       this.teams = null;
@@ -474,14 +474,14 @@ export class GameService implements OnDestroy {
       }
       this.setGameData(packet.teams, packet.questions, packet.currentGameState);
       this.setNewGameState(EGameStatesMaster.READY_TO_START);
-      this.redirect(pathsMaster.readyToStart);
+      this.redirect(baseUrlMaster + pathsMaster.readyToStart);
     }
   }
 
   private handleStartGameResponse(packet: IResponsePacket): void {
     if (packet.wasSuccessful) {
       this.setNewGameState(EGameStatesMaster.PLAYING);
-      this.redirect(pathsMaster.play);
+      this.redirect(baseUrlMaster + pathsMaster.play);
     }
   }
 
