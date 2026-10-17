@@ -91,6 +91,7 @@ export class GameService implements OnDestroy {
   // the master gets these too, when grading reveals the correct answers
   private answerSetStatePacketSubject = new Subject<IAnswerSetStatePacket>();
   private gradeAnswerSubject = new Subject<IGradeAnswerPacket>();
+  private gradingRequestSubject = new Subject<void>();
   private cbUpdateCurrentQuestion: ZeroVoidCallback;
   private cbEndGame: ZeroVoidCallback;
   private markTeamSubject: Subject<IMarkTeamPacket>;
@@ -774,8 +775,19 @@ export class GameService implements OnDestroy {
   /**
    * Grades the answer of the team that buzzed; the server awards the points, see IGradeAnswerPacket
    */
-  public gradeAnswer(teamId: string, result: EGradeResults, revealCorrectAnswers: boolean): void {
-    this.webSocketService.send<IGradeAnswerPacket>(PacketHelper.makeGradeAnswerPacket(teamId, result, revealCorrectAnswers));
+  public gradeAnswer(teamId: string, result: EGradeResults, revealCorrectAnswers: boolean, answer?: IAnswer): void {
+    this.webSocketService.send<IGradeAnswerPacket>(PacketHelper.makeGradeAnswerPacket(teamId, result, revealCorrectAnswers, answer));
+  }
+
+  /**
+   * Opens the grade dialog again after the master closed it without grading, see QuestionPaneComponent
+   */
+  public requestGrading(): void {
+    this.gradingRequestSubject.next();
+  }
+
+  public observeGradingRequests(): Observable<void> {
+    return this.gradingRequestSubject.asObservable();
   }
 
   public observeGradeAnswerPackets(): Observable<IGradeAnswerPacket> {

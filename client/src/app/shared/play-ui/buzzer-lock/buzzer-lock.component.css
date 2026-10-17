@@ -1,5 +1,7 @@
 :host {
   display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* big enough to hit without looking, like on a tablet in the middle of a game */
@@ -46,4 +48,9 @@ button.buzzer-lock mat-icon {
   0% { transform: scale(1); }
   40% { transform: scale(1.08); }
   100% { transform: scale(1); }
+}
+
+button.grade {
+  min-height: 56px;
+  border-radius: 28px;
 }

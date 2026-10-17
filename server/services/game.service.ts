@@ -442,19 +442,14 @@ export class GameService {
         const pointsPacket: ITeamSetPointsPacket = {packetType: EPacketTypes.TEAM_SET_POINTS, teamId: team.teamId, points: team.points};
         this.sendToMaster<ITeamSetPointsPacket>(pointsPacket);
         this.sendToAllScreens<ITeamSetPointsPacket>(pointsPacket);
-        if (factor > 0) {
-            if (packet.revealCorrectAnswers) {
-                for (const answer of (question?.answers ?? []).filter(a => a.isCorrect)) {
-                    if ((this.currentGameState.activatedAnswers ?? []).some(a => GameStateHelper.isSameAnswer(a, answer))) {
-                        continue;
-                    }
-                    const activatePacket = PacketHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer);
-                    GameStateHelper.applyAnswerState(this.currentGameState, activatePacket);
-                    this.sendToMaster<IAnswerSetStatePacket>(activatePacket);
-                    this.sendToAllScreens<IAnswerSetStatePacket>(activatePacket);
-                }
-            }
-        } else {
+        // the answer the team gave lights up, or else for a correct answer all correct ones
+        const givenAnswer = packet.answer ? question?.answers?.find(a => GameStateHelper.isSameAnswer(a, packet.answer)) : undefined;
+        if (givenAnswer) {
+            this.activateAnswer(givenAnswer);
+        } else if (factor > 0 && packet.revealCorrectAnswers) {
+            (question?.answers ?? []).filter(a => a.isCorrect).forEach(a => this.activateAnswer(a));
+        }
+        if (factor < 0) {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
             this.releaseHardwareBuzzerLock(true);
@@ -462,6 +457,16 @@ export class GameService {
         // the screens and the master flash the answers for a wrong one
         this.sendToMaster<IGradeAnswerPacket>(packet);
         this.sendToAllScreens<IGradeAnswerPacket>(packet);
+    }
+
+    private activateAnswer(answer: IAnswer): void {
+        if ((this.currentGameState.activatedAnswers ?? []).some(a => GameStateHelper.isSameAnswer(a, answer))) {
+            return;
+        }
+        const activatePacket = PacketHelper.makeAnswerSetSatePacket(EAnswerStates.ACTIVATE, answer);
+        GameStateHelper.applyAnswerState(this.currentGameState, activatePacket);
+        this.sendToMaster<IAnswerSetStatePacket>(activatePacket);
+        this.sendToAllScreens<IAnswerSetStatePacket>(activatePacket);
     }
 
     /**

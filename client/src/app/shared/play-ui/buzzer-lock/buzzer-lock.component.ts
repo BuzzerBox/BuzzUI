@@ -2,7 +2,8 @@ import {Component} from '@angular/core';
 import {GameService} from '../../../services/game.service';
 
 /**
- * The master's button to release the buzzers, which stands out while they are locked
+ * The master's button to release the buzzers, which stands out while they are locked, and to grade the answer of the
+ * team that buzzed
  */
 @Component({
     selector: 'app-buzzer-lock',
@@ -24,6 +25,13 @@ export class BuzzerLockComponent {
   public getBuzzedTeamName(): string | null {
     const marked = this.game.getGameStateData()?.markedTeamIds ?? [];
     return marked.length === 1 ? this.game.findTeam(marked[0])?.name ?? null : null;
+  }
+
+  /**
+   * Opens the grade dialog again, see QuestionPaneComponent
+   */
+  public grade(): void {
+    this.game.requestGrading();
   }
 
   /**
