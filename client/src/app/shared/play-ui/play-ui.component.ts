@@ -3,11 +3,14 @@ import {GameService} from '../../services/game.service';
 import {
   ITeam,
   IQuestion,
-  IEndGamePacket
+  IEndGamePacket,
+  IMarkTeamPacket
 } from '../../../../../shared/shared';
-import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
-import {MatDialog} from '@angular/material/dialog';
+import {TeamColorHelper} from '../../helper/team-color.helper';
+import {ScreenThemeHelper} from '../../themes/screen-theme.helper';
 import {Subscription} from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {DialogConfirmEndingGameComponent} from './dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {SubscriptionsHelper} from '../../helper/subscriptions.helper';
 import {ConfigService} from '../../services/config.service';
 import {EGameStatesMaster} from '../../master/enums/EGameStatesMaster';
@@ -26,6 +29,11 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     return !this.isMaster;
   }
 
+  // the quiz-show themes, see screen-themes.ts
+  @HostBinding('class.show') get isShowStyle(): boolean {
+    return this.isScreen && ScreenThemeHelper.isShowStyle(this.game.getGameStateData()?.themeId);
+  }
+
   /**
    * Rows of team cards on each side of the screens; at least 4, so a few teams don't get huge cards
    */
@@ -34,8 +42,14 @@ export class PlayUiComponent implements OnInit, OnDestroy {
   }
 
   public currentQuestion: IQuestion;
-  public isGameOver = false;
+  // a screen learns it from the END_GAME packet
+  private isScreenGameOver = false;
   private setQuestionPacketSubscription: Subscription;
+  private markTeamSubscription: Subscription;
+  // screens: the name of the team that just buzzed, across the question for a moment
+  public buzzBanner: {id: number, name: string, color: string} | null = null;
+  private buzzBannerTimeout: ReturnType<typeof setTimeout> | null = null;
+  private static readonly BUZZ_BANNER_DURATION_IN_MS = 1500;
   // kept to remove the very same listener again
   private readonly keydownListener = (event: KeyboardEvent) => this.handleKeyboardEvent(event);
 
@@ -43,11 +57,12 @@ export class PlayUiComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentQuestion = this.game.getCurrentQuestion();
-    // the master comes back to the scores when it opens the play page again after ending the game
-    this.isGameOver = this.isMaster && this.game.getGameState() === EGameStatesMaster.END;
     if (!this.isMaster) {
+      // the theme of this game, for the whole page and the waiting screen after it
+      ScreenThemeHelper.apply(this.game.getGameStateData()?.themeId);
       this.game.setCallbackUpdateCurrentQuestion(this.callbackUpdateCurrentQuestion.bind(this));
       this.game.setCallbackEndGame(this.callbackEndGame.bind(this));
+      this.markTeamSubscription = this.game.observeMarkTeamPackets().subscribe(this.onMarkTeamPacket.bind(this));
       // There is some angular directive to achieve the binding of a listener (@HostListener) but it is not possible to remove that binding
       // or have it react to some boolean state but we only need it if this component is used from a screen, thus I prefer the "old" JS-way
       // of adding an event listener
@@ -56,6 +71,13 @@ export class PlayUiComponent implements OnInit, OnDestroy {
         document.addEventListener('keydown', this.keydownListener);
       }
     }
+  }
+
+  /**
+   * The master ends the game in its toolbar, and comes back to the scores when it opens the play page again afterwards
+   */
+  public get isGameOver(): boolean {
+    return this.isMaster ? this.game.getGameState() === EGameStatesMaster.END : this.isScreenGameOver;
   }
 
   public getTeams(): ITeam[] {
@@ -87,14 +109,7 @@ export class PlayUiComponent implements OnInit, OnDestroy {
   }
 
   public endGame(): void {
-    let sub: Subscription = this.dialog.open(DialogConfirmEndingGameComponent).afterClosed().subscribe(result => {
-      if (result) {
-        this.isGameOver = true;
-        this.game.endGame();
-      }
-      sub.unsubscribe();
-      sub = null;
-    });
+    DialogConfirmEndingGameComponent.confirmAndEndGame(this.dialog, this.game);
   }
 
   // TODO implement this as observable instead of this callback fizzle
@@ -103,14 +118,25 @@ export class PlayUiComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    SubscriptionsHelper.cleanUpSubscriptions(this.setQuestionPacketSubscription);
+    SubscriptionsHelper.cleanUpSubscriptions(this.setQuestionPacketSubscription, this.markTeamSubscription);
+    clearTimeout(this.buzzBannerTimeout);
     if (!this.isMaster) {
       document.removeEventListener('keydown', this.keydownListener);
     }
   }
 
+  private onMarkTeamPacket(packet: IMarkTeamPacket): void {
+    const team = this.isShowStyle && packet.mark && !packet.unmarkAll ? this.game.findTeam(packet.teamId) : null;
+    if (team == null) {
+      return;
+    }
+    this.buzzBanner = {id: (this.buzzBanner?.id ?? 0) + 1, name: team.name, color: TeamColorHelper.getColor(team, this.getTeams())};
+    clearTimeout(this.buzzBannerTimeout);
+    this.buzzBannerTimeout = setTimeout(() => this.buzzBanner = null, PlayUiComponent.BUZZ_BANNER_DURATION_IN_MS);
+  }
+
   private callbackEndGame(packet: IEndGamePacket): void {
-    this.isGameOver = true;
+    this.isScreenGameOver = true;
   }
 
   handleKeyboardEvent(event: KeyboardEvent): void {

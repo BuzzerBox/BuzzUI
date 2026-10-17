@@ -25,7 +25,9 @@ import {ArraysHelper} from '../../../helper/arrays.helper';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {DialogGradeAnswerComponent, IDialogGradeAnswerData} from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
+import {TeamColorHelper} from '../../../helper/team-color.helper';
+import {ScreenThemeHelper} from '../../../themes/screen-theme.helper';
+import {DialogGradeAnswerComponent, IDialogGradeAnswerData, RELEASE_WITHOUT_GRADE, TGradeDialogResult} from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
 
 @Component({
     selector: 'app-question-pane',
@@ -51,7 +53,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private markTeamSubscription: Subscription;
   private gradeAnswerSubscription: Subscription;
   // only on the master: grading the answer of the team that buzzed
-  private gradeDialogRef: MatDialogRef<DialogGradeAnswerComponent, EGradeResults>;
+  private gradeDialogRef: MatDialogRef<DialogGradeAnswerComponent, TGradeDialogResult>;
   private gradeDialogTeamId: string;
   // set for a moment after a wrong answer, which lets the answers flash red
   public flashWrong = false;
@@ -278,6 +280,33 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  /**
+   * The game is played in a quiz-show theme (see screen-themes.ts); the master then shows the answers' letters too
+   */
+  public isShowTheme(): boolean {
+    return ScreenThemeHelper.isShowStyle(this.game.getGameStateData()?.themeId);
+  }
+
+  @HostBinding('class.show') get isShowStyle(): boolean {
+    return this.isScreen && this.isShowTheme();
+  }
+
+  /**
+   * A, B, C, … as on a quiz show, so players can call out their answer
+   */
+  public getAnswerLetter(index: number): string {
+    return String.fromCharCode('A'.charCodeAt(0) + index);
+  }
+
+  /**
+   * Logged-in answers take the color of the team that buzzed; without one, the brand's
+   */
+  public getLoggedInColor(): string {
+    const marked = this.game.getGameStateData()?.markedTeamIds ?? [];
+    const team = marked.length === 1 ? this.game.findTeam(marked[0]) : null;
+    return team ? TeamColorHelper.getColor(team, this.game.getTeams() ?? []) : 'var(--bb-brand-light)';
+  }
+
   public isLoggedIn(answer: IAnswer): boolean {
     return this.loggedInAnswers.includes(answer);
   }
@@ -364,7 +393,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     }
     this.closeGradeDialog();
     this.gradeDialogTeamId = teamId;
-    const dialogRef = this.dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, EGradeResults>(DialogGradeAnswerComponent, {
+    const dialogRef = this.dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, TGradeDialogResult>(DialogGradeAnswerComponent, {
       data: {teamName: team.name, points: GameService.getQuestionPoints(this.question)}
     });
     this.gradeDialogRef = dialogRef;
@@ -374,7 +403,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         this.gradeDialogTeamId = null;
       }
       // closing it without a grade (or because the team is no longer marked) leaves everything as it is
-      if (result != null) {
+      if (result === RELEASE_WITHOUT_GRADE) {
+        this.game.releaseBuzzerLock();
+      } else if (result != null) {
         // a correct answer lights up where the answer options are shown
         this.game.gradeAnswer(teamId, result, this.showAnswers && !!this.question?.show);
       }

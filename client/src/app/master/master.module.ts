@@ -14,7 +14,6 @@ import {MatStepperModule} from '@angular/material/stepper';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatCheckboxModule} from '@angular/material/checkbox';
-import { StartGameComponent } from './start-game/start-game.component';
 import { PlayComponent } from './play/play.component';
 import {MatCardModule} from '@angular/material/card';
 import {SharedModule} from '../shared/shared.module';
@@ -60,7 +59,6 @@ import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component'
     MasterAlreadyRegisteredComponent,
     ToolbarMasterComponent,
     ErrorPageComponent,
-    StartGameComponent,
     PlayComponent,
     SelectMediaComponent,
     FileUploadFormComponent,

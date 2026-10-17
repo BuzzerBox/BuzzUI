@@ -1,1 +1,10 @@
-<p>buzzer-lock works!</p>
+<button mat-flat-button class="buzzer-lock" [class.locked]="isLocked()" (click)="release()"
+        [title]="isLocked() ? 'Die Buzzer für alle Teams freigeben' : 'Die Buzzer sind frei; gibt sie trotzdem noch einmal frei'">
+  <mat-icon>{{isLocked() ? 'lock' : 'lock_open'}}</mat-icon>
+  <span class="labels">
+    <span class="label">{{isLocked() ? 'Buzzer freigeben' : 'Buzzer frei'}}</span>
+    @if (isLocked() && getBuzzedTeamName(); as teamName) {
+      <span class="team">{{teamName}} hat gebuzzert</span>
+    }
+  </span>
+</button>

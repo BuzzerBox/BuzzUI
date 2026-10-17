@@ -4,6 +4,10 @@
   gap: 0.5em;
 }
 
+.release-actions {
+  justify-content: center;
+}
+
 .grade-actions button {
   flex: 1 1 auto;
 }

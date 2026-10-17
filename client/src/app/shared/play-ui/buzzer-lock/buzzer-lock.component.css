@@ -1,0 +1,49 @@
+:host {
+  display: inline-flex;
+}
+
+/* big enough to hit without looking, like on a tablet in the middle of a game */
+button.buzzer-lock {
+  min-width: 260px;
+  min-height: 56px;
+  padding: 0 24px;
+  border-radius: 28px;
+  font-size: 1.1em;
+  /* free: there is nothing to do, so it stays in the background */
+  background-color: transparent;
+  color: rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.24);
+}
+
+button.buzzer-lock.locked {
+  background-color: #ffc107;
+  color: rgba(0, 0, 0, 0.87);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  /* runs once, whenever a team buzzes */
+  animation: pulse 0.6s ease-out;
+}
+
+button.buzzer-lock mat-icon {
+  margin-right: 12px;
+}
+
+.labels {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.label {
+  font-weight: 500;
+}
+
+.team {
+  font-size: 0.75em;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}

@@ -65,7 +65,40 @@ mat-card-content {
 }
 
 .logged-in {
-  background-color: aqua !important;
+  background-color: var(--logged-in-color, aqua) !important;
+}
+
+/*
+ * A, B, C, … small in the top left corner of the answer; its size doesn't follow the answer's (appFitText). It is
+ * placed in the cell, whose button is 95% wide and 90% high and centered (see .answer-cell button).
+ */
+.answer-cell {
+  position: relative;
+  --letter-size: 14px;
+}
+
+.answer-letter {
+  position: absolute;
+  z-index: 1;
+  top: calc(5% + var(--letter-size) * 0.5);
+  left: calc(2.5% + var(--letter-size) * 0.5);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(var(--letter-size) * 1.7);
+  height: calc(var(--letter-size) * 1.7);
+  border-radius: calc(var(--letter-size) * 0.35);
+  background-color: rgba(0, 0, 0, 0.12);
+  font-size: var(--letter-size);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ✓ or ✗ once the answer is revealed */
+.answer-mark {
+  margin-left: 0.4em;
+  font-weight: 700;
 }
 
 .wrong {
@@ -237,4 +270,91 @@ button.screen-visibility:disabled {
 /* the tiles are lower here, so their text is sized to a larger share of the band's height */
 :host(.screen) .videooptions.below-media .answer-cell button {
   font-size: max(12px, min(18cqh, 6cqw)) !important;
+}
+
+/* the "show" themes (see screen-themes.ts): a header strip, the progress of the game and quiz-show answer tiles */
+:host(.screen.show) mat-card-title {
+  font-family: var(--bb-display-font);
+  font-weight: 500;
+  color: var(--bb-text-muted);
+  letter-spacing: 0.02em;
+}
+
+:host(.screen.show) .question-points {
+  background-color: var(--bb-brand);
+  color: #fff;
+  font-weight: 700;
+}
+
+:host(.screen.show) .progress {
+  height: calc(var(--u) * 0.5);
+  margin: calc(var(--u) * 0.8) calc(var(--u) * 1.6) 0;
+  border-radius: calc(var(--u) * 0.25);
+  background: var(--bb-track);
+  overflow: hidden;
+}
+
+:host(.screen.show) .progress-done {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--bb-brand), var(--bb-brand-light));
+  transition: width 600ms ease-out;
+}
+
+:host(.screen.show) .question-text {
+  font-family: var(--bb-display-font);
+  font-weight: 500;
+  text-align: center;
+}
+
+:host(.screen.show) .answer-cell {
+  /* cqh/cqw: % of the answer grid */
+  --letter-size: max(12px, min(3.2cqh, 2cqw));
+}
+
+:host(.screen.show) .answer-cell button {
+  /* Material's buttons space their letters out, which makes long answers hard to read */
+  letter-spacing: normal;
+  --mat-button-protected-label-text-tracking: normal;
+  border-radius: calc(var(--u) * 1.2);
+  background-color: var(--bb-surface-raised) !important;
+  color: var(--bb-text) !important;
+  box-shadow: inset 0 0 0 1px var(--bb-border) !important;
+  font-family: var(--bb-display-font);
+  font-weight: 500;
+  /* the answer stays clear of the letter in the corner */
+  padding-left: calc(var(--letter-size) * 2.6);
+  padding-right: calc(var(--letter-size) * 2.6);
+}
+
+:host(.screen.show) .answer-cell .answer-letter {
+  background-color: var(--bb-brand);
+  color: #fff;
+}
+
+:host(.screen.show) .answer-cell button.logged-in {
+  background-color: var(--logged-in-color) !important;
+  color: var(--bb-on-team) !important;
+}
+
+:host(.screen.show) .answer-cell button.logged-in + .answer-letter {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+:host(.screen.show) .answer-cell button.correct,
+:host(.screen.show) .answer-grid.flash-wrong .answer-cell button.correct {
+  background-color: var(--bb-correct) !important;
+  color: #fff !important;
+}
+
+:host(.screen.show) .answer-cell button.wrong,
+:host(.screen.show) .answer-grid.flash-wrong .answer-cell button {
+  background-color: var(--bb-wrong) !important;
+  color: #fff !important;
+}
+
+:host(.screen.show) .answer-cell button.correct + .answer-letter,
+:host(.screen.show) .answer-cell button.wrong + .answer-letter,
+:host(.screen.show) .answer-grid.flash-wrong .answer-letter {
+  background-color: rgba(0, 0, 0, 0.25);
 }

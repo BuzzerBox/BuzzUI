@@ -1,4 +1,6 @@
 @use '@angular/material' as mat;
+// the screen themes (the master keeps the light Material theme below), see app/themes/screen-themes.ts
+@use 'app/themes/themes';
 
 // Include the core styles (typography, elevation, etc.)
 @include mat.elevation-classes();

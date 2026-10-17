@@ -8,22 +8,29 @@
       }
     </div>
     <div class="questions-pane">
+      @if (buzzBanner; as banner) {
+        <!-- one element per buzz, so its animation starts again -->
+        @for (b of [banner]; track b.id) {
+          <div class="buzz-banner" [style.--team-color]="b.color">{{b.name}}!</div>
+        }
+      }
       <div class="parent">
         <mat-card class="question">
           <app-question-pane [question]="currentQuestion" [isMaster]="isMaster"></app-question-pane>
-          <mat-card-actions>
-            @if (isMaster) {
+          @if (isMaster) {
+            <mat-card-actions class="master-actions">
               <button mat-button class="large-controls" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage">Vorherige Frage</button>
-            }
-            @if (isMaster) {
-              <button mat-button class="large-controls" [disabled]="!hasNextQuestion()" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
-            }
-            <span class="spacer"></span>
-            <!--            TODO: move this button to the right. Also, show dialog to confirm it-->
-            @if (isMaster) {
-              <button mat-button (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel Beenden</button>
-            }
-          </mat-card-actions>
+              <span class="spacer"></span>
+              <app-buzzer-lock></app-buzzer-lock>
+              <span class="spacer"></span>
+              @if (hasNextQuestion()) {
+                <button mat-button class="large-controls" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
+              } @else {
+                <!-- after the last question, the game ends here instead -->
+                <button mat-button class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+              }
+            </mat-card-actions>
+          }
         </mat-card>
       </div>
     </div>

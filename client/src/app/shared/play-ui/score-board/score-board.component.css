@@ -67,3 +67,186 @@ mat-card.scores {
 :host(.screen) .placed {
   font-size: calc(var(--u) * 4);
 }
+
+/* the "show" themes (see screen-themes.ts): the final scores on a podium */
+:host(.screen.show) {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+:host(.screen.show) .final {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  padding: calc(var(--u) * 3) calc(var(--u) * 4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  overflow: hidden;
+  font-family: var(--bb-display-font);
+  color: var(--bb-text);
+}
+
+:host(.screen.show) .title {
+  font-size: calc(var(--u) * 7);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-brand-light);
+}
+
+:host(.screen.show) .podium {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 62%;
+  width: min(100%, calc(var(--u) * 150));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(var(--u) * 2);
+}
+
+:host(.screen.show) .podium-place {
+  order: var(--order);
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  animation: rise 900ms ease-out backwards;
+}
+
+/* the winner comes last, after the second and the third */
+:host(.screen.show) .podium-place.place-1 { animation-delay: 900ms; }
+:host(.screen.show) .podium-place.place-2 { animation-delay: 400ms; }
+
+:host(.screen.show) .podium-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 0.5);
+  padding-bottom: calc(var(--u) * 1.2);
+  text-align: center;
+}
+
+:host(.screen.show) .podium-name {
+  max-width: 100%;
+  font-size: calc(var(--u) * 4.5);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host(.screen.show) .podium-points {
+  font-size: calc(var(--u) * 6);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--team-color);
+}
+
+:host(.screen.show) .crown {
+  width: auto;
+  height: auto;
+  font-size: calc(var(--u) * 8);
+  color: var(--bb-gold);
+  text-shadow: 0 0 calc(var(--u) * 2 * var(--bb-glow)) var(--bb-gold);
+}
+
+/* the blocks: highest for the winner, in the team's color with the medal's color on top */
+:host(.screen.show) .podium-block {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: calc(var(--u) * 1.5);
+  border-radius: calc(var(--u) * 1.2) calc(var(--u) * 1.2) 0 0;
+  border-top: calc(var(--u) * 1.2) solid var(--medal);
+  /* darker towards the floor */
+  background: linear-gradient(180deg, transparent, rgba(13, 16, 36, 0.55)), var(--team-color);
+  color: var(--bb-on-team);
+  font-size: calc(var(--u) * 9);
+  font-weight: 700;
+}
+
+:host(.screen.show) .place-1 { --medal: var(--bb-gold); }
+:host(.screen.show) .place-1 .podium-block { height: calc(var(--u) * 26); }
+:host(.screen.show) .place-2 { --medal: var(--bb-silver); }
+:host(.screen.show) .place-2 .podium-block { height: calc(var(--u) * 18); }
+:host(.screen.show) .place-3 { --medal: var(--bb-bronze); }
+:host(.screen.show) .place-3 .podium-block { height: calc(var(--u) * 12); }
+
+/* up to seven more teams, in two columns */
+:host(.screen.show) .others {
+  width: min(100%, calc(var(--u) * 150));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--u) * 1) calc(var(--u) * 3);
+  animation: fade-in 600ms ease-out 1.6s backwards;
+}
+
+:host(.screen.show) .other {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 2);
+  border-left: calc(var(--u) * 0.8) solid var(--team-color);
+  border-radius: calc(var(--u) * 0.8);
+  background: var(--bb-surface);
+  font-size: calc(var(--u) * 3.4);
+}
+
+:host(.screen.show) .other-place {
+  color: var(--bb-text-muted);
+}
+
+:host(.screen.show) .other-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host(.screen.show) .other-points {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+:host(.screen.show) .confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+:host(.screen.show) .confetti span {
+  position: absolute;
+  top: -5%;
+  width: calc(var(--u) * 1.2);
+  height: calc(var(--u) * 2);
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(30%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--drift), 110vh) rotate(720deg); }
+}

@@ -5,7 +5,6 @@ import {RouteGuard} from './guards/route.guard';
 import {SetupComponent} from './setup/setup.component';
 import {MasterAlreadyRegisteredComponent} from './master-already-registered/master-already-registered.component';
 import {pathsMaster} from './paths-master';
-import {StartGameComponent} from './start-game/start-game.component';
 import {PlayComponent} from './play/play.component';
 import {HomeComponent} from './home/home.component';
 import {LoadGameComponent} from './load-game/load-game.component';
@@ -21,7 +20,6 @@ const routes: Routes = [
   { path: pathsMaster.storage, component: StorageManagerComponent, canActivate: [RouteGuard]},
   { path: pathsMaster.prepare, component: PrepareGameComponent, canActivate: [RouteGuard]},
   { path: pathsMaster.masterAlreadyRegistered, component: MasterAlreadyRegisteredComponent, canActivate: [RouteGuard]},
-  { path: pathsMaster.readyToStart, component: StartGameComponent, canActivate: [RouteGuard]},
   { path: pathsMaster.play, component: PlayComponent, canActivate: [RouteGuard]}
 ];
 
