@@ -65,6 +65,8 @@ enum LOOKUP_TEAM_CODE {
 export class GameService {
     private static instance: GameService;
     private webSocketConnectionMaster: WebSocketConnection;
+    // the device of the current or last master, see mayBecomeMaster()
+    private lastMasterId: string | undefined;
     private webSocketConnectionsScreens: Map<string, WebSocketConnection>;
     private newConnectionEstablished$: Observable<WebSocketConnection>;
     private newConnectionEstablishedSubscription: Subscription;
@@ -177,7 +179,22 @@ export class GameService {
     }
 
     private isGameSetUp(): boolean {
-        return [EGameStates.WAITING_FOR_START, EGameStates.PLAYING, EGameStates.LOST_MASTER, EGameStates.END].includes(this.currentStateInAutomaton);
+        return this.isGameRunning() || this.currentStateInAutomaton === EGameStates.END;
+    }
+
+    /**
+     * A game is set up and not over yet
+     */
+    private isGameRunning(): boolean {
+        return [EGameStates.WAITING_FOR_START, EGameStates.PLAYING, EGameStates.LOST_MASTER].includes(this.currentStateInAutomaton);
+    }
+
+    /**
+     * A running game whose master lost its connection waits for that device, see IRegisterMasterPacket.masterId;
+     * another one that just tries to become the master (e.g. by itself, from the already-registered page) would grab it
+     */
+    private mayBecomeMaster(packet: IRegisterMasterPacket): boolean {
+        return this.currentStateInAutomaton !== EGameStates.LOST_MASTER || !!packet.takeOver || packet.masterId === this.lastMasterId;
     }
 
     private makeAutosaveSnapshot() {
@@ -291,8 +308,9 @@ export class GameService {
         if (this.webSocketConnectionMaster != null && packet.takeOver) {
             this.dropMaster();
         }
-        if (this.webSocketConnectionMaster == null) {
+        if (this.webSocketConnectionMaster == null && this.mayBecomeMaster(packet)) {
             this.webSocketConnectionMaster = con;
+            this.lastMasterId = packet.masterId;
             ClockService.get().setClientTime(packet.clientTime);
             // before anything that takes the master to pages that use the storage
             this.sendToMaster<IStorageAccessPacket>({
@@ -337,7 +355,7 @@ export class GameService {
         } else {
             con.send<IResponsePacket>({
                 ...PacketHelper.makeResponsePacket(packet.packetType, false, 'Another master is connected'),
-                isGameRunning: [EGameStates.WAITING_FOR_START, EGameStates.PLAYING, EGameStates.LOST_MASTER].includes(this.currentStateInAutomaton)
+                isGameRunning: this.isGameRunning()
             });
             con.close();
             sub.unsubscribe();

@@ -29,7 +29,7 @@ export class RouteGuard  {
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     const path = route.url;
     const currentPath = path[path.length - 1].path;
-    const allowedPaths = pathsForState[this.game.getGameState()] ?? [pathsMaster.start];
+    const allowedPaths = pathsForState[this.game.getGameState()];
     // a page of another state leads to the one of the current state, which always lets the master in
     return allowedPaths.includes(currentPath) || this.redirect(allowedPaths[0]);
   }

@@ -29,12 +29,14 @@ export class MasterAlreadyRegisteredComponent {
     const message = this.getRejection().isGameRunning
       ? 'Das andere Gerät kann das Spiel dann nicht mehr steuern. Das laufende Spiel geht hier mit dem aktuellen Punktestand weiter.'
       : 'Das andere Gerät kann die BuzzerBox dann nicht mehr steuern. Was dort gerade eingegeben, aber noch nicht gespeichert wurde, geht verloren.';
+    this.game.pauseMasterRetry(true);
     this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
       data: {title: 'Steuerung übernehmen?', message, confirmText: 'Übernehmen'}
     }).afterClosed().subscribe(confirmed => {
       if (confirmed) {
         this.game.registerAgainAsMaster(true);
       }
+      this.game.pauseMasterRetry(false);
     });
   }
 

@@ -64,8 +64,12 @@ export interface IMasterRejection {
   takenOver: boolean;
 }
 
-// how long a refused master waits before it tries again, which lets it in once the other master is gone
+// how long a refused master waits before it tries again, which lets it in once the other master is gone; the wait
+// doubles with every refusal up to the maximum, so a device left on that page doesn't keep the box busy
 const MASTER_RETRY_DELAY_MS = 3000;
+const MASTER_RETRY_MAX_DELAY_MS = 15000;
+// where the browser keeps the ID that tells the server it is the same device, see IRegisterMasterPacket.masterId
+const MASTER_ID_STORAGE_KEY = 'buzzerbox-master-id';
 
 @Injectable({
   providedIn: 'root'
@@ -101,6 +105,11 @@ export class GameService implements OnDestroy {
   private autosaveInfoSubject = new ReplaySubject<IAutosaveInfoPacket>(1);
   private masterRejection: IMasterRejection | null = null;
   private masterRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  // refusals since the last time the user asked to try again, which the wait before the next try depends on
+  private masterRetryCount = 0;
+  // while the user decides whether to take over, see pauseMasterRetry()
+  private masterRetryPaused = false;
+  private readonly masterId = GameService.loadMasterId();
   // registering again after a reconnect has to take over as well, see registerMaster()
   private takeOverRequested = false;
 
@@ -157,10 +166,7 @@ export class GameService implements OnDestroy {
           break;
         case EGameStatesMaster.REJECTED:
           // the server closes the connection of a refused master; trying again lets it in once the other master is gone
-          if (!this.masterRejection?.takenOver) {
-            clearTimeout(this.masterRetryTimer);
-            this.masterRetryTimer = setTimeout(() => this.registerAgainAsMaster(), MASTER_RETRY_DELAY_MS);
-          }
+          this.scheduleMasterRetry();
           break;
         default:
           // the server keeps a running game for a master that rejoins, which a reload does
@@ -175,22 +181,72 @@ export class GameService implements OnDestroy {
     this.webSocketService.send<IRegisterMasterPacket>({
       packetType: EPacketTypes.REGISTER_MASTER,
       clientTime: Date.now(),
+      masterId: this.masterId,
       takeOver: this.takeOverRequested || undefined
     });
+  }
+
+  /**
+   * The same in every tab and after a reload, as long as the browser keeps it
+   */
+  private static loadMasterId(): string {
+    try {
+      let id = localStorage.getItem(MASTER_ID_STORAGE_KEY);
+      if (!id) {
+        id = Uuid.v4();
+        localStorage.setItem(MASTER_ID_STORAGE_KEY, id);
+      }
+      return id;
+    } catch {
+      // without storage, a reload counts as another device, which has to take over a running game
+      return Uuid.v4();
+    }
   }
 
   /**
    * For a refused master: tries to become the master again, or takes over from the master that is connected
    */
   public registerAgainAsMaster(takeOver = false): void {
+    this.masterRetryCount = 0;
+    this.tryAgainAsMaster(takeOver);
+  }
+
+  private tryAgainAsMaster(takeOver: boolean): void {
     if (this.currentGameStateInAutomaton !== EGameStatesMaster.REJECTED) {
       return;
     }
-    clearTimeout(this.masterRetryTimer);
-    this.masterRetryTimer = null;
+    this.clearMasterRetry();
     this.takeOverRequested = takeOver;
     this.setNewGameState(EGameStatesMaster.STARTING);
     this.registerMaster();
+  }
+
+  /**
+   * Stops a refused master from trying again by itself while the user decides whether to take over; a retry would
+   * leave the refused state in the meantime, and the takeover would then go nowhere
+   */
+  public pauseMasterRetry(paused: boolean): void {
+    this.masterRetryPaused = paused;
+    if (paused) {
+      this.clearMasterRetry();
+    } else {
+      this.scheduleMasterRetry();
+    }
+  }
+
+  private scheduleMasterRetry(): void {
+    this.clearMasterRetry();
+    if (this.currentGameStateInAutomaton !== EGameStatesMaster.REJECTED || this.masterRejection?.takenOver || this.masterRetryPaused) {
+      return;
+    }
+    const delay = Math.min(MASTER_RETRY_DELAY_MS * 2 ** this.masterRetryCount, MASTER_RETRY_MAX_DELAY_MS);
+    this.masterRetryCount++;
+    this.masterRetryTimer = setTimeout(() => this.tryAgainAsMaster(false), delay);
+  }
+
+  private clearMasterRetry(): void {
+    clearTimeout(this.masterRetryTimer);
+    this.masterRetryTimer = null;
   }
 
   public getMasterRejection(): IMasterRejection | null {
@@ -267,6 +323,7 @@ export class GameService implements OnDestroy {
   }
 
   async ngOnDestroy(): Promise<void> {
+    this.clearMasterRetry();
     if (this.webSocketListenSubscription != null && (await this.webSocketListenSubscription) != null) {
      (await this.webSocketListenSubscription).unsubscribe();
     }
@@ -277,7 +334,8 @@ export class GameService implements OnDestroy {
     if (this.currentGameStateInAutomaton === EGameStatesMaster.MASTER_ACCEPTED) {
       this.setNewGameState(EGameStatesMaster.RECEIVED_PRESETUP_DATA);
       this.presetupData = packet;
-      this.redirect(pathsMaster.home);
+      // the game of before a reset or a takeover is over; the play page shows it until it is left
+      this.redirect(pathsMaster.home).then(() => this.clearGameData());
     } else if (this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
       // registered again after a lost connection; a restarted server has new buzzer IDs
       this.presetupData = packet;
@@ -312,6 +370,7 @@ export class GameService implements OnDestroy {
     this.takeOverRequested = false;
     if (packet.wasSuccessful) {
       this.masterRejection = null;
+      this.masterRetryCount = 0;
       if (this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
         this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
       }
@@ -326,18 +385,28 @@ export class GameService implements OnDestroy {
     if (!this.initedAsMaster) {
       return;
     }
-    const wasInGame = [EGameStatesMaster.READY_TO_START, EGameStatesMaster.PLAYING].includes(this.currentGameStateInAutomaton);
-    this.masterRejection = {isGameRunning: wasInGame, takenOver: true};
+    this.masterRejection = {isGameRunning: this.isInGame(), takenOver: true};
+    this.joinedRunningGame = false;
+    // the server revoked the token, and no longer saves for this device; the game data stays until the page is left
+    this.storageTokenSubject.next(null);
+    this.autosaveInfoSubject.next({packetType: EPacketTypes.AUTOSAVE_INFO, storage: null});
     this.setNewGameState(EGameStatesMaster.REJECTED);
     this.redirect(pathsMaster.masterAlreadyRegistered);
+  }
+
+  /**
+   * Like the server's isGameRunning(): a game is set up and not over yet
+   */
+  private isInGame(): boolean {
+    return [EGameStatesMaster.READY_TO_START, EGameStatesMaster.PLAYING].includes(this.currentGameStateInAutomaton);
   }
 
   public getGameState(): EGameStatesMaster {
     return this.currentGameStateInAutomaton;
   }
 
-  private redirect(target: string): void {
-    this.router.navigate([target]);
+  private redirect(target: string): Promise<boolean> {
+    return this.router.navigate([target]);
   }
 
   public getPresetupData(): IPresetupAvailableInfoPacket {
@@ -386,8 +455,18 @@ export class GameService implements OnDestroy {
     }
   }
 
+  private clearGameData(): void {
+    this.teams = [];
+    this.questions = [];
+    this.currentGameState = null;
+  }
+
   private handleNewMasterAcceptedPacket(packet: INewMasterAccepted): void {
     if (this.currentGameStateInAutomaton === EGameStatesMaster.STARTING) {
+      // the server answers a takeover of a running game with this packet instead of a response
+      this.takeOverRequested = false;
+      this.masterRejection = null;
+      this.masterRetryCount = 0;
       this.joinedRunningGame = true;
       if (packet.availableBuzzers) {
         // needed to change the teams later on
@@ -633,7 +712,7 @@ export class GameService implements OnDestroy {
   public resetServer(): void {
     this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
     this.joinedRunningGame = false;
-    // the game data stays until the next setup replaces it, since the play page is shown until then
+    // the game data stays until the presetup data takes the master to the start page, since the play page is shown until then
     this.webSocketService.send<IResetServerPacket>({
       packetType: EPacketTypes.RESET_SERVER
     });

@@ -15,7 +15,7 @@ describe('MasterAlreadyRegisteredComponent', () => {
 
   beforeEach(async () => {
     rejection = {isGameRunning: true, takenOver: false};
-    game = jasmine.createSpyObj<GameService>('GameService', ['getMasterRejection', 'registerAgainAsMaster']);
+    game = jasmine.createSpyObj<GameService>('GameService', ['getMasterRejection', 'registerAgainAsMaster', 'pauseMasterRetry']);
     game.getMasterRejection.and.callFake(() => rejection);
     await TestBed.configureTestingModule({
       declarations: [ MasterAlreadyRegisteredComponent ],
@@ -58,5 +58,7 @@ describe('MasterAlreadyRegisteredComponent', () => {
     confirmed = true;
     component.takeOver();
     expect(game.registerAgainAsMaster).toHaveBeenCalledWith(true);
+    // the retry is paused while the dialog is open, and resumed after either answer
+    expect(game.pauseMasterRetry.calls.allArgs()).toEqual([[true], [false], [true], [false]]);
   });
 });
