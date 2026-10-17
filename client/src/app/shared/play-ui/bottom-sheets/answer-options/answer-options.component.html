@@ -1,9 +1,9 @@
 <mat-nav-list>
   @if (isAlreadyLoggedIn()) {
-    <a mat-list-item (click)="logOutAnswer()">Anwort ausloggen</a>
+    <a mat-list-item (click)="logOutAnswer()">Auswahl aufheben</a>
   }
   @if (!isAlreadyLoggedIn()) {
-    <a mat-list-item (click)="logInAnswer()">Anwort einloggen</a>
+    <a mat-list-item (click)="logInAnswer()">Antwort selektieren</a>
   }
-  <a mat-list-item (click)="activateAnswer()">Antwort aktivieren</a>
+  <a mat-list-item (click)="activateAnswer()">Antwort aufdecken</a>
 </mat-nav-list>

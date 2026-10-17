@@ -64,8 +64,10 @@ mat-card-content {
   white-space: normal;
 }
 
+/* a selected ("logged-in") answer: neither red nor green, which stand for wrong and right */
 .logged-in {
-  background-color: var(--logged-in-color, aqua) !important;
+  background-color: var(--bb-selected) !important;
+  color: var(--bb-on-selected) !important;
 }
 
 /*
@@ -361,8 +363,8 @@ button.screen-visibility:disabled {
 }
 
 :host(.screen.show) .answer-cell button.logged-in {
-  background-color: var(--logged-in-color) !important;
-  color: var(--bb-on-team) !important;
+  background-color: var(--bb-selected) !important;
+  color: var(--bb-on-selected) !important;
 }
 
 :host(.screen.show) .answer-cell button.logged-in + .answer-letter {

@@ -27,7 +27,6 @@ import {ArraysHelper} from '../../../helper/arrays.helper';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/snack-bar';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {TeamColorHelper} from '../../../helper/team-color.helper';
 import {ScreenThemeHelper} from '../../../themes/screen-theme.helper';
 import {
   DialogGradeAnswerComponent,
@@ -292,15 +291,6 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
    */
   public getAnswerLetter(index: number): string {
     return String.fromCharCode('A'.charCodeAt(0) + index);
-  }
-
-  /**
-   * Logged-in answers take the color of the team that buzzed; without one, the brand's
-   */
-  public getLoggedInColor(): string {
-    const marked = this.game.getGameStateData()?.markedTeamIds ?? [];
-    const team = marked.length === 1 ? this.game.findTeam(marked[0]) : null;
-    return team ? TeamColorHelper.getColor(team, this.game.getTeams() ?? []) : 'var(--bb-brand-light)';
   }
 
   public isLoggedIn(answer: IAnswer): boolean {
