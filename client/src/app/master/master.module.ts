@@ -38,6 +38,7 @@ import {MatTabsModule} from '@angular/material/tabs';
 import {MatRadioModule} from '@angular/material/radio';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatMenuModule} from '@angular/material/menu';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {HomeComponent} from './home/home.component';
 import {LoadGameComponent} from './load-game/load-game.component';
 import {StorageManagerComponent} from './storage-manager/storage-manager.component';
@@ -93,6 +94,7 @@ import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component'
     MatRadioModule,
     MatProgressBarModule,
     MatMenuModule,
+    MatSlideToggleModule,
     MatStepperModule,
     MatFormFieldModule,
     MatInputModule,

@@ -1,13 +1,13 @@
 <form [formGroup]="questionConfig">
-  <h3>Initial Question State</h3>
-  <mat-button-toggle-group name="questionState" aria-label="Question State" formControlName="questionState">
+  <p class="label">Frage zu Beginn</p>
+  <mat-button-toggle-group name="questionState" aria-label="Frage zu Beginn" formControlName="questionState">
     @for (option of questionStateOptions; track option.key) {
       <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
     }
   </mat-button-toggle-group>
 
-  <h3>Initial Media & Answer State</h3>
-  <mat-button-toggle-group name="preset" aria-label="Media and Answer State" formControlName="preset">
+  <p class="label">Medium und Antworten zu Beginn</p>
+  <mat-button-toggle-group name="preset" aria-label="Medium und Antworten zu Beginn" formControlName="preset">
     @for (option of presetOptions; track option.key) {
       <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
     }

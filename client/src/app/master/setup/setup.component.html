@@ -1,3 +1,21 @@
+<ng-template #mediaDefaultsSection>
+  <mat-expansion-panel class="media-defaults">
+    <mat-expansion-panel-header>
+      <mat-panel-title>Medienfragen</mat-panel-title>
+      <mat-panel-description>Wie Fragen mit Bild, Video, Audio oder Diashow beginnen</mat-panel-description>
+    </mat-expansion-panel-header>
+    <p class="hint">So beginnen alle Fragen dieses Spiels mit Medien. Einzelne Fragen kannst du später bei der Frage selbst anpassen.</p>
+    <div class="media-defaults-kinds">
+      @for (kind of mediaKinds; track kind) {
+        <div class="media-defaults-kind">
+          <h3>{{mediaKindLabels[kind]}}</h3>
+          <app-media-question-display-order-configuration [initialConfig]="mediaDefaults[kind]" [mediaKind]="kind" (questionConfigChange)="changeMediaDefault(kind, $event)"></app-media-question-display-order-configuration>
+        </div>
+      }
+    </div>
+  </mat-expansion-panel>
+</ng-template>
+
 <app-toolbar-master [showHomeIcon]="true"></app-toolbar-master>
 <mat-horizontal-stepper linear="true">
   <mat-step [completed]="ref !== null">
@@ -20,6 +38,7 @@
         </mat-form-field>
         <p class="label">Speichern auf</p>
         <app-storage-locations [initialId]="newGameLocationId" (selectedChange)="newGameLocation = $event"></app-storage-locations>
+        <ng-container *ngTemplateOutlet="mediaDefaultsSection"></ng-container>
         @if (createError) {
           <p class="error"><mat-icon>error</mat-icon>{{createError}}</p>
         }
@@ -35,6 +54,7 @@
           Die neueste ist Version {{latestVersion}}; beim Speichern entsteht eine neue Version mit diesen Fragen.
         }
       </p>
+      <ng-container *ngTemplateOutlet="mediaDefaultsSection"></ng-container>
       <div>
         <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
         <button mat-button matStepperNext>Weiter</button>
@@ -52,86 +72,106 @@
             <mat-expansion-panel-header>
               <mat-panel-title>
                 <mat-icon cdkDragHandle class="drag-handle" title="Frage verschieben">drag_indicator</mat-icon>
-                Frage {{i + 1}}
+                <span class="panel-number">Frage {{i + 1}}</span>
+                @if (getQuestionPreview(questionFormGroupName); as preview) {
+                  <span class="panel-preview">„{{preview}}“</span>
+                }
               </mat-panel-title>
               <mat-panel-description>
                 <span class="panel-header-icons">
-                  @if (getCustomPoints(questionFormGroupName) !== null) {
-                    <span class="panel-header-points">{{getCustomPoints(questionFormGroupName)}} Punkte</span>
+                  @if (getMediaKind(questionFormGroupName); as kind) {
+                    <span class="panel-header-info" [title]="questionInitialConfig[i] ? 'Eigener Medienablauf' : ''">
+                      <mat-icon>{{mediaKindIcons[kind]}}</mat-icon>{{mediaKindLabels[kind]}}
+                      @if (questionInitialConfig[i]) {
+                        <mat-icon class="panel-header-custom-media">tune</mat-icon>
+                      }
+                    </span>
                   }
-                  @if (questionsFormGroup.controls[questionFormGroupName] && questionsFormGroup.controls[questionFormGroupName].valid) {
-                    <mat-icon class="green-icon">check_circle</mat-icon>
-                  }
-                  <button mat-icon-button (click)="removeQuestion(i, $event)" title="Frage löschen">
+                  <span class="panel-header-info">{{getPointsText(questionFormGroupName)}}</span>
+                  <mat-icon class="valid-icon" [class.green-icon]="questionsFormGroup.controls[questionFormGroupName]?.valid"
+                            [title]="questionsFormGroup.controls[questionFormGroupName]?.valid ? 'Vollständig' : 'Noch unvollständig'">
+                    {{questionsFormGroup.controls[questionFormGroupName]?.valid ? 'check_circle' : 'radio_button_unchecked'}}
+                  </mat-icon>
+                  <button mat-icon-button type="button" (click)="removeQuestion(i, $event)" title="Frage löschen">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </span>
               </mat-panel-description>
             </mat-expansion-panel-header>
-            <div class="row-layout" [formGroupName]="questionFormGroupName">
-              <mat-form-field >
-                <mat-label>Fragetext</mat-label>
-                <textarea matInput formControlName="text" cdkTextareaAutosize class="question"></textarea>
-              </mat-form-field>
-              <mat-form-field class="points">
-                <mat-label>Punkte</mat-label>
-                <input matInput type="number" min="1" step="1" formControlName="points">
-                <mat-error>Ganze Zahl ab 1</mat-error>
-              </mat-form-field>
-              <mat-checkbox formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">Zeige Antwortmöglichkeiten</mat-checkbox>
-              <!--          <button mat-raised-button>Frage entfernen</button>-->
-            </div>
-            <div class="row-layout" [formGroupName]="questionFormGroupName">
-              <input type = "hidden" formControlName="mediaSrc">
-            </div>
-            <!--          <button mat-raised-button>Frage entfernen</button>-->
-            <div class="answers" [formGroupName]="questionFormGroupName">
-              <div formGroupName="answers">
-                <!--            first answer-->
-                <div class="row-layout" formGroupName="answer0">
-                  <mat-form-field>
-                    <mat-label>Antwort 1</mat-label>
-                    <input matInput formControlName="text">
+
+            <div class="question-card" [formGroupName]="questionFormGroupName">
+              <section class="question-section">
+                <h4 class="section-title">Frage</h4>
+                <div class="question-row">
+                  <mat-form-field class="question-text">
+                    <mat-label>Fragetext</mat-label>
+                    <textarea matInput formControlName="text" cdkTextareaAutosize cdkAutosizeMinRows="1"></textarea>
                   </mat-form-field>
-                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-                </div>
-                <!--            second answer-->
-                <div class="row-layout" formGroupName="answer1">
-                  <mat-form-field>
-                    <mat-label>Antwort 2</mat-label>
-                    <input matInput formControlName="text">
+                  <mat-form-field class="points">
+                    <mat-label>Punkte</mat-label>
+                    <input matInput type="number" min="1" step="1" formControlName="points">
+                    <mat-error>Ganze Zahl ab 1</mat-error>
                   </mat-form-field>
-                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
                 </div>
-                <!--            third answer-->
-                <div class="row-layout" formGroupName="answer2">
-                  <mat-form-field>
-                    <mat-label>Antwort 3</mat-label>
-                    <input matInput formControlName="text">
-                  </mat-form-field>
-                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
+              </section>
+
+              <section class="question-section">
+                <div class="section-header">
+                  <h4 class="section-title">Antworten</h4>
+                  <mat-slide-toggle formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">Antwortmöglichkeiten zeigen</mat-slide-toggle>
                 </div>
-                <!--            fourth answer-->
-                <div class="row-layout" formGroupName="answer3">
-                  <mat-form-field>
-                    <mat-label>Antwort 4</mat-label>
-                    <input matInput formControlName="text">
-                  </mat-form-field>
-                  <mat-checkbox #checkbox formControlName="isCorrect">Richtige Antwort</mat-checkbox>
-                </div>
-              </div>
+                @if (getQuestionFormGroup(questionFormGroupName).get('answersVisible').value) {
+                  <div class="answers" formGroupName="answers">
+                    @for (answerIndex of answerIndexes; track answerIndex) {
+                      <mat-form-field [formGroupName]="ANSWER_FORM_GROUP_BASE_NAME + answerIndex"
+                                      [class.correct-answer]="isCorrectAnswer(questionFormGroupName, answerIndex)">
+                        <mat-label>Antwort {{answerIndex + 1}}</mat-label>
+                        <input matInput formControlName="text">
+                        <mat-checkbox matSuffix formControlName="isCorrect" class="correct-checkbox" title="Richtige Antwort"
+                                      [attr.aria-label]="'Antwort ' + (answerIndex + 1) + ' ist richtig'"></mat-checkbox>
+                      </mat-form-field>
+                    }
+                  </div>
+                  @if (getAnswerFromGroup(questionFormGroupName).hasError('error')) {
+                    <p class="hint">Hake mindestens eine richtige Antwort an.</p>
+                  }
+                } @else {
+                  <p class="hint">Die Teams sehen keine Antwortmöglichkeiten, die Spielleitung bewertet die Antwort selbst.</p>
+                }
+              </section>
+
+              <section class="question-section">
+                <h4 class="section-title">Medien</h4>
+                <app-select-media [game]="ref" [fileLocation]="getQuestionFormGroup(questionFormGroupName).get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i}); onQuestionsChanged()"></app-select-media>
+                @if (getMediaKind(questionFormGroupName); as kind) {
+                  <div class="media-config">
+                    @if (questionInitialConfig[i]) {
+                      <div class="media-config-line">
+                        <span class="hint">Ablauf: eigener für diese Frage</span>
+                        <button mat-button type="button" (click)="resetQuestionConfig(i)">Spiel-Standard verwenden</button>
+                      </div>
+                      <app-media-question-display-order-configuration [initialConfig]="questionInitialConfig[i]" [mediaKind]="kind" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
+                    } @else {
+                      <div class="media-config-line">
+                        <span class="hint">Ablauf: Spiel-Standard für {{mediaKindLabels[kind]}}</span>
+                        <button mat-button type="button" (click)="customizeQuestionConfig(i, kind)">Für diese Frage anpassen</button>
+                      </div>
+                    }
+                  </div>
+                }
+              </section>
+
+              <section class="question-section">
+                <h4 class="section-title">Notizen für die Spielleitung</h4>
+                <mat-form-field class="notes">
+                  <mat-label>Notizen (optional)</mat-label>
+                  <textarea matInput formControlName="notes" cdkTextareaAutosize cdkAutosizeMinRows="2"></textarea>
+                  <mat-hint>Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige</mat-hint>
+                </mat-form-field>
+              </section>
             </div>
-            <app-select-media [game]="ref" [fileLocation]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i}); onQuestionsChanged()"></app-select-media>
-            <div class="row-layout" [formGroupName]="questionFormGroupName">
-              <mat-form-field class="notes">
-                <mat-label>Notizen für die Spielleitung (optional)</mat-label>
-                <textarea matInput formControlName="notes" cdkTextareaAutosize cdkAutosizeMinRows="2"></textarea>
-                <mat-hint>Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige</mat-hint>
-              </mat-form-field>
-            </div>
-            <app-media-question-display-order-configuration *ngIf="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" [initialConfig]="questionInitialConfig[i]" [isSlideshow]="isSlideshow(questionFormGroupName)" [mediaSrc]="questionsFormGroup.controls[questionFormGroupName].get('mediaSrc').value.toString()" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
             <mat-action-row>
-              <button mat-button color="primary" (click)="addQuestionToFormGroup()">Add Question</button>
+              <button mat-button type="button" color="primary" (click)="addQuestionToFormGroup()"><mat-icon>add</mat-icon> Frage hinzufügen</button>
             </mat-action-row>
           </mat-expansion-panel>
         }

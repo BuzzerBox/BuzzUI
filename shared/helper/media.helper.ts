@@ -1,10 +1,77 @@
 import {IMediaDetails} from '../interfaces/IMediaDetails';
 import {IQuestion} from '../interfaces/IQuestion';
+import {IMediaQuestionDefaults, IMediaQuestionState, TMediaKind} from '../interfaces/IMediaQuestionState';
+import {EMediaStates} from '../enums/EMediaStates';
+import {EQuestionAnswerStates} from '../enums/EQuestionAnswerStates';
 import {FileExtensionsService} from '../services/file-extensions.service';
 
 export class MediaHelper {
+    public static readonly MEDIA_KINDS: TMediaKind[] = ['image', 'playable', 'slideshow'];
+
     private constructor() {
         // hide public constructor
+    }
+
+    /**
+     * How a media question starts if neither the game nor the question says otherwise: the media plays (or is shown)
+     * with the question, and the answers come once it ended
+     */
+    public static getDefaultInitialConfig(): IMediaQuestionState {
+        return {
+            mediaState: EMediaStates.PLAYING,
+            questionState: EQuestionAnswerStates.SHOWN,
+            answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+        };
+    }
+
+    /**
+     * The defaults of a game for every kind of media, filling in what the game doesn't set
+     */
+    public static completeMediaDefaults(defaults: Partial<IMediaQuestionDefaults> | undefined): IMediaQuestionDefaults {
+        return {
+            image: {...(defaults?.image ?? this.getDefaultInitialConfig())},
+            playable: {...(defaults?.playable ?? this.getDefaultInitialConfig())},
+            slideshow: {...(defaults?.slideshow ?? this.getDefaultInitialConfig())}
+        };
+    }
+
+    /**
+     * The kind of the media, or null if there is none
+     */
+    public static getMediaKind(media: IMediaDetails | undefined): TMediaKind | null {
+        if (this.isSlideshow(media)) {
+            return 'slideshow';
+        }
+        if (!media?.fileSrc) {
+            return null;
+        }
+        return FileExtensionsService.isPlayable(media.fileSrc) ? 'playable' : 'image';
+    }
+
+    /**
+     * How the question starts: its own config, or else the game's default for its kind of media. Undefined for
+     * questions without media.
+     */
+    public static getInitialConfig(question: IQuestion, defaults: Partial<IMediaQuestionDefaults> | undefined): IMediaQuestionState | undefined {
+        const kind = this.getMediaKind(question.mediaDetails);
+        if (kind == null) {
+            return undefined;
+        }
+        return question.initialConfig ?? defaults?.[kind] ?? this.getDefaultInitialConfig();
+    }
+
+    /**
+     * The questions as they are played: every media question with the config it starts with
+     */
+    public static applyMediaDefaults(questions: IQuestion[], defaults: Partial<IMediaQuestionDefaults> | undefined): IQuestion[] {
+        return questions.map(question => {
+            const initialConfig = this.getInitialConfig(question, defaults);
+            return initialConfig ? {...question, initialConfig: {...initialConfig}} : question;
+        });
+    }
+
+    public static isSameInitialConfig(a: IMediaQuestionState | undefined, b: IMediaQuestionState | undefined): boolean {
+        return a?.mediaState === b?.mediaState && a?.questionState === b?.questionState && a?.answerState === b?.answerState;
     }
 
     /**

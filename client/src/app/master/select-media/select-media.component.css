@@ -1,39 +1,57 @@
-.example-tree-invisible {
-  display: none;
+.selection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
 }
 
-.example-tree ul,
-.example-tree li {
-  margin-top: 0;
-  margin-bottom: 0;
-  list-style-type: none;
+.selection.missing {
+  border-color: #c62828;
 }
 
-/*
- * This padding sets alignment of the nested nodes.
- */
-.example-tree .mat-nested-tree-node div[role=group] {
-  padding-left: 40px;
+.selection.missing .selection-icon {
+  color: #c62828;
 }
 
-/*
- * Padding for leaf nodes.
- * Leaf nodes need to have padding so as to align with other non-leaf nodes
- * under the same parent.
- */
-.example-tree div[role=group] > .mat-tree-node {
-  padding-left: 40px;
-}
-.background-highlight {
-  background-color: whitesmoke;
-}
-.mat-list-icon {
+.selection-icon {
   color: rgba(0, 0, 0, 0.54);
-  margin-right: 10px;
+  flex: none;
 }
 
-.slideshow-button {
-  margin-left: 16px;
+.selection-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.selection-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selection-kind,
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.9em;
+}
+
+.browser {
+  padding: 8px 12px;
+  border: 1px dashed rgba(0, 0, 0, 0.24);
+  border-radius: 4px;
+}
+
+.browser-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
 }
 
 .media-actions {
@@ -42,4 +60,37 @@
   flex-wrap: wrap;
   gap: 8px;
   margin: 8px 0;
+}
+
+.tree-invisible {
+  display: none;
+}
+
+/* nested nodes are indented by the width of a folder toggle */
+.media-tree .mat-nested-tree-node div[role=group] {
+  padding-left: 40px;
+}
+
+/* files line up with the names of folders, after the space of the toggle */
+.file-node {
+  padding-left: 40px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.media-tree div[role=group] > .mat-nested-tree-node > .file-node {
+  padding-left: 40px;
+}
+
+.node-icon {
+  color: rgba(0, 0, 0, 0.54);
+  margin-right: 10px;
+}
+
+.background-highlight {
+  background-color: whitesmoke;
+}
+
+.slideshow-button {
+  margin-left: 16px;
 }

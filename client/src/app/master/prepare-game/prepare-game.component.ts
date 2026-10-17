@@ -194,7 +194,8 @@ export class PrepareGameComponent implements OnInit {
         markedTeamIds: (this.mappedGameState.markedTeamIds ?? []).filter(id => teamIds.includes(id))
       };
     }
-    const questions = StorageService.resolveMediaUrls(this.ref, this.definition.questions);
+    // the questions without their own config start as the game's defaults for their media say
+    const questions = StorageService.resolveMediaUrls(this.ref, MediaHelper.applyMediaDefaults(this.definition.questions, this.definition.mediaDefaults));
     await this.game.setupStoredGame(teams, questions, gameState, {
       locationId: this.ref.location.id,
       gameName: this.ref.gameName,

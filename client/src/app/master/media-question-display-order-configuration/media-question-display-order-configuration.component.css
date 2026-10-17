@@ -1,0 +1,9 @@
+.label {
+  margin: 8px 0 4px;
+  font-size: 0.9em;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+mat-button-toggle-group {
+  flex-wrap: wrap;
+}
