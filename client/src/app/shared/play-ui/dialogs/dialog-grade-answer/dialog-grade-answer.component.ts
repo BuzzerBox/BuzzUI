@@ -9,6 +9,13 @@ export interface IDialogGradeAnswerData {
 }
 
 /**
+ * The dialog's result for releasing the buzzers without grading the answer, e.g. when a team buzzed by mistake
+ */
+export const RELEASE_WITHOUT_GRADE = 'release';
+
+export type TGradeDialogResult = EGradeResults | typeof RELEASE_WITHOUT_GRADE;
+
+/**
  * Opens on the master when a team buzzed; closes with how its answer was graded
  */
 @Component({
@@ -19,6 +26,7 @@ export interface IDialogGradeAnswerData {
 })
 export class DialogGradeAnswerComponent {
   public readonly EGradeResults = EGradeResults;
+  public readonly RELEASE_WITHOUT_GRADE = RELEASE_WITHOUT_GRADE;
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: IDialogGradeAnswerData) { }
 

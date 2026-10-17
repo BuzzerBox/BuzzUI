@@ -9,6 +9,8 @@ import {GameFileHelper} from '../../helper/game-file.helper';
 import {IPrepareNavigationState} from '../game-navigation';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
 import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
+import {IScreenTheme, SCREEN_THEMES} from '../../themes/screen-themes';
+import {ScreenThemeHelper} from '../../themes/screen-theme.helper';
 
 interface ITeamRow {
   buzzer: IBuzzer;
@@ -51,6 +53,9 @@ export class PrepareGameComponent implements OnInit {
   // media the questions show that aren't in the game's media folder, e.g. deleted or never copied in
   public missingMedia: IMissingMedia[] = [];
   public mediaCheckError: string = null;
+  // how the screens look in this game
+  public readonly themes: IScreenTheme[] = SCREEN_THEMES;
+  public themeId: string = ScreenThemeHelper.getLastChosen().id;
 
   constructor(private game: GameService, private storage: StorageService, private router: Router, private dialog: MatDialog) {
     game.useAsMaster();
@@ -76,6 +81,10 @@ export class PrepareGameComponent implements OnInit {
       this.error = StorageService.getErrorMessage(e);
       return;
     }
+    // a continued game keeps its theme; one from before themes gets the default
+    if (this.state != null) {
+      this.themeId = ScreenThemeHelper.getTheme(this.state.gameState?.themeId).id;
+    }
     this.initTeams();
     await this.findMissingMedia();
   }
@@ -99,6 +108,10 @@ export class PrepareGameComponent implements OnInit {
 
   public getMissingQuestionNumbers(): string {
     return [...new Set(this.missingMedia.map(media => media.questionNumber))].join(', ');
+  }
+
+  public chooseTheme(theme: IScreenTheme): void {
+    this.themeId = theme.id;
   }
 
   public isContinuing(): boolean {
@@ -201,7 +214,8 @@ export class PrepareGameComponent implements OnInit {
       gameName: this.ref.gameName,
       gameVersion: this.definition.version,
       stateName: this.isContinuing() ? this.navigation.stateName : this.getStateName()
-    }, !this.isContinuing());
+    }, !this.isContinuing(), this.themeId);
+    ScreenThemeHelper.rememberChosen(this.themeId);
     // the server's answer takes the master to the start of the game
   }
 

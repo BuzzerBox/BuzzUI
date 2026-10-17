@@ -29,7 +29,7 @@ describe('RouteGuard', () => {
   const target = (result: unknown): string => router.serializeUrl(result as UrlTree);
 
   const allPaths = [pathsMaster.start, pathsMaster.home, pathsMaster.setup, pathsMaster.loadGame, pathsMaster.prepare,
-    pathsMaster.storage, pathsMaster.masterAlreadyRegistered, pathsMaster.readyToStart, pathsMaster.play];
+    pathsMaster.storage, pathsMaster.masterAlreadyRegistered, pathsMaster.play];
 
   const allStates = Object.values(EGameStatesMaster).filter(value => typeof value === 'number') as EGameStatesMaster[];
 

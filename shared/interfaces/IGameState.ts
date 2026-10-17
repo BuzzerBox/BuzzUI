@@ -25,4 +25,9 @@ export interface IGameState {
     setBuzzerLock: boolean;
     mediaQuestionState: IMediaQuestionState;
     mediaVolume: IMediaVolume;
+    /**
+     * How the screens look, one of the client's screen themes; chosen when the game is set up. Missing in states from
+     * before themes existed, and an unknown one (e.g. from a newer version), means the default theme.
+     */
+    themeId?: string;
 }

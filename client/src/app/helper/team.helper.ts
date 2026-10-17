@@ -11,7 +11,9 @@ export class TeamHelper {
       teamId: toClone.teamId,
       points: toClone.points,
       buzzerId: toClone.buzzerId,
-      name: toClone.name
+      name: toClone.name,
+      // the team's color depends on it, see TeamColorHelper
+      buzzerIndex: toClone.buzzerIndex
     };
   }
 

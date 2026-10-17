@@ -46,6 +46,34 @@
     @if (getActiveCount() < MIN_TEAMS) {
       <p class="warning">Es müssen mindestens {{MIN_TEAMS}} Teams spielen.</p>
     }
+
+    <h2>Aussehen der Anzeige</h2>
+    <div class="themes" role="radiogroup" aria-label="Aussehen der Anzeige">
+      @for (theme of themes; track theme.id) {
+        <button type="button" class="theme" role="radio" [attr.aria-checked]="theme.id === themeId"
+                [class.selected]="theme.id === themeId" (click)="chooseTheme(theme)">
+          <!-- a small screen in the theme's colors -->
+          <span class="theme-preview" [style.background]="theme.preview.background" aria-hidden="true">
+            <span class="preview-team" [style.background]="theme.preview.surface"
+                  [style.border-top-color]="theme.style === 'show' ? '#4f8ef7' : theme.preview.surface"></span>
+            <span class="preview-question" [style.background]="theme.preview.surface">
+              <span class="preview-line" [style.background]="theme.preview.text"></span>
+              <span class="preview-answer" [style.background]="theme.preview.accent"></span>
+            </span>
+            <span class="preview-team" [style.background]="theme.preview.surface"
+                  [style.border-top-color]="theme.style === 'show' ? '#ffb020' : theme.preview.surface"></span>
+          </span>
+          <span class="theme-name">
+            @if (theme.id === themeId) {
+              <mat-icon>check_circle</mat-icon>
+            }
+            {{theme.name}}
+          </span>
+          <span class="theme-description">{{theme.description}}</span>
+        </button>
+      }
+    </div>
+
     @if (definition.questions.length === 0) {
       <p class="warning">Diese Version hat keine Fragen.</p>
     }
@@ -67,7 +95,7 @@
     <div class="actions">
       <a mat-button [routerLink]="homeUrl">Abbrechen</a>
       <button mat-raised-button color="primary" [disabled]="!canStart()" (click)="start()">
-        <mat-icon>play_arrow</mat-icon> {{isContinuing() ? 'Spiel fortsetzen' : 'Spiel vorbereiten'}}
+        <mat-icon>play_arrow</mat-icon> {{isContinuing() ? 'Spiel fortsetzen' : 'Spiel starten'}}
       </button>
     </div>
   }

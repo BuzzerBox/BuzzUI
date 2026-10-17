@@ -14,3 +14,78 @@
   font-size: max(16px, min(3vh, 3vw));
   text-align: center;
 }
+
+/* the "show" themes (see screen-themes.ts): the logo with the state below it, centered together */
+.container.show {
+  --u: min(1vh, 0.75vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 2.5);
+  width: 100%;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: calc(var(--u) * 4);
+  background: var(--bb-bg);
+  color: var(--bb-text);
+}
+
+/* breathes slowly while the screen waits */
+.show .logo {
+  width: calc(var(--u) * 36);
+  height: calc(var(--u) * 36);
+  filter: drop-shadow(0 0 calc(var(--u) * 4 * var(--bb-glow)) rgba(211, 47, 47, 0.55));
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* like in the master's toolbar */
+.show .brand {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-size: calc(var(--u) * 8);
+  font-weight: 300;
+  color: var(--bb-text);
+}
+
+.show .brand-bold {
+  font-weight: 500;
+}
+
+.show .message {
+  margin: 0;
+  font-size: max(16px, calc(var(--u) * 3.2));
+  color: var(--bb-text-muted);
+  text-align: center;
+}
+
+/* how the person hosting gets to the master */
+.show .join {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 2);
+  margin-top: calc(var(--u) * 2);
+}
+
+.show .join-step {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.2);
+  padding: calc(var(--u) * 1.2) calc(var(--u) * 2.4);
+  border-radius: calc(var(--u) * 4);
+  background: var(--bb-surface);
+  box-shadow: inset 0 0 0 1px var(--bb-border);
+  font-size: max(14px, calc(var(--u) * 2.6));
+}
+
+.show .join-step mat-icon {
+  width: auto;
+  height: auto;
+  font-size: 1.3em;
+  color: var(--bb-brand-light);
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.06); opacity: 1; }
+}

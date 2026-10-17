@@ -1,10 +1,31 @@
-<div class="container">
-  <mat-spinner [diameter]="spinnerDiameter"></mat-spinner>
-  <p class="message">
-    @if (isWebsocketConnected) {
-      Warte auf Spielaufbau!
-    } @else {
-      Warte auf Verbindung zum Server!
+<!-- the theme of the screen's last game, see screen-themes.ts -->
+@if (isShowStyle) {
+  <div class="container show">
+    <img class="logo" src="assets/images/logo.png" alt="">
+    <div class="brand"><span class="brand-bold">Buzzer</span>Box</div>
+    <p class="message">
+      @if (isWebsocketConnected) {
+        Warte auf Spielaufbau …
+      } @else {
+        Warte auf Verbindung zum Server …
+      }
+    </p>
+    @if (isWebsocketConnected && join) {
+      <div class="join">
+        <span class="join-step"><mat-icon>wifi</mat-icon>WLAN <strong>{{join.wifiName}}</strong></span>
+        <span class="join-step"><mat-icon>language</mat-icon><strong>{{join.masterAddress}}</strong> öffnen</span>
+      </div>
     }
-  </p>
-</div>
+  </div>
+} @else {
+  <div class="container">
+    <mat-spinner [diameter]="spinnerDiameter"></mat-spinner>
+    <p class="message">
+      @if (isWebsocketConnected) {
+        Warte auf Spielaufbau!
+      } @else {
+        Warte auf Verbindung zum Server!
+      }
+    </p>
+  </div>
+}

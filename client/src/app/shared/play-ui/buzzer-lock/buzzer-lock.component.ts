@@ -1,16 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import {Component} from '@angular/core';
+import {GameService} from '../../../services/game.service';
 
+/**
+ * The master's button to release the buzzers, which stands out while they are locked
+ */
 @Component({
     selector: 'app-buzzer-lock',
     templateUrl: './buzzer-lock.component.html',
     styleUrls: ['./buzzer-lock.component.css'],
     standalone: false
 })
-export class BuzzerLockComponent implements OnInit {
+export class BuzzerLockComponent {
 
-  constructor() { }
+  constructor(private game: GameService) { }
 
-  ngOnInit(): void {
+  public isLocked(): boolean {
+    return !!this.game.getGameStateData()?.setBuzzerLock;
   }
 
+  /**
+   * The team that buzzed, if exactly one is marked
+   */
+  public getBuzzedTeamName(): string | null {
+    const marked = this.game.getGameStateData()?.markedTeamIds ?? [];
+    return marked.length === 1 ? this.game.findTeam(marked[0])?.name ?? null : null;
+  }
+
+  /**
+   * Also while they are free, in case the box and the app disagree
+   */
+  public release(): void {
+    this.game.releaseBuzzerLock();
+  }
 }

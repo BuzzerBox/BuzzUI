@@ -6,7 +6,7 @@ import { GameService } from './game.service';
 import {WebSocketService} from './web-socket.service';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
 import {EPacketTypes, IGamePacket, IRegisterMasterPacket, IWebSocketMessage, PacketHelper} from '../../../../shared/shared';
-import {pathsMaster} from '../master/paths-master';
+import {baseUrlMaster, pathsMaster} from '../master/paths-master';
 
 describe('GameService', () => {
   let service: GameService;
@@ -96,6 +96,26 @@ describe('GameService', () => {
     service.resetServer();
     reconnects.next();
     expect(registrations()[2].takeOver).toBeUndefined();
+  });
+
+  const startGamePackets = () => sent.filter(m => (m as IGamePacket).packetType === EPacketTypes.START_GAME);
+
+  it('starts the game right after it was set up, and then shows the play page', () => {
+    service.useAsMaster();
+    receive(PacketHelper.makeResponsePacket(EPacketTypes.REGISTER_MASTER, true));
+    receive({packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO, availableBuzzers: []} as IGamePacket);
+    service.setupGame([], []);
+    receive(PacketHelper.makeResponsePacket(EPacketTypes.SETUP_GAME, true));
+    expect(startGamePackets().length).toBe(1);
+    receive(PacketHelper.makeResponsePacket(EPacketTypes.START_GAME, true));
+    expect(service.getGameState()).toBe(EGameStatesMaster.PLAYING);
+    expect(router.navigate).toHaveBeenCalledWith([baseUrlMaster + pathsMaster.play]);
+  });
+
+  it('goes on with the running game right after rejoining it', () => {
+    service.useAsMaster();
+    receive({packetType: EPacketTypes.NEW_MASTER_ACCEPTED, teams: [], questions: [], currentGameState: null} as IGamePacket);
+    expect(startGamePackets().length).toBe(1);
   });
 
   it('waits longer after every refusal, up to a maximum', fakeAsync(() => {

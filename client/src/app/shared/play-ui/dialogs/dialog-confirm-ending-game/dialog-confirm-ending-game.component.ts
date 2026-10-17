@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import {MatDialogRef} from '@angular/material/dialog';
+import {Component} from '@angular/core';
+import {MatDialog} from '@angular/material/dialog';
+import {GameService} from '../../../../services/game.service';
 
 @Component({
     selector: 'app-dialog-confirm-ending-game',
@@ -7,11 +8,17 @@ import {MatDialogRef} from '@angular/material/dialog';
     styleUrls: ['./dialog-confirm-ending-game.component.css'],
     standalone: false
 })
-export class DialogConfirmEndingGameComponent implements OnInit {
+export class DialogConfirmEndingGameComponent {
 
-  constructor() { }
-
-  ngOnInit(): void {
+  /**
+   * Asks whether to end the game, and ends it if so; from the master's menu and after the last question
+   */
+  public static confirmAndEndGame(dialog: MatDialog, game: GameService): void {
+    dialog.open(DialogConfirmEndingGameComponent).afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        game.endGame();
+      }
+    });
   }
 
 }

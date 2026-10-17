@@ -1,0 +1,51 @@
+// The variables of the "show" screen themes (see screen-themes.ts). The screen puts its game's theme onto the page as
+// <html data-screen-theme="…">. Studio is the default, also for a screen that waits for its first game. The "classic"
+// theme doesn't use them. Rubik is bundled (angular.json), since the box has no internet.
+
+// Studio: dark like a TV studio, easy on the eyes in a dim room; the team colors stand out on it. The brand red is from
+// the logo; green and red are kept for right and wrong.
+:root,
+[data-screen-theme="studio"] {
+  --bb-bg: radial-gradient(ellipse at 50% 0%, #252b52 0%, #161a35 45%, #0d1024 100%);
+  --bb-surface: #1f2444;
+  --bb-surface-raised: #2a3058;
+  --bb-border: rgba(255, 255, 255, 0.08);
+  --bb-shadow: rgba(0, 0, 0, 0.35);
+  --bb-track: rgba(255, 255, 255, 0.1);
+  --bb-text: #f4f5fb;
+  --bb-text-muted: #a9aed0;
+  // on a team's color, e.g. the card of the team that buzzed
+  --bb-on-team: #10132a;
+  --bb-brand: #d32f2f;
+  --bb-brand-light: #ff6659;
+  --bb-correct: #2e9e4f;
+  --bb-wrong: #e0442b;
+  --bb-gold: #ffc940;
+  --bb-silver: #c9d1e0;
+  --bb-bronze: #d9925b;
+  --bb-display-font: Rubik, Roboto, "Helvetica Neue", sans-serif;
+  // how strongly the team that buzzed, the banner, the crown and the logo glow; 1 is very strong, 0 turns it off
+  --bb-glow: 0;
+}
+
+// Tageslicht: the studio look on a light background, for bright rooms and projectors
+[data-screen-theme="daylight"] {
+  --bb-bg: linear-gradient(180deg, #f5f7fc 0%, #e3e7f2 100%);
+  --bb-surface: #ffffff;
+  --bb-surface-raised: #eef1f8;
+  --bb-border: rgba(16, 19, 42, 0.1);
+  --bb-shadow: rgba(16, 19, 42, 0.12);
+  --bb-track: rgba(16, 19, 42, 0.1);
+  --bb-text: #161a35;
+  --bb-text-muted: #5b6183;
+  --bb-on-team: #10132a;
+  --bb-brand: #d32f2f;
+  --bb-brand-light: #e04a3f;
+  --bb-correct: #23914a;
+  --bb-wrong: #d93a22;
+  --bb-gold: #e3a700;
+  --bb-silver: #9aa3b5;
+  --bb-bronze: #c27a45;
+  --bb-display-font: Rubik, Roboto, "Helvetica Neue", sans-serif;
+  --bb-glow: 0;
+}

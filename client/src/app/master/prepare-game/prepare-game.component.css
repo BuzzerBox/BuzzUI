@@ -84,3 +84,86 @@ h2 {
 .missing-title mat-icon {
   color: #ef6c00;
 }
+
+/* the screen themes, as small screens to choose from */
+.themes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+button.theme {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 8px 12px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.theme:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+button.theme.selected {
+  border-color: #3f51b5;
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.25);
+}
+
+.theme-preview {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr;
+  gap: 6%;
+  aspect-ratio: 16 / 9;
+  padding: 6%;
+  box-sizing: border-box;
+  border-radius: 6px;
+}
+
+.preview-team {
+  height: 40%;
+  border-top: 4px solid;
+  border-radius: 3px;
+}
+
+.preview-question {
+  display: flex;
+  flex-direction: column;
+  gap: 12%;
+  padding: 8%;
+  border-radius: 3px;
+}
+
+.preview-line {
+  height: 10%;
+  width: 80%;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+.preview-answer {
+  height: 20%;
+  width: 45%;
+  border-radius: 2px;
+}
+
+.theme-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.theme-name mat-icon {
+  color: #3f51b5;
+}
+
+.theme-description {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.9em;
+}

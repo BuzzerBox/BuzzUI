@@ -166,6 +166,10 @@ export class GameService {
         } else if (packet.packetType === EPacketTypes.MARK_TEAM) {
             this.onMarkTeamPacket(packet as IMarkTeamPacket);
         } else if (packet.packetType === EPacketTypes.SET_BUZZER_LOCK) {
+            // releasing from the master is like the soft release on the box: the team that buzzed is no longer marked
+            if (!(packet as ISetBuzzerLockPacket).setLock) {
+                this.unmarkAllTeams();
+            }
             this.onSetBuzzerLockPacket(con, packet as ISetBuzzerLockPacket);
         } else if (packet.packetType === EPacketTypes.SET_MEDIA_VOLUME) {
             this.onSetMediaVolumePacket(packet as ISetMediaVolumePacket);
@@ -279,6 +283,10 @@ export class GameService {
             this.currentGameState = {...this.makeInitialGameState(), ...packet.currentGameState};
             // a savegame can't lock the buzzers, only a buzzer press can
             this.currentGameState.setBuzzerLock = this.keypressLocked;
+            // chosen for this game; it is saved with the state, so a continued game keeps it
+            if (packet.themeId) {
+                this.currentGameState.themeId = packet.themeId;
+            }
             this.resumesRunningGame = false;
             this.gameFinished = false;
             this.setNewState(EGameStates.WAITING_FOR_START);
@@ -418,9 +426,9 @@ export class GameService {
     }
 
     /**
-     * Awards the team that buzzed the points of the question, twice them for a double answer and none for a wrong one.
-     * A correct answer solves the question: it reveals the correct answer options and keeps the buzzers locked. A wrong
-     * one releases the buzzers for the other teams.
+     * Awards the team that buzzed the points of the question, twice them for a double answer, and takes them away for a
+     * wrong one. A correct answer solves the question: it reveals the correct answer options and keeps the buzzers
+     * locked. A wrong one releases the buzzers for the other teams.
      */
     private onGradeAnswerPacket(packet: IGradeAnswerPacket): void {
         const team: ITeam = this.findTeam(packet.teamId);
@@ -429,12 +437,12 @@ export class GameService {
             return;
         }
         const question = this.getCurrentQuestion();
-        const factor = packet.result === EGradeResults.DOUBLE ? 2 : packet.result === EGradeResults.CORRECT ? 1 : 0;
+        const factor = packet.result === EGradeResults.DOUBLE ? 2 : packet.result === EGradeResults.CORRECT ? 1 : -1;
+        team.points = (team.points ?? 0) + factor * (question?.points ?? 1);
+        const pointsPacket: ITeamSetPointsPacket = {packetType: EPacketTypes.TEAM_SET_POINTS, teamId: team.teamId, points: team.points};
+        this.sendToMaster<ITeamSetPointsPacket>(pointsPacket);
+        this.sendToAllScreens<ITeamSetPointsPacket>(pointsPacket);
         if (factor > 0) {
-            team.points = (team.points ?? 0) + factor * (question?.points ?? 1);
-            const pointsPacket: ITeamSetPointsPacket = {packetType: EPacketTypes.TEAM_SET_POINTS, teamId: team.teamId, points: team.points};
-            this.sendToMaster<ITeamSetPointsPacket>(pointsPacket);
-            this.sendToAllScreens<ITeamSetPointsPacket>(pointsPacket);
             if (packet.revealCorrectAnswers) {
                 for (const answer of (question?.answers ?? []).filter(a => a.isCorrect)) {
                     if ((this.currentGameState.activatedAnswers ?? []).some(a => GameStateHelper.isSameAnswer(a, answer))) {

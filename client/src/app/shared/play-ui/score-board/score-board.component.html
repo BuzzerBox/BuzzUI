@@ -1,22 +1,58 @@
-<mat-card class="scores">
-  <mat-card-header>
-    <mat-card-title>Punkteliste</mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="score">
-      @for (team of sortedTeams; track team; let i = $index) {
-        <div>
-          <span class="score-entry placed{{(i + 1) <= 3 ? '-' + (i + 1) : ''}}">{{i + 1}}. {{team.name}}: {{team.points}} Pkt.</span>
+@if (!isShowStyle) {
+  <mat-card class="scores">
+    <mat-card-header>
+      <mat-card-title>Punkteliste</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="score">
+        @for (team of sortedTeams; track team; let i = $index) {
+          <div>
+            <span class="score-entry placed{{(i + 1) <= 3 ? '-' + (i + 1) : ''}}">{{i + 1}}. {{team.name}}: {{team.points}} Pkt.</span>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+    @if (isMaster) {
+      <mat-card-actions>
+        <button mat-button (click)="resetServer()" title="Zurück zur Startseite, um ein neues Spiel zu beginnen oder eines fortzusetzen">Zur Startseite</button>
+      </mat-card-actions>
+    }
+  </mat-card>
+} @else {
+  <div class="final">
+    <div class="title">Endstand</div>
+    <div class="podium">
+      @for (entry of podium; track entry.team.teamId) {
+        <div class="podium-place place-{{entry.place}}" [style.--team-color]="entry.color" [style.--order]="entry.order">
+          <div class="podium-team">
+            @if (entry.place === 1) {
+              <mat-icon class="crown">emoji_events</mat-icon>
+            }
+            <span class="podium-name">{{entry.team.name}}</span>
+            <span class="podium-points">{{entry.team.points ?? 0}}</span>
+          </div>
+          <div class="podium-block">{{entry.place}}</div>
         </div>
       }
     </div>
-  </mat-card-content>
-  @if (isMaster) {
-    <mat-card-actions>
-      @if (isMaster) {
-        <button mat-button (click)="resetServer()" title="Zurück zur Startseite, um ein neues Spiel zu beginnen oder eines fortzusetzen">Zur Startseite</button>
+    @if (others.length) {
+      <div class="others">
+        @for (entry of others; track entry.team.teamId) {
+          <div class="other" [style.--team-color]="entry.color">
+            <span class="other-place">{{entry.place}}.</span>
+            <span class="other-name">{{entry.team.name}}</span>
+            <span class="other-points">{{entry.team.points ?? 0}}</span>
+          </div>
+        }
+      </div>
+    }
+    <!-- falls once, then it is gone -->
+    <div class="confetti" aria-hidden="true">
+      @for (piece of confetti; track $index) {
+        <span [style.left.%]="piece.left" [style.background]="piece.color"
+              [style.animation-delay.ms]="piece.delay" [style.animation-duration.ms]="piece.duration"
+              [style.--drift]="piece.drift + 'vw'"></span>
       }
-    </mat-card-actions>
-  }
-
-</mat-card>
+    </div>
+  </div>
+}

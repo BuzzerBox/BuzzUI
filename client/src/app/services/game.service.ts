@@ -84,7 +84,6 @@ export class GameService implements OnDestroy {
   private questions: IQuestion[];
   private currentGameState: IGameState;
   private presetupData: IPresetupAvailableInfoPacket;
-  private joinedRunningGame: boolean;
   private initedAsMaster = false;
   private initedAsScreen = false;
   private screenId: string = null;
@@ -127,7 +126,6 @@ export class GameService implements OnDestroy {
 
   public useAsMaster(): void {
     if (!this.initedAsMaster && !this.initedAsScreen) {
-      this.joinedRunningGame = false;
       this.setNewGameState(EGameStatesMaster.STARTING);
       this.registerMaster();
       this.initedAsMaster = true;
@@ -386,7 +384,6 @@ export class GameService implements OnDestroy {
       return;
     }
     this.masterRejection = {isGameRunning: this.isInGame(), takenOver: true};
-    this.joinedRunningGame = false;
     // the server revoked the token, and no longer saves for this device; the game data stays until the page is left
     this.storageTokenSubject.next(null);
     this.autosaveInfoSubject.next({packetType: EPacketTypes.AUTOSAVE_INFO, storage: null});
@@ -417,15 +414,20 @@ export class GameService implements OnDestroy {
    * Sets up a stored game, whose state the server then saves while it is played
    * @param questions with the URLs of their media
    * @param gameState undefined for a new state
+   * @param themeId how the screens look, see screen-themes.ts
    */
   public setupStoredGame(teams: ITeam[], questions: IQuestion[], gameState: IGameState | undefined, storage: IGameStorageRef,
-                         isNewState: boolean): Promise<void> {
-    return this.setupGame(teams, questions, gameState, true, storage, isNewState);
+                         isNewState: boolean, themeId?: string): Promise<void> {
+    return this.setupGame(teams, questions, gameState, true, storage, isNewState, themeId);
   }
 
   public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true,
-                   storage?: IGameStorageRef, isNewState?: boolean): Promise<void> {
+                   storage?: IGameStorageRef, isNewState?: boolean, themeId?: string): Promise<void> {
     const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
+    // the master shows parts of the theme too, e.g. the answers' letters
+    if (themeId) {
+      this.currentGameState.themeId = themeId;
+    }
     // console.log("current 2", currentGameState);
     // if (currentGameState == null) {
     //   throw new Error("grrrr");
@@ -437,7 +439,8 @@ export class GameService implements OnDestroy {
         questions,
         currentGameState,
         storage,
-        isNewState
+        isNewState,
+        themeId
       });
     }
     return promise;
@@ -445,8 +448,9 @@ export class GameService implements OnDestroy {
 
   private handleGameSetupResponse(packet: IResponsePacket): void {
     if (packet.wasSuccessful) {
+      // the screens already show the first question, so the game starts right away
       this.setNewGameState(EGameStatesMaster.READY_TO_START);
-      this.redirect(baseUrlMaster + pathsMaster.readyToStart);
+      this.startGame();
     } else {
       // TODO: what to do if game setup was not successful?
       this.teams = null;
@@ -467,14 +471,14 @@ export class GameService implements OnDestroy {
       this.takeOverRequested = false;
       this.masterRejection = null;
       this.masterRetryCount = 0;
-      this.joinedRunningGame = true;
       if (packet.availableBuzzers) {
         // needed to change the teams later on
         this.presetupData = {packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO, availableBuzzers: packet.availableBuzzers};
       }
       this.setGameData(packet.teams, packet.questions, packet.currentGameState);
+      // the screens still show the running game, so it goes on right away
       this.setNewGameState(EGameStatesMaster.READY_TO_START);
-      this.redirect(baseUrlMaster + pathsMaster.readyToStart);
+      this.startGame();
     }
   }
 
@@ -489,10 +493,6 @@ export class GameService implements OnDestroy {
     this.webSocketService.send<IStartGamePacket>({
       packetType: EPacketTypes.START_GAME
     });
-  }
-
-  public didJoinRunningGame(): boolean {
-    return this.joinedRunningGame;
   }
 
   public getTeams(): ITeam[] {
@@ -711,7 +711,6 @@ export class GameService implements OnDestroy {
    */
   public resetServer(): void {
     this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
-    this.joinedRunningGame = false;
     // the game data stays until the presetup data takes the master to the start page, since the play page is shown until then
     this.webSocketService.send<IResetServerPacket>({
       packetType: EPacketTypes.RESET_SERVER

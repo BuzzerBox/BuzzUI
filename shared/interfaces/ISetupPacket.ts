@@ -16,4 +16,8 @@ export interface ISetupPacket extends IGamePacket {
      * Whether storage.stateName is a new state; the server makes the name unique then
      */
     isNewState?: boolean;
+    /**
+     * How the screens look in this game, see IGameState.themeId
+     */
+    themeId?: string;
 }

@@ -63,3 +63,118 @@ mat-card-content p {
 :host(.screen) .points-value {
   font-weight: 500;
 }
+
+/*
+ * The "show" themes (see screen-themes.ts): the team's color as a stripe, the team that buzzed lit up in it while the
+ * others step back, the change of the points and a crown for the leader. Colors and fonts are the theme's variables.
+ */
+:host(.screen.show) .team-card {
+  position: relative;
+  /* the team's color as a thick stripe on top */
+  border-top: 2.2cqh solid var(--team-color);
+  border-radius: 2.5cqh;
+  background: var(--bb-surface);
+  color: var(--bb-text);
+  box-shadow: inset 0 0 0 1px var(--bb-border);
+  /* only what the GPU can do cheaply, for the Pi */
+  transition: transform 250ms ease-out, opacity 250ms ease-out, box-shadow 250ms ease-out;
+}
+
+:host(.screen.show) mat-card-title {
+  font-family: var(--bb-display-font);
+  font-weight: 500;
+  color: inherit;
+}
+
+:host(.screen.show) mat-card-content {
+  position: relative;
+}
+
+:host(.screen.show) .points-value {
+  font-family: var(--bb-display-font);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+:host(.screen.show) .team-card.marked {
+  background: var(--team-color);
+  color: var(--bb-on-team);
+  transform: scale(1.03);
+  box-shadow: 0 0 calc(4cqh * var(--bb-glow)) calc(1cqh * var(--bb-glow)) var(--team-color);
+  z-index: 1;
+  animation: buzz 600ms ease-out;
+}
+
+:host(.screen.show) .team-card.dimmed {
+  opacity: 0.45;
+}
+
+:host(.screen.show) .team-card.grade-correct {
+  animation: flash-correct 1.6s ease-out;
+}
+
+:host(.screen.show) .team-card.grade-wrong {
+  animation: flash-wrong 1.6s ease-out, shake 450ms ease-in-out;
+}
+
+:host(.screen.show) .crown {
+  position: absolute;
+  top: 4cqh;
+  right: 5cqw;
+  width: auto;
+  height: auto;
+  font-size: min(16cqh, 14cqw);
+  color: var(--bb-gold);
+  text-shadow: 0 0 calc(1cqh * var(--bb-glow)) var(--bb-gold);
+}
+
+/* a pill next to the score, so it reads on the card as well as on the flash, and leaves the name free */
+:host(.screen.show) .points-change {
+  position: absolute;
+  right: 4cqw;
+  top: 50%;
+  padding: 0.05em 0.45em;
+  border-radius: 1em;
+  background: var(--bb-correct);
+  color: #fff;
+  box-shadow: 0 0 0 0.6cqh var(--bb-shadow);
+  font-family: var(--bb-display-font);
+  font-weight: 700;
+  font-size: min(16cqh, 12cqw);
+  pointer-events: none;
+  animation: pop 1.6s ease-out forwards;
+}
+
+:host(.screen.show) .points-change.negative {
+  background: var(--bb-wrong);
+}
+
+@keyframes buzz {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.1); }
+  100% { transform: scale(1.03); }
+}
+
+@keyframes flash-correct {
+  0%, 30% { background: var(--bb-correct); color: #fff; }
+  100% { background: var(--bb-surface); }
+}
+
+@keyframes flash-wrong {
+  0%, 30% { background: var(--bb-wrong); color: #fff; }
+  100% { background: var(--bb-surface); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4%); }
+  40%, 80% { transform: translateX(4%); }
+}
+
+@keyframes pop {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.6); }
+  15% { opacity: 1; transform: translateY(-50%) scale(1.15); }
+  25% { transform: translateY(-50%) scale(1); }
+  75% { opacity: 1; transform: translateY(-50%); }
+  100% { opacity: 0; transform: translateY(-90%); }
+}

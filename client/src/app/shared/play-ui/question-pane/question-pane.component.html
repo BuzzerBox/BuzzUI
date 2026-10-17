@@ -7,6 +7,12 @@
       }
     </mat-card-title>
   </mat-card-header>
+  @if (!isMaster && isShowTheme()) {
+    <!-- how far the game is -->
+    <div class="progress" role="progressbar" [attr.aria-valuenow]="getCurrentQuestionNumber()" aria-valuemin="1" [attr.aria-valuemax]="getTotalQuestionNumber()">
+      <div class="progress-done" [style.width.%]="100 * getCurrentQuestionNumber() / getTotalQuestionNumber()"></div>
+    </div>
+  }
   <mat-card-content>
     @if (isMaster) {
       <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showQuestion"
@@ -47,7 +53,8 @@
           </button>
         }
         @if (showAnswers || (isMaster && question.show)) {
-          <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong">
+          <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong"
+            [style.--logged-in-color]="isShowTheme() ? getLoggedInColor() : null">
             @for (answer of getAnswers(); track answer; let i = $index) {
               <div class="answer-cell">
                 <button id="button{{i}}" mat-raised-button
@@ -57,7 +64,14 @@
                   [disabled]="!showAnswers" [appFitText]="!isMaster"
                   (click)="onClickAnswer(answer, $event.currentTarget)">
                   {{answer.text}}
+                  @if (isShowTheme() && isActivated(answer)) {
+                    <span class="answer-mark">{{answer.isCorrect ? '✓' : '✗'}}</span>
+                  }
                 </button>
+                <!-- over the button's corner, outside of it, so the button's text can't move it -->
+                @if (isShowTheme()) {
+                  <span class="answer-letter" aria-hidden="true">{{getAnswerLetter(i)}}</span>
+                }
               </div>
             }
           </div>

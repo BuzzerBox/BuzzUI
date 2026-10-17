@@ -2,6 +2,10 @@
   "gameName": "Game",
   "masterName": "Master",
   "screenName": "Screen",
+  "join": {
+    "wifiName": "BuzzerBoxNetwork",
+    "masterAddress": "buzzer.box"
+  },
   "server": {
     "port": 4201,
     "address": "",
