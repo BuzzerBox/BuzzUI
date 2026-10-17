@@ -1,7 +1,16 @@
-.center-center {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+/* the spinner with the message below it, centered together */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: max(16px, min(4vh, 4vw));
+  width: 100%;
+  height: 100vh;
 }
 
+.message {
+  margin: 0;
+  font-size: max(16px, min(3vh, 3vw));
+  text-align: center;
+}

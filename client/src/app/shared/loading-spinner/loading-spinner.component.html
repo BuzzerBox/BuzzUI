@@ -1,6 +1,4 @@
-<div>
-  <p class="center-center">
-    {{ text }}
-  </p>
-  <mat-spinner diameter="400" class="center-center"></mat-spinner>
+<div class="container">
+  <mat-spinner [diameter]="spinnerDiameter"></mat-spinner>
+  <p class="message">{{ text }}</p>
 </div>
