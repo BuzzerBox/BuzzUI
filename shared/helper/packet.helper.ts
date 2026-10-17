@@ -108,12 +108,13 @@ export class PacketHelper {
         };
     }
 
-    public static makeGradeAnswerPacket(teamId: string, result: EGradeResults, revealCorrectAnswers: boolean): IGradeAnswerPacket {
+    public static makeGradeAnswerPacket(teamId: string, result: EGradeResults, revealCorrectAnswers: boolean, answer?: IAnswer): IGradeAnswerPacket {
         return {
             packetType: EPacketTypes.GRADE_ANSWER,
             teamId,
             result,
-            revealCorrectAnswers
+            revealCorrectAnswers,
+            ...(answer ? {answer} : {})
         };
     }
 

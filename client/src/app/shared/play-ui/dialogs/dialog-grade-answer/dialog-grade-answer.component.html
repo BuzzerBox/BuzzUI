@@ -1,12 +1,42 @@
 <h1 mat-dialog-title>{{data.teamName}} hat gebuzzert</h1>
 <div mat-dialog-content>
+  @if (data.answers.length) {
+    <p>Welche Antwort wurde gegeben? <span class="optional">(optional)</span></p>
+    <div class="answer-options" role="group" aria-label="Gegebene Antwort">
+      @for (option of data.answers; track option.letter) {
+        <button type="button" mat-stroked-button class="answer-option"
+          [class.selected]="selectedAnswer === option.answer" [class.is-correct]="option.answer.isCorrect"
+          [attr.aria-pressed]="selectedAnswer === option.answer" [disabled]="option.isRevealed"
+          [title]="option.isRevealed ? 'Schon aufgedeckt' : ''"
+          (click)="toggleAnswer(option.answer)">
+          <span class="letter">{{option.letter}}</span>
+          <span class="text">{{option.answer.text}}</span>
+          @if (option.answer.isCorrect) {
+            <mat-icon class="correct-icon" title="Richtige Antwort">check</mat-icon>
+          }
+        </button>
+      }
+    </div>
+    <p class="hint">
+      @if (selectedAnswer && data.answersHiddenOnScreens) {
+        Die Antworten sind auf der Anzeige noch verborgen; diese leuchtet {{selectedAnswer.isCorrect ? 'grün' : 'rot'}} auf, sobald sie erscheinen.
+      } @else if (selectedAnswer) {
+        Diese Antwort leuchtet auf der Anzeige {{selectedAnswer.isCorrect ? 'grün' : 'rot'}} auf.
+      } @else if (data.answersHiddenOnScreens) {
+        Die Antworten sind auf der Anzeige noch verborgen.
+      } @else {
+        Ohne Auswahl leuchten bei „Richtig“ alle richtigen Antworten auf.
+      }
+    </p>
+  }
   <p>Wie war die Antwort?</p>
 </div>
 <div mat-dialog-actions class="grade-actions">
-  <button mat-raised-button class="correct" [mat-dialog-close]="EGradeResults.CORRECT">Richtig (+{{formatPoints(data.points)}})</button>
-  <button mat-raised-button class="wrong" [mat-dialog-close]="EGradeResults.WRONG">Falsch (−{{formatPoints(data.points)}})</button>
-  <button mat-raised-button class="double" [mat-dialog-close]="EGradeResults.DOUBLE">Doppelt (+{{formatPoints(data.points * 2)}})</button>
+  <button mat-raised-button class="correct" [mat-dialog-close]="grade(EGradeResults.CORRECT)" [disabled]="!isAllowed(EGradeResults.CORRECT)">Richtig (+{{formatPoints(data.points)}})</button>
+  <button mat-raised-button class="wrong" [mat-dialog-close]="grade(EGradeResults.WRONG)" [disabled]="!isAllowed(EGradeResults.WRONG)">Falsch (−{{formatPoints(data.points)}})</button>
+  <button mat-raised-button class="double" [mat-dialog-close]="grade(EGradeResults.DOUBLE)" [disabled]="!isAllowed(EGradeResults.DOUBLE)">Doppelt (+{{formatPoints(data.points * 2)}})</button>
 </div>
 <div mat-dialog-actions class="release-actions">
+  <button mat-button [mat-dialog-close]="undefined" title="Schließt das Fenster; die Buzzer bleiben gesperrt und die Antwort kann später über „Bewerten“ bewertet werden">Später bewerten</button>
   <button mat-button [mat-dialog-close]="RELEASE_WITHOUT_GRADE" title="Gibt die Buzzer für alle Teams frei, ohne Punkte zu vergeben">Ohne Wertung freigeben</button>
 </div>

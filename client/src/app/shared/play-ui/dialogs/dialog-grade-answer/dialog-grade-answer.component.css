@@ -27,3 +27,64 @@
   background-color: #ffc107 !important;
   color: rgba(0, 0, 0, 0.87) !important;
 }
+
+/* a grade that doesn't fit the picked answer */
+.grade-actions button:disabled {
+  opacity: 0.35;
+}
+
+.optional, .hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.hint {
+  font-size: 0.9em;
+}
+
+/* the answer options as on the play page: two columns */
+.answer-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+}
+
+button.answer-option {
+  display: flex;
+  justify-content: flex-start;
+  height: auto;
+  min-height: 48px;
+  padding: 6px 12px;
+  text-align: left;
+  white-space: normal;
+}
+
+.letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  height: 1.6em;
+  margin-right: 0.5em;
+  border-radius: 0.35em;
+  background-color: rgba(0, 0, 0, 0.12);
+  font-weight: 700;
+}
+
+.correct-icon {
+  margin-left: auto;
+  color: forestgreen;
+}
+
+/* the picked answer takes the color it lights up in */
+button.answer-option.selected {
+  background-color: orangered;
+  color: white;
+}
+
+button.answer-option.selected.is-correct {
+  background-color: forestgreen;
+}
+
+button.answer-option.selected .correct-icon {
+  color: white;
+}

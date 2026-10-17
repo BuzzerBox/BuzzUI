@@ -27,7 +27,13 @@ import {MatSnackBar, MatSnackBarRef, TextOnlySnackBar} from '@angular/material/s
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {TeamColorHelper} from '../../../helper/team-color.helper';
 import {ScreenThemeHelper} from '../../../themes/screen-theme.helper';
-import {DialogGradeAnswerComponent, IDialogGradeAnswerData, RELEASE_WITHOUT_GRADE, TGradeDialogResult} from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
+import {
+  DialogGradeAnswerComponent,
+  IDialogGradeAnswerData,
+  IDialogGradeAnswerOption,
+  RELEASE_WITHOUT_GRADE,
+  TGradeDialogResult
+} from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
 
 @Component({
     selector: 'app-question-pane',
@@ -52,6 +58,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private mediaUpdateSubscription: Subscription;
   private markTeamSubscription: Subscription;
   private gradeAnswerSubscription: Subscription;
+  private gradingRequestSubscription: Subscription;
   // only on the master: grading the answer of the team that buzzed
   private gradeDialogRef: MatDialogRef<DialogGradeAnswerComponent, TGradeDialogResult>;
   private gradeDialogTeamId: string;
@@ -76,6 +83,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.gradeAnswerSubscription = this.game.observeGradeAnswerPackets().subscribe(this.handleGradeAnswerPacket.bind(this));
     if (this.isMaster) {
       this.markTeamSubscription = this.game.observeMarkTeamPackets().subscribe(this.handleMarkTeamPacket.bind(this));
+      // "Bewerten" next to the buzzer button, after the dialog was closed without grading
+      this.gradingRequestSubscription = this.game.observeGradingRequests().subscribe(() => this.reopenGradeDialog());
       // after a reload or rejoining, a team may have buzzed already
       const gameState = this.game.getGameStateData();
       if (gameState?.setBuzzerLock && gameState.markedTeamIds?.length === 1) {
@@ -394,7 +403,12 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.closeGradeDialog();
     this.gradeDialogTeamId = teamId;
     const dialogRef = this.dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, TGradeDialogResult>(DialogGradeAnswerComponent, {
-      data: {teamName: team.name, points: GameService.getQuestionPoints(this.question)}
+      data: {
+        teamName: team.name,
+        points: GameService.getQuestionPoints(this.question),
+        answers: this.getGradeAnswerOptions(),
+        answersHiddenOnScreens: !this.showAnswers
+      }
     });
     this.gradeDialogRef = dialogRef;
     dialogRef.afterClosed().subscribe(result => {
@@ -407,9 +421,35 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         this.game.releaseBuzzerLock();
       } else if (result != null) {
         // a correct answer lights up where the answer options are shown
-        this.game.gradeAnswer(teamId, result, this.showAnswers && !!this.question?.show);
+        this.game.gradeAnswer(teamId, result.result, this.areAnswersShownOnScreens(), result.answer);
       }
     });
+  }
+
+  private reopenGradeDialog(): void {
+    const gameState = this.game.getGameStateData();
+    if (this.gradeDialogRef == null && gameState?.setBuzzerLock && gameState.markedTeamIds?.length === 1) {
+      this.openGradeDialog(gameState.markedTeamIds[0]);
+    }
+  }
+
+  private areAnswersShownOnScreens(): boolean {
+    return this.showAnswers && !!this.question?.show;
+  }
+
+  /**
+   * The answers the master can pick as the one the team gave. Also while the screens hide them, e.g. until the media
+   * ended: the picked one is revealed and lights up once they appear.
+   */
+  private getGradeAnswerOptions(): IDialogGradeAnswerOption[] {
+    if (!this.question?.show) {
+      return [];
+    }
+    return (this.question?.answers ?? []).map((answer, i) => ({
+      answer,
+      letter: this.getAnswerLetter(i),
+      isRevealed: this.isActivated(answer)
+    }));
   }
 
   private closeGradeDialog(): void {
@@ -427,7 +467,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     SubscriptionsHelper.cleanUpSubscriptions(this.answerSetStatePacketSubscription, this.mediaUpdateSubscription,
-      this.markTeamSubscription, this.gradeAnswerSubscription);
+      this.markTeamSubscription, this.gradeAnswerSubscription, this.gradingRequestSubscription);
     clearTimeout(this.flashWrongTimeout);
     this.closeGradeDialog();
   }
