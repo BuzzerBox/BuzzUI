@@ -29,6 +29,16 @@ export class SerialPortService {
         });
         this.serialPortConnection.on('error', this.onError.bind(this));
         this.serialPortConnection.on('data', this.onDataIn.bind(this))
+        // the microcontroller treats every eol byte as a heartbeat and shows a lost connection
+        // (the dot on the 7-segment display) when none arrives for 6 s
+        setInterval(() => this.sendHeartbeat(), ConfigService.get().serial.heartbeatIntervalInMS);
+    }
+
+    private sendHeartbeat(): void {
+        // skip while the port is closed, so a missing port doesn't log an error every interval
+        if (this.serialPortConnection.isOpen) {
+            this.write(Buffer.from([ConfigService.get().serial.eol]));
+        }
     }
 
     public static get(): SerialPortService {

@@ -91,7 +91,8 @@
       "setBuzzer": 2
     },
     "stuffingBit": 0,
-    "eol": 255
+    "eol": 255,
+    "heartbeatIntervalInMS": 2000
   },
   "enableBrowserKeypressEvents": false,
   "reverseProxy": false,
