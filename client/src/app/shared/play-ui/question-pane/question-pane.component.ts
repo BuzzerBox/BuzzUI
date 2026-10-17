@@ -126,10 +126,15 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         }
       }
     }
-    if (this.allCorrectAnswersFoundSnackBar != null) {
-      this.allCorrectAnswersFoundSnackBar.dismiss();
-      this.allCorrectAnswersFoundSnackBar = null;
-    }
+    this.dismissAllCorrectAnswersFoundSnackBar();
+  }
+
+  /**
+   * It belongs to the question, so it goes away when the question changes or the game is left
+   */
+  private dismissAllCorrectAnswersFoundSnackBar(): void {
+    this.allCorrectAnswersFoundSnackBar?.dismiss();
+    this.allCorrectAnswersFoundSnackBar = null;
   }
 
   public getCurrentQuestionNumber(): number {
@@ -316,10 +321,13 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (answer.isCorrect) {
       this.correctAnswersThatAreLeft--;
       if (this.correctAnswersThatAreLeft === 0 && this.isMaster) {
-        this.allCorrectAnswersFoundSnackBar = this.snackBar.open('Alle richtigen Antworten wurden aufgedeckt.', 'Okay');
-        const sub: Subscription = this.allCorrectAnswersFoundSnackBar.afterOpened().subscribe(() => {
-          sub.unsubscribe();
-          this.allCorrectAnswersFoundSnackBar = null;
+        const snackBarRef = this.snackBar.open('Alle richtigen Antworten wurden aufgedeckt.', 'Okay');
+        this.allCorrectAnswersFoundSnackBar = snackBarRef;
+        // closed with "Okay", or replaced by another snack bar
+        snackBarRef.afterDismissed().subscribe(() => {
+          if (this.allCorrectAnswersFoundSnackBar === snackBarRef) {
+            this.allCorrectAnswersFoundSnackBar = null;
+          }
         });
       } else if (this.isMaster && setInService) {
         // if there are correct answers left, manually release the buzzer lock
@@ -430,6 +438,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       this.markTeamSubscription, this.gradeAnswerSubscription);
     clearTimeout(this.flashWrongTimeout);
     this.closeGradeDialog();
+    this.dismissAllCorrectAnswersFoundSnackBar();
   }
 
   public isQuestionExisting(): boolean {
