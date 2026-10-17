@@ -61,6 +61,7 @@
                   [class.logged-in]="isLoggedIn(answer)"
                   [class.correct]="isActivated(answer) && answer.isCorrect"
                   [class.wrong]="isActivated(answer) && !answer.isCorrect"
+                  [class.correct-hint]="isMaster && answer.isCorrect && !isActivated(answer)"
                   [disabled]="!showAnswers" [appFitText]="!isMaster"
                   (click)="onClickAnswer(answer, $event.currentTarget)">
                   {{answer.text}}
@@ -71,6 +72,10 @@
                 <!-- over the button's corner, outside of it, so the button's text can't move it -->
                 @if (isShowTheme()) {
                   <span class="answer-letter" aria-hidden="true">{{getAnswerLetter(i)}}</span>
+                }
+                <!-- only the master knows which answers are correct before they are revealed -->
+                @if (isMaster && answer.isCorrect && !isActivated(answer)) {
+                  <span class="correct-badge" title="Richtige Antwort"><mat-icon>check</mat-icon></span>
                 }
               </div>
             }
