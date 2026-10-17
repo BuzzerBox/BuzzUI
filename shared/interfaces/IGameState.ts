@@ -1,4 +1,5 @@
-import {IGamePacket, EPacketTypes, IAnswer} from '../shared';
+import {IAnswer} from './IAnswer';
+import {IRoundProgress} from './IRound';
 import {IMediaQuestionState} from "./IMediaQuestionState";
 import {IMediaVolume} from "./IMediaVolume";
 
@@ -17,7 +18,15 @@ import {IMediaVolume} from "./IMediaVolume";
 export const CURRENT_SAVEGAME_VERSION = 3;
 
 export interface IGameState {
-    currentQuestionNumber: number;
+    /**
+     * The round that is played, see IRound.id
+     */
+    currentRoundId: string;
+    /**
+     * How far each round got, by IRound.id, so going back to a round continues it. States saved before rounds existed
+     * had currentQuestionNumber instead, see GameFormatHelper.migrateGameState.
+     */
+    roundProgress: Record<string, IRoundProgress>;
     markedTeamIds: string[];
     loggedAnswers: IAnswer[];
     // the answers of the current question that were revealed; missing in savegames from before it was tracked

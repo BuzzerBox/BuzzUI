@@ -8,7 +8,8 @@ import {
     IAnswerSetStatePacket,
     ISetQuestionPacket,
     IEndGamePacket,
-    IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket, IGradeAnswerPacket
+    IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket, IGradeAnswerPacket,
+    ISetRoundPacket
 } from "../interfaces";
 
 import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates, EGradeResults} from '../enums';
@@ -99,6 +100,13 @@ export class PacketHelper {
         return {
             packetType: EPacketTypes.SET_QUESTION,
             set
+        };
+    }
+
+    public static makeSetRoundPacket(roundId: string): ISetRoundPacket {
+        return {
+            packetType: EPacketTypes.SET_ROUND,
+            roundId
         };
     }
 

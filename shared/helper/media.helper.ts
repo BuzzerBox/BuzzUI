@@ -4,6 +4,8 @@ import {IMediaQuestionDefaults, IMediaQuestionState, TMediaKind} from '../interf
 import {EMediaStates} from '../enums/EMediaStates';
 import {EQuestionAnswerStates} from '../enums/EQuestionAnswerStates';
 import {FileExtensionsService} from '../services/file-extensions.service';
+import {IRound} from '../interfaces/IRound';
+import {RoundRulesHelper} from '../rules/round-rules.helper';
 
 export class MediaHelper {
     public static readonly MEDIA_KINDS: TMediaKind[] = ['image', 'playable', 'slideshow'];
@@ -61,13 +63,13 @@ export class MediaHelper {
     }
 
     /**
-     * The questions as they are played: every media question with the config it starts with
+     * The rounds as they are played: every media question with the config it starts with
      */
-    public static applyMediaDefaults(questions: IQuestion[], defaults: Partial<IMediaQuestionDefaults> | undefined): IQuestion[] {
-        return questions.map(question => {
+    public static applyMediaDefaults(rounds: IRound[], defaults: Partial<IMediaQuestionDefaults> | undefined): IRound[] {
+        return rounds.map(round => RoundRulesHelper.get(round).mapQuestions(round, question => {
             const initialConfig = this.getInitialConfig(question, defaults);
             return initialConfig ? {...question, initialConfig: {...initialConfig}} : question;
-        });
+        }));
     }
 
     public static isSameInitialConfig(a: IMediaQuestionState | undefined, b: IMediaQuestionState | undefined): boolean {
@@ -75,18 +77,19 @@ export class MediaHelper {
     }
 
     /**
-     * The media files the questions show that aren't there: the images of a slideshow, the file of other questions.
-     * The paths are relative to the game's media folder, like existingPaths, which holds every file and folder in it.
+     * The media files the questions of the rounds show that aren't there: the images of a slideshow, the file of other
+     * questions. The paths are relative to the game's media folder, like existingPaths, which holds every file and
+     * folder in it. Rounds and questions are counted from 1.
      */
-    public static findMissingMedia(questions: IQuestion[], existingPaths: Set<string>): {questionNumber: number, path: string}[] {
+    public static findMissingMedia(rounds: IRound[], existingPaths: Set<string>): {roundNumber: number, questionNumber: number, path: string}[] {
         const normalize = (mediaPath: string) => mediaPath.split('/').filter(segment => segment !== '').join('/');
-        return (questions ?? []).flatMap((question, index) => {
+        return (rounds ?? []).flatMap((round, roundIndex) => RoundRulesHelper.get(round).getQuestions(round).flatMap((question, index) => {
             const media = question.mediaDetails;
             const paths = this.isSlideshow(media) ? media.slides : (media?.fileSrc ? [media.fileSrc] : []);
             return paths
                 .filter(mediaPath => !existingPaths.has(normalize(mediaPath)))
-                .map(mediaPath => ({questionNumber: index + 1, path: mediaPath}));
-        });
+                .map(mediaPath => ({roundNumber: roundIndex + 1, questionNumber: index + 1, path: mediaPath}));
+        }));
     }
 
     public static isSlideshow(media: IMediaDetails | undefined): boolean {

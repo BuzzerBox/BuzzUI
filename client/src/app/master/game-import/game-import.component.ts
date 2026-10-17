@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
 import {Subscription} from 'rxjs';
-import {IGameBundle, IGameImportResult, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
+import {GameFormatHelper, IGameBundle, IGameImportResult, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
 import {StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
 import {FormatHelper} from '../../helper/format.helper';
@@ -53,6 +53,21 @@ export class GameImportComponent implements OnDestroy {
     } catch (e) {
       this.error = e instanceof SyntaxError ? 'Die Datei ist kein Spiel und kein Spielstand.' : (e as Error).message;
     }
+  }
+
+  /**
+   * E.g. "12 Fragen", and for a bundle with a state "und ein Spielstand (3 Teams, bei Frage 4 von 12)"
+   */
+  public getBundleSummary(): string {
+    const rounds = this.bundle.game.rounds;
+    const questionCount = GameFormatHelper.getAllQuestions(rounds).length;
+    const contents = rounds.length > 1 ? `${rounds.length} Runden, ${questionCount} Fragen` : `${questionCount} Fragen`;
+    const state = this.bundle.state;
+    if (state == null) {
+      return contents;
+    }
+    const progress = GameFormatHelper.describeProgress(GameFormatHelper.getProgress(rounds, state.gameState));
+    return `${contents} und ein Spielstand (${state.teams.length} Teams, bei ${progress})`;
   }
 
   public getSanitizedName(): string {

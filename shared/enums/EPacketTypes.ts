@@ -40,4 +40,8 @@ export enum EPacketTypes {
      * Sent from the server to the master when another device took over as master, see IRegisterMasterPacket.takeOver
      */
     MASTER_TAKEN_OVER,
+    /**
+     * Sent from the master to play another round of the game, see ISetRoundPacket
+     */
+    SET_ROUND,
 }

@@ -25,6 +25,8 @@
               <span class="spacer"></span>
               @if (hasNextQuestion()) {
                 <button mat-button class="large-controls" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
+              } @else if (getNextRound(); as nextRound) {
+                <button mat-button class="large-controls" (click)="startNextRound()" [title]="'Weiter mit ' + nextRound.name">Nächste Runde</button>
               } @else {
                 <!-- after the last question, the game ends here instead -->
                 <button mat-button class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>

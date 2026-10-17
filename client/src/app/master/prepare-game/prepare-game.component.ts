@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {Router} from '@angular/router';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
-import {IBuzzer, IDirectoryTree, IGameDefinition, IGameInstanceState, IGameState, ITeam, MediaHelper, StorageApiHelper} from '../../../../../shared/shared';
+import {GameFormatHelper, IBuzzer, IDirectoryTree, IGameDefinition, IGameInstanceState, IGameState, ITeam, MediaHelper, StorageApiHelper} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
@@ -21,6 +21,7 @@ interface ITeamRow {
 }
 
 interface IMissingMedia {
+  roundNumber: number;
   questionNumber: number;
   path: string;
 }
@@ -103,11 +104,22 @@ export class PrepareGameComponent implements OnInit {
       node.children?.forEach(collect);
     };
     collect(tree);
-    this.missingMedia = MediaHelper.findMissingMedia(this.definition.questions, existing);
+    this.missingMedia = MediaHelper.findMissingMedia(this.definition.rounds, existing);
   }
 
   public getMissingQuestionNumbers(): string {
-    return [...new Set(this.missingMedia.map(media => media.questionNumber))].join(', ');
+    return [...new Set(this.missingMedia.map(media => this.getQuestionLabel(media)))].join(', ');
+  }
+
+  /**
+   * E.g. "3", or "Runde 2, 3" in a game of several rounds
+   */
+  public getQuestionLabel(media: IMissingMedia): string {
+    return this.definition.rounds.length > 1 ? `Runde ${media.roundNumber}, ${media.questionNumber}` : String(media.questionNumber);
+  }
+
+  public getQuestionCount(): number {
+    return GameFormatHelper.getAllQuestions(this.definition?.rounds).length;
   }
 
   public chooseTheme(theme: IScreenTheme): void {
@@ -165,16 +177,17 @@ export class PrepareGameComponent implements OnInit {
   }
 
   public getProgress(): string {
-    const questionCount = this.definition.questions.length;
     if (this.state == null) {
-      return `${questionCount} Fragen`;
+      const rounds = this.definition.rounds.length;
+      return rounds > 1 ? `${rounds} Runden, ${this.getQuestionCount()} Fragen` : `${this.getQuestionCount()} Fragen`;
     }
-    const current = Math.min((this.state.gameState?.currentQuestionNumber ?? 0) + 1, questionCount);
-    return `${this.state.finished ? 'Beendet' : 'Weiter'} bei Frage ${current} von ${questionCount}`;
+    // e.g. "bei Frage 4 von 10"
+    const progress = GameFormatHelper.describeProgress(GameFormatHelper.getProgress(this.definition.rounds, this.state.gameState));
+    return `${this.state.finished ? 'Beendet' : 'Weiter'} bei ${progress}`;
   }
 
   public canStart(): boolean {
-    return this.definition != null && this.definition.questions.length > 0 && this.teamsFormGroup.valid
+    return this.definition != null && this.getQuestionCount() > 0 && this.teamsFormGroup.valid
       && this.getActiveCount() >= this.MIN_TEAMS && (this.isContinuing() || this.stateName.valid && !!this.getStateName())
       && !this.starting;
   }
@@ -200,16 +213,15 @@ export class PrepareGameComponent implements OnInit {
     let gameState: IGameState | undefined;
     if (this.mappedGameState != null) {
       const teamIds = teams.map(team => team.teamId);
-      const lastQuestion = Math.max(0, this.definition.questions.length - 1);
+      // the server sends states for the rounds of their version, which are completed just in case
       gameState = {
-        ...this.mappedGameState,
-        currentQuestionNumber: Math.min(this.mappedGameState.currentQuestionNumber ?? 0, lastQuestion),
+        ...GameFormatHelper.completeGameState(this.mappedGameState, this.definition.rounds),
         markedTeamIds: (this.mappedGameState.markedTeamIds ?? []).filter(id => teamIds.includes(id))
       };
     }
     // the questions without their own config start as the game's defaults for their media say
-    const questions = StorageService.resolveMediaUrls(this.ref, MediaHelper.applyMediaDefaults(this.definition.questions, this.definition.mediaDefaults));
-    await this.game.setupStoredGame(teams, questions, gameState, {
+    const rounds = StorageService.resolveMediaUrls(this.ref, MediaHelper.applyMediaDefaults(this.definition.rounds, this.definition.mediaDefaults));
+    await this.game.setupStoredGame(teams, rounds, gameState, {
       locationId: this.ref.location.id,
       gameName: this.ref.gameName,
       gameVersion: this.definition.version,

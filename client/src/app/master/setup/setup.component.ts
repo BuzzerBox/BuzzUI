@@ -4,7 +4,20 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService} from '../../services/game.service';
 import {MatStepper} from '@angular/material/stepper';
-import {IQuestion, IAnswer, IMediaQuestionDefaults, IMediaQuestionState, IStorageLocation, MediaHelper, StorageApiHelper, TMediaKind} from '../../../../../shared/shared';
+import {
+  GameFormatHelper,
+  IAnswer,
+  IClassicRound,
+  IMediaQuestionDefaults,
+  IMediaQuestionState,
+  IQuestion,
+  IRound,
+  IStorageLocation,
+  MediaHelper,
+  StorageApiHelper,
+  TMediaKind
+} from '../../../../../shared/shared';
+import * as Uuid from 'uuid';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IMediaSelection} from '../interfaces/IMediaSelection';
 import {IGameRef, StorageService} from '../../services/storage.service';
@@ -13,7 +26,8 @@ import {baseUrlMaster, pathsMaster} from '../paths-master';
 
 /**
  * The editor of a game: its name and where it is stored, and its questions. Saving adds a new version of the game;
- * the teams are chosen when it is played.
+ * the teams are chosen when it is played. It edits the first classic round of the game; other rounds are kept as they
+ * are until the editor has a list of rounds (#120).
  */
 @Component({
     selector: 'app-setup',
@@ -46,6 +60,10 @@ export class SetupComponent implements OnInit {
   public savedVersion: number = null;
   public saving = false;
   public saveError: string = null;
+
+  // the rounds of the loaded version; the edited one gets the questions of the form when saving
+  private rounds: IRound[] = [];
+  private editedRoundId: string | null = null;
 
   public questionsFormGroup: UntypedFormGroup;
   public questionFormGroupNames: string[];
@@ -101,8 +119,11 @@ export class SetupComponent implements OnInit {
         const definition = await this.storage.getVersion(ref, baseVersion);
         this.loadedVersion = definition.version;
         this.latestVersion = info.latestVersion;
-        this.initMediaDefaults(definition.questions, definition.mediaDefaults);
-        this.initQuestionsFormControls(definition.questions);
+        this.rounds = definition.rounds;
+        const editedRound = this.rounds.find(round => round.mode === 'classic') as IClassicRound | undefined;
+        this.editedRoundId = editedRound?.id ?? null;
+        this.initMediaDefaults(GameFormatHelper.getAllQuestions(this.rounds), definition.mediaDefaults);
+        this.initQuestionsFormControls(editedRound?.questions ?? []);
       }
       this.ref = ref;
       // continue with the questions
@@ -186,6 +207,7 @@ export class SetupComponent implements OnInit {
       // built like a new question so the imported one gets the same validators
       const questionFormGroup = this.createQuestionFormGroup();
       questionFormGroup.patchValue({
+        id: q.id,
         text: q.text,
         mediaSrc: q.mediaDetails?.fileSrc ?? '',
         slides: q.mediaDetails?.slides ?? null,
@@ -281,6 +303,8 @@ export class SetupComponent implements OnInit {
 
   private createQuestionFormGroup(): UntypedFormGroup {
     return new UntypedFormGroup({
+      // stays the same when the question is changed or moved, see IQuestion.id
+      id: new UntypedFormControl(Uuid.v4()),
       text: new UntypedFormControl(null, Validators.required),
       // relative to the game's media folder
       mediaSrc: new UntypedFormControl(''),
@@ -349,6 +373,7 @@ export class SetupComponent implements OnInit {
         });
       }
       const question: IQuestion = {
+        id: questionFormGroup.get('id').value,
         text: questionText,
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
@@ -381,6 +406,19 @@ export class SetupComponent implements OnInit {
   }
 
   /**
+   * The rounds of the game with the questions of the form in the edited round; a new game gets its first round
+   */
+  private buildRounds(): IRound[] {
+    const questions = this.buildSetupQuestionsObject();
+    if (this.editedRoundId == null) {
+      this.editedRoundId = Uuid.v4();
+      this.rounds = [...this.rounds, GameFormatHelper.makeClassicRound(this.editedRoundId, GameFormatHelper.makeRoundName(this.rounds.length), [])];
+    }
+    this.rounds = this.rounds.map(round => round.id === this.editedRoundId ? {...round, questions} : round);
+    return this.rounds;
+  }
+
+  /**
    * Saves the questions as a new version of the game, if they changed
    */
   public async saveGame(): Promise<void> {
@@ -390,7 +428,7 @@ export class SetupComponent implements OnInit {
     this.saving = true;
     this.saveError = null;
     try {
-      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults);
+      const result = await this.storage.saveVersion(this.ref, this.buildRounds(), this.mediaDefaults);
       this.savedVersion = result.version;
       this.loadedVersion = result.version;
       this.snackBar.open(result.unchanged ? `Nichts geändert, es bleibt bei Version ${result.version}.` : `Version ${result.version} wurde gespeichert.`,

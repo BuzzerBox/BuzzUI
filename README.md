@@ -148,6 +148,11 @@ games/<Name>/                      on the box: <storage.boxPath>/games (default 
 ```
 
 - **Versions:** saving in the editor adds a new version, if anything changed. Versions are never changed afterwards.
+  A version consists of rounds, each played by the rules of its mode (`shared/rules/`); so far every round is a
+  classic one, with the questions one after the other. Questions and rounds have IDs that stay the same, which states
+  remember their progress by. Versions and states saved before rounds existed (format 4 and older, see
+  `CURRENT_GAME_FORMAT_VERSION`) are read as one classic round each time they are loaded or imported
+  (`GameFormatHelper`); their files stay as they are.
 - **States:** each time a game is played gets a state with its teams and progress, which plays the version it was
   started with. *Spiel fortsetzen* lists the states of all games to continue them, *Neues Spiel* starts a new one with
   the latest version. The server saves the state automatically while the game is played; the toolbar shows when it

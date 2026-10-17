@@ -3,6 +3,7 @@ import {GameService} from '../../services/game.service';
 import {
   ITeam,
   IQuestion,
+  IRound,
   IEndGamePacket,
   IMarkTeamPacket
 } from '../../../../../shared/shared';
@@ -106,6 +107,14 @@ export class PlayUiComponent implements OnInit, OnDestroy {
 
   public hasNextQuestion(): boolean {
     return this.game.hasNextQuestion();
+  }
+
+  public getNextRound(): IRound | undefined {
+    return this.game.getNextRound();
+  }
+
+  public startNextRound(): void {
+    this.currentQuestion = this.game.startNextRound();
   }
 
   public endGame(): void {

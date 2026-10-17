@@ -154,6 +154,13 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * The name of the round, only for games with several
+   */
+  public getRoundName(): string | null {
+    return (this.game.getRounds()?.length ?? 0) > 1 ? this.game.getCurrentRound()?.name ?? null : null;
+  }
+
+  /**
    * What the question is worth, e.g. "3 Punkte"; only shown if some question in the game is not worth the default 1
    */
   public getPointsLabel(): string | null {

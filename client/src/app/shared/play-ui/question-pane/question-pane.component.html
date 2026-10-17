@@ -1,6 +1,9 @@
 @if (isQuestionExisting()) {
   <mat-card-header>
     <mat-card-title>
+      @if (getRoundName(); as roundName) {
+        {{roundName}} ·
+      }
       Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}
       @if (getPointsLabel(); as pointsLabel) {
         <span class="question-points">{{pointsLabel}}</span>

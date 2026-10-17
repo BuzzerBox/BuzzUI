@@ -1,4 +1,5 @@
-import {IGamePacket, EPacketTypes, ITeam, IQuestion, IGameState, IGameStorageRef} from '../shared';
+import {IGamePacket, EPacketTypes, ITeam, IGameState, IGameStorageRef} from '../shared';
+import {IRound} from './IRound';
 
 export interface ISetupPacket extends IGamePacket {
     packetType: EPacketTypes.SETUP_GAME;
@@ -6,7 +7,7 @@ export interface ISetupPacket extends IGamePacket {
      * The teams playing
      */
     teams: ITeam[];
-    questions: IQuestion[];
+    rounds: IRound[];
     currentGameState?: IGameState
     /**
      * Where the game is stored, so its state is saved there while it is played

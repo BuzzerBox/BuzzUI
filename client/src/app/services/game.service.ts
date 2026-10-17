@@ -9,6 +9,9 @@ import {
   EGradeResults,
   EQuestionAnswerStates,
   GameStateHelper,
+  GameFormatHelper,
+  ClassicRoundRules,
+  RoundRulesHelper,
   IAnswer,
   IAnswerSetStatePacket,
   IDataForScreenPacket,
@@ -24,6 +27,8 @@ import {
   INewMasterAccepted,
   IPresetupAvailableInfoPacket,
   IQuestion,
+  IRound,
+  IRoundProgress,
   IRegisterMasterPacket,
   IRegisterScreenPacket,
   IResetServerPacket,
@@ -31,6 +36,7 @@ import {
   ISetBuzzerLockPacket,
   ISetMediaVolumePacket,
   ISetQuestionPacket,
+  ISetRoundPacket,
   ISetupPacket,
   IStartGamePacket,
   IStorageAccessPacket,
@@ -81,7 +87,7 @@ export class GameService implements OnDestroy {
   private currentGameStateInAutomaton: EGameStatesMaster;
   private previousGameStateInAutomaton: EGameStatesMaster;
   private teams: ITeam[];
-  private questions: IQuestion[];
+  private rounds: IRound[];
   private currentGameState: IGameState;
   private presetupData: IPresetupAvailableInfoPacket;
   private initedAsMaster = false;
@@ -122,7 +128,7 @@ export class GameService implements OnDestroy {
     this.webSocketService.observeReconnects().subscribe(() => this.onReconnected());
     this.markTeamSubject = new Subject<IMarkTeamPacket>();
     this.teams = [];
-    this.questions = [];
+    this.rounds = [];
   }
 
   public useAsMaster(): void {
@@ -280,6 +286,9 @@ export class GameService implements OnDestroy {
       case EPacketTypes.SET_QUESTION:
         this.handleSetQuestionPacket(message as ISetQuestionPacket);
         break;
+      case EPacketTypes.SET_ROUND:
+        this.handleSetRoundPacket(message as ISetRoundPacket);
+        break;
       case EPacketTypes.END_GAME:
         this.handleEndGamePacket(message as IEndGamePacket);
         break;
@@ -413,18 +422,18 @@ export class GameService implements OnDestroy {
 
   /**
    * Sets up a stored game, whose state the server then saves while it is played
-   * @param questions with the URLs of their media
+   * @param rounds with the URLs of their media
    * @param gameState undefined for a new state
    * @param themeId how the screens look, see screen-themes.ts
    */
-  public setupStoredGame(teams: ITeam[], questions: IQuestion[], gameState: IGameState | undefined, storage: IGameStorageRef,
+  public setupStoredGame(teams: ITeam[], rounds: IRound[], gameState: IGameState | undefined, storage: IGameStorageRef,
                          isNewState: boolean, themeId?: string): Promise<void> {
-    return this.setupGame(teams, questions, gameState, true, storage, isNewState, themeId);
+    return this.setupGame(teams, rounds, gameState, true, storage, isNewState, themeId);
   }
 
-  public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true,
+  public setupGame(teams: ITeam[], rounds: IRound[], currentGameState?: IGameState, sendPacket: boolean = true,
                    storage?: IGameStorageRef, isNewState?: boolean, themeId?: string): Promise<void> {
-    const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
+    const promise: Promise<void> = this.setGameData(teams, rounds, currentGameState, true);
     // the master shows parts of the theme too, e.g. the answers' letters
     if (themeId) {
       this.currentGameState.themeId = themeId;
@@ -437,7 +446,7 @@ export class GameService implements OnDestroy {
       this.webSocketService.send<ISetupPacket>({
         packetType: EPacketTypes.SETUP_GAME,
         teams,
-        questions,
+        rounds,
         currentGameState,
         storage,
         isNewState,
@@ -455,14 +464,14 @@ export class GameService implements OnDestroy {
     } else {
       // TODO: what to do if game setup was not successful?
       this.teams = null;
-      this.questions = null;
+      this.rounds = null;
       this.currentGameState = null;
     }
   }
 
   private clearGameData(): void {
     this.teams = [];
-    this.questions = [];
+    this.rounds = [];
     this.currentGameState = null;
   }
 
@@ -476,7 +485,7 @@ export class GameService implements OnDestroy {
         // needed to change the teams later on
         this.presetupData = {packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO, availableBuzzers: packet.availableBuzzers};
       }
-      this.setGameData(packet.teams, packet.questions, packet.currentGameState);
+      this.setGameData(packet.teams, packet.rounds, packet.currentGameState);
       // the screens still show the running game, so it goes on right away
       this.setNewGameState(EGameStatesMaster.READY_TO_START);
       this.startGame();
@@ -500,11 +509,23 @@ export class GameService implements OnDestroy {
     return this.teams;
   }
 
+  /**
+   * The questions of the current round
+   */
   public getQuestions(): IQuestion[] {
-    return this.questions;
+    const round = this.getCurrentRound();
+    return round ? RoundRulesHelper.get(round).getQuestions(round) : [];
   }
 
-  public async setGameData(teams: ITeam[], questions: IQuestion[], gameState?: IGameState, dotNotMergeBuzzerIds: boolean = false): Promise<void> {
+  public getRounds(): IRound[] {
+    return this.rounds;
+  }
+
+  public getCurrentRound(): IRound | undefined {
+    return GameFormatHelper.getCurrentRound(this.rounds, this.currentGameState);
+  }
+
+  public async setGameData(teams: ITeam[], rounds: IRound[], gameState?: IGameState, dotNotMergeBuzzerIds: boolean = false): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!dotNotMergeBuzzerIds) {
         this.teams = this.mergeBuzzerIdsFromPresetupDataWithSetTeams(teams);
@@ -516,10 +537,11 @@ export class GameService implements OnDestroy {
           team.points = 0;
         }
       }
-      this.questions = questions;
+      this.rounds = rounds ?? [];
       if (gameState == null) {
-        this.currentGameState = {
-          currentQuestionNumber: 0,
+        this.currentGameState = GameFormatHelper.completeGameState({
+          currentRoundId: '',
+          roundProgress: {},
           loggedAnswers: [],
           activatedAnswers: [],
           markedTeamIds: [],
@@ -531,25 +553,30 @@ export class GameService implements OnDestroy {
             answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
           },
           mediaVolume: PacketHelper.getDefaultMediaVolume()
-        };
+        }, this.rounds);
       } else {
-        this.currentGameState = gameState;
+        // the server sends complete states; one passed in from a file may not be
+        this.currentGameState = GameFormatHelper.completeGameState(gameState, this.rounds);
       }
       resolve();
     });
   }
 
-  public getQuestion(i: number): IQuestion {
-    return this.questions[i];
-  }
-
   public getCurrentQuestion(): IQuestion {
     if (!this.currentGameState) { return null; }
-    return this.getQuestion(this.currentGameState.currentQuestionNumber);
+    return GameFormatHelper.getCurrentQuestion(this.rounds, this.currentGameState) ?? null;
   }
 
+  /**
+   * The place of the current question in its round, counted from 0
+   */
   public getCurrentQuestionNumber(): number {
-    return this.currentGameState?.currentQuestionNumber ?? 0;
+    const round = this.getCurrentRound();
+    return round ? RoundRulesHelper.get(round).getCurrentQuestionIndex(round, this.getCurrentProgress()) : 0;
+  }
+
+  private getCurrentProgress(): IRoundProgress | undefined {
+    return GameFormatHelper.getCurrentProgress(this.currentGameState);
   }
 
   public addPoint(team: ITeam): void {
@@ -562,14 +589,14 @@ export class GameService implements OnDestroy {
   }
 
   public static getQuestionPoints(question: IQuestion | null | undefined): number {
-    return question?.points ?? 1;
+    return ClassicRoundRules.getQuestionPoints(question);
   }
 
   /**
    * Point values are only worth showing when they differ, i.e. some question is not worth the default 1 point
    */
   public hasCustomQuestionPoints(): boolean {
-    return (this.questions ?? []).some(question => GameService.getQuestionPoints(question) !== 1);
+    return GameFormatHelper.getAllQuestions(this.rounds).some(question => GameService.getQuestionPoints(question) !== 1);
   }
 
   public removePoint(team: ITeam): void {
@@ -637,31 +664,77 @@ export class GameService implements OnDestroy {
 
   public getPreviousQuestion(): IQuestion {
     if (this.hasPreviousQuestion()) {
-      this.currentGameState.currentQuestionNumber--;
-      GameStateHelper.resetQuestionProgress(this.currentGameState);
-      this.sendUnmarkAllTeamsPacket();
-      this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
+      this.selectQuestion(this.getCurrentQuestionNumber() - 1);
     }
     return this.getCurrentQuestion();
   }
 
   public getNextQuestion(): IQuestion {
     if (this.hasNextQuestion()) {
-      this.currentGameState.currentQuestionNumber++;
-      GameStateHelper.resetQuestionProgress(this.currentGameState);
-      this.sendUnmarkAllTeamsPacket();
-      this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
+      this.selectQuestion(this.getCurrentQuestionNumber() + 1);
     }
     return this.getCurrentQuestion();
   }
 
+  private selectQuestion(index: number): void {
+    if (!this.applySelectQuestion(index)) {
+      return;
+    }
+    this.sendUnmarkAllTeamsPacket();
+    this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(index));
+  }
+
+  /**
+   * Shows the question at that place in the current round, as the server does for a SET_QUESTION packet
+   */
+  private applySelectQuestion(index: number): boolean {
+    const round = this.getCurrentRound();
+    const progress = round ? RoundRulesHelper.get(round).selectQuestion(round, this.getCurrentProgress(), index) : null;
+    if (progress == null) {
+      return false;
+    }
+    this.currentGameState.roundProgress[round.id] = progress;
+    GameStateHelper.resetQuestionProgress(this.currentGameState);
+    return true;
+  }
+
   public hasPreviousQuestion(): boolean {
-    return this.getCurrentQuestionNumber() > 0;
+    const round = this.getCurrentRound();
+    return !!round && RoundRulesHelper.get(round).hasPreviousQuestion(round, this.getCurrentProgress());
   }
 
   public hasNextQuestion(): boolean {
-    if (!this.questions) { return false; }
-    return this.getCurrentQuestionNumber() < this.questions.length - 1;
+    const round = this.getCurrentRound();
+    return !!round && RoundRulesHelper.get(round).hasNextQuestion(round, this.getCurrentProgress());
+  }
+
+  /**
+   * The round after the current one, once the current one is over; undefined after the last round
+   */
+  public getNextRound(): IRound | undefined {
+    const round = this.getCurrentRound();
+    if (!round || !RoundRulesHelper.get(round).isOver(round, this.getCurrentProgress())) {
+      return undefined;
+    }
+    return this.rounds[GameFormatHelper.getRoundIndex(this.rounds, round.id) + 1];
+  }
+
+  /**
+   * Goes on with the next round, see getNextRound()
+   */
+  public startNextRound(): IQuestion {
+    const nextRound = this.getNextRound();
+    if (nextRound) {
+      this.applySetRound(nextRound.id);
+      this.sendUnmarkAllTeamsPacket();
+      this.webSocketService.send<ISetRoundPacket>(PacketHelper.makeSetRoundPacket(nextRound.id));
+    }
+    return this.getCurrentQuestion();
+  }
+
+  private applySetRound(roundId: string): void {
+    this.currentGameState.currentRoundId = roundId;
+    GameStateHelper.resetQuestionProgress(this.currentGameState);
   }
 
   public endGame(): void {
@@ -694,7 +767,7 @@ export class GameService implements OnDestroy {
 
   private handleDataForScreenPacket(packet: IDataForScreenPacket): void {
     if (this.isUsedAsScreen()) {
-      this.setGameData(packet.teams, packet.questions, packet.gameState);
+      this.setGameData(packet.teams, packet.rounds, packet.gameState);
       if (packet.gameState?.mediaQuestionState) {
         this.updateMediaStateSubject.next({
           packetType: EPacketTypes.UPDATE_MEDIA_STATE,
@@ -796,8 +869,16 @@ export class GameService implements OnDestroy {
 
   private handleSetQuestionPacket(packet: ISetQuestionPacket): void {
     if (this.isUsedAsScreen()) {
-      this.currentGameState.currentQuestionNumber = packet.set;
-      GameStateHelper.resetQuestionProgress(this.currentGameState);
+      this.applySelectQuestion(packet.set);
+      if (this.cbUpdateCurrentQuestion != null) {
+        this.cbUpdateCurrentQuestion();
+      }
+    }
+  }
+
+  private handleSetRoundPacket(packet: ISetRoundPacket): void {
+    if (this.isUsedAsScreen() && GameFormatHelper.getRound(this.rounds, packet.roundId) != null) {
+      this.applySetRound(packet.roundId);
       if (this.cbUpdateCurrentQuestion != null) {
         this.cbUpdateCurrentQuestion();
       }
