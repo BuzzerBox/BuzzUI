@@ -20,6 +20,9 @@
   --bb-brand-light: #ff6659;
   --bb-correct: #2e9e4f;
   --bb-wrong: #e0442b;
+  // a selected answer, before it is revealed; also on the master and in the classic theme
+  --bb-selected: #3f6fd8;
+  --bb-on-selected: #fff;
   --bb-gold: #ffc940;
   --bb-silver: #c9d1e0;
   --bb-bronze: #d9925b;
@@ -43,6 +46,8 @@
   --bb-brand-light: #e04a3f;
   --bb-correct: #23914a;
   --bb-wrong: #d93a22;
+  --bb-selected: #3461c9;
+  --bb-on-selected: #fff;
   --bb-gold: #e3a700;
   --bb-silver: #9aa3b5;
   --bb-bronze: #c27a45;
