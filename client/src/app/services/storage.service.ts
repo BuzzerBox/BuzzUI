@@ -6,6 +6,7 @@ import {
   IDirectoryTree,
   IGameBundle,
   IGameDefinition,
+  IMediaQuestionDefaults,
   IGameCopyResult,
   IGameImportResult,
   IGameInfo,
@@ -213,10 +214,10 @@ export class StorageService {
   }
 
   /**
-   * Saves the questions as a new version, unless they are the same as in the latest one
+   * Saves the questions and media defaults as a new version, unless they are the same as in the latest one
    */
-  public saveVersion(ref: IGameRef, questions: IQuestion[]): Promise<IGameVersionInfo & {unchanged: boolean}> {
-    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {questions}, {headers: this.headers()}).toPromise();
+  public saveVersion(ref: IGameRef, questions: IQuestion[], mediaDefaults: IMediaQuestionDefaults): Promise<IGameVersionInfo & {unchanged: boolean}> {
+    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {questions, mediaDefaults}, {headers: this.headers()}).toPromise();
   }
 
   public deleteVersion(ref: IGameRef, version: number): Promise<void> {

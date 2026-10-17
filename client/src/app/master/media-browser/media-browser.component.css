@@ -78,3 +78,21 @@ a {
 .hint {
   color: rgba(0, 0, 0, 0.6);
 }
+
+/* the list styles its meta slot for short text (top aligned, a spacer before it), which puts buttons out of line */
+.mdc-list-item .mdc-list-item__end.entry-action {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  margin-top: 0;
+}
+
+.mdc-list-item .mdc-list-item__end.entry-action::before {
+  display: none;
+}
+
+/* both labels get the same width, so the buttons line up as one column */
+.pick-button {
+  min-width: 13.5em;
+  justify-content: flex-start;
+}

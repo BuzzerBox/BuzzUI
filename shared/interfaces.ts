@@ -7,7 +7,7 @@ import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {IQuestion} from './interfaces/IQuestion';
 import {IMediaDetails} from './interfaces/IMediaDetails';
-import {IMediaQuestionState} from './interfaces/IMediaQuestionState';
+import {IMediaQuestionState, IMediaQuestionDefaults, TMediaKind} from './interfaces/IMediaQuestionState';
 import {IMediaVolume} from './interfaces/IMediaVolume';
 import {ISetMediaVolumePacket} from './interfaces/ISetMediaVolumePacket';
 import {ISetupPacket} from './interfaces/ISetupPacket';
@@ -70,6 +70,8 @@ export {
 	CURRENT_SAVEGAME_VERSION,
 	ISetBuzzerLockPacket,
 	IMediaQuestionState,
+	IMediaQuestionDefaults,
+	TMediaKind,
 	IMediaVolume,
 	ISetMediaVolumePacket,
 	IGradeAnswerPacket,

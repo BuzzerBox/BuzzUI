@@ -1,91 +1,76 @@
-<h3>Media Selection :</h3>
-@if (activeNode !== undefined && activeNode.type === 'directory') {
-  <div>
-    Die Bildserie {{activeNode.name}} ({{getSlideImages(activeNode).length}} Bilder) ist ausgewaehlt.
+@if (activeNode !== undefined && !browsing) {
+  <div class="selection">
+    <mat-icon class="selection-icon">{{getIcon(activeNode)}}</mat-icon>
+    <span class="selection-text">
+      <span class="selection-name">{{activeNode.name}}</span>
+      <span class="selection-kind">{{getKindText(activeNode)}}</span>
+    </span>
+    <button mat-stroked-button type="button" (click)="browsing = true">Ändern</button>
+    <button mat-button type="button" (click)="changeSelection(undefined)">Entfernen</button>
   </div>
-}
-@if (activeNode !== undefined && activeNode.type !== 'directory') {
-  <div>
-    Die Datei {{activeNode.name}} ist ausgewaehlt.
+} @else if (activeNode === undefined && missingLocation && !browsing) {
+  <div class="selection missing">
+    <mat-icon class="selection-icon">error_outline</mat-icon>
+    <span class="selection-text">
+      <span class="selection-name">{{missingLocation}}</span>
+      <span class="selection-kind">Nicht in den Medien des Spiels. Lade eine Datei mit diesem Namen hoch oder wähle ein anderes Medium.</span>
+    </span>
+    <button mat-stroked-button type="button" (click)="browsing = true">Ändern</button>
+    <button mat-button type="button" (click)="changeSelection(undefined)">Entfernen</button>
   </div>
-}
-@if (activeNode === undefined && missingLocation) {
-  <div>
-    <button mat-icon-button (click)="changeSelection(undefined)" title="Medium entfernen">
-      <mat-icon>remove_circle_outline</mat-icon>
-    </button>
-    Das ausgewählte Medium {{missingLocation}} ist nicht in den Medien des Spiels. Lade eine Datei mit diesem Namen hoch oder wähle ein anderes Medium.
-  </div>
-}
-@if (activeNode === undefined && !missingLocation) {
-  <div>
-    Zu dieser Frage ist kein Medium ausgewaehlt.
-  </div>
-}
-
-<div class="media-actions">
-  <input type="file" #mediaUpload hidden multiple (change)="upload($any($event.target).files); mediaUpload.value = ''">
-  <button mat-stroked-button type="button" [disabled]="uploading" (click)="mediaUpload.click()">
-    <mat-icon>upload</mat-icon> Medien hochladen
-  </button>
-  <button mat-stroked-button type="button" (click)="openCopyDialog()">
-    <mat-icon>usb</mat-icon> Vom USB-Stick übernehmen
-  </button>
-  @if (uploading) {
-    <mat-spinner diameter="20"></mat-spinner>
-  }
-</div>
-
-<mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
-  <!-- This is the tree node template for files -->
-  <mat-nested-tree-node *matTreeNodeDef="let node">
-    <div class="mat-tree-node" (click)="changeSelection(node)" [ngClass]="{'background-highlight': activeNode === node}">
-      @if (activeNode !== node && isImage(node)) {
-        <mat-icon mat-list-icon>image</mat-icon>
+} @else {
+  <div class="browser">
+    <div class="browser-header">
+      <span class="hint">{{activeNode === undefined ? 'Kein Medium ausgewählt. Wähle eine Datei oder einen Ordner als Diashow.' : 'Wähle ein anderes Medium.'}}</span>
+      @if (activeNode !== undefined || missingLocation) {
+        <button mat-button type="button" (click)="browsing = false">Abbrechen</button>
       }
-      @if (activeNode !== node && isVideo(node)) {
-        <mat-icon mat-list-icon>movie</mat-icon>
-      }
-      @if (activeNode !== node && isAudio(node)) {
-        <mat-icon mat-list-icon>audiotrack</mat-icon>
-      }
-      @if (activeNode === node) {
-        <mat-icon mat-list-icon>check</mat-icon>
-      }
-      {{node.name}}
     </div>
-  </mat-nested-tree-node>
-  <!-- This is the tree node template for directories -->
-  <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild" >
-    <div class="mat-tree-node">
-      <button mat-icon-button matTreeNodeToggle
-        [attr.aria-label]="'Toggle ' + node.name">
-        <mat-icon class="mat-icon-rtl-mirror">
-          {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
-        </mat-icon>
+    <div class="media-actions">
+      <input type="file" #mediaUpload hidden multiple (change)="upload($any($event.target).files); mediaUpload.value = ''">
+      <button mat-stroked-button type="button" [disabled]="uploading" (click)="mediaUpload.click()">
+        <mat-icon>upload</mat-icon> Medien hochladen
       </button>
-      <mat-icon mat-list-icon>folder</mat-icon>
-      {{node.name}}
-      @if (canBeSlideshow(node)) {
-        <button mat-stroked-button class="slideshow-button" [class.background-highlight]="activeNode === node" (click)="selectSlideshow(node)"
-          [title]="activeNode === node ? 'Bildserie abwählen' : 'Die Bilder dieses Ordners nacheinander zeigen'">
-          <mat-icon>{{ activeNode === node ? 'check' : 'burst_mode' }}</mat-icon>
-          {{ activeNode === node ? 'Bildserie ausgewählt' : 'Als Bildserie' }} ({{getSlideImages(node).length}} Bilder)
-        </button>
+      <button mat-stroked-button type="button" (click)="openCopyDialog()">
+        <mat-icon>usb</mat-icon> Vom USB-Stick übernehmen
+      </button>
+      @if (uploading) {
+        <mat-spinner diameter="20"></mat-spinner>
       }
     </div>
-    <div [class.example-tree-invisible]="!treeControl.isExpanded(node)"
-      role="group">
-      <ng-container matTreeNodeOutlet></ng-container>
-    </div>
-  </mat-nested-tree-node>
-</mat-tree>
 
-@if (activeNode !== undefined) {
-  <div>
-    <button mat-icon-button (click)="changeSelection(undefined)">
-      <mat-icon>remove_circle_outline</mat-icon>
-    </button>
-    {{activeNode.name}}
+    @if (dataSource.data.length === 0) {
+      <p class="hint">Das Spiel hat noch keine Medien.</p>
+    }
+    <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="media-tree">
+      <!-- files -->
+      <mat-nested-tree-node *matTreeNodeDef="let node">
+        <div class="mat-tree-node file-node" role="button" tabindex="0" (click)="changeSelection(node)" (keydown.enter)="changeSelection(node)"
+             (keydown.space)="$event.preventDefault(); changeSelection(node)" [class.background-highlight]="activeNode === node">
+          <mat-icon class="node-icon">{{activeNode === node ? 'check' : getIcon(node)}}</mat-icon>
+          {{node.name}}
+        </div>
+      </mat-nested-tree-node>
+      <!-- folders -->
+      <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
+        <div class="mat-tree-node">
+          <button mat-icon-button type="button" matTreeNodeToggle [attr.aria-label]="node.name + ' auf- oder zuklappen'">
+            <mat-icon class="mat-icon-rtl-mirror">{{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}</mat-icon>
+          </button>
+          <mat-icon class="node-icon">folder</mat-icon>
+          {{node.name}}
+          @if (canBeSlideshow(node)) {
+            <button mat-stroked-button type="button" class="slideshow-button" [class.background-highlight]="activeNode === node" (click)="selectSlideshow(node)"
+                    [title]="activeNode === node ? 'Diashow abwählen' : 'Die Bilder dieses Ordners nacheinander zeigen'">
+              <mat-icon>{{activeNode === node ? 'check' : 'burst_mode'}}</mat-icon>
+              {{activeNode === node ? 'Als Diashow ausgewählt' : 'Als Diashow'}} ({{getSlideImages(node).length}} Bilder)
+            </button>
+          }
+        </div>
+        <div [class.tree-invisible]="!treeControl.isExpanded(node)" role="group">
+          <ng-container matTreeNodeOutlet></ng-container>
+        </div>
+      </mat-nested-tree-node>
+    </mat-tree>
   </div>
 }

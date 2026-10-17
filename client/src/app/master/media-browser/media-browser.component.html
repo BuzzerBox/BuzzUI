@@ -78,12 +78,16 @@
           </span>
           <span matListItemLine>{{getDetails(entry)}}</span>
           @if (canWrite()) {
-            <button matListItemMeta mat-icon-button (click)="edit(entry)" title="Umbenennen, verschieben oder löschen"
-                    aria-label="Umbenennen, verschieben oder löschen"><mat-icon>{{entry.usedByVersions?.length ? 'lock' : 'edit'}}</mat-icon></button>
+            <span matListItemMeta class="entry-action">
+              <button mat-icon-button (click)="edit(entry)" title="Umbenennen, verschieben oder löschen"
+                      aria-label="Umbenennen, verschieben oder löschen"><mat-icon>{{entry.usedByVersions?.length ? 'lock' : 'edit'}}</mat-icon></button>
+            </span>
           } @else if (!isManaging()) {
-            <button matListItemMeta mat-stroked-button (click)="pick(entry)">
-              <mat-icon>add</mat-icon> {{entry.type === 'directory' ? 'Ordner übernehmen' : 'Übernehmen'}}
-            </button>
+            <span matListItemMeta class="entry-action">
+              <button mat-stroked-button class="pick-button" (click)="pick(entry)">
+                <mat-icon>{{entry.type === 'directory' ? 'slideshow' : 'add'}}</mat-icon>{{entry.type === 'directory' ? 'Ordner übernehmen' : 'Übernehmen'}}
+              </button>
+            </span>
           }
         </mat-list-item>
       }

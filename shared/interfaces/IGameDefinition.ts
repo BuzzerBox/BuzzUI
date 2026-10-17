@@ -1,4 +1,4 @@
-import {IGameState, IQuestion, ITeam} from '../shared';
+import {IGameState, IMediaQuestionDefaults, IQuestion, ITeam} from '../shared';
 
 /**
  * The format of game, state and bundle files; the savegames from before (CURRENT_SAVEGAME_VERSION) had teams,
@@ -26,6 +26,11 @@ export interface IGameDefinition {
      * "/" between folders
      */
     questions: IQuestion[];
+    /**
+     * How media questions start, for each kind of media, unless a question has its own initialConfig. Versions saved
+     * before it existed have an initialConfig in every media question.
+     */
+    mediaDefaults?: Partial<IMediaQuestionDefaults>;
 }
 
 /**

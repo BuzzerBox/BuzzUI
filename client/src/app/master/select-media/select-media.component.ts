@@ -32,6 +32,10 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
   public missingLocation: string | null = null;
 
   public uploading = false;
+  // whether the media are shown to choose from; they always are while nothing is selected
+  public browsing = false;
+  // the game's media folder, whose content the tree shows
+  private root: IDirectoryTree | null = null;
   private hasFetchedData = false;
   private fetching: Promise<void> = null;
   private subscription: Subscription;
@@ -54,7 +58,7 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
     this.hasFetchedData = false;
     await this.getData();
     if (this.fileLocation) {
-      this.activeNode = (await this.getNodeByFilePath(this.fileLocation, this.dataSource.data[0] ?? null)) ?? undefined;
+      this.activeNode = (await this.getNodeByFilePath(this.fileLocation, this.root)) ?? undefined;
       this.missingLocation = this.activeNode == null ? this.fileLocation : null;
     }
     this.cdr.markForCheck();
@@ -122,7 +126,9 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
         console.error('Could not load the media of the game', e);
       }
     }
-    this.dataSource.data = result != null ? [result] : [];
+    this.root = result;
+    // the media folder itself isn't shown, only what is in it
+    this.dataSource.data = result?.children ?? [];
     this.hasFetchedData = true;
   }
 
@@ -133,6 +139,7 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
       this.locationChange.emit({path: ''});
     } else {
       this.activeNode = node;
+      this.browsing = false;
       this.locationChange.emit({path: node.path});
     }
   }
@@ -144,6 +151,7 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
     }
     this.activeNode = folder;
     this.missingLocation = null;
+    this.browsing = false;
     this.locationChange.emit({path: folder.path, slides: this.getSlideImages(folder).map(image => image.path)});
   }
 
@@ -156,11 +164,8 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
       .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
   }
 
-  /**
-   * Only subfolders of the media folder can be slideshows, not the media folder itself
-   */
   canBeSlideshow(folder: IDirectoryTree): boolean {
-    return folder !== this.dataSource.data[0] && this.getSlideImages(folder).length >= 2;
+    return this.getSlideImages(folder).length >= 2;
   }
 
   hasChild = (_: number, node: IDirectoryTree) => !!node && !!node.children && node.children.length > 0;
@@ -171,7 +176,7 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
       this.fetching ??= this.getMediaDirectory().finally(() => this.fetching = null);
       await this.fetching;
     }
-    return Promise.resolve(this.dataSource.data[0]);
+    return Promise.resolve(this.root);
   }
 
   public async getNodeByFilePath(filePath: string, root: IDirectoryTree | null): Promise<IDirectoryTree | null> {
@@ -190,6 +195,23 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
     return null;
+  }
+
+  public getIcon(node: IDirectoryTree): string {
+    if (node.type === 'directory') {
+      return 'burst_mode';
+    }
+    return this.isVideo(node) ? 'movie' : this.isAudio(node) ? 'audiotrack' : 'image';
+  }
+
+  /**
+   * What kind of media the selection is, e.g. "Diashow · 4 Bilder"
+   */
+  public getKindText(node: IDirectoryTree): string {
+    if (node.type === 'directory') {
+      return `Diashow · ${this.getSlideImages(node).length} Bilder`;
+    }
+    return this.isVideo(node) ? 'Video' : this.isAudio(node) ? 'Audio' : 'Bild';
   }
 
   public isImage(node: IDirectoryTree): boolean {

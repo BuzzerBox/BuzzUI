@@ -4,10 +4,9 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService} from '../../services/game.service';
 import {MatStepper} from '@angular/material/stepper';
-import {IQuestion, IAnswer, IMediaQuestionState, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
+import {IQuestion, IAnswer, IMediaQuestionDefaults, IMediaQuestionState, IStorageLocation, MediaHelper, StorageApiHelper, TMediaKind} from '../../../../../shared/shared';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IMediaSelection} from '../interfaces/IMediaSelection';
-import {DEFAULT_MEDIA_QUESTION_CONFIG} from '../media-question-display-order-configuration/media-question-display-order-configuration.component';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {IEditorNavigationState, INewGameNavigationState, IPrepareNavigationState} from '../game-navigation';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
@@ -50,7 +49,14 @@ export class SetupComponent implements OnInit {
 
   public questionsFormGroup: UntypedFormGroup;
   public questionFormGroupNames: string[];
+  // a question's own config, undefined for the questions that start as the game's media defaults say
   public questionInitialConfig: IMediaQuestionState[];
+  // how the media questions of the game start, for each kind of media
+  public mediaDefaults: IMediaQuestionDefaults = MediaHelper.completeMediaDefaults(undefined);
+  public readonly mediaKinds = MediaHelper.MEDIA_KINDS;
+  public readonly mediaKindLabels: Record<TMediaKind, string> = {image: 'Bild', playable: 'Video & Audio', slideshow: 'Diashow'};
+  public readonly mediaKindIcons: Record<TMediaKind, string> = {image: 'image', playable: 'movie', slideshow: 'burst_mode'};
+  public readonly answerIndexes = [0, 1, 2, 3];
 
   step = 0;
 
@@ -95,6 +101,7 @@ export class SetupComponent implements OnInit {
         const definition = await this.storage.getVersion(ref, baseVersion);
         this.loadedVersion = definition.version;
         this.latestVersion = info.latestVersion;
+        this.initMediaDefaults(definition.questions, definition.mediaDefaults);
         this.initQuestionsFormControls(definition.questions);
       }
       this.ref = ref;
@@ -138,6 +145,23 @@ export class SetupComponent implements OnInit {
 
   public getLocationText(location: IStorageLocation): string {
     return location.type === 'box' ? 'der BuzzerBox' : 'dem USB-Stick ' + location.name;
+  }
+
+  /**
+   * Versions saved before games had media defaults have a config in every media question. Those that are the same as
+   * the built-in default start following the game's defaults; the others stay their own.
+   */
+  private initMediaDefaults(questions: IQuestion[], mediaDefaults: Partial<IMediaQuestionDefaults> | undefined): void {
+    this.mediaDefaults = MediaHelper.completeMediaDefaults(mediaDefaults);
+    if (mediaDefaults != null) {
+      return;
+    }
+    const builtIn = MediaHelper.getDefaultInitialConfig();
+    questions.forEach(question => {
+      if (MediaHelper.isSameInitialConfig(question.initialConfig, builtIn)) {
+        delete question.initialConfig;
+      }
+    });
   }
 
   private initQuestionsFormControls(importedQuestions: IQuestion[] | null = null): void {
@@ -346,8 +370,10 @@ export class SetupComponent implements OnInit {
         if (slides?.length) {
           question.mediaDetails.slides = slides;
         }
-        // the config component only emits once the user changes something, so fall back to the default it shows
-        question.initialConfig = this.questionInitialConfig[index] ?? {...DEFAULT_MEDIA_QUESTION_CONFIG};
+        // only a question's own config is stored, the others start as the game's media defaults say
+        if (this.questionInitialConfig[index]) {
+          question.initialConfig = this.questionInitialConfig[index];
+        }
       }
       ret.push(question);
     });
@@ -364,7 +390,7 @@ export class SetupComponent implements OnInit {
     this.saving = true;
     this.saveError = null;
     try {
-      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject());
+      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults);
       this.savedVersion = result.version;
       this.loadedVersion = result.version;
       this.snackBar.open(result.unchanged ? `Nichts geändert, es bleibt bei Version ${result.version}.` : `Version ${result.version} wurde gespeichert.`,
@@ -426,18 +452,62 @@ export class SetupComponent implements OnInit {
   }
 
   /**
-   * The points of the question if they differ from the default 1, for the panel header; otherwise null
+   * The points of the question for the panel header
    */
-  public getCustomPoints(questionFormGroupName: string): number | null {
+  public getPointsText(questionFormGroupName: string): string {
     const points = Number(this.questionsFormGroup.controls[questionFormGroupName]?.get('points').value);
-    return Number.isFinite(points) && points !== 1 ? points : null;
+    if (!Number.isFinite(points)) {
+      return '';
+    }
+    return points === 1 ? '1 Punkt' : `${points} Punkte`;
   }
 
-  public isSlideshow(questionFormGroupName: string): boolean {
-    return !!this.questionsFormGroup.controls[questionFormGroupName].get('slides').value?.length;
+  /**
+   * The start of the question text, so collapsed questions can be told apart
+   */
+  public getQuestionPreview(questionFormGroupName: string): string {
+    const text = (this.questionsFormGroup.controls[questionFormGroupName]?.get('text').value ?? '').toString().replace(/\s+/g, ' ').trim();
+    return text.length > 60 ? text.slice(0, 57) + '…' : text;
+  }
+
+  public isCorrectAnswer(questionFormGroupName: string, answerIndex: number): boolean {
+    return !!this.getAnswerFromGroup(questionFormGroupName).get(this.ANSWER_FORM_GROUP_BASE_NAME + answerIndex)?.get('isCorrect').value;
+  }
+
+  /**
+   * The kind of media the question shows, null if it has none
+   */
+  public getMediaKind(questionFormGroupName: string): TMediaKind | null {
+    const questionFormGroup = this.questionsFormGroup.controls[questionFormGroupName];
+    return MediaHelper.getMediaKind({
+      fileSrc: (questionFormGroup.get('mediaSrc').value ?? '').toString(),
+      slides: questionFormGroup.get('slides').value ?? undefined
+    });
   }
 
   changeQuestionConfig(event: { config: IMediaQuestionState; question: number }): void {
     this.questionInitialConfig[event.question] = event.config;
+    this.onQuestionsChanged();
+  }
+
+  changeMediaDefault(kind: TMediaKind, config: IMediaQuestionState): void {
+    this.mediaDefaults = {...this.mediaDefaults, [kind]: config};
+    this.onQuestionsChanged();
+  }
+
+  /**
+   * Gives the question its own config, starting as the game's default for its media
+   */
+  public customizeQuestionConfig(index: number, kind: TMediaKind): void {
+    this.questionInitialConfig[index] = {...this.mediaDefaults[kind]};
+    this.onQuestionsChanged();
+  }
+
+  /**
+   * Lets the question start as the game's media defaults say again
+   */
+  public resetQuestionConfig(index: number): void {
+    this.questionInitialConfig[index] = undefined;
+    this.onQuestionsChanged();
   }
 }

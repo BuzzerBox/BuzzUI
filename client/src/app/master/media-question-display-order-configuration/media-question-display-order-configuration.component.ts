@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
-import {EMediaStates, EQuestionAnswerStates, FileExtensionsService, IMediaQuestionState} from '../../../../../shared/shared';
+import {EMediaStates, EQuestionAnswerStates, IMediaQuestionState, MediaHelper, TMediaKind} from '../../../../../shared/shared';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
@@ -9,13 +9,6 @@ const PRESET_TO_STATE: Record<MediaAnswerPreset, Pick<IMediaQuestionState, 'medi
   MEDIA_FIRST:  { mediaState: EMediaStates.PLAYING, answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA },
   HIDE_BOTH:    { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.HIDDEN },
   SHOW_ANSWERS: { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.SHOWN },
-};
-
-// What the form shows when a question has no config yet. Setup applies the same default so the UI matches what is played.
-export const DEFAULT_MEDIA_QUESTION_CONFIG: IMediaQuestionState = {
-  mediaState:    EMediaStates.PLAYING,
-  questionState: EQuestionAnswerStates.SHOWN,
-  answerState:   EQuestionAnswerStates.WAIT_FOR_MEDIA,
 };
 
 function presetFromConfig(config: IMediaQuestionState): MediaAnswerPreset {
@@ -34,20 +27,19 @@ function presetFromConfig(config: IMediaQuestionState): MediaAnswerPreset {
 export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, OnChanges {
   @Output() questionConfigChange = new EventEmitter<IMediaQuestionState>();
   @Input() initialConfig: IMediaQuestionState;
-  @Input() mediaSrc: string = '';
-  @Input() isSlideshow = false;
+  @Input() mediaKind: TMediaKind = 'image';
 
   public questionConfig: FormGroup;
 
   private readonly allQuestionStateOptions = [
-    { label: 'Show',               key: EQuestionAnswerStates.SHOWN },
-    { label: 'Hide',               key: EQuestionAnswerStates.HIDDEN },
-    { label: 'Reveal after media', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
+    { label: 'Zeigen',                 key: EQuestionAnswerStates.SHOWN },
+    { label: 'Verbergen',              key: EQuestionAnswerStates.HIDDEN },
+    { label: 'Nach dem Medium zeigen', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
   ];
 
   // video, audio or a slideshow: media that ends, so the question and answers can wait for it
   get hasEnd(): boolean {
-    return this.isSlideshow || FileExtensionsService.isPlayable(this.mediaSrc);
+    return this.mediaKind !== 'image';
   }
 
   get questionStateOptions() {
@@ -57,16 +49,16 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
 
   get presetOptions(): { label: string; key: MediaAnswerPreset }[] {
     return [
-      { label: this.isSlideshow ? 'Show first image, reveal answers after the last' : this.hasEnd ? 'Play media, reveal answers after' : 'Show Image', key: 'MEDIA_FIRST' },
-      { label: 'Hide both',    key: 'HIDE_BOTH' },
-      { label: 'Show answers', key: 'SHOW_ANSWERS' },
+      { label: this.mediaKind === 'slideshow' ? 'Erstes Bild zeigen, Antworten nach dem letzten' : this.hasEnd ? 'Abspielen, Antworten danach' : 'Bild zeigen', key: 'MEDIA_FIRST' },
+      { label: 'Beides verbergen', key: 'HIDE_BOTH' },
+      { label: 'Antworten zeigen', key: 'SHOW_ANSWERS' },
     ];
   }
 
   constructor() {}
 
   ngOnInit(): void {
-    const config = this.initialConfig ?? DEFAULT_MEDIA_QUESTION_CONFIG;
+    const config = this.initialConfig ?? MediaHelper.getDefaultInitialConfig();
     const preset = presetFromConfig(config);
 
     this.questionConfig = new FormGroup({
@@ -81,13 +73,13 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
     if (!this.questionConfig) { return; }
     if (changes['initialConfig']) {
       // the setup list renumbers its entries, so after a reorder or delete this component can belong to a different question
-      const config = this.initialConfig ?? DEFAULT_MEDIA_QUESTION_CONFIG;
+      const config = this.initialConfig ?? MediaHelper.getDefaultInitialConfig();
       this.questionConfig.setValue({
         questionState: config.questionState,
         preset:        presetFromConfig(config),
       }, {emitEvent: false});
     }
-    if (!changes['mediaSrc'] && !changes['isSlideshow']) { return; }
+    if (!changes['mediaKind']) { return; }
     if (!this.hasEnd) {
       const qs = this.questionConfig.get('questionState');
       if (qs.value === EQuestionAnswerStates.WAIT_FOR_MEDIA) {

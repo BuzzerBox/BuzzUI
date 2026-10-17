@@ -19,6 +19,7 @@ import {
     IGameStateInfo,
     IGameStorageRef,
     IGameVersionInfo,
+    IMediaQuestionDefaults,
     IQuestion,
     IStorageEntry,
     IStorageFolder,
@@ -691,11 +692,15 @@ export class StorageService {
      * Stores the questions as a new version of the game, which is created if it doesn't exist yet. If they are the same
      * as in the latest version, no version is added.
      */
-    public async saveVersion(locationId: string, gameName: string, body: {questions?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
+    public async saveVersion(locationId: string, gameName: string, body: {questions?: unknown, mediaDefaults?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
         if (!Array.isArray(body?.questions)) {
             throw new StorageError(400, 'A game version needs its questions');
         }
+        if (body.mediaDefaults != null && (typeof body.mediaDefaults !== 'object' || Array.isArray(body.mediaDefaults))) {
+            throw new StorageError(400, 'The media defaults of a game version must be an object');
+        }
         const questions = body.questions as IQuestion[];
+        const mediaDefaults = body.mediaDefaults as Partial<IMediaQuestionDefaults> | undefined;
         const resolved = await this.getWritableLocation(locationId);
         const dirs = this.getGameDirectories(resolved, gameName);
         await fs.mkdir(dirs.versions, {recursive: true}).catch(e => { throw this.toWriteError(e); });
@@ -704,7 +709,8 @@ export class StorageService {
         const latest = await this.getLatestVersionNumber(dirs);
         if (latest != null) {
             const latestDefinition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, latest));
-            if (latestDefinition != null && isEqual(latestDefinition.questions, questions)) {
+            if (latestDefinition != null && isEqual(latestDefinition.questions, questions)
+                && isEqual(latestDefinition.mediaDefaults, mediaDefaults)) {
                 return {...await this.getVersionInfo(resolved, gameName, latest), unchanged: true};
             }
         }
@@ -716,6 +722,9 @@ export class StorageService {
             savedAt: ClockService.get().nowAsIsoString(),
             questions
         };
+        if (mediaDefaults != null) {
+            definition.mediaDefaults = mediaDefaults;
+        }
         await this.writeJsonAtomically(this.getVersionFile(dirs, version), definition, false);
         LoggerService.log(`Saved version ${version} of ${gameName} on ${resolved.location.name}`);
         return {...await this.getVersionInfo(resolved, gameName, version), unchanged: false};
@@ -1136,6 +1145,9 @@ export class StorageService {
         }
         const now = ClockService.get().nowAsIsoString();
         const definition: IGameDefinition = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'game', version: 1, savedAt: now, questions};
+        if (bundle.game.mediaDefaults != null) {
+            definition.mediaDefaults = bundle.game.mediaDefaults;
+        }
         await this.writeJsonAtomically(this.getVersionFile(dirs, 1), definition, false);
         const result: IGameImportResult = {gameName, missingMedia};
         if (bundle.state != null) {
