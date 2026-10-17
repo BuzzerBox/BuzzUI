@@ -38,6 +38,7 @@ import {IStorageLocation, TStorageLocationType} from './interfaces/IStorageLocat
 import {IGameDefinition, IGameInstanceState, IGameBundle, CURRENT_GAME_FORMAT_VERSION} from './interfaces/IGameDefinition';
 import {IGameInfo, IGameVersionInfo, IGameStateInfo, IGameStorageRef, IGameImportResult, IGameCopyResult} from './interfaces/IGameInfo';
 import {IAutosaveInfoPacket} from './interfaces/IAutosaveInfoPacket';
+import {IMasterTakenOverPacket} from './interfaces/IMasterTakenOverPacket';
 import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
 
 export {
@@ -91,6 +92,7 @@ export {
 	IGameStorageRef,
 	IGameImportResult,
 	IAutosaveInfoPacket,
+	IMasterTakenOverPacket,
 	IStorageEntry,
 	IStorageFolder
 }

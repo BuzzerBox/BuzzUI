@@ -10,6 +10,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../helper/subscriptions.helper';
 import {ConfigService} from '../../services/config.service';
+import {EGameStatesMaster} from '../../master/enums/EGameStatesMaster';
 
 @Component({
     selector: 'app-play-ui',
@@ -42,6 +43,8 @@ export class PlayUiComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentQuestion = this.game.getCurrentQuestion();
+    // the master comes back to the scores when it opens the play page again after ending the game
+    this.isGameOver = this.isMaster && this.game.getGameState() === EGameStatesMaster.END;
     if (!this.isMaster) {
       this.game.setCallbackUpdateCurrentQuestion(this.callbackUpdateCurrentQuestion.bind(this));
       this.game.setCallbackEndGame(this.callbackEndGame.bind(this));

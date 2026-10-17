@@ -36,4 +36,8 @@ export enum EPacketTypes {
      * Sent from the server to the master when it saved the running game, see IAutosaveInfoPacket
      */
     AUTOSAVE_INFO,
+    /**
+     * Sent from the server to the master when another device took over as master, see IRegisterMasterPacket.takeOver
+     */
+    MASTER_TAKEN_OVER,
 }

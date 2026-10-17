@@ -66,8 +66,6 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
 
   public resetServer(): void {
     this.game.resetServer();
-    setTimeout(window.location.reload, 250);
-    // ();
   }
 
   public releaseBuzzerLock(): void {

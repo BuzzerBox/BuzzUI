@@ -8,4 +8,14 @@ export interface IRegisterMasterPacket extends IGamePacket {
      * takes the time it saves games with from the master.
      */
     clientTime?: number;
+    /**
+     * Identifies the device across reloads. A master that lost its connection gets back into its running game by
+     * itself; any other device has to take over.
+     */
+    masterId?: string;
+    /**
+     * Whether to take over from the master that is connected, instead of being refused. The server tells that master
+     * with a MASTER_TAKEN_OVER packet and closes its connection; a running game goes on with the new master.
+     */
+    takeOver?: boolean;
 }

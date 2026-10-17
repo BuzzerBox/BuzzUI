@@ -34,6 +34,7 @@ import {
     ISetupPacket,
     IStartGamePacket,
     IStorageAccessPacket,
+    IMasterTakenOverPacket,
     IAutosaveInfoPacket,
     ITeam,
     ITeamSetPointsPacket,
@@ -64,6 +65,8 @@ enum LOOKUP_TEAM_CODE {
 export class GameService {
     private static instance: GameService;
     private webSocketConnectionMaster: WebSocketConnection;
+    // the device of the current or last master, see mayBecomeMaster()
+    private lastMasterId: string | undefined;
     private webSocketConnectionsScreens: Map<string, WebSocketConnection>;
     private newConnectionEstablished$: Observable<WebSocketConnection>;
     private newConnectionEstablishedSubscription: Subscription;
@@ -176,7 +179,22 @@ export class GameService {
     }
 
     private isGameSetUp(): boolean {
-        return [EGameStates.WAITING_FOR_START, EGameStates.PLAYING, EGameStates.LOST_MASTER, EGameStates.END].includes(this.currentStateInAutomaton);
+        return this.isGameRunning() || this.currentStateInAutomaton === EGameStates.END;
+    }
+
+    /**
+     * A game is set up and not over yet
+     */
+    private isGameRunning(): boolean {
+        return [EGameStates.WAITING_FOR_START, EGameStates.PLAYING, EGameStates.LOST_MASTER].includes(this.currentStateInAutomaton);
+    }
+
+    /**
+     * A running game whose master lost its connection waits for that device, see IRegisterMasterPacket.masterId;
+     * another one that just tries to become the master (e.g. by itself, from the already-registered page) would grab it
+     */
+    private mayBecomeMaster(packet: IRegisterMasterPacket): boolean {
+        return this.currentStateInAutomaton !== EGameStates.LOST_MASTER || !!packet.takeOver || packet.masterId === this.lastMasterId;
     }
 
     private makeAutosaveSnapshot() {
@@ -276,8 +294,23 @@ export class GameService {
     }
 
     private onRegisterMasterPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterMasterPacket): void {
-        if (this.webSocketConnectionMaster == null) {
+        if (con === this.webSocketConnectionMaster) {
+            // the master sent this twice, e.g. once more after a reconnect; refusing would close its own connection
+            this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
+            if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_SETUP) {
+                this.sendToMaster<IPresetupAvailableInfoPacket>({
+                    packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
+                    availableBuzzers: this.getBuzzerConfig()
+                });
+            }
+            return;
+        }
+        if (this.webSocketConnectionMaster != null && packet.takeOver) {
+            this.dropMaster();
+        }
+        if (this.webSocketConnectionMaster == null && this.mayBecomeMaster(packet)) {
             this.webSocketConnectionMaster = con;
+            this.lastMasterId = packet.masterId;
             ClockService.get().setClientTime(packet.clientTime);
             // before anything that takes the master to pages that use the storage
             this.sendToMaster<IStorageAccessPacket>({
@@ -310,15 +343,35 @@ export class GameService {
                 }
             }
 
-            this.webSocketConnectionMaster.addOnCloseCallback(this.onMasterConnectionDestroy.bind(this))
+            this.webSocketConnectionMaster.addOnCloseCallback(() => {
+                // a master that was taken over from is no longer the master when its connection closes at last
+                if (this.webSocketConnectionMaster === con) {
+                    this.onMasterConnectionDestroy();
+                }
+            });
             this.webSocketConnectionMaster.addOnCloseCallback(() => sub.unsubscribe());
             this.sendToMaster<IUpdateInfoPacket>(UpdateService.get().getInfo());
             this.sendToMaster<IAutosaveInfoPacket>(AutosaveService.get().getInfo());
         } else {
-            con.send<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, false));
+            con.send<IResponsePacket>({
+                ...PacketHelper.makeResponsePacket(packet.packetType, false, 'Another master is connected'),
+                isGameRunning: this.isGameRunning()
+            });
             con.close();
             sub.unsubscribe();
         }
+    }
+
+    /**
+     * Lets another device take over: the master is told and dropped right away, as if its connection was lost, since
+     * the connection may take a while to close (or never answer again, if the device left the WiFi)
+     */
+    private dropMaster(): void {
+        const oldMaster = this.webSocketConnectionMaster;
+        LoggerService.log('Another device takes over as master');
+        oldMaster.send<IMasterTakenOverPacket>({packetType: EPacketTypes.MASTER_TAKEN_OVER});
+        this.onMasterConnectionDestroy();
+        oldMaster.close();
     }
 
     /**
