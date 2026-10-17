@@ -53,6 +53,33 @@ mat-card.question {
   flex: 1 1 auto;
 }
 
+/* the board fills the card */
+mat-card.question.board {
+  display: flex;
+  flex-direction: column;
+}
+
+mat-card.question.board app-jeopardy-board {
+  flex: 1;
+  min-height: 0;
+}
+
+/* a tile of the board opens out of it */
+:host(.screen) mat-card.question.tile-open {
+  animation: tile-open 0.5s ease-out;
+}
+
+@keyframes tile-open {
+  0% { opacity: 0; transform: scale(0.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.screen) mat-card.question.tile-open {
+    animation: none;
+  }
+}
+
 /* the buzzer button sits in the middle, between the question navigation */
 .master-actions {
   align-items: center;

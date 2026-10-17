@@ -37,6 +37,11 @@ import {
   ISetMediaVolumePacket,
   ISetQuestionPacket,
   ISetRoundPacket,
+  ISelectQuestionPacket,
+  ISetPickingTeamPacket,
+  IJeopardyRound,
+  IJeopardyRoundProgress,
+  IJeopardyTile,
   ISetupPacket,
   IStartGamePacket,
   IStorageAccessPacket,
@@ -308,7 +313,13 @@ export class GameService implements OnDestroy {
         this.handleMediaVolumePacket(message as ISetMediaVolumePacket);
         break;
       case EPacketTypes.GRADE_ANSWER:
-        this.gradeAnswerSubject.next(message as IGradeAnswerPacket);
+        this.handleGradeAnswerPacket(message as IGradeAnswerPacket);
+        break;
+      case EPacketTypes.SELECT_QUESTION:
+        this.handleSelectQuestionPacket(message as ISelectQuestionPacket);
+        break;
+      case EPacketTypes.SET_PICKING_TEAM:
+        this.handleSetPickingTeamPacket(message as ISetPickingTeamPacket);
         break;
       case EPacketTypes.UPDATE_TEAMS:
         this.handleUpdateTeamsPacket(message as IUpdateTeamsPacket);
@@ -709,21 +720,18 @@ export class GameService implements OnDestroy {
   }
 
   /**
-   * The round after the current one, once the current one is over; undefined after the last round
+   * The round after the current one, also before the current one is over; undefined after the last round
    */
-  public getNextRound(): IRound | undefined {
+  public getFollowingRound(): IRound | undefined {
     const round = this.getCurrentRound();
-    if (!round || !RoundRulesHelper.get(round).isOver(round, this.getCurrentProgress())) {
-      return undefined;
-    }
-    return this.rounds[GameFormatHelper.getRoundIndex(this.rounds, round.id) + 1];
+    return round ? this.rounds[GameFormatHelper.getRoundIndex(this.rounds, round.id) + 1] : undefined;
   }
 
   /**
-   * Goes on with the next round, see getNextRound()
+   * Goes on with the round after the current one, see getFollowingRound()
    */
   public startNextRound(): IQuestion {
-    const nextRound = this.getNextRound();
+    const nextRound = this.getFollowingRound();
     if (nextRound) {
       this.applySetRound(nextRound.id);
       this.sendUnmarkAllTeamsPacket();
@@ -735,6 +743,133 @@ export class GameService implements OnDestroy {
   private applySetRound(roundId: string): void {
     this.currentGameState.currentRoundId = roundId;
     GameStateHelper.resetQuestionProgress(this.currentGameState);
+  }
+
+  /**
+   * The Jeopardy round that is played, undefined in other rounds
+   */
+  public getCurrentJeopardyRound(): IJeopardyRound | undefined {
+    const round = this.getCurrentRound();
+    return round?.mode === 'jeopardy' ? round : undefined;
+  }
+
+  public getCurrentJeopardyProgress(): IJeopardyRoundProgress | undefined {
+    return this.getCurrentJeopardyRound() ? this.getCurrentProgress() as IJeopardyRoundProgress : undefined;
+  }
+
+  /**
+   * Whether the Jeopardy board is shown rather than a question
+   */
+  public isBoardShown(): boolean {
+    return this.getCurrentJeopardyRound() != null && this.getCurrentJeopardyProgress()?.openQuestionId == null;
+  }
+
+  /**
+   * The open tile of the Jeopardy board, undefined while the board is shown
+   */
+  public getOpenTile(): IJeopardyTile | undefined {
+    const round = this.getCurrentJeopardyRound();
+    return round ? RoundRulesHelper.jeopardy.getTile(round, this.getCurrentJeopardyProgress()?.openQuestionId) : undefined;
+  }
+
+  public isQuestionPlayed(questionId: string): boolean {
+    return RoundRulesHelper.jeopardy.isPlayed(this.getCurrentJeopardyProgress(), questionId);
+  }
+
+  /**
+   * Opens a tile of the board
+   */
+  public openTile(questionId: string): IQuestion {
+    this.sendSelectQuestionPacket(PacketHelper.makeSelectQuestionPacket(questionId));
+    return this.getCurrentQuestion();
+  }
+
+  /**
+   * Goes back to the board
+   * @param markPlayed closes the tile for good, e.g. as no team knew the answer
+   */
+  public closeTile(markPlayed: boolean): void {
+    this.sendSelectQuestionPacket(PacketHelper.makeSelectQuestionPacket(null, markPlayed));
+  }
+
+  private sendSelectQuestionPacket(packet: ISelectQuestionPacket): void {
+    if (this.applySelectQuestionPacket(packet)) {
+      this.sendUnmarkAllTeamsPacket();
+      this.webSocketService.send<ISelectQuestionPacket>(packet);
+    }
+  }
+
+  private applySelectQuestionPacket(packet: ISelectQuestionPacket): boolean {
+    const round = this.getCurrentJeopardyRound();
+    const progress = round ? RoundRulesHelper.jeopardy.applySelectQuestion(round, this.getCurrentJeopardyProgress(), packet) : null;
+    if (progress == null) {
+      return false;
+    }
+    this.currentGameState.roundProgress[round.id] = progress;
+    GameStateHelper.resetQuestionProgress(this.currentGameState);
+    return true;
+  }
+
+  private handleSelectQuestionPacket(packet: ISelectQuestionPacket): void {
+    if (this.isUsedAsScreen() && this.applySelectQuestionPacket(packet) && this.cbUpdateCurrentQuestion != null) {
+      this.cbUpdateCurrentQuestion();
+    }
+  }
+
+  /**
+   * The team that picks the next tile of the board, undefined if none is chosen
+   */
+  public getPickingTeam(): ITeam | undefined {
+    const teamId = this.getCurrentJeopardyProgress()?.pickingTeamId;
+    return teamId ? this.findTeam(teamId) : undefined;
+  }
+
+  public setPickingTeam(teamId: string | null): void {
+    this.applySetPickingTeam(teamId);
+    this.webSocketService.send<ISetPickingTeamPacket>(PacketHelper.makeSetPickingTeamPacket(teamId));
+  }
+
+  private applySetPickingTeam(teamId: string | null): void {
+    const round = this.getCurrentJeopardyRound();
+    if (round) {
+      this.currentGameState.roundProgress[round.id] = RoundRulesHelper.jeopardy.applySetPickingTeam(this.getCurrentJeopardyProgress(), teamId);
+    }
+  }
+
+  private handleSetPickingTeamPacket(packet: ISetPickingTeamPacket): void {
+    if (this.isUsedAsScreen()) {
+      this.applySetPickingTeam(packet.teamId);
+    }
+  }
+
+  /**
+   * The server, the master and the screens all go on the same way after a grade, see IRoundRules.afterGrade
+   */
+  private handleGradeAnswerPacket(packet: IGradeAnswerPacket): void {
+    const round = this.getCurrentRound();
+    if (round && this.currentGameState) {
+      this.currentGameState.roundProgress[round.id] = RoundRulesHelper.get(round).afterGrade(round, this.getCurrentProgress(), packet.teamId, packet.result);
+    }
+    this.gradeAnswerSubject.next(packet);
+  }
+
+  /**
+   * What a correct answer to the current question is worth: its points, or the value of the open tile
+   */
+  public getCurrentQuestionValue(): number {
+    const round = this.getCurrentRound();
+    return round ? Math.abs(RoundRulesHelper.get(round).getGradePoints(round, this.getCurrentProgress(), EGradeResults.CORRECT)) : 1;
+  }
+
+  /**
+   * The header of the current question, e.g. "Frage 3/10", or "Geografie · 300" for a tile of the board
+   */
+  public getQuestionTitle(): string {
+    const tile = this.getOpenTile();
+    if (tile) {
+      return `${tile.category.name} · ${tile.value}`;
+    }
+    return `Frage ${this.getCurrentQuestionNumber() + 1}/${this.getQuestions().length}`;
   }
 
   public endGame(): void {

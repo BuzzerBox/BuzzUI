@@ -109,8 +109,29 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     return this.game.hasNextQuestion();
   }
 
-  public getNextRound(): IRound | undefined {
-    return this.game.getNextRound();
+  public getFollowingRound(): IRound | undefined {
+    return this.game.getFollowingRound();
+  }
+
+  public isJeopardyRound(): boolean {
+    return this.game.getCurrentJeopardyRound() != null;
+  }
+
+  public isBoardShown(): boolean {
+    return this.game.isBoardShown();
+  }
+
+  /**
+   * Whether the open tile was answered correctly, so it is closed once the master goes back to the board
+   */
+  public isOpenTilePlayed(): boolean {
+    const tile = this.game.getOpenTile();
+    return tile != null && this.game.isQuestionPlayed(tile.question.id);
+  }
+
+  public closeTile(markPlayed: boolean): void {
+    this.game.closeTile(markPlayed);
+    this.currentQuestion = this.game.getCurrentQuestion();
   }
 
   public startNextRound(): void {

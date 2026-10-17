@@ -8,6 +8,10 @@ import {IRoundRules} from './round-rules';
  * double one twice them, and a wrong one takes them away.
  */
 export class ClassicRoundRules implements IRoundRules<IClassicRound, IClassicRoundProgress> {
+    public isWellFormed(round: unknown): boolean {
+        return Array.isArray((round as Partial<IClassicRound>)?.questions);
+    }
+
     public completeProgress(round: IClassicRound, progress: Partial<IClassicRoundProgress> | undefined): IClassicRoundProgress {
         const isInRound = round.questions.some(question => question.id === progress?.currentQuestionId);
         return {currentQuestionId: isInRound ? progress.currentQuestionId : (round.questions[0]?.id ?? null)};
@@ -53,6 +57,11 @@ export class ClassicRoundRules implements IRoundRules<IClassicRound, IClassicRou
     public getGradePoints(round: IClassicRound, progress: IClassicRoundProgress, result: EGradeResults): number {
         const factor = result === EGradeResults.DOUBLE ? 2 : result === EGradeResults.CORRECT ? 1 : -1;
         return factor * ClassicRoundRules.getQuestionPoints(this.getCurrentQuestion(round, progress));
+    }
+
+    public afterGrade(round: IClassicRound, progress: IClassicRoundProgress, teamId: string, result: EGradeResults): IClassicRoundProgress {
+        // the master goes on to the next question by hand
+        return progress;
     }
 
     /**

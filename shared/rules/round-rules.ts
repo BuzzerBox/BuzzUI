@@ -8,6 +8,11 @@ import {EGradeResults} from '../enums/EGradeResults';
  */
 export interface IRoundRules<R extends IRound = IRound, P extends IRoundProgress = IRoundProgress> {
     /**
+     * Whether a round read from a file (with a mode of these rules) has everything these rules need
+     */
+    isWellFormed(round: unknown): boolean;
+
+    /**
      * How the round starts, or how it goes on from what a state saved: what doesn't fit the round (e.g. a question that
      * isn't in it, from a broken file) starts over
      */
@@ -56,4 +61,10 @@ export interface IRoundRules<R extends IRound = IRound, P extends IRoundProgress
      * What a graded answer adds to the team's points; negative for a wrong one
      */
     getGradePoints(round: R, progress: P, result: EGradeResults): number;
+
+    /**
+     * How the round goes on after the master graded the answer of the team; the server, the master and the screens
+     * each apply it when they get the IGradeAnswerPacket
+     */
+    afterGrade(round: R, progress: P, teamId: string, result: EGradeResults): P;
 }

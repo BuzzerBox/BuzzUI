@@ -34,7 +34,7 @@ describe('GameFormatHelper', () => {
     expect(migrated.version).toBe(3);
     expect((migrated as unknown as {questions?: unknown}).questions).toBeUndefined();
     expect(migrated.rounds.length).toBe(1);
-    const round = migrated.rounds[0];
+    const round = migrated.rounds[0] as IClassicRound;
     expect(round.mode).toBe('classic');
     expect(round.id).toBe(GameFormatHelper.LEGACY_ROUND_ID);
     expect(round.questions.map(q => q.text)).toEqual(['A', 'B']);
@@ -54,7 +54,7 @@ describe('GameFormatHelper', () => {
     });
     expect(migrated.rounds.map(round => round.id)).toEqual(['r', 'round-2']);
     expect(migrated.rounds.map(round => round.name)).toEqual(['Eins', 'Runde 2']);
-    const ids = migrated.rounds[0].questions.map(q => q.id);
+    const ids = GameFormatHelper.getAllQuestions([migrated.rounds[0]]).map(q => q.id);
     expect(ids[0]).toBe('x');
     expect(new Set(ids).size).toBe(3);
   });
@@ -95,11 +95,11 @@ describe('GameFormatHelper', () => {
       formatVersion: 4, kind: 'bundle', gameName: 'Quiz', game: legacyVersion([question('A'), question('B')]),
       state: {formatVersion: 4, kind: 'state', gameVersion: 3, createdAt: '', updatedAt: '', finished: false, teams: [], gameState: gameState({currentQuestionNumber: 1})}
     }, 'quiz.json');
-    expect(bundle.game.rounds[0].questions.length).toBe(2);
+    expect(GameFormatHelper.getAllQuestions(bundle.game.rounds).length).toBe(2);
     expect(bundle.state.gameState.roundProgress[GameFormatHelper.LEGACY_ROUND_ID]).toEqual({currentQuestionId: 'question-2'});
 
     const saveGame = GameFileHelper.toBundle({version: 3, teams: [], question: [question('A')], gameState: gameState({currentQuestionNumber: 0})}, 'alt.json');
-    expect(saveGame.game.rounds[0].questions[0].id).toBe('question-1');
+    expect(GameFormatHelper.getAllQuestions(saveGame.game.rounds)[0].id).toBe('question-1');
     expect(saveGame.state.gameState.currentRoundId).toBe(GameFormatHelper.LEGACY_ROUND_ID);
   });
 });

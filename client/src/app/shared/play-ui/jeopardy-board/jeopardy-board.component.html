@@ -1,0 +1,43 @@
+@if (getRound(); as round) {
+  <div class="picking">
+    @if (isMaster) {
+      <span class="picking-label">Es wählt:</span>
+      @for (team of getTeams(); track team.teamId) {
+        <button mat-stroked-button type="button" class="picking-team" [class.active]="isPicking(team)"
+                [style.--team-color]="getTeamColor(team)" (click)="choosePickingTeam(team)"
+                [attr.aria-pressed]="isPicking(team)" title="Dieses Team wählt die nächste Kachel">
+          {{team.name}}
+        </button>
+      }
+      @if (!getPickingTeam()) {
+        <span class="hint">Wähle, welches Team beginnt.</span>
+      }
+    } @else if (getPickingTeam(); as team) {
+      <span class="picking-team active" [style.--team-color]="getTeamColor(team)">{{team.name}} wählt</span>
+    }
+  </div>
+  <div class="grid" role="grid" [attr.aria-label]="round.name">
+    @for (category of round.categories; track $index) {
+      <div class="category" role="columnheader">{{category.name}}</div>
+    }
+    @for (value of round.values; track $index; let valueIndex = $index) {
+      @for (category of round.categories; track $index) {
+        @if (category.questions[valueIndex]; as question) {
+          @if (isMaster) {
+            <button type="button" class="tile" [class.played]="isPlayed(question)" [disabled]="isPlayed(question)"
+                    (click)="open(question)" [attr.aria-label]="getTileLabel(category.name, value, question)">
+              {{value}}
+            </button>
+          } @else {
+            <!-- played tiles stay as gaps, so the others keep their places -->
+            <div class="tile" [class.played]="isPlayed(question)" role="gridcell">
+              @if (!isPlayed(question)) {
+                {{value}}
+              }
+            </div>
+          }
+        }
+      }
+    }
+  </div>
+}

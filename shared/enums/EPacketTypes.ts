@@ -44,4 +44,12 @@ export enum EPacketTypes {
      * Sent from the master to play another round of the game, see ISetRoundPacket
      */
     SET_ROUND,
+    /**
+     * Sent from the master to open or close a tile of a Jeopardy board, see ISelectQuestionPacket
+     */
+    SELECT_QUESTION,
+    /**
+     * Sent from the master to choose the team that picks the next tile, see ISetPickingTeamPacket
+     */
+    SET_PICKING_TEAM,
 }

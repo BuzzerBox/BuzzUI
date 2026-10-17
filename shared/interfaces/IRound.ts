@@ -1,10 +1,9 @@
 import {IQuestion} from './IQuestion';
 
 /**
- * How a round is played, see RoundRulesHelper for the rules of each mode. Jeopardy and a final are planned as further
- * modes (#120).
+ * How a round is played, see RoundRulesHelper for the rules of each mode. A final is planned as a further mode (#120).
  */
-export type TRoundMode = 'classic';
+export type TRoundMode = 'classic' | 'jeopardy';
 
 interface IRoundBase {
     /**
@@ -26,7 +25,31 @@ export interface IClassicRound extends IRoundBase {
     questions: IQuestion[];
 }
 
-export type IRound = IClassicRound;
+/**
+ * A column of a Jeopardy board
+ */
+export interface IJeopardyCategory {
+    name: string;
+    /**
+     * One for each of the board's values: questions[i] is worth values[i]. Their own points don't count.
+     */
+    questions: IQuestion[];
+}
+
+/**
+ * A board of categories × values. A team picks a tile, every team may buzz; a correct answer is worth the tile's value
+ * and closes it, a wrong one costs it.
+ */
+export interface IJeopardyRound extends IRoundBase {
+    mode: 'jeopardy';
+    /**
+     * The rows of the board, from the top
+     */
+    values: number[];
+    categories: IJeopardyCategory[];
+}
+
+export type IRound = IClassicRound | IJeopardyRound;
 
 /**
  * How far a classic round got
@@ -39,9 +62,28 @@ export interface IClassicRoundProgress {
 }
 
 /**
+ * How far a Jeopardy round got
+ */
+export interface IJeopardyRoundProgress {
+    /**
+     * The tiles that are closed, by the IDs of their questions
+     */
+    playedQuestionIds: string[];
+    /**
+     * The tile that is shown, null while the board is shown
+     */
+    openQuestionId: string | null;
+    /**
+     * The team that picks the next tile, null until the master chose who starts. Set to the team that answered
+     * correctly, and changeable by the master.
+     */
+    pickingTeamId: string | null;
+}
+
+/**
  * How far a round got; IGameState.roundProgress has one for each round of the game
  */
-export type IRoundProgress = IClassicRoundProgress;
+export type IRoundProgress = IClassicRoundProgress | IJeopardyRoundProgress;
 
 /**
  * Where a game is, for lists and the master, all counted from 1

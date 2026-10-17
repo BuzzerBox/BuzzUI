@@ -9,7 +9,9 @@ import {
     ISetQuestionPacket,
     IEndGamePacket,
     IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket, IGradeAnswerPacket,
-    ISetRoundPacket
+    ISetRoundPacket,
+    ISelectQuestionPacket,
+    ISetPickingTeamPacket
 } from "../interfaces";
 
 import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates, EGradeResults} from '../enums';
@@ -107,6 +109,24 @@ export class PacketHelper {
         return {
             packetType: EPacketTypes.SET_ROUND,
             roundId
+        };
+    }
+
+    /**
+     * @param questionId null to close the open tile
+     */
+    public static makeSelectQuestionPacket(questionId: string | null, markPlayed?: boolean): ISelectQuestionPacket {
+        const packet: ISelectQuestionPacket = {packetType: EPacketTypes.SELECT_QUESTION, questionId};
+        if (markPlayed != null) {
+            packet.markPlayed = markPlayed;
+        }
+        return packet;
+    }
+
+    public static makeSetPickingTeamPacket(teamId: string | null): ISetPickingTeamPacket {
+        return {
+            packetType: EPacketTypes.SET_PICKING_TEAM,
+            teamId
         };
     }
 

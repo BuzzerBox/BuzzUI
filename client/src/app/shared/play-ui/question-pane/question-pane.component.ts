@@ -153,6 +153,17 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.game.getQuestions().length;
   }
 
+  public getQuestionTitle(): string {
+    return this.game.getQuestionTitle();
+  }
+
+  /**
+   * Whether the question is a tile of a Jeopardy board, which shows its value in the title
+   */
+  public isTile(): boolean {
+    return this.game.getOpenTile() != null;
+  }
+
   /**
    * The name of the round, only for games with several
    */
@@ -164,7 +175,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
    * What the question is worth, e.g. "3 Punkte"; only shown if some question in the game is not worth the default 1
    */
   public getPointsLabel(): string | null {
-    if (!this.game.hasCustomQuestionPoints()) {
+    if (this.isTile() || !this.game.hasCustomQuestionPoints()) {
       return null;
     }
     const points = GameService.getQuestionPoints(this.question);
@@ -410,7 +421,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     const dialogRef = this.dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, TGradeDialogResult>(DialogGradeAnswerComponent, {
       data: {
         teamName: team.name,
-        points: GameService.getQuestionPoints(this.question),
+        points: this.game.getCurrentQuestionValue(),
         answers: this.getGradeAnswerOptions(),
         answersHiddenOnScreens: !this.showAnswers
       }

@@ -1,0 +1,145 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 8px;
+  box-sizing: border-box;
+  gap: 8px;
+}
+
+.picking {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+
+.picking-label {
+  font-weight: 500;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.picking-team.active {
+  background: var(--team-color);
+  color: #10132a;
+}
+
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--categories), minmax(0, 1fr));
+  grid-template-rows: auto repeat(var(--values), minmax(0, 1fr));
+  gap: 6px;
+}
+
+.category {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  text-align: center;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  background: #e8eaf6;
+  color: #1a237e;
+  font: inherit;
+  font-size: 1.4em;
+  font-weight: 700;
+}
+
+button.tile {
+  cursor: pointer;
+}
+
+button.tile:hover:not(:disabled),
+button.tile:focus-visible {
+  background: #c5cae9;
+}
+
+.tile.played {
+  background: transparent;
+  color: rgba(0, 0, 0, 0.3);
+  text-decoration: line-through;
+  cursor: default;
+}
+
+/* screens: everything scales with the screen, see play-ui.component.css */
+:host(.screen) {
+  padding: calc(var(--u) * 1.5);
+  gap: calc(var(--u) * 1.5);
+}
+
+:host(.screen) .picking {
+  justify-content: center;
+  min-height: calc(var(--u) * 6);
+}
+
+:host(.screen) .picking-team {
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 2.4);
+  border-radius: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 4);
+  font-weight: 700;
+}
+
+:host(.screen) .grid {
+  gap: calc(var(--u) * 1);
+}
+
+:host(.screen) .category {
+  padding: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 3.2);
+}
+
+:host(.screen) .tile {
+  min-height: 0;
+  border-radius: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 6);
+}
+
+/* played tiles leave a gap on the screens */
+:host(.screen) .tile.played {
+  border-color: transparent;
+}
+
+/* the show themes */
+:host(.screen.show) .category {
+  border-radius: calc(var(--u) * 1);
+  background: var(--bb-surface-raised);
+  color: var(--bb-text);
+  font-family: var(--bb-display-font);
+  text-transform: uppercase;
+}
+
+:host(.screen.show) .tile {
+  border: none;
+  background: var(--bb-surface-raised);
+  color: var(--bb-gold);
+  font-family: var(--bb-display-font);
+  box-shadow: inset 0 0 0 1px var(--bb-border), 0 calc(var(--u) * 0.4) calc(var(--u) * 1.5) var(--bb-shadow);
+}
+
+:host(.screen.show) .tile.played {
+  background: transparent;
+  box-shadow: none;
+}
+
+:host(.screen.show) .picking-team.active {
+  color: var(--bb-on-team);
+  box-shadow: 0 0 calc(var(--u) * 3 * var(--bb-glow)) var(--team-color);
+  font-family: var(--bb-display-font);
+}

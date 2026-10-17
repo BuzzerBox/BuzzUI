@@ -1,7 +1,7 @@
 import {CURRENT_GAME_FORMAT_VERSION, IGameDefinition, IGameInstanceState} from '../interfaces/IGameDefinition';
 import {IGameState} from '../interfaces/IGameState';
 import {IQuestion} from '../interfaces/IQuestion';
-import {IClassicRound, IGameProgress, IRound, IRoundProgress} from '../interfaces/IRound';
+import {IClassicRound, IGameProgress, IJeopardyCategory, IJeopardyRound, IRound, IRoundProgress} from '../interfaces/IRound';
 import {RoundRulesHelper} from '../rules/round-rules.helper';
 
 /**
@@ -94,13 +94,15 @@ export class GameFormatHelper {
     }
 
     private static isSupportedRound(round: unknown): boolean {
-        const candidate = round as Partial<IClassicRound>;
-        return candidate != null && typeof candidate === 'object' && RoundRulesHelper.isSupportedMode(candidate.mode)
-            && Array.isArray(candidate.questions);
+        return RoundRulesHelper.isSupportedRound(round);
     }
 
     public static makeClassicRound(id: string, name: string, questions: IQuestion[]): IClassicRound {
         return {id, mode: 'classic', name, questions};
+    }
+
+    public static makeJeopardyRound(id: string, name: string, values: number[], categories: IJeopardyCategory[]): IJeopardyRound {
+        return {id, mode: 'jeopardy', name, values, categories};
     }
 
     /**

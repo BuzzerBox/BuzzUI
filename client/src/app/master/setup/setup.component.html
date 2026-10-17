@@ -61,140 +61,231 @@
       </div>
     }
   </mat-step>
-  <mat-step [stepControl]="questionsFormGroup" label="Fragen">
-    <!--    <ng-template [ngIf]="showQuestions">-->
-    <!--    <ng-template>-->
+  <mat-step [completed]="areAllRoundsValid()" label="Fragen">
     <form #questionForm [formGroup]="questionsFormGroup" id="questionForm" (input)="onQuestionsChanged()" (change)="onQuestionsChanged()">
-      <!--    <form #questionForm [formGroup]="testObs | async" id="questionForm">-->
-      <mat-accordion class="example-headers-align" cdkDropList (cdkDropListDropped)="dropQuestion($event)">
-        @for (questionFormGroupName of questionFormGroupNames; track questionFormGroupName; let i = $index) {
-          <mat-expansion-panel hideToggle [expanded]="step === i" (opened)="setStep(i)" cdkDrag>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <mat-icon cdkDragHandle class="drag-handle" title="Frage verschieben">drag_indicator</mat-icon>
-                <span class="panel-number">Frage {{i + 1}}</span>
-                @if (getQuestionPreview(questionFormGroupName); as preview) {
-                  <span class="panel-preview">„{{preview}}“</span>
-                }
-              </mat-panel-title>
-              <mat-panel-description>
-                <span class="panel-header-icons">
-                  @if (getMediaKind(questionFormGroupName); as kind) {
-                    <span class="panel-header-info" [title]="questionInitialConfig[i] ? 'Eigener Medienablauf' : ''">
-                      <mat-icon>{{mediaKindIcons[kind]}}</mat-icon>{{mediaKindLabels[kind]}}
-                      @if (questionInitialConfig[i]) {
-                        <mat-icon class="panel-header-custom-media">tune</mat-icon>
-                      }
-                    </span>
-                  }
-                  <span class="panel-header-info">{{getPointsText(questionFormGroupName)}}</span>
-                  <mat-icon class="valid-icon" [class.green-icon]="questionsFormGroup.controls[questionFormGroupName]?.valid"
-                            [title]="questionsFormGroup.controls[questionFormGroupName]?.valid ? 'Vollständig' : 'Noch unvollständig'">
-                    {{questionsFormGroup.controls[questionFormGroupName]?.valid ? 'check_circle' : 'radio_button_unchecked'}}
-                  </mat-icon>
-                  <button mat-icon-button type="button" (click)="removeQuestion(i, $event)" title="Frage löschen">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </span>
-              </mat-panel-description>
-            </mat-expansion-panel-header>
-
-            <div class="question-card" [formGroupName]="questionFormGroupName">
-              <section class="question-section">
-                <h4 class="section-title">Frage</h4>
-                <div class="question-row">
-                  <mat-form-field class="question-text">
-                    <mat-label>Fragetext</mat-label>
-                    <textarea matInput formControlName="text" cdkTextareaAutosize cdkAutosizeMinRows="1"></textarea>
-                  </mat-form-field>
-                  <mat-form-field class="points">
-                    <mat-label>Punkte</mat-label>
-                    <input matInput type="number" min="1" step="1" formControlName="points">
-                    <mat-error>Ganze Zahl ab 1</mat-error>
-                  </mat-form-field>
-                </div>
-              </section>
-
-              <section class="question-section">
-                <div class="section-header">
-                  <h4 class="section-title">Antworten</h4>
-                  <mat-slide-toggle formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">Antwortmöglichkeiten zeigen</mat-slide-toggle>
-                </div>
-                @if (getQuestionFormGroup(questionFormGroupName).get('answersVisible').value) {
-                  <div class="answers" formGroupName="answers">
-                    @for (answerIndex of answerIndexes; track answerIndex) {
-                      <mat-form-field [formGroupName]="ANSWER_FORM_GROUP_BASE_NAME + answerIndex"
-                                      [class.correct-answer]="isCorrectAnswer(questionFormGroupName, answerIndex)">
-                        <mat-label>Antwort {{answerIndex + 1}}</mat-label>
-                        <input matInput formControlName="text">
-                        <mat-checkbox matSuffix formControlName="isCorrect" class="correct-checkbox" title="Richtige Antwort"
-                                      [attr.aria-label]="'Antwort ' + (answerIndex + 1) + ' ist richtig'"></mat-checkbox>
-                      </mat-form-field>
-                    }
-                  </div>
-                  @if (getAnswerFromGroup(questionFormGroupName).hasError('error')) {
-                    <p class="hint">Hake mindestens eine richtige Antwort an.</p>
-                  }
-                } @else {
-                  <p class="hint">Die Teams sehen keine Antwortmöglichkeiten, die Spielleitung bewertet die Antwort selbst.</p>
-                }
-              </section>
-
-              <section class="question-section">
-                <h4 class="section-title">Medien</h4>
-                <app-select-media [game]="ref" [fileLocation]="getQuestionFormGroup(questionFormGroupName).get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i}); onQuestionsChanged()"></app-select-media>
-                @if (getMediaKind(questionFormGroupName); as kind) {
-                  <div class="media-config">
-                    @if (questionInitialConfig[i]) {
-                      <div class="media-config-line">
-                        <span class="hint">Ablauf: eigener für diese Frage</span>
-                        <button mat-button type="button" (click)="resetQuestionConfig(i)">Spiel-Standard verwenden</button>
-                      </div>
-                      <app-media-question-display-order-configuration [initialConfig]="questionInitialConfig[i]" [mediaKind]="kind" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
-                    } @else {
-                      <div class="media-config-line">
-                        <span class="hint">Ablauf: Spiel-Standard für {{mediaKindLabels[kind]}}</span>
-                        <button mat-button type="button" (click)="customizeQuestionConfig(i, kind)">Für diese Frage anpassen</button>
-                      </div>
-                    }
-                  </div>
-                }
-              </section>
-
-              <section class="question-section">
-                <h4 class="section-title">Notizen für die Spielleitung</h4>
-                <mat-form-field class="notes">
-                  <mat-label>Notizen (optional)</mat-label>
-                  <textarea matInput formControlName="notes" cdkTextareaAutosize cdkAutosizeMinRows="2"></textarea>
-                  <mat-hint>Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige</mat-hint>
+      <!-- declared in the form, so its controls find the questions form -->
+      <ng-template #questionCard let-name="name" let-i="index">
+        <div class="question-card" [formGroupName]="name">
+          <section class="question-section">
+            <h4 class="section-title">Frage</h4>
+            <div class="question-row">
+              <mat-form-field class="question-text">
+                <mat-label>Fragetext</mat-label>
+                <textarea matInput formControlName="text" cdkTextareaAutosize cdkAutosizeMinRows="1"></textarea>
+              </mat-form-field>
+              @if (!isJeopardy()) {
+                <mat-form-field class="points">
+                  <mat-label>Punkte</mat-label>
+                  <input matInput type="number" min="1" step="1" formControlName="points">
+                  <mat-error>Ganze Zahl ab 1</mat-error>
                 </mat-form-field>
-              </section>
+              }
             </div>
-            <mat-action-row>
-              <button mat-button type="button" color="primary" (click)="addQuestionToFormGroup()"><mat-icon>add</mat-icon> Frage hinzufügen</button>
-            </mat-action-row>
-          </mat-expansion-panel>
+          </section>
+
+          <section class="question-section">
+            <div class="section-header">
+              <h4 class="section-title">Antworten</h4>
+              <mat-slide-toggle formControlName="answersVisible" (change)="applyShowAnswersState(name, $event.checked)">Antwortmöglichkeiten zeigen</mat-slide-toggle>
+            </div>
+            @if (getQuestionFormGroup(name).get('answersVisible').value) {
+              <div class="answers" formGroupName="answers">
+                @for (answerIndex of answerIndexes; track answerIndex) {
+                  <mat-form-field [formGroupName]="ANSWER_FORM_GROUP_BASE_NAME + answerIndex"
+                                  [class.correct-answer]="isCorrectAnswer(name, answerIndex)">
+                    <mat-label>Antwort {{answerIndex + 1}}</mat-label>
+                    <input matInput formControlName="text">
+                    <mat-checkbox matSuffix formControlName="isCorrect" class="correct-checkbox" title="Richtige Antwort"
+                                  [attr.aria-label]="'Antwort ' + (answerIndex + 1) + ' ist richtig'"></mat-checkbox>
+                  </mat-form-field>
+                }
+              </div>
+              @if (getAnswerFromGroup(name).hasError('error')) {
+                <p class="hint">Hake mindestens eine richtige Antwort an.</p>
+              }
+            } @else {
+              <p class="hint">Die Teams sehen keine Antwortmöglichkeiten, die Spielleitung bewertet die Antwort selbst.</p>
+            }
+          </section>
+
+          <section class="question-section">
+            <h4 class="section-title">Medien</h4>
+            <app-select-media [game]="ref" [fileLocation]="getQuestionFormGroup(name).get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i}); onQuestionsChanged()"></app-select-media>
+            @if (getMediaKind(name); as kind) {
+              <div class="media-config">
+                @if (questionInitialConfig[i]) {
+                  <div class="media-config-line">
+                    <span class="hint">Ablauf: eigener für diese Frage</span>
+                    <button mat-button type="button" (click)="resetQuestionConfig(i)">Spiel-Standard verwenden</button>
+                  </div>
+                  <app-media-question-display-order-configuration [initialConfig]="questionInitialConfig[i]" [mediaKind]="kind" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
+                } @else {
+                  <div class="media-config-line">
+                    <span class="hint">Ablauf: Spiel-Standard für {{mediaKindLabels[kind]}}</span>
+                    <button mat-button type="button" (click)="customizeQuestionConfig(i, kind)">Für diese Frage anpassen</button>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+
+          <section class="question-section">
+            <h4 class="section-title">Notizen für die Spielleitung</h4>
+            <mat-form-field class="notes">
+              <mat-label>Notizen (optional)</mat-label>
+              <textarea matInput formControlName="notes" cdkTextareaAutosize cdkAutosizeMinRows="2"></textarea>
+              <mat-hint>Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige</mat-hint>
+            </mat-form-field>
+          </section>
+        </div>
+      </ng-template>
+
+      <div class="rounds" role="tablist" aria-label="Runden">
+        @for (editor of roundEditors; track editor.id; let r = $index) {
+          <button mat-stroked-button type="button" role="tab" class="round-tab" [class.active]="r === activeRoundIndex"
+                  [attr.aria-selected]="r === activeRoundIndex" (click)="showRound(r)">
+            <mat-icon>{{roundModeIcons[editor.mode]}}</mat-icon>
+            {{editor.name || 'Runde ' + (r + 1)}}
+            <mat-icon iconPositionEnd class="valid-icon" [class.green-icon]="isRoundValid(r)" [title]="isRoundValid(r) ? 'Vollständig' : 'Noch unvollständig'">
+              {{isRoundValid(r) ? 'check_circle' : 'radio_button_unchecked'}}
+            </mat-icon>
+          </button>
         }
-      </mat-accordion>
-      <!--<button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>-->
+        <button mat-button type="button" color="primary" [matMenuTriggerFor]="addRoundMenu"><mat-icon>add</mat-icon> Runde hinzufügen</button>
+        <mat-menu #addRoundMenu="matMenu">
+          @for (mode of roundModes; track mode) {
+            <button mat-menu-item type="button" (click)="addRound(mode)"><mat-icon>{{roundModeIcons[mode]}}</mat-icon>{{roundModeLabels[mode]}}</button>
+          }
+        </mat-menu>
+      </div>
+
+      @if (getActiveRoundEditor(); as editor) {
+        <div class="round-settings">
+          <mat-form-field class="round-name">
+            <mat-label>Name der Runde</mat-label>
+            <input matInput [(ngModel)]="editor.name" [ngModelOptions]="{standalone: true}" required>
+          </mat-form-field>
+          <span class="round-mode"><mat-icon>{{roundModeIcons[editor.mode]}}</mat-icon>{{roundModeLabels[editor.mode]}}</span>
+          <span class="spacer"></span>
+          <button mat-icon-button type="button" (click)="moveRound(-1)" [disabled]="activeRoundIndex === 0" title="Runde nach vorne verschieben"><mat-icon>arrow_back</mat-icon></button>
+          <button mat-icon-button type="button" (click)="moveRound(1)" [disabled]="activeRoundIndex === roundEditors.length - 1" title="Runde nach hinten verschieben"><mat-icon>arrow_forward</mat-icon></button>
+          <button mat-icon-button type="button" (click)="removeRound(activeRoundIndex)" [disabled]="roundEditors.length < 2" title="Runde löschen"><mat-icon>delete</mat-icon></button>
+        </div>
+
+        @if (editor.mode === 'jeopardy') {
+          <p class="hint">Jede Kategorie hat eine Frage für jeden Wert. Eine richtige Antwort bringt den Wert der Kachel, eine falsche kostet ihn.</p>
+          <div class="board-scroll">
+            <div class="board-editor" [style.--categories]="editor.categoryNames.length">
+              <div class="board-corner"></div>
+              @for (categoryName of editor.categoryNames; track $index; let c = $index) {
+                <div class="board-category">
+                  <mat-form-field>
+                    <mat-label>Kategorie {{c + 1}}</mat-label>
+                    <input matInput [ngModel]="categoryName" (ngModelChange)="setCategoryName(c, $event)" [ngModelOptions]="{standalone: true}" required>
+                  </mat-form-field>
+                  <button mat-icon-button type="button" (click)="removeCategory(c)" title="Kategorie löschen"><mat-icon>delete</mat-icon></button>
+                </div>
+              }
+              @for (value of editor.values; track $index; let v = $index) {
+                <div class="board-value">
+                  <mat-form-field>
+                    <mat-label>Wert</mat-label>
+                    <input matInput type="number" min="1" step="1" [ngModel]="value" (ngModelChange)="setBoardValue(v, $event)" [ngModelOptions]="{standalone: true}" required>
+                  </mat-form-field>
+                  <button mat-icon-button type="button" (click)="removeValue(v)" title="Wert löschen"><mat-icon>delete</mat-icon></button>
+                </div>
+                @for (categoryName of editor.categoryNames; track $index; let c = $index) {
+                  <button type="button" class="board-tile" [class.selected]="step === getTileIndex(c, v)" (click)="setStep(getTileIndex(c, v))"
+                          [attr.aria-pressed]="step === getTileIndex(c, v)">
+                    <span class="tile-head">
+                      <span class="tile-value">{{value}}</span>
+                      <mat-icon class="valid-icon" [class.green-icon]="isTileValid(getTileIndex(c, v))">
+                        {{isTileValid(getTileIndex(c, v)) ? 'check_circle' : 'radio_button_unchecked'}}
+                      </mat-icon>
+                    </span>
+                    <span class="tile-preview">{{getQuestionPreview(questionFormGroupNames[getTileIndex(c, v)]) || 'Noch leer'}}</span>
+                  </button>
+                }
+              }
+            </div>
+          </div>
+          <div class="board-actions">
+            <button mat-button type="button" color="primary" (click)="addCategory()"><mat-icon>add</mat-icon> Kategorie hinzufügen</button>
+            <button mat-button type="button" color="primary" (click)="addValue()"><mat-icon>add</mat-icon> Wert hinzufügen</button>
+          </div>
+          @if (questionFormGroupNames[step]; as name) {
+            <mat-card class="tile-editor">
+              <mat-card-header><mat-card-title>{{getTileTitle(step)}}</mat-card-title></mat-card-header>
+              <mat-card-content>
+                <!-- made again for each tile: formGroupName doesn't follow a name that changes -->
+                @for (tileName of [name]; track tileName) {
+                  <ng-container *ngTemplateOutlet="questionCard; context: {name: tileName, index: step}"></ng-container>
+                }
+              </mat-card-content>
+            </mat-card>
+          } @else {
+            <p class="hint">Füge Kategorien und Werte hinzu, um das Spielbrett zu füllen.</p>
+          }
+        } @else {
+          <mat-accordion class="example-headers-align" cdkDropList (cdkDropListDropped)="dropQuestion($event)">
+            @for (questionFormGroupName of questionFormGroupNames; track questionFormGroupName; let i = $index) {
+              <mat-expansion-panel hideToggle [expanded]="step === i" (opened)="setStep(i)" cdkDrag>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <mat-icon cdkDragHandle class="drag-handle" title="Frage verschieben">drag_indicator</mat-icon>
+                    <span class="panel-number">Frage {{i + 1}}</span>
+                    @if (getQuestionPreview(questionFormGroupName); as preview) {
+                      <span class="panel-preview">„{{preview}}“</span>
+                    }
+                  </mat-panel-title>
+                  <mat-panel-description>
+                    <span class="panel-header-icons">
+                      @if (getMediaKind(questionFormGroupName); as kind) {
+                        <span class="panel-header-info" [title]="questionInitialConfig[i] ? 'Eigener Medienablauf' : ''">
+                          <mat-icon>{{mediaKindIcons[kind]}}</mat-icon>{{mediaKindLabels[kind]}}
+                          @if (questionInitialConfig[i]) {
+                            <mat-icon class="panel-header-custom-media">tune</mat-icon>
+                          }
+                        </span>
+                      }
+                      <span class="panel-header-info">{{getPointsText(questionFormGroupName)}}</span>
+                      <mat-icon class="valid-icon" [class.green-icon]="questionsFormGroup.controls[questionFormGroupName]?.valid"
+                                [title]="questionsFormGroup.controls[questionFormGroupName]?.valid ? 'Vollständig' : 'Noch unvollständig'">
+                        {{questionsFormGroup.controls[questionFormGroupName]?.valid ? 'check_circle' : 'radio_button_unchecked'}}
+                      </mat-icon>
+                      <button mat-icon-button type="button" (click)="removeQuestion(i, $event)" title="Frage löschen">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <ng-container *ngTemplateOutlet="questionCard; context: {name: questionFormGroupName, index: i}"></ng-container>
+                <mat-action-row>
+                  <button mat-button type="button" color="primary" (click)="addQuestionToFormGroup()"><mat-icon>add</mat-icon> Frage hinzufügen</button>
+                </mat-action-row>
+              </mat-expansion-panel>
+            }
+          </mat-accordion>
+        }
+      }
 
       <div>
         <button mat-button matStepperPrevious>Zurück</button>
-        <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">Weiter</button>
+        <button mat-button matStepperNext [disabled]="!areAllRoundsValid()">Weiter</button>
       </div>
     </form>
-  <!--    </ng-template>-->
 </mat-step>
 <mat-step>
   <ng-template matStepLabel>Speichern</ng-template>
-  <p>Das Spiel hat <b>{{getNumberOfQuestions()}} Frage(n)</b>. Beim Speichern entsteht eine neue Version; Spielstände
+  <p>Das Spiel hat <b>{{roundEditors.length === 1 ? '' : roundEditors.length + ' Runden, '}}{{getNumberOfQuestions()}} Frage(n)</b>. Beim Speichern entsteht eine neue Version; Spielstände
     spielen weiter die Version, mit der sie begonnen wurden.</p>
   @if (saveError) {
     <p class="error"><mat-icon>error</mat-icon>{{saveError}}</p>
   }
   <div>
     <button mat-button matStepperPrevious>Zurück</button>
-    <button mat-raised-button color="primary" [disabled]="saving || !questionsFormGroup.valid" (click)="saveGame()">Spiel speichern</button>
+    <button mat-raised-button color="primary" [disabled]="saving || !areAllRoundsValid()" (click)="saveGame()">Spiel speichern</button>
     @if (savedVersion !== null) {
       <button mat-button (click)="playSavedVersion()"><mat-icon>play_arrow</mat-icon> Version {{savedVersion}} spielen</button>
       <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
