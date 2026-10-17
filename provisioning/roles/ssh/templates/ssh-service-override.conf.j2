@@ -1,0 +1,8 @@
+# SSH only runs while the admin user has keys: built into the image (ssh_authorized_keys) or on the boot partition
+# (buzzerbox-ssh-keys.service). Without them the service is skipped, not failed.
+[Unit]
+Wants=buzzerbox-ssh-keys.service
+After=buzzerbox-ssh-keys.service
+
+[Service]
+ExecCondition=/bin/sh -c 'test -s /etc/buzzerbox/ssh_authorized_keys || test -s /home/{{ buzzerbox_admin_user }}/.ssh/authorized_keys'

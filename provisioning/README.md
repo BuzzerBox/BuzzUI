@@ -24,7 +24,7 @@ own settings (such as the WiFi name and password) from a file on the boot partit
 | USB sticks | `udiskie` mounts them at `/media/pi/<label>`, as before |
 | Splash screen | `splashscreen.service` (fbi), until the kiosk starts |
 | Buzzers | the GPIO UART `/dev/ttyS0` (`enable_uart=1`, no serial console) |
-| SSH | off, unless the image is built with `ssh_authorized_keys` |
+| SSH | off, unless there are keys: built into the image (`ssh_authorized_keys`) or in `buzzerbox-ssh-keys.txt` on the boot partition |
 
 ## Building the image
 
@@ -89,6 +89,23 @@ every box its own WiFi password**: the default one is public in this repository.
 `WIFI_ANTENNA=external` switches a CM4 to the antenna on its U.FL connector (`dtparam=ant2` in `config.txt`). The
 firmware only reads `config.txt` at boot, so when the setting changes, the box restarts once by itself. A Raspberry Pi 4
 has no antenna connector and ignores the setting.
+
+### SSH access
+
+SSH is off on the images from GitHub. To log into a box, put your public key (e.g. `~/.ssh/id_ed25519.pub`) into
+`buzzerbox-ssh-keys.txt` on the same boot partition, one key per line, and restart the box. Then join its WiFi and
+log in as the admin user, who may use `sudo` (`10.0.0.5` unless `buzzerbox.txt` sets another `SERVER_IP_ADDRESS`):
+
+```sh
+ssh admin@10.0.0.5
+```
+
+The box takes the keys on every start (`roles/ssh/files/buzzerbox-apply-ssh-keys.sh`), and `journalctl -u
+buzzerbox-ssh-keys` shows which keys it took and why lines were ignored. Only public keys are taken, and passwords are
+never accepted. Remove the keys and restart the box to turn SSH off again. Anyone who can write to the card can turn
+SSH on this way, but they could change the box in any other way as well.
+
+Images built with `ssh_authorized_keys` (see above) have their keys built in, in addition to the ones on the card.
 
 ## Changing boxes that are in use
 

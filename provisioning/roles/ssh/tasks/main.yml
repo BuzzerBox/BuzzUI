@@ -1,48 +1,106 @@
-# SSH for maintenance (e.g. running this playbook against a box). It is only on when ssh_authorized_keys is set, and
-# only for buzzerbox_admin_user with a key.
+# SSH for maintenance (e.g. running this playbook against a box), only for buzzerbox_admin_user and only with a key.
+# The keys come from ssh_authorized_keys, built into the image, or from buzzerbox-ssh-keys.txt on the boot partition,
+# which buzzerbox-ssh-keys.service takes on every boot. Without any key, ssh.service doesn't start.
+#
+# Anyone who can write to the boot partition can turn SSH on that way, but they could change the box in any other way
+# too: the card isn't protected.
 
-- name: Set up SSH access
-  when: ssh_authorized_keys | length > 0
-  block:
-    - name: Create the admin user
-      ansible.builtin.user:
-        name: "{{ buzzerbox_admin_user }}"
-        shell: /bin/bash
-        password_lock: true
-        groups: [sudo]
-        append: true
+- name: Create the admin user
+  ansible.builtin.user:
+    name: "{{ buzzerbox_admin_user }}"
+    shell: /bin/bash
+    password_lock: true
+    groups: [sudo]
+    append: true
 
-    - name: Install the authorized keys
-      ansible.posix.authorized_key:
-        user: "{{ buzzerbox_admin_user }}"
-        key: "{{ ssh_authorized_keys | join('\n') }}"
-        exclusive: true
+- name: Create the admin user's SSH folder
+  ansible.builtin.file:
+    path: "/home/{{ buzzerbox_admin_user }}/.ssh"
+    state: directory
+    owner: "{{ buzzerbox_admin_user }}"
+    group: "{{ buzzerbox_admin_user }}"
+    mode: "0700"
 
-    - name: Let the admin user use sudo without a password
-      ansible.builtin.copy:
-        dest: /etc/sudoers.d/buzzerbox-admin
-        content: "{{ buzzerbox_admin_user }} ALL=(ALL) NOPASSWD: ALL\n"
-        mode: "0440"
-        validate: visudo -cf %s
+# empty without ssh_authorized_keys, so an image built without them has no key of its own
+- name: Install the keys built into the image
+  ansible.builtin.copy:
+    dest: "/home/{{ buzzerbox_admin_user }}/.ssh/authorized_keys"
+    content: "{{ (ssh_authorized_keys | join('\n') + '\n') if ssh_authorized_keys | length > 0 else '' }}"
+    owner: "{{ buzzerbox_admin_user }}"
+    group: "{{ buzzerbox_admin_user }}"
+    mode: "0600"
 
-    - name: Allow keys only
-      ansible.builtin.copy:
-        dest: /etc/ssh/sshd_config.d/buzzerbox.conf
-        content: |
-          PasswordAuthentication no
-          KbdInteractiveAuthentication no
-          PermitRootLogin no
-          AllowUsers {{ buzzerbox_admin_user }}
-        mode: "0644"
-      notify: Reload ssh
+- name: Let the admin user use sudo without a password
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/buzzerbox-admin
+    content: "{{ buzzerbox_admin_user }} ALL=(ALL) NOPASSWD: ALL\n"
+    mode: "0440"
+    validate: visudo -cf %s
 
-    - name: Enable SSH
-      ansible.builtin.systemd_service:
-        name: ssh.service
-        enabled: true
+- name: Allow keys only
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/buzzerbox.conf
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowUsers {{ buzzerbox_admin_user }}
+      AuthorizedKeysFile .ssh/authorized_keys /etc/buzzerbox/ssh_authorized_keys
+    mode: "0644"
+  notify: Reload ssh
 
-- name: Disable SSH
+- name: Install the script that takes the keys from the boot partition
+  ansible.builtin.copy:
+    src: buzzerbox-apply-ssh-keys.sh
+    dest: /usr/local/sbin/buzzerbox-apply-ssh-keys
+    mode: "0755"
+
+# a box that already has the file keeps it, with its keys
+- name: Put the keys file on the boot partition
+  ansible.builtin.template:
+    src: buzzerbox-ssh-keys.txt.j2
+    dest: /boot/firmware/buzzerbox-ssh-keys.txt
+    force: false
+
+- name: Install the keys service
+  ansible.builtin.copy:
+    src: buzzerbox-ssh-keys.service
+    dest: /etc/systemd/system/buzzerbox-ssh-keys.service
+    mode: "0644"
+
+- name: Create the folder for the SSH service's settings
+  ansible.builtin.file:
+    path: /etc/systemd/system/ssh.service.d
+    state: directory
+    mode: "0755"
+
+- name: Start SSH only while there are keys
+  ansible.builtin.template:
+    src: ssh-service-override.conf.j2
+    dest: /etc/systemd/system/ssh.service.d/buzzerbox.conf
+    mode: "0644"
+  notify: Reload ssh
+
+- name: Enable the keys service
+  ansible.builtin.systemd_service:
+    name: buzzerbox-ssh-keys.service
+    enabled: true
+    daemon_reload: "{{ not ansible_facts.is_chroot }}"
+
+# it decides on every boot whether to run, see ssh-service-override.conf.j2
+- name: Enable SSH
   ansible.builtin.systemd_service:
     name: ssh.service
+    enabled: true
+
+- name: Look for the SSH socket
+  ansible.builtin.stat:
+    path: /usr/lib/systemd/system/ssh.socket
+  register: ssh_socket
+
+# socket activation would start sshd past the condition
+- name: Don't start SSH through its socket
+  ansible.builtin.systemd_service:
+    name: ssh.socket
     enabled: false
-  when: ssh_authorized_keys | length == 0
+  when: ssh_socket.stat.exists
