@@ -12,7 +12,9 @@ import {
   IAnswerSetStatePacket,
   IGradeAnswerPacket,
   IMarkTeamPacket,
-  IQuestion
+  IMediaQuestionState,
+  IQuestion,
+  PacketHelper
 } from '../../../../../../shared/shared';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {
@@ -82,28 +84,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
         this.openGradeDialog(gameState.markedTeamIds[0]);
       }
     }
-    if (this.question.initialConfig) {
-      this.showAnswers = (this.question.initialConfig.answerState === EQuestionAnswerStates.SHOWN && this.question.show as boolean) || !this.question.mediaDetails.fileSrc;
-      this.showQuestion = this.question.initialConfig.questionState === EQuestionAnswerStates.SHOWN;
-      this.questionState = this.question.initialConfig.questionState;
-      this.mediaState = this.question.initialConfig.mediaState;
-      this.answerState = this.question.initialConfig.answerState;
-    }
     this.mediaUpdateSubscription = this.game.observeMediaStateUpdates().subscribe(
-      (packet) => {
-        this.showQuestion = packet.mediaQuestionState.questionState === EQuestionAnswerStates.SHOWN;
-        this.questionState = packet.mediaQuestionState.questionState;
-        this.mediaState = packet.mediaQuestionState.mediaState;
-        this.answerState = packet.mediaQuestionState.answerState;
-        switch (packet.mediaQuestionState.answerState) {
-          case EQuestionAnswerStates.SHOWN:
-            // questions without answer options (unchecked in setup) never show their answers
-            this.showAnswers = !!this.question?.show;
-            break;
-          default:
-            this.showAnswers = !this.question?.mediaDetails && this.question?.show as boolean;
-        }
-      }
+      (packet) => this.applyMediaQuestionState(packet.mediaQuestionState)
     );
     this.restoreQuestionProgress();
   }
@@ -353,6 +335,24 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     this.reset();
+    if (changes['question']) {
+      // The pane stays when the question changes. Until the server's media state for the new question arrives, the
+      // previous question's visibility would otherwise apply, so start with the state the server will send.
+      this.applyMediaQuestionState(this.question?.initialConfig ?? PacketHelper.getDefaultMediaState());
+    }
+  }
+
+  private applyMediaQuestionState(state: IMediaQuestionState): void {
+    this.showQuestion = state.questionState === EQuestionAnswerStates.SHOWN;
+    this.questionState = state.questionState;
+    this.mediaState = state.mediaState;
+    this.answerState = state.answerState;
+    if (state.answerState === EQuestionAnswerStates.SHOWN) {
+      // questions without answer options (unchecked in setup) never show their answers
+      this.showAnswers = !!this.question?.show;
+    } else {
+      this.showAnswers = !this.question?.mediaDetails && !!this.question?.show;
+    }
   }
 
   private handleAnswerSetStatePacket(packet: IAnswerSetStatePacket): void {
