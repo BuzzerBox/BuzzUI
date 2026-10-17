@@ -52,7 +52,8 @@
             }
           </button>
         }
-        @if (showAnswers || (isMaster && question.show)) {
+        <!-- questions without answer options (unchecked in setup) may still hold placeholder answers from old games -->
+        @if (question.show && (showAnswers || isMaster)) {
           <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong"
             [style.--logged-in-color]="isShowTheme() ? getLoggedInColor() : null">
             @for (answer of getAnswers(); track answer; let i = $index) {
