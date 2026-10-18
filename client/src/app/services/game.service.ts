@@ -42,6 +42,9 @@ import {
   IJeopardyRound,
   IJeopardyRoundProgress,
   IJeopardyTile,
+  IFinalRound,
+  IFinalRoundProgress,
+  ISetWagerPacket,
   ISetupPacket,
   IStartGamePacket,
   IStorageAccessPacket,
@@ -320,6 +323,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.SET_PICKING_TEAM:
         this.handleSetPickingTeamPacket(message as ISetPickingTeamPacket);
+        break;
+      case EPacketTypes.SET_WAGER:
+        this.handleSetWagerPacket(message as ISetWagerPacket);
         break;
       case EPacketTypes.UPDATE_TEAMS:
         this.handleUpdateTeamsPacket(message as IUpdateTeamsPacket);
@@ -800,8 +806,13 @@ export class GameService implements OnDestroy {
   }
 
   private applySelectQuestionPacket(packet: ISelectQuestionPacket): boolean {
-    const round = this.getCurrentJeopardyRound();
-    const progress = round ? RoundRulesHelper.jeopardy.applySelectQuestion(round, this.getCurrentJeopardyProgress(), packet) : null;
+    const round = this.getCurrentRound();
+    let progress: IJeopardyRoundProgress | IFinalRoundProgress | null = null;
+    if (round?.mode === 'jeopardy') {
+      progress = RoundRulesHelper.jeopardy.applySelectQuestion(round, this.getCurrentJeopardyProgress(), packet);
+    } else if (round?.mode === 'final') {
+      progress = RoundRulesHelper.final.applySelectQuestion(round, this.getCurrentFinalProgress(), packet);
+    }
     if (progress == null) {
       return false;
     }
@@ -814,6 +825,127 @@ export class GameService implements OnDestroy {
     if (this.isUsedAsScreen() && this.applySelectQuestionPacket(packet) && this.cbUpdateCurrentQuestion != null) {
       this.cbUpdateCurrentQuestion();
     }
+  }
+
+  // ---- wagers: Daily Doubles and the final ----
+
+  /**
+   * The final that is played, undefined in other rounds
+   */
+  public getCurrentFinalRound(): IFinalRound | undefined {
+    const round = this.getCurrentRound();
+    return round?.mode === 'final' ? round : undefined;
+  }
+
+  public getCurrentFinalProgress(): IFinalRoundProgress | undefined {
+    return this.getCurrentFinalRound() ? this.getCurrentProgress() as IFinalRoundProgress : undefined;
+  }
+
+  /**
+   * Whether the open tile of the board is a Daily Double
+   */
+  public isOpenTileDailyDouble(): boolean {
+    const round = this.getCurrentJeopardyRound();
+    return !!round && RoundRulesHelper.jeopardy.isDailyDouble(round, this.getCurrentJeopardyProgress()?.openQuestionId);
+  }
+
+  /**
+   * Whether teams wager now instead of a question being shown: on a Daily Double until the team that picked it wagered,
+   * in the final until the master shows the question
+   */
+  public isWagerStage(): boolean {
+    if (this.getCurrentFinalRound()) {
+      return !this.getCurrentFinalProgress()?.questionShown;
+    }
+    const tile = this.getOpenTile();
+    const progress = this.getCurrentJeopardyProgress();
+    return !!tile && this.isOpenTileDailyDouble() && !this.isQuestionPlayed(tile.question.id)
+      && (progress?.pickingTeamId == null || progress.wagers?.[progress.pickingTeamId] == null);
+  }
+
+  /**
+   * The teams that wager now: the one that picked the Daily Double, or every team in the final
+   */
+  public getWageringTeams(): ITeam[] {
+    if (this.getCurrentFinalRound()) {
+      return this.teams ?? [];
+    }
+    const pickingTeam = this.isOpenTileDailyDouble() ? this.getPickingTeam() : undefined;
+    return pickingTeam ? [pickingTeam] : [];
+  }
+
+  public getWager(teamId: string): number | undefined {
+    const progress = this.getCurrentFinalProgress() ?? this.getCurrentJeopardyProgress();
+    return progress?.wagers?.[teamId];
+  }
+
+  public getMaxWager(team: ITeam): number {
+    const final = this.getCurrentFinalRound();
+    if (final) {
+      return RoundRulesHelper.final.getMaxWager(team.points ?? 0);
+    }
+    const round = this.getCurrentJeopardyRound();
+    return round ? RoundRulesHelper.jeopardy.getMaxWager(round, team.points ?? 0) : 0;
+  }
+
+  /**
+   * The server keeps it within getMaxWager and sends back what it took
+   */
+  public setWager(teamId: string, wager: number): void {
+    this.webSocketService.send<ISetWagerPacket>(PacketHelper.makeSetWagerPacket(teamId, wager));
+  }
+
+  private handleSetWagerPacket(packet: ISetWagerPacket): void {
+    const round = this.getCurrentRound();
+    const progress = this.getCurrentProgress() as IJeopardyRoundProgress | IFinalRoundProgress;
+    if (round && progress && (round.mode === 'jeopardy' || round.mode === 'final')) {
+      this.currentGameState.roundProgress[round.id] = {...progress, wagers: {...progress.wagers, [packet.teamId]: packet.wager}};
+    }
+  }
+
+  /**
+   * Shows the question of the final, once every team wagered
+   */
+  public showFinalQuestion(): IQuestion {
+    const final = this.getCurrentFinalRound();
+    if (final) {
+      this.sendSelectQuestionPacket(PacketHelper.makeSelectQuestionPacket(final.question.id));
+    }
+    return this.getCurrentQuestion();
+  }
+
+  public haveAllTeamsWagered(): boolean {
+    return this.getWageringTeams().every(team => this.getWager(team.teamId) != null);
+  }
+
+  /**
+   * The teams the master grades by hand, for their wagers: the one that picked the Daily Double once it wagered, or
+   * every team once the question of the final is shown
+   */
+  public getTeamsGradedByWager(): ITeam[] {
+    if (this.getCurrentFinalRound()) {
+      return this.getCurrentFinalProgress()?.questionShown ? (this.teams ?? []) : [];
+    }
+    return this.isOpenTileDailyDouble() && !this.isWagerStage() ? this.getWageringTeams() : [];
+  }
+
+  public mayGrade(teamId: string): boolean {
+    const round = this.getCurrentRound();
+    return !!round && RoundRulesHelper.get(round).mayGrade(round, this.getCurrentProgress(), teamId);
+  }
+
+  /**
+   * How the master graded the team in the final, undefined if not yet
+   */
+  public getFinalGradeResult(teamId: string): EGradeResults | undefined {
+    return this.getCurrentFinalProgress()?.gradeResults?.[teamId];
+  }
+
+  /**
+   * Grades a team that wagered: it wins or loses its wager
+   */
+  public gradeWager(teamId: string, isCorrect: boolean): void {
+    this.gradeAnswer(teamId, isCorrect ? EGradeResults.CORRECT : EGradeResults.WRONG, false);
   }
 
   /**
@@ -858,16 +990,21 @@ export class GameService implements OnDestroy {
    */
   public getCurrentQuestionValue(): number {
     const round = this.getCurrentRound();
-    return round ? Math.abs(RoundRulesHelper.get(round).getGradePoints(round, this.getCurrentProgress(), EGradeResults.CORRECT)) : 1;
+    const teamId = this.getCurrentJeopardyProgress()?.pickingTeamId ?? '';
+    return round ? Math.abs(RoundRulesHelper.get(round).getGradePoints(round, this.getCurrentProgress(), EGradeResults.CORRECT, teamId)) : 1;
   }
 
   /**
    * The header of the current question, e.g. "Frage 3/10", or "Geografie · 300" for a tile of the board
    */
   public getQuestionTitle(): string {
+    const final = this.getCurrentFinalRound();
+    if (final) {
+      return final.category;
+    }
     const tile = this.getOpenTile();
     if (tile) {
-      return `${tile.category.name} · ${tile.value}`;
+      return `${tile.category.name} · ${this.isOpenTileDailyDouble() ? 'Daily Double' : tile.value}`;
     }
     return `Frage ${this.getCurrentQuestionNumber() + 1}/${this.getQuestions().length}`;
   }

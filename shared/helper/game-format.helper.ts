@@ -1,7 +1,7 @@
 import {CURRENT_GAME_FORMAT_VERSION, IGameDefinition, IGameInstanceState} from '../interfaces/IGameDefinition';
 import {IGameState} from '../interfaces/IGameState';
 import {IQuestion} from '../interfaces/IQuestion';
-import {IClassicRound, IGameProgress, IJeopardyCategory, IJeopardyRound, IRound, IRoundProgress} from '../interfaces/IRound';
+import {IClassicRound, IFinalRound, IGameProgress, IJeopardyCategory, IJeopardyRound, IRound, IRoundProgress} from '../interfaces/IRound';
 import {RoundRulesHelper} from '../rules/round-rules.helper';
 
 /**
@@ -101,8 +101,18 @@ export class GameFormatHelper {
         return {id, mode: 'classic', name, questions};
     }
 
-    public static makeJeopardyRound(id: string, name: string, values: number[], categories: IJeopardyCategory[]): IJeopardyRound {
-        return {id, mode: 'jeopardy', name, values, categories};
+    public static makeJeopardyRound(id: string, name: string, values: number[], categories: IJeopardyCategory[],
+                                    dailyDoubleQuestionIds: string[] = []): IJeopardyRound {
+        const round: IJeopardyRound = {id, mode: 'jeopardy', name, values, categories};
+        // left out without any, like in versions from before they existed
+        if (dailyDoubleQuestionIds.length > 0) {
+            round.dailyDoubleQuestionIds = dailyDoubleQuestionIds;
+        }
+        return round;
+    }
+
+    public static makeFinalRound(id: string, name: string, category: string, question: IQuestion): IFinalRound {
+        return {id, mode: 'final', name, category, question};
     }
 
     /**

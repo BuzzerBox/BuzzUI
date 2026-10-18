@@ -26,7 +26,8 @@ import {baseUrlMaster, pathsMaster} from '../paths-master';
 
 /**
  * What the editor knows of a round: its settings, and the form of its questions. A Jeopardy round has its tiles in the
- * form category by category: the question of category c and value v is number c * values.length + v.
+ * form category by category: the question of category c and value v is number c * values.length + v. A final has its
+ * one question in the form.
  */
 interface IRoundEditor {
   id: string;
@@ -35,6 +36,10 @@ interface IRoundEditor {
   // Jeopardy only
   values: number[];
   categoryNames: string[];
+  // the questions of the tiles that are a Daily Double, by their IDs
+  dailyDoubleIds: string[];
+  // the final only
+  category: string;
   questionsFormGroup: UntypedFormGroup;
   questionFormGroupNames: string[];
   questionInitialConfig: IMediaQuestionState[];
@@ -84,9 +89,9 @@ export class SetupComponent implements OnInit {
 
   public roundEditors: IRoundEditor[] = [];
   public activeRoundIndex = 0;
-  public readonly roundModes: TRoundMode[] = ['classic', 'jeopardy'];
-  public readonly roundModeLabels: Record<TRoundMode, string> = {classic: 'Klassisch', jeopardy: 'Jeopardy'};
-  public readonly roundModeIcons: Record<TRoundMode, string> = {classic: 'format_list_numbered', jeopardy: 'grid_view'};
+  public readonly roundModes: TRoundMode[] = ['classic', 'jeopardy', 'final'];
+  public readonly roundModeLabels: Record<TRoundMode, string> = {classic: 'Klassisch', jeopardy: 'Jeopardy', final: 'Finale'};
+  public readonly roundModeIcons: Record<TRoundMode, string> = {classic: 'format_list_numbered', jeopardy: 'grid_view', final: 'emoji_events'};
 
   public questionsFormGroup: UntypedFormGroup;
   public questionFormGroupNames: string[];
@@ -216,7 +221,14 @@ export class SetupComponent implements OnInit {
     for (const round of list) {
       if (round.mode === 'jeopardy') {
         this.initQuestionsFormControls(GameFormatHelper.getAllQuestions([round]), false);
-        this.roundEditors.push(this.captureRoundEditor(round.id, round.mode, round.name, [...round.values], round.categories.map(c => c.name)));
+        this.roundEditors.push(this.captureRoundEditor(round.id, round.mode, round.name, {
+          values: [...round.values],
+          categoryNames: round.categories.map(c => c.name),
+          dailyDoubleIds: [...(round.dailyDoubleQuestionIds ?? [])]
+        }));
+      } else if (round.mode === 'final') {
+        this.initQuestionsFormControls([round.question], false);
+        this.roundEditors.push(this.captureRoundEditor(round.id, round.mode, round.name, {category: round.category}));
       } else {
         this.initQuestionsFormControls(round.questions);
         this.roundEditors.push(this.captureRoundEditor(round.id, round.mode, round.name));
@@ -229,9 +241,14 @@ export class SetupComponent implements OnInit {
   /**
    * An editor for the questions form as it is now
    */
-  private captureRoundEditor(id: string, mode: TRoundMode, name: string, values: number[] = [], categoryNames: string[] = []): IRoundEditor {
+  private captureRoundEditor(id: string, mode: TRoundMode, name: string,
+                             settings: Partial<Pick<IRoundEditor, 'values' | 'categoryNames' | 'dailyDoubleIds' | 'category'>> = {}): IRoundEditor {
     return {
-      id, mode, name, values, categoryNames,
+      id, mode, name,
+      values: settings.values ?? [],
+      categoryNames: settings.categoryNames ?? [],
+      dailyDoubleIds: settings.dailyDoubleIds ?? [],
+      category: settings.category ?? '',
       questionsFormGroup: this.questionsFormGroup,
       questionFormGroupNames: this.questionFormGroupNames,
       questionInitialConfig: this.questionInitialConfig,
@@ -263,8 +280,11 @@ export class SetupComponent implements OnInit {
     return this.roundEditors[this.activeRoundIndex];
   }
 
-  public isJeopardy(): boolean {
-    return this.getActiveRoundEditor()?.mode === 'jeopardy';
+  /**
+   * Jeopardy tiles are worth their value, and the final the wagers, rather than points of the question
+   */
+  public hidesQuestionPoints(): boolean {
+    return this.getActiveRoundEditor()?.mode !== 'classic';
   }
 
   public showRound(index: number): void {
@@ -286,7 +306,12 @@ export class SetupComponent implements OnInit {
         this.appendQuestionFormGroup(this.createJeopardyQuestionFormGroup());
       }
       const categoryNames = Array.from({length: NEW_BOARD_CATEGORIES}, (_, i) => `Kategorie ${i + 1}`);
-      editor = this.captureRoundEditor(Uuid.v4(), mode, name, [...NEW_BOARD_VALUES], categoryNames);
+      editor = this.captureRoundEditor(Uuid.v4(), mode, name, {values: [...NEW_BOARD_VALUES], categoryNames});
+    } else if (mode === 'final') {
+      this.initQuestionsFormControls([], false);
+      // like a tile: the master grades it, answer options are optional
+      this.appendQuestionFormGroup(this.createJeopardyQuestionFormGroup());
+      editor = this.captureRoundEditor(Uuid.v4(), mode, 'Finale');
     } else {
       this.initQuestionsFormControls([]);
       editor = this.captureRoundEditor(Uuid.v4(), mode, name);
@@ -347,6 +372,9 @@ export class SetupComponent implements OnInit {
     const form = this.getEditorForm(index);
     if (!editor || !form.group.valid || (editor.name ?? '').trim() === '') {
       return false;
+    }
+    if (editor.mode === 'final') {
+      return (editor.category ?? '').trim() !== '' && form.names.length === 1;
     }
     if (editor.mode === 'jeopardy') {
       return editor.values.length > 0 && editor.categoryNames.length > 0
@@ -432,6 +460,28 @@ export class SetupComponent implements OnInit {
   public setCategoryName(categoryIndex: number, name: string): void {
     const editor = this.getActiveRoundEditor();
     editor.categoryNames = editor.categoryNames.map((n, i) => i === categoryIndex ? name : n);
+    this.onQuestionsChanged();
+  }
+
+  private getQuestionId(index: number): string | undefined {
+    return this.questionsFormGroup.get(this.questionFormGroupNames[index])?.get('id').value;
+  }
+
+  public isDailyDouble(index: number): boolean {
+    const id = this.getQuestionId(index);
+    return id != null && this.getActiveRoundEditor().dailyDoubleIds.includes(id);
+  }
+
+  /**
+   * Makes the tile a Daily Double, or a tile like the others again
+   */
+  public setDailyDouble(index: number, isDailyDouble: boolean): void {
+    const editor = this.getActiveRoundEditor();
+    const id = this.getQuestionId(index);
+    if (id == null) {
+      return;
+    }
+    editor.dailyDoubleIds = isDailyDouble ? [...editor.dailyDoubleIds.filter(i => i !== id), id] : editor.dailyDoubleIds.filter(i => i !== id);
     this.onQuestionsChanged();
   }
 
@@ -714,18 +764,25 @@ export class SetupComponent implements OnInit {
     this.storeActiveRoundEditor();
     return this.roundEditors.map((editor, index) => {
       const name = editor.name.trim() || GameFormatHelper.makeRoundName(index);
-      const questions = this.buildQuestions(editor);
+      // a tile is worth its value and the final the wagers, not points of their own
+      const questions = this.buildQuestions(editor).map(question => {
+        if (editor.mode === 'classic') {
+          return question;
+        }
+        const withoutPoints = {...question};
+        delete withoutPoints.points;
+        return withoutPoints;
+      });
+      if (editor.mode === 'final') {
+        return GameFormatHelper.makeFinalRound(editor.id, name, editor.category.trim(), questions[0]);
+      }
       if (editor.mode === 'jeopardy') {
         const valueCount = editor.values.length;
+        const ids = new Set(questions.map(question => question.id));
         return GameFormatHelper.makeJeopardyRound(editor.id, name, [...editor.values], editor.categoryNames.map((categoryName, c) => ({
           name: categoryName.trim(),
-          // a tile is worth its value, not points of its own
-          questions: questions.slice(c * valueCount, (c + 1) * valueCount).map(question => {
-            const tileQuestion = {...question};
-            delete tileQuestion.points;
-            return tileQuestion;
-          })
-        })));
+          questions: questions.slice(c * valueCount, (c + 1) * valueCount)
+        })), editor.dailyDoubleIds.filter(id => ids.has(id)));
       }
       return GameFormatHelper.makeClassicRound(editor.id, name, questions);
     });

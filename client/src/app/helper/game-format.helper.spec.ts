@@ -126,10 +126,10 @@ describe('ClassicRoundRules', () => {
   it('scores the points of the question, as games did before rounds', () => {
     const first = rules.completeProgress(round, undefined);
     const second = rules.selectQuestion(round, first, 1);
-    expect(rules.getGradePoints(round, first, EGradeResults.CORRECT)).toBe(1);
-    expect(rules.getGradePoints(round, second, EGradeResults.CORRECT)).toBe(3);
-    expect(rules.getGradePoints(round, second, EGradeResults.DOUBLE)).toBe(6);
-    expect(rules.getGradePoints(round, second, EGradeResults.WRONG)).toBe(-3);
+    expect(rules.getGradePoints(round, first, EGradeResults.CORRECT, 'team')).toBe(1);
+    expect(rules.getGradePoints(round, second, EGradeResults.CORRECT, 'team')).toBe(3);
+    expect(rules.getGradePoints(round, second, EGradeResults.DOUBLE, 'team')).toBe(6);
+    expect(rules.getGradePoints(round, second, EGradeResults.WRONG, 'team')).toBe(-3);
     expect(rules.mayBuzz(round, second, 'team')).toBeTrue();
   });
 });

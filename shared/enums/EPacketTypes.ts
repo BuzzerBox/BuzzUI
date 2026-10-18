@@ -52,4 +52,8 @@ export enum EPacketTypes {
      * Sent from the master to choose the team that picks the next tile, see ISetPickingTeamPacket
      */
     SET_PICKING_TEAM,
+    /**
+     * Sent from the master with what a team wagers on a Daily Double or the final, see ISetWagerPacket
+     */
+    SET_WAGER,
 }

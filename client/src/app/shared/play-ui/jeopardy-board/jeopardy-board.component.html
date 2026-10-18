@@ -27,6 +27,10 @@
             <button type="button" class="tile" [class.played]="isPlayed(question)" [disabled]="isPlayed(question)"
                     (click)="open(question)" [attr.aria-label]="getTileLabel(category.name, value, question)">
               {{value}}
+              @if (isDailyDouble(question)) {
+                <!-- only the master knows where they are -->
+                <span class="daily-double" title="Daily Double">DD</span>
+              }
             </button>
           } @else {
             <!-- played tiles stay as gaps, so the others keep their places -->

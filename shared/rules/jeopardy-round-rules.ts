@@ -3,6 +3,7 @@ import {IJeopardyCategory, IJeopardyRound, IJeopardyRoundProgress} from '../inte
 import {ISelectQuestionPacket} from '../interfaces/ISelectQuestionPacket';
 import {EGradeResults} from '../enums/EGradeResults';
 import {IRoundRules} from './round-rules';
+import {WagerHelper} from './wager.helper';
 
 /**
  * Where a question is on the board
@@ -19,22 +20,28 @@ export interface IJeopardyTile {
  * A board of categories × values. The team that picks says a tile, the master opens it, and every team may buzz. A
  * correct answer is worth the tile's value, a double one twice it; it closes the tile, and the team picks next. A wrong
  * answer costs the value and lets the other teams buzz. If no team knows it, the master closes the tile without points.
+ * A Daily Double is answered by the team that picked it, nobody buzzes: it wagers up to its points, or up to the
+ * board's highest value if that is more, and wins or loses the wager. It closes the tile either way.
  */
 export class JeopardyRoundRules implements IRoundRules<IJeopardyRound, IJeopardyRoundProgress> {
     public isWellFormed(round: unknown): boolean {
         const candidate = round as Partial<IJeopardyRound>;
         return Array.isArray(candidate?.values) && candidate.values.every(value => typeof value === 'number' && Number.isFinite(value))
             && Array.isArray(candidate.categories)
-            && candidate.categories.every(category => Array.isArray(category?.questions) && category.questions.length === candidate.values.length);
+            && candidate.categories.every(category => Array.isArray(category?.questions) && category.questions.length === candidate.values.length)
+            && (candidate.dailyDoubleQuestionIds == null
+                || (Array.isArray(candidate.dailyDoubleQuestionIds) && candidate.dailyDoubleQuestionIds.every(id => typeof id === 'string')));
     }
 
     public completeProgress(round: IJeopardyRound, progress: Partial<IJeopardyRoundProgress> | undefined): IJeopardyRoundProgress {
         const ids = new Set(this.getQuestions(round).map(question => question.id));
         const played = Array.isArray(progress?.playedQuestionIds) ? progress.playedQuestionIds.filter(id => ids.has(id)) : [];
+        const openQuestionId = ids.has(progress?.openQuestionId) ? progress.openQuestionId : null;
         return {
             playedQuestionIds: [...new Set(played)],
-            openQuestionId: ids.has(progress?.openQuestionId) ? progress.openQuestionId : null,
-            pickingTeamId: typeof progress?.pickingTeamId === 'string' ? progress.pickingTeamId : null
+            openQuestionId,
+            pickingTeamId: typeof progress?.pickingTeamId === 'string' ? progress.pickingTeamId : null,
+            wagers: openQuestionId == null ? {} : WagerHelper.completeWagers(progress?.wagers)
         };
     }
 
@@ -74,26 +81,71 @@ export class JeopardyRoundRules implements IRoundRules<IJeopardyRound, IJeopardy
     }
 
     /**
-     * Only while a tile is open that nobody answered correctly yet
+     * Only while a tile is open that nobody answered correctly yet, and that isn't a Daily Double
      */
     public mayBuzz(round: IJeopardyRound, progress: IJeopardyRoundProgress, teamId: string): boolean {
-        return progress?.openQuestionId != null && !this.isPlayed(progress, progress.openQuestionId);
+        return this.isOpenAndUnplayed(progress) && !this.isDailyDouble(round, progress.openQuestionId);
     }
 
-    public getGradePoints(round: IJeopardyRound, progress: IJeopardyRoundProgress, result: EGradeResults): number {
+    /**
+     * Any team on an open tile; on a Daily Double only the team that picked it, once it wagered
+     */
+    public mayGrade(round: IJeopardyRound, progress: IJeopardyRoundProgress, teamId: string): boolean {
+        if (!this.isOpenAndUnplayed(progress)) {
+            return false;
+        }
+        return !this.isDailyDouble(round, progress.openQuestionId)
+            || (teamId === progress.pickingTeamId && progress.wagers?.[teamId] != null);
+    }
+
+    public getGradePoints(round: IJeopardyRound, progress: IJeopardyRoundProgress, result: EGradeResults, teamId: string): number {
+        if (this.isDailyDouble(round, progress?.openQuestionId)) {
+            return WagerHelper.getPoints(progress.wagers?.[teamId], result !== EGradeResults.WRONG);
+        }
         const factor = result === EGradeResults.DOUBLE ? 2 : result === EGradeResults.CORRECT ? 1 : -1;
         return factor * (this.getTile(round, progress?.openQuestionId)?.value ?? 0);
     }
 
     /**
-     * A correct answer closes the tile (it stays shown until the master goes back to the board), and the team picks next
+     * A correct answer closes the tile (it stays shown until the master goes back to the board), and the team picks next.
+     * A Daily Double closes either way, and the team that picked it picks again.
      */
     public afterGrade(round: IJeopardyRound, progress: IJeopardyRoundProgress, teamId: string, result: EGradeResults): IJeopardyRoundProgress {
         const openId = progress.openQuestionId;
-        if (result === EGradeResults.WRONG || openId == null) {
+        if (openId == null) {
+            return progress;
+        }
+        if (this.isDailyDouble(round, openId)) {
+            return {...progress, playedQuestionIds: this.addPlayed(progress, openId)};
+        }
+        if (result === EGradeResults.WRONG) {
             return progress;
         }
         return {...progress, playedQuestionIds: this.addPlayed(progress, openId), pickingTeamId: teamId};
+    }
+
+    public isDailyDouble(round: IJeopardyRound, questionId: string | null | undefined): boolean {
+        return questionId != null && (round.dailyDoubleQuestionIds ?? []).includes(questionId);
+    }
+
+    /**
+     * Up to the team's points, or up to the board's highest value if that is more
+     */
+    public getMaxWager(round: IJeopardyRound, teamPoints: number): number {
+        return Math.max(teamPoints ?? 0, ...round.values, 0);
+    }
+
+    /**
+     * The wager of the team that picked the open Daily Double, kept within getMaxWager; null if there is none to wager on
+     */
+    public applySetWager(round: IJeopardyRound, progress: IJeopardyRoundProgress, teamId: string, wager: unknown,
+                         teamPoints: number): IJeopardyRoundProgress | null {
+        const value = WagerHelper.clamp(wager, this.getMaxWager(round, teamPoints));
+        if (!this.isOpenAndUnplayed(progress) || !this.isDailyDouble(round, progress.openQuestionId)
+            || teamId !== progress.pickingTeamId || value == null) {
+            return null;
+        }
+        return {...progress, wagers: {...progress.wagers, [teamId]: value}};
     }
 
     /**
@@ -103,12 +155,12 @@ export class JeopardyRoundRules implements IRoundRules<IJeopardyRound, IJeopardy
         if (packet.questionId == null) {
             const openId = progress.openQuestionId;
             const playedQuestionIds = packet.markPlayed && openId != null ? this.addPlayed(progress, openId) : progress.playedQuestionIds;
-            return {...progress, playedQuestionIds, openQuestionId: null};
+            return {...progress, playedQuestionIds, openQuestionId: null, wagers: {}};
         }
         if (this.getTile(round, packet.questionId) == null || this.isPlayed(progress, packet.questionId)) {
             return null;
         }
-        return {...progress, openQuestionId: packet.questionId};
+        return {...progress, openQuestionId: packet.questionId, wagers: {}};
     }
 
     public applySetPickingTeam(progress: IJeopardyRoundProgress, teamId: string | null): IJeopardyRoundProgress {
@@ -131,6 +183,10 @@ export class JeopardyRoundRules implements IRoundRules<IJeopardyRound, IJeopardy
             }
         }
         return undefined;
+    }
+
+    private isOpenAndUnplayed(progress: IJeopardyRoundProgress | undefined): boolean {
+        return progress?.openQuestionId != null && !this.isPlayed(progress, progress.openQuestionId);
     }
 
     private addPlayed(progress: IJeopardyRoundProgress, questionId: string): string[] {

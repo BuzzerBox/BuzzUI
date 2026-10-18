@@ -2,11 +2,13 @@ import {IRound, TRoundMode} from '../interfaces/IRound';
 import {IRoundRules} from './round-rules';
 import {ClassicRoundRules} from './classic-round-rules';
 import {JeopardyRoundRules} from './jeopardy-round-rules';
+import {FinalRoundRules} from './final-round-rules';
 
 export class RoundRulesHelper {
     private static readonly RULES: Record<TRoundMode, IRoundRules> = {
         classic: new ClassicRoundRules(),
-        jeopardy: new JeopardyRoundRules()
+        jeopardy: new JeopardyRoundRules(),
+        final: new FinalRoundRules()
     };
 
     private constructor() {
@@ -30,6 +32,13 @@ export class RoundRulesHelper {
      */
     public static get jeopardy(): JeopardyRoundRules {
         return this.RULES.jeopardy as JeopardyRoundRules;
+    }
+
+    /**
+     * The rules of the final, with its wagers
+     */
+    public static get final(): FinalRoundRules {
+        return this.RULES.final as FinalRoundRules;
     }
 
     /**

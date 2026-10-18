@@ -11,7 +11,8 @@ import {
     IKeypressOnScreenPacket, IUpdateMediaStatePacket, IMediaVolume, ISetMediaVolumePacket, IGradeAnswerPacket,
     ISetRoundPacket,
     ISelectQuestionPacket,
-    ISetPickingTeamPacket
+    ISetPickingTeamPacket,
+    ISetWagerPacket
 } from "../interfaces";
 
 import {EPacketTypes, EAnswerStates, EMediaStates, EQuestionAnswerStates, EGradeResults} from '../enums';
@@ -121,6 +122,14 @@ export class PacketHelper {
             packet.markPlayed = markPlayed;
         }
         return packet;
+    }
+
+    public static makeSetWagerPacket(teamId: string, wager: number): ISetWagerPacket {
+        return {
+            packetType: EPacketTypes.SET_WAGER,
+            teamId,
+            wager
+        };
     }
 
     public static makeSetPickingTeamPacket(teamId: string | null): ISetPickingTeamPacket {

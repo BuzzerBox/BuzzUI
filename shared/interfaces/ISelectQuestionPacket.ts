@@ -1,8 +1,9 @@
 import {IGamePacket, EPacketTypes} from '../shared';
 
 /**
- * Sent by the master to open a tile of the Jeopardy board that is played, or to go back to the board; the server
- * forwards it to the screens. See JeopardyRoundRules.applySelectQuestion.
+ * Sent by the master to open a tile of the Jeopardy board that is played, or to go back to the board, and to show the
+ * question of the final once the teams wagered; the server forwards it to the screens. See applySelectQuestion of
+ * JeopardyRoundRules and FinalRoundRules.
  */
 export interface ISelectQuestionPacket extends IGamePacket {
     packetType: EPacketTypes.SELECT_QUESTION;

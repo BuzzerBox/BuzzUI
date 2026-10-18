@@ -24,7 +24,29 @@
         }
       }
       <div class="parent">
-        @if (isJeopardyRound()) {
+        @if (isWagerStage()) {
+          <mat-card class="question wager">
+            <app-wager-panel [isMaster]="isMaster" (questionShown)="currentQuestion = $event"></app-wager-panel>
+            @if (isMaster && isJeopardyRound()) {
+              <mat-card-actions class="master-actions">
+                <button mat-button class="large-controls" (click)="closeTile(false)" title="Zeige wieder das Spielbrett; die Kachel bleibt offen">Zurück</button>
+              </mat-card-actions>
+            }
+          </mat-card>
+        } @else if (isFinalRound()) {
+          @for (question of [currentQuestion]; track question?.id) {
+            <mat-card class="question tile-open">
+              <app-question-pane [question]="question" [isMaster]="isMaster"></app-question-pane>
+              @if (isMaster) {
+                <app-wager-grading></app-wager-grading>
+                <mat-card-actions class="master-actions">
+                  <span class="spacer"></span>
+                  <ng-container *ngTemplateOutlet="roundEndActions"></ng-container>
+                </mat-card-actions>
+              }
+            </mat-card>
+          }
+        } @else if (isJeopardyRound()) {
           @if (isBoardShown()) {
             <mat-card class="question board">
               <app-jeopardy-board [isMaster]="isMaster" (tileOpened)="currentQuestion = $event"></app-jeopardy-board>
@@ -41,6 +63,9 @@
               <mat-card class="question tile-open">
                 <app-question-pane [question]="question" [isMaster]="isMaster"></app-question-pane>
                 @if (isMaster) {
+                  @if (isDailyDouble()) {
+                    <app-wager-grading></app-wager-grading>
+                  }
                   <mat-card-actions class="master-actions">
                     @if (isOpenTilePlayed()) {
                       <button mat-button class="large-controls" (click)="closeTile(false)" title="Zeige wieder das Spielbrett">Zum Spielbrett</button>
@@ -48,7 +73,10 @@
                       <button mat-button class="large-controls" (click)="closeTile(false)" title="Zeige wieder das Spielbrett; die Kachel bleibt offen">Zurück</button>
                     }
                     <span class="spacer"></span>
-                    <app-buzzer-lock></app-buzzer-lock>
+                    <!-- nobody buzzes on a Daily Double -->
+                    @if (!isDailyDouble()) {
+                      <app-buzzer-lock></app-buzzer-lock>
+                    }
                     <span class="spacer"></span>
                     @if (!isOpenTilePlayed()) {
                       <button mat-button class="large-controls" (click)="closeTile(true)" title="Niemand wusste es: Kachel ohne Punkte schließen">Ohne Punkte schließen</button>

@@ -1,6 +1,6 @@
 import {Component, EventEmitter, HostBinding, Input, Output} from '@angular/core';
 import {GameService} from '../../../services/game.service';
-import {IJeopardyRound, IQuestion, ITeam} from '../../../../../../shared/shared';
+import {IJeopardyRound, IQuestion, ITeam, RoundRulesHelper} from '../../../../../../shared/shared';
 import {TeamColorHelper} from '../../../helper/team-color.helper';
 import {ScreenThemeHelper} from '../../../themes/screen-theme.helper';
 
@@ -43,6 +43,11 @@ export class JeopardyBoardComponent {
 
   public isPlayed(question: IQuestion): boolean {
     return this.game.isQuestionPlayed(question.id);
+  }
+
+  public isDailyDouble(question: IQuestion): boolean {
+    const round = this.getRound();
+    return !!round && RoundRulesHelper.jeopardy.isDailyDouble(round, question.id);
   }
 
   public open(question: IQuestion): void {

@@ -10,6 +10,8 @@ export {GameFormatHelper} from './helper/game-format.helper';
 export type {IRoundRules} from './rules/round-rules';
 export {ClassicRoundRules} from './rules/classic-round-rules';
 export {JeopardyRoundRules} from './rules/jeopardy-round-rules';
+export {FinalRoundRules} from './rules/final-round-rules';
+export {WagerHelper} from './rules/wager.helper';
 export type {IJeopardyTile} from './rules/jeopardy-round-rules';
 export {RoundRulesHelper} from './rules/round-rules.helper';
 export {VersionHelper} from './helper/version.helper';

@@ -151,8 +151,10 @@ games/<Name>/                      on the box: <storage.boxPath>/games (default 
   A version consists of rounds, each played by the rules of its mode (`shared/rules/`), which the editor adds,
   reorders and removes. A classic round has the questions one after the other. A Jeopardy round is a board of
   categories × values: the master opens the tile the picking team says, every team may buzz, a correct answer is worth
-  the tile's value and lets that team pick next, a wrong one costs it. Questions and rounds have IDs that stay the
-  same, which states remember their progress by. Versions and states saved before rounds existed (format 4 and older, see
+  the tile's value and lets that team pick next, a wrong one costs it. On a Daily Double only the picking team
+  answers, for a wager up to its points (or the board's highest value, if that is more). A final shows its category,
+  every team wagers up to its points, then the question follows and the master grades every team. Questions and
+  rounds have IDs that stay the same, which states remember their progress by. Versions and states saved before rounds existed (format 4 and older, see
   `CURRENT_GAME_FORMAT_VERSION`) are read as one classic round each time they are loaded or imported
   (`GameFormatHelper`); their files stay as they are.
 - **States:** each time a game is played gets a state with its teams and progress, which plays the version it was

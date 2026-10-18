@@ -64,6 +64,16 @@ mat-card.question.board app-jeopardy-board {
   min-height: 0;
 }
 
+mat-card.question.wager {
+  display: flex;
+  flex-direction: column;
+}
+
+mat-card.question.wager app-wager-panel {
+  flex: 1;
+  min-height: 0;
+}
+
 /* a tile of the board opens out of it */
 :host(.screen) mat-card.question.tile-open {
   animation: tile-open 0.5s ease-out;

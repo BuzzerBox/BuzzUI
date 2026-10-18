@@ -54,7 +54,11 @@ export class ClassicRoundRules implements IRoundRules<IClassicRound, IClassicRou
         return true;
     }
 
-    public getGradePoints(round: IClassicRound, progress: IClassicRoundProgress, result: EGradeResults): number {
+    public mayGrade(round: IClassicRound, progress: IClassicRoundProgress, teamId: string): boolean {
+        return true;
+    }
+
+    public getGradePoints(round: IClassicRound, progress: IClassicRoundProgress, result: EGradeResults, teamId: string): number {
         const factor = result === EGradeResults.DOUBLE ? 2 : result === EGradeResults.CORRECT ? 1 : -1;
         return factor * ClassicRoundRules.getQuestionPoints(this.getCurrentQuestion(round, progress));
     }

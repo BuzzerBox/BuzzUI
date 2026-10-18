@@ -117,6 +117,18 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     return this.game.getCurrentJeopardyRound() != null;
   }
 
+  public isFinalRound(): boolean {
+    return this.game.getCurrentFinalRound() != null;
+  }
+
+  public isWagerStage(): boolean {
+    return this.game.isWagerStage();
+  }
+
+  public isDailyDouble(): boolean {
+    return this.game.isOpenTileDailyDouble();
+  }
+
   public isBoardShown(): boolean {
     return this.game.isBoardShown();
   }

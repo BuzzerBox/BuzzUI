@@ -73,7 +73,7 @@
                 <mat-label>Fragetext</mat-label>
                 <textarea matInput formControlName="text" cdkTextareaAutosize cdkAutosizeMinRows="1"></textarea>
               </mat-form-field>
-              @if (!isJeopardy()) {
+              @if (!hidesQuestionPoints()) {
                 <mat-form-field class="points">
                   <mat-label>Punkte</mat-label>
                   <input matInput type="number" min="1" step="1" formControlName="points">
@@ -199,6 +199,9 @@
                           [attr.aria-pressed]="step === getTileIndex(c, v)">
                     <span class="tile-head">
                       <span class="tile-value">{{value}}</span>
+                      @if (isDailyDouble(getTileIndex(c, v))) {
+                        <span class="daily-double-badge">Daily Double</span>
+                      }
                       <mat-icon class="valid-icon" [class.green-icon]="isTileValid(getTileIndex(c, v))">
                         {{isTileValid(getTileIndex(c, v)) ? 'check_circle' : 'radio_button_unchecked'}}
                       </mat-icon>
@@ -215,7 +218,13 @@
           </div>
           @if (questionFormGroupNames[step]; as name) {
             <mat-card class="tile-editor">
-              <mat-card-header><mat-card-title>{{getTileTitle(step)}}</mat-card-title></mat-card-header>
+              <mat-card-header>
+                <mat-card-title>{{getTileTitle(step)}}</mat-card-title>
+              </mat-card-header>
+              <div class="daily-double-setting">
+                <mat-slide-toggle [checked]="isDailyDouble(step)" (change)="setDailyDouble(step, $event.checked)">Daily Double</mat-slide-toggle>
+                <span class="hint">Nur das Team, das die Kachel wählt, antwortet, und setzt dafür einen Einsatz.</span>
+              </div>
               <mat-card-content>
                 <!-- made again for each tile: formGroupName doesn't follow a name that changes -->
                 @for (tileName of [name]; track tileName) {
@@ -225,6 +234,15 @@
             </mat-card>
           } @else {
             <p class="hint">Füge Kategorien und Werte hinzu, um das Spielbrett zu füllen.</p>
+          }
+        } @else if (editor.mode === 'final') {
+          <p class="hint">Zuerst sehen die Teams die Kategorie und setzen einen Teil ihrer Punkte, dann kommt die Frage. Die Teams schreiben ihre Antwort auf, die Spielleitung bewertet jedes Team.</p>
+          <mat-form-field class="final-category">
+            <mat-label>Kategorie</mat-label>
+            <input matInput [(ngModel)]="editor.category" [ngModelOptions]="{standalone: true}" required>
+          </mat-form-field>
+          @if (questionFormGroupNames[0]; as name) {
+            <ng-container *ngTemplateOutlet="questionCard; context: {name: name, index: 0}"></ng-container>
           }
         } @else {
           <mat-accordion class="example-headers-align" cdkDropList (cdkDropListDropped)="dropQuestion($event)">

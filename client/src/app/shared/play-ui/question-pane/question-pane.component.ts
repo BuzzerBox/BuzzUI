@@ -158,10 +158,11 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Whether the question is a tile of a Jeopardy board, which shows its value in the title
+   * Whether the question is one of a classic round: Jeopardy tiles show their value in the title, and wagers count in
+   * the final, instead of points of the question
    */
-  public isTile(): boolean {
-    return this.game.getOpenTile() != null;
+  public isClassic(): boolean {
+    return (this.game.getCurrentRound()?.mode ?? 'classic') === 'classic';
   }
 
   /**
@@ -175,7 +176,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
    * What the question is worth, e.g. "3 Punkte"; only shown if some question in the game is not worth the default 1
    */
   public getPointsLabel(): string | null {
-    if (this.isTile() || !this.game.hasCustomQuestionPoints()) {
+    if (!this.isClassic() || !this.game.hasCustomQuestionPoints()) {
       return null;
     }
     const points = GameService.getQuestionPoints(this.question);

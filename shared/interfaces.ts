@@ -40,7 +40,8 @@ import {IGameInfo, IGameVersionInfo, IGameStateInfo, IGameStorageRef, IGameImpor
 import {IAutosaveInfoPacket} from './interfaces/IAutosaveInfoPacket';
 import {IMasterTakenOverPacket} from './interfaces/IMasterTakenOverPacket';
 import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
-import {IRound, IClassicRound, IJeopardyRound, IJeopardyCategory, IRoundProgress, IClassicRoundProgress, IJeopardyRoundProgress, IGameProgress, TRoundMode} from './interfaces/IRound';
+import {IRound, IClassicRound, IJeopardyRound, IJeopardyCategory, IFinalRound, IRoundProgress, IClassicRoundProgress, IJeopardyRoundProgress, IFinalRoundProgress, IGameProgress, TRoundMode} from './interfaces/IRound';
+import {ISetWagerPacket} from './interfaces/ISetWagerPacket';
 import {ISetRoundPacket} from './interfaces/ISetRoundPacket';
 import {ISelectQuestionPacket} from './interfaces/ISelectQuestionPacket';
 import {ISetPickingTeamPacket} from './interfaces/ISetPickingTeamPacket';
@@ -112,5 +113,8 @@ export {
 	IJeopardyCategory,
 	IJeopardyRoundProgress,
 	ISelectQuestionPacket,
-	ISetPickingTeamPacket
+	ISetPickingTeamPacket,
+	IFinalRound,
+	IFinalRoundProgress,
+	ISetWagerPacket
 }

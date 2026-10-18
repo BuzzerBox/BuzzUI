@@ -1,9 +1,10 @@
 import {IQuestion} from './IQuestion';
+import {EGradeResults} from '../enums/EGradeResults';
 
 /**
- * How a round is played, see RoundRulesHelper for the rules of each mode. A final is planned as a further mode (#120).
+ * How a round is played, see RoundRulesHelper for the rules of each mode
  */
-export type TRoundMode = 'classic' | 'jeopardy';
+export type TRoundMode = 'classic' | 'jeopardy' | 'final';
 
 interface IRoundBase {
     /**
@@ -47,9 +48,23 @@ export interface IJeopardyRound extends IRoundBase {
      */
     values: number[];
     categories: IJeopardyCategory[];
+    /**
+     * The tiles that are a Daily Double, by the IDs of their questions: only the team that picked answers, for a wager
+     */
+    dailyDoubleQuestionIds?: string[];
 }
 
-export type IRound = IClassicRound | IJeopardyRound;
+/**
+ * One question to end the game with: the category is shown first, every team wagers on it, then the question follows.
+ * The teams write their answers down, and the master grades every team.
+ */
+export interface IFinalRound extends IRoundBase {
+    mode: 'final';
+    category: string;
+    question: IQuestion;
+}
+
+export type IRound = IClassicRound | IJeopardyRound | IFinalRound;
 
 /**
  * How far a classic round got
@@ -78,12 +93,34 @@ export interface IJeopardyRoundProgress {
      * correctly, and changeable by the master.
      */
     pickingTeamId: string | null;
+    /**
+     * The wager on the open Daily Double, by team ID; empty for other tiles and while the board is shown
+     */
+    wagers: Record<string, number>;
+}
+
+/**
+ * How far the final got
+ */
+export interface IFinalRoundProgress {
+    /**
+     * False while the category is shown and the teams wager
+     */
+    questionShown: boolean;
+    /**
+     * By team ID
+     */
+    wagers: Record<string, number>;
+    /**
+     * How the master graded each team that is graded already, by team ID
+     */
+    gradeResults: Record<string, EGradeResults>;
 }
 
 /**
  * How far a round got; IGameState.roundProgress has one for each round of the game
  */
-export type IRoundProgress = IClassicRoundProgress | IJeopardyRoundProgress;
+export type IRoundProgress = IClassicRoundProgress | IJeopardyRoundProgress | IFinalRoundProgress;
 
 /**
  * Where a game is, for lists and the master, all counted from 1

@@ -347,3 +347,27 @@
 .tile-editor {
   margin-bottom: 16px;
 }
+
+.daily-double-badge {
+  margin-left: auto;
+  margin-right: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #ffc940;
+  color: #10132a;
+  font-size: 0.75em;
+  font-weight: 700;
+}
+
+.daily-double-setting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px 8px;
+}
+
+.final-category {
+  min-width: 24em;
+  max-width: 100%;
+}

@@ -63,7 +63,19 @@
 }
 
 button.tile {
+  position: relative;
   cursor: pointer;
+}
+
+.daily-double {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #ffc940;
+  color: #10132a;
+  font-size: 0.5em;
 }
 
 button.tile:hover:not(:disabled),

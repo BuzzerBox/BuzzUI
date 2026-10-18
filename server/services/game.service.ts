@@ -37,6 +37,8 @@ import {
     ISetRoundPacket,
     ISelectQuestionPacket,
     ISetPickingTeamPacket,
+    ISetWagerPacket,
+    IFinalRoundProgress,
     IJeopardyRoundProgress,
     ISetupPacket,
     IStartGamePacket,
@@ -172,6 +174,8 @@ export class GameService {
             this.onSelectQuestionPacket(packet as ISelectQuestionPacket);
         } else if (packet.packetType === EPacketTypes.SET_PICKING_TEAM) {
             this.onSetPickingTeamPacket(packet as ISetPickingTeamPacket);
+        } else if (packet.packetType === EPacketTypes.SET_WAGER) {
+            this.onSetWagerPacket(packet as ISetWagerPacket);
         } else if (packet.packetType === EPacketTypes.END_GAME) {
             this.onEndGamePacket(packet as IEndGamePacket);
         } else if (packet.packetType === EPacketTypes.RESET_SERVER) {
@@ -457,10 +461,14 @@ export class GameService {
             LoggerService.warn(`Can't grade the answer of unknown team ${packet.teamId}`);
             return;
         }
+        const rules = RoundRulesHelper.get(round);
+        if (!rules.mayGrade(round, this.getCurrentProgress(), team.teamId)) {
+            LoggerService.warn(`The rules of the round don't let the answer of ${team.name} be graded now`);
+            return;
+        }
         const question = this.getCurrentQuestion();
         const isCorrect = packet.result !== EGradeResults.WRONG;
-        const rules = RoundRulesHelper.get(round);
-        team.points = (team.points ?? 0) + rules.getGradePoints(round, this.getCurrentProgress(), packet.result);
+        team.points = (team.points ?? 0) + rules.getGradePoints(round, this.getCurrentProgress(), packet.result, team.teamId);
         // e.g. a correct answer closes a Jeopardy tile; the master and the screens do the same with the packet
         this.currentGameState.roundProgress[round.id] = rules.afterGrade(round, this.getCurrentProgress(), team.teamId, packet.result);
         const pointsPacket: ITeamSetPointsPacket = {packetType: EPacketTypes.TEAM_SET_POINTS, teamId: team.teamId, points: team.points};
@@ -588,13 +596,16 @@ export class GameService {
     }
 
     /**
-     * Opens a tile of the Jeopardy board, or goes back to the board
+     * Opens a tile of the Jeopardy board, or goes back to the board; shows the question of the final
      */
     private onSelectQuestionPacket(packet: ISelectQuestionPacket): void {
         const round = this.getCurrentRound();
-        const progress = round?.mode === 'jeopardy'
-            ? RoundRulesHelper.jeopardy.applySelectQuestion(round, this.getCurrentProgress() as IJeopardyRoundProgress, packet)
-            : null;
+        let progress: IJeopardyRoundProgress | IFinalRoundProgress | null = null;
+        if (round?.mode === 'jeopardy') {
+            progress = RoundRulesHelper.jeopardy.applySelectQuestion(round, this.getCurrentProgress() as IJeopardyRoundProgress, packet);
+        } else if (round?.mode === 'final') {
+            progress = RoundRulesHelper.final.applySelectQuestion(round, this.getCurrentProgress() as IFinalRoundProgress, packet);
+        }
         if (progress == null) {
             LoggerService.warn(`Ignoring the selection of question ${packet.questionId}, which isn't on the board or is played`);
             return;
@@ -602,6 +613,29 @@ export class GameService {
         this.currentGameState.roundProgress[round.id] = progress;
         this.sendToAllScreens(packet);
         this.showCurrentQuestion();
+    }
+
+    /**
+     * What a team wagers on a Daily Double or in the final, kept within what it may wager
+     */
+    private onSetWagerPacket(packet: ISetWagerPacket): void {
+        const round = this.getCurrentRound();
+        const team = this.findTeam(packet.teamId);
+        let progress: IJeopardyRoundProgress | IFinalRoundProgress | null = null;
+        if (team != null && round?.mode === 'jeopardy') {
+            progress = RoundRulesHelper.jeopardy.applySetWager(round, this.getCurrentProgress() as IJeopardyRoundProgress, team.teamId, packet.wager, team.points ?? 0);
+        } else if (team != null && round?.mode === 'final') {
+            progress = RoundRulesHelper.final.applySetWager(round, this.getCurrentProgress() as IFinalRoundProgress, team.teamId, packet.wager, team.points ?? 0);
+        }
+        if (progress == null) {
+            LoggerService.warn(`Ignoring the wager ${packet.wager} of team ${packet.teamId}`);
+            return;
+        }
+        this.currentGameState.roundProgress[round.id] = progress;
+        // the master and the screens take what was kept, which may be less than was asked for
+        const wagerPacket = PacketHelper.makeSetWagerPacket(team.teamId, progress.wagers[team.teamId]);
+        this.sendToMaster<ISetWagerPacket>(wagerPacket);
+        this.sendToAllScreens<ISetWagerPacket>(wagerPacket);
     }
 
     private onSetPickingTeamPacket(packet: ISetPickingTeamPacket): void {

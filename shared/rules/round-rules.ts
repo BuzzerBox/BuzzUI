@@ -58,9 +58,14 @@ export interface IRoundRules<R extends IRound = IRound, P extends IRoundProgress
     mayBuzz(round: R, progress: P, teamId: string): boolean;
 
     /**
-     * What a graded answer adds to the team's points; negative for a wrong one
+     * Whether the master may grade the answer of the team now, e.g. not twice in the final
      */
-    getGradePoints(round: R, progress: P, result: EGradeResults): number;
+    mayGrade(round: R, progress: P, teamId: string): boolean;
+
+    /**
+     * What a graded answer of the team adds to its points; negative for a wrong one
+     */
+    getGradePoints(round: R, progress: P, result: EGradeResults, teamId: string): number;
 
     /**
      * How the round goes on after the master graded the answer of the team; the server, the master and the screens
