@@ -6,7 +6,15 @@
   <form [formGroup]="teamsFormGroup">
     @for (row of rows; track row.controlName) {
       <div class="team-row" [class.inactive]="!isActive(row)">
-        <mat-checkbox [checked]="isActive(row)" (change)="setActive(row, $event.checked)">{{row.buzzer.name}}</mat-checkbox>
+        <mat-checkbox [checked]="isActive(row)" (change)="setActive(row, $event.checked)">
+          {{row.buzzer.name}}
+          @if (row.buzzer.online === false) {
+            <mat-icon class="buzzer-status" title="Dieser Funkbuzzer ist gerade nicht verbunden">wifi_off</mat-icon>
+          }
+          @if (row.buzzer.batteryLow) {
+            <mat-icon class="buzzer-status" title="Der Akku dieses Funkbuzzers ist fast leer">battery_alert</mat-icon>
+          }
+        </mat-checkbox>
         <mat-form-field class="team-name">
           <mat-label>Teamname</mat-label>
           <input matInput [formControlName]="row.controlName">

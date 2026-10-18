@@ -1,9 +1,10 @@
 #!/bin/bash
 # Applies the per-box settings from buzzerbox.txt on the boot partition: the WiFi access point of NetworkManager, the
-# names the box answers to in it, the WiFi country and the WiFi antenna. buzzerbox-settings.service runs it on every
-# boot, before NetworkManager starts, with --boot: only then does it restart the box for a changed antenna. Values that
-# are missing or invalid fall back to the defaults in /etc/buzzerbox/settings.defaults, which the setup wrote
-# (provisioning/group_vars/all.yml). Files are only written when something changed.
+# names the box answers to in it, the WiFi country, the WiFi antenna and the WiFi the wireless buzzers are given.
+# buzzerbox-settings.service runs it on every boot, before NetworkManager starts, with --boot: only then does it restart
+# the box for a changed antenna. Values that are missing or invalid fall back to the defaults in
+# /etc/buzzerbox/settings.defaults, which the setup wrote (provisioning/group_vars/all.yml). Files are only written when
+# something changed.
 
 set -euo pipefail
 
@@ -18,6 +19,7 @@ CMDLINE_FILE="/boot/firmware/cmdline.txt"
 CONFIG_FILE="/boot/firmware/config.txt"
 CONNECTION_FILE="/etc/NetworkManager/system-connections/buzzerbox-ap.nmconnection"
 DNSMASQ_FILE="/etc/NetworkManager/dnsmasq-shared.d/buzzerbox.conf"
+WIRELESS_BUZZERS_FILE="/etc/buzzerbox/wireless-buzzers.conf"
 # fixed, so that the connection file stays the same as long as the settings do
 CONNECTION_UUID="6f1d6a52-8c3b-4a51-9a2e-1b8e0c5d2b77"
 # the addresses devices get, in the /24 network of SERVER_IP_ADDRESS
@@ -145,6 +147,12 @@ read -r -a HOSTNAMES <<< "${settings[SERVER_HOSTNAMES]}"
 for hostname in "${HOSTNAMES[@]}"; do
   echo "address=/${hostname}/${IP}"
 done | writeIfChanged "${DNSMASQ_FILE}" 644 || true
+
+# The game server gives the wireless buzzers the WiFi when they are plugged into the box over USB
+# (BuzzerProvisioningService). It runs as a member of dialout, for the serial ports, which may read the passphrase.
+printf 'WIFI_SSID=%s\nWIFI_PASSPHRASE=%s\nSERVER_IP_ADDRESS=%s\n' "${settings[WIFI_SSID]}" "${settings[WIFI_PASSPHRASE]}" "${IP}" \
+  | writeIfChanged "${WIRELESS_BUZZERS_FILE}" 640 || true
+chgrp dialout "${WIRELESS_BUZZERS_FILE}"
 
 # The box itself needs the hostnames too: the master stores media as full URLs on the host it was opened under (e.g.
 # http://buzzer.box:4202/media/...), and the kiosk loads them. The box doesn't ask that dnsmasq, so they go into

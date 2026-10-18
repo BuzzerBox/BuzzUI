@@ -40,4 +40,8 @@ export enum EPacketTypes {
      * Sent from the server to the master when another device took over as master, see IRegisterMasterPacket.takeOver
      */
     MASTER_TAKEN_OVER,
+    /**
+     * Sent from the server to the master when the available buzzers change, see IAvailableBuzzersPacket
+     */
+    AVAILABLE_BUZZERS,
 }

@@ -98,6 +98,18 @@
     "eol": 255,
     "heartbeatIntervalInMS": 2000
   },
+  "udpBuzzer": {
+    "enabled": true,
+    "listenPort": 5005,
+    "heartbeatTimeoutInMS": 5000,
+    "pressCollectionWindowInMS": 50,
+    "batteryLowInMV": 3500,
+    "provisioning": {
+      "enabled": true,
+      "settingsFile": "/etc/buzzerbox/wireless-buzzers.conf",
+      "usbIds": ["1a86:55d4"]
+    }
+  },
   "enableBrowserKeypressEvents": false,
   "reverseProxy": false,
   "update": {

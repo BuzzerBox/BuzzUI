@@ -39,6 +39,7 @@ import {IGameDefinition, IGameInstanceState, IGameBundle, CURRENT_GAME_FORMAT_VE
 import {IGameInfo, IGameVersionInfo, IGameStateInfo, IGameStorageRef, IGameImportResult, IGameCopyResult} from './interfaces/IGameInfo';
 import {IAutosaveInfoPacket} from './interfaces/IAutosaveInfoPacket';
 import {IMasterTakenOverPacket} from './interfaces/IMasterTakenOverPacket';
+import {IAvailableBuzzersPacket} from './interfaces/IAvailableBuzzersPacket';
 import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
 
 export {
@@ -95,6 +96,7 @@ export {
 	IGameImportResult,
 	IAutosaveInfoPacket,
 	IMasterTakenOverPacket,
+	IAvailableBuzzersPacket,
 	IStorageEntry,
 	IStorageFolder
 }

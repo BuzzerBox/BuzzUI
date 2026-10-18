@@ -8,6 +8,7 @@ export {MediaHelper} from './helper/media.helper';
 export {GameStateHelper} from './helper/game-state.helper';
 export {VersionHelper} from './helper/version.helper';
 export {StorageApiHelper} from './helper/storage-api.helper';
+export {BuzzerHelper} from './helper/buzzer.helper';
 
 export {
     PacketHelper
