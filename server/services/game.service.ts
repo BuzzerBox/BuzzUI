@@ -37,6 +37,8 @@ import {
     IMasterTakenOverPacket,
     IAutosaveInfoPacket,
     IAvailableBuzzersPacket,
+    IUsbBuzzersPacket,
+    IAdoptUsbBuzzerPacket,
     ITeam,
     ITeamSetPointsPacket,
     IUpdateInfoPacket,
@@ -52,6 +54,7 @@ import {MicroControllerSerialAdapter} from '../objects/adapters/MicroControllerS
 import {Buffer} from 'buffer';
 import {SerialPortService} from './serial-port.service';
 import {IUdpBuzzerState, UdpBuzzerService} from './udp-buzzer.service';
+import {BuzzerProvisioningService} from './buzzer-provisioning.service';
 import {ConfigService} from './config.service';
 import {toInteger} from 'lodash';
 import {ObjectHelper} from '../../shared/helper/object.helper';
@@ -107,9 +110,20 @@ export class GameService {
         SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
         UdpBuzzerService.get().setStateProvider(this.getUdpBuzzerState.bind(this));
         UdpBuzzerService.get().addOnPressCallback(this.onUdpBuzzerPress.bind(this));
-        UdpBuzzerService.get().addOnBuzzersChangedCallback(() => this.sendToMaster<IAvailableBuzzersPacket>({
-            packetType: EPacketTypes.AVAILABLE_BUZZERS,
-            availableBuzzers: this.getAvailableBuzzers()
+        UdpBuzzerService.get().addOnBuzzersChangedCallback(() => {
+            this.sendToMaster<IAvailableBuzzersPacket>({
+                packetType: EPacketTypes.AVAILABLE_BUZZERS,
+                availableBuzzers: this.getAvailableBuzzers()
+            });
+            // a buzzer plugged in over USB shows whether it is connected
+            this.sendToMaster<IUsbBuzzersPacket>({
+                packetType: EPacketTypes.USB_BUZZERS,
+                buzzers: BuzzerProvisioningService.get().getBuzzers()
+            });
+        });
+        BuzzerProvisioningService.get().addOnChangedCallback(buzzers => this.sendToMaster<IUsbBuzzersPacket>({
+            packetType: EPacketTypes.USB_BUZZERS,
+            buzzers
         }));
         UpdateService.get().observeInfo().subscribe(info => this.sendToMaster<IUpdateInfoPacket>(info));
         AutosaveService.get().observeInfo().subscribe(info => this.sendToMaster<IAutosaveInfoPacket>(info));
@@ -188,6 +202,8 @@ export class GameService {
             this.onUpdateTeamsPacket(packet as IUpdateTeamsPacket);
         } else if (packet.packetType === EPacketTypes.INSTALL_UPDATE) {
             this.onInstallUpdatePacket(packet as IInstallUpdatePacket);
+        } else if (packet.packetType === EPacketTypes.ADOPT_USB_BUZZER) {
+            BuzzerProvisioningService.get().adopt((packet as IAdoptUsbBuzzerPacket).path);
         }
     }
 
@@ -385,6 +401,10 @@ export class GameService {
             this.webSocketConnectionMaster.addOnCloseCallback(() => sub.unsubscribe());
             this.sendToMaster<IUpdateInfoPacket>(UpdateService.get().getInfo());
             this.sendToMaster<IAutosaveInfoPacket>(AutosaveService.get().getInfo());
+            this.sendToMaster<IUsbBuzzersPacket>({
+                packetType: EPacketTypes.USB_BUZZERS,
+                buzzers: BuzzerProvisioningService.get().getBuzzers()
+            });
         } else {
             con.send<IResponsePacket>({
                 ...PacketHelper.makeResponsePacket(packet.packetType, false, 'Another master is connected'),

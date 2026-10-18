@@ -8,4 +8,5 @@ const config = ConfigService.get();
 HttpServerService.get().start(config.server.port);
 FileServerService.get().start(config.fileServer.port, config.fileServer.localPath);
 GameService.startGame();
-BuzzerProvisioningService.start();
+// looks for wireless buzzers plugged in over USB
+BuzzerProvisioningService.get();

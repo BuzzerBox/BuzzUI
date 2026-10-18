@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import {ReadlineParser, SerialPort} from 'serialport';
+import {IUsbBuzzer, TUsbBuzzerError} from '../../shared/shared';
 import {ConfigService} from './config.service';
 import {LoggerService} from './logger.service';
+import {UdpBuzzerService} from './udp-buzzer.service';
 
 interface IWifiSettings {
     ssid: string;
@@ -9,17 +11,30 @@ interface IWifiSettings {
     serverAddress: string;
 }
 
+interface ISessionResult {
+    // the port couldn't be opened at all (e.g. right after it showed up)
+    openFailed?: boolean;
+    macAddress?: string;
+    firmwareVersion?: string;
+    // the WiFi the buzzer has, as it told in BUZZ READY (firmware 1.1.0 and later)
+    wifi?: {ssid?: string, host?: string, port?: number};
+    error?: TUsbBuzzerError;
+}
+
+export type UsbBuzzersChangedCallback = (buzzers: IUsbBuzzer[]) => void;
+
 /**
- * Gives a wireless buzzer (BuzzController/wireless) the box's WiFi when it is plugged into the box over USB. The
- * buzzer's USB serial chip shows up as a serial port (udpBuzzer.provisioning.usbIds); the box greets it and sends the
- * WiFi only to a buzzer that answers. Text lines at 115200 baud:
+ * Wireless buzzers (BuzzController/wireless) plugged into the box over USB: the box finds out who they are, and gives
+ * one the box's WiFi when the master adopts it. The buzzer's USB serial chip shows up as a serial port
+ * (udpBuzzer.provisioning.usbIds). Text lines at 115200 baud:
  *
  *   box → buzzer: BUZZ HELLO
- *   buzzer → box: BUZZ READY <mac> <firmware version>    (also when it starts)
+ *   buzzer → box: BUZZ READY <mac> <firmware version> {"ssid":…,"host":…,"port":…}    (also when it starts; the
+ *                 WiFi it has, without the passphrase, or {} without one; older firmware leaves it out)
  *   box → buzzer: BUZZ WIFI {"ssid":…,"pass":…,"host":…,"port":…}
  *   buzzer → box: BUZZ OK | BUZZ ERROR <reason>
  *
- * Each buzzer is set up once per plugging in.
+ * The master sees the buzzers and their state (IUsbBuzzer) and adopts them (IAdoptUsbBuzzerPacket).
  */
 export class BuzzerProvisioningService {
     private static instance: BuzzerProvisioningService;
@@ -31,10 +46,13 @@ export class BuzzerProvisioningService {
     // a port that can't be opened yet (e.g. right after it showed up) is tried again with the next look, this often
     private static readonly MAX_OPEN_ATTEMPTS = 5;
 
-    // the ports of buzzers that are plugged in, so each is set up once
-    private readonly knownPaths = new Set<string>();
-    // how often each port couldn't be opened, until it is unplugged
+    // the buzzers that are plugged in, by their port
+    private readonly buzzers = new Map<string, IUsbBuzzer>();
+    private readonly onChangedCallbacks: UsbBuzzersChangedCallback[] = [];
+    // how often each port couldn't be opened while identifying, until it is unplugged
     private readonly failedOpens = new Map<string, number>();
+    // ports to identify again with the next look
+    private readonly retryIdentify = new Set<string>();
 
     private constructor() {
         const conf = ConfigService.get().udpBuzzer;
@@ -45,10 +63,51 @@ export class BuzzerProvisioningService {
             BuzzerProvisioningService.POLL_INTERVAL_IN_MS);
     }
 
-    public static start(): void {
+    public static get(): BuzzerProvisioningService {
         if (this.instance == null) {
             this.instance = new BuzzerProvisioningService();
         }
+        return this.instance;
+    }
+
+    public addOnChangedCallback(callback: UsbBuzzersChangedCallback): void {
+        this.onChangedCallbacks.push(callback);
+    }
+
+    /**
+     * Also tells which ones talk to this server over WiFi right now
+     */
+    public getBuzzers(): IUsbBuzzer[] {
+        return [...this.buzzers.values()].map(buzzer => ({
+            ...buzzer,
+            isConnected: buzzer.macAddress != null && UdpBuzzerService.get().isOnline(buzzer.macAddress)
+        }));
+    }
+
+    /**
+     * Gives the buzzer at that port the box's WiFi; also one that didn't answer or failed before
+     */
+    public adopt(path: string): void {
+        const buzzer = this.buzzers.get(path);
+        if (buzzer == null || buzzer.state === 'identifying' || buzzer.state === 'adopting') {
+            return;
+        }
+        const wifi = this.readWifiSettings();
+        if (wifi == null) {
+            this.update(path, {state: 'failed', error: 'no-wifi-settings'});
+            return;
+        }
+        this.update(path, {state: 'adopting', error: undefined});
+        LoggerService.log(`Adopting the buzzer at ${path}`);
+        this.talk(path, wifi).then(result => {
+            if (result.error == null) {
+                LoggerService.log(`Buzzer ${result.macAddress} at ${path} now knows the WiFi ${wifi.ssid}`);
+                this.update(path, {...this.describe(result), state: 'adopted', ssid: wifi.ssid, isAdopted: true});
+            } else {
+                LoggerService.warn(`Could not adopt the buzzer at ${path}: ${result.error}`);
+                this.update(path, {...this.describe(result), state: 'failed', error: result.error});
+            }
+        });
     }
 
     private async lookForBuzzers(): Promise<void> {
@@ -56,39 +115,87 @@ export class BuzzerProvisioningService {
         const ports = (await SerialPort.list())
             .filter(port => usbIds.includes(`${port.vendorId}:${port.productId}`.toLowerCase()));
         const paths = new Set(ports.map(port => port.path));
-        // unplugged: set it up again the next time
-        for (const path of [...this.knownPaths]) {
+        let changed = false;
+        for (const path of [...this.buzzers.keys()]) {
             if (!paths.has(path)) {
-                this.knownPaths.delete(path);
+                LoggerService.log(`The buzzer at ${path} was unplugged`);
+                this.buzzers.delete(path);
                 this.failedOpens.delete(path);
+                this.retryIdentify.delete(path);
+                changed = true;
             }
         }
+        if (changed) {
+            this.notifyChanged();
+        }
         for (const path of paths) {
-            if (!this.knownPaths.has(path)) {
-                this.knownPaths.add(path);
-                this.provision(path).catch(e => LoggerService.error(`Could not set up the buzzer at ${path}`, e));
+            if (!this.buzzers.has(path) || this.retryIdentify.delete(path)) {
+                this.identify(path);
             }
         }
     }
 
-    private async provision(path: string): Promise<void> {
-        const wifi = this.readWifiSettings();
-        if (wifi == null) {
+    private identify(path: string): void {
+        if (!this.buzzers.has(path)) {
+            LoggerService.log(`A buzzer was plugged in at ${path}`);
+            this.buzzers.set(path, {path, state: 'identifying'});
+            this.notifyChanged();
+        }
+        this.talk(path, null).then(result => {
+            if (result.openFailed && this.buzzers.has(path)) {
+                const attempts = (this.failedOpens.get(path) ?? 0) + 1;
+                this.failedOpens.set(path, attempts);
+                if (attempts < BuzzerProvisioningService.MAX_OPEN_ATTEMPTS) {
+                    // still identifying for the master
+                    this.retryIdentify.add(path);
+                    return;
+                }
+            }
+            if (result.error != null) {
+                this.update(path, {state: 'no-answer'});
+                return;
+            }
+            const wifi = this.readWifiSettings(true);
+            const isAdopted = wifi != null && result.wifi?.ssid === wifi.ssid && result.wifi?.host === wifi.serverAddress
+                && result.wifi?.port === ConfigService.get().udpBuzzer.listenPort;
+            this.update(path, {...this.describe(result), state: 'detected', ssid: result.wifi?.ssid, isAdopted});
+        });
+    }
+
+    /**
+     * What the master gets of a session's result
+     */
+    private describe(result: ISessionResult): Partial<IUsbBuzzer> {
+        return {macAddress: result.macAddress, firmwareVersion: result.firmwareVersion};
+    }
+
+    /**
+     * Changes a buzzer that is still plugged in
+     */
+    private update(path: string, changes: Partial<IUsbBuzzer>): void {
+        const buzzer = this.buzzers.get(path);
+        if (buzzer == null) {
             return;
         }
-        LoggerService.log(`Setting up the buzzer at ${path}`);
+        this.buzzers.set(path, {...buzzer, ...changes});
+        this.notifyChanged();
+    }
+
+    private notifyChanged(): void {
+        const buzzers = this.getBuzzers();
+        this.onChangedCallbacks.forEach(callback => callback(buzzers));
+    }
+
+    /**
+     * Greets the buzzer, and gives it the WiFi if there is one to give. Never rejects.
+     */
+    private async talk(path: string, wifi: IWifiSettings | null): Promise<ISessionResult> {
         const port = new SerialPort({path, baudRate: 115200, autoOpen: false, hupcl: false});
         try {
             await new Promise<void>((resolve, reject) => port.open(err => err ? reject(err) : resolve()));
         } catch (e) {
-            const attempts = (this.failedOpens.get(path) ?? 0) + 1;
-            this.failedOpens.set(path, attempts);
-            if (attempts < BuzzerProvisioningService.MAX_OPEN_ATTEMPTS) {
-                LoggerService.warn(`Could not open the buzzer at ${path}, trying again`, e);
-                this.knownPaths.delete(path);
-                return;
-            }
-            throw e;
+            LoggerService.warn(`Could not open the buzzer's port ${path}`, e);
+            return {error: 'port-error', openFailed: true};
         }
         port.on('error', err => LoggerService.warn(`Serial error of the buzzer at ${path}`, err));
         // DTR and RTS reset the ESP32 (as for flashing); both off leaves it running
@@ -97,45 +204,60 @@ export class BuzzerProvisioningService {
         const send = (line: string) => port.write(line + '\n');
         const started = Date.now();
         let wasReset = false;
-        let mac: string = null;
+        const result: ISessionResult = {};
         try {
-            const result = await new Promise<string>(resolve => {
+            return await new Promise<ISessionResult>(resolve => {
+                const finish = (error?: TUsbBuzzerError) => {
+                    clearInterval(hello);
+                    resolve({...result, error});
+                };
                 const hello = setInterval(() => {
-                    if (mac == null && !wasReset && Date.now() - started > BuzzerProvisioningService.RESET_AFTER_IN_MS) {
+                    if (result.macAddress == null && !wasReset
+                            && Date.now() - started > BuzzerProvisioningService.RESET_AFTER_IN_MS) {
                         wasReset = true;
                         this.reset(port);
                     }
                     if (Date.now() - started > BuzzerProvisioningService.TIMEOUT_IN_MS) {
-                        clearInterval(hello);
-                        resolve('no answer');
-                    } else if (mac == null) {
+                        finish('no-answer');
+                    } else if (result.macAddress == null) {
                         send('BUZZ HELLO');
                     }
                 }, BuzzerProvisioningService.HELLO_INTERVAL_IN_MS);
+                port.on('close', () => finish('port-error'));
                 lines.on('data', (raw: string) => {
                     const line = raw.trim();
                     if (line.startsWith('BUZZ READY ')) {
                         // again after the buzzer restarted
-                        mac = line.split(' ')[2] ?? '?';
+                        const [, , macAddress, firmwareVersion, ...wifiInfo] = line.split(' ');
+                        result.macAddress = macAddress;
+                        result.firmwareVersion = firmwareVersion;
+                        try {
+                            // an SSID may have spaces
+                            result.wifi = wifiInfo.length > 0 ? JSON.parse(wifiInfo.join(' ')) : undefined;
+                        } catch (e) {
+                            LoggerService.warn(`Ignoring the WiFi the buzzer at ${path} told: ${wifiInfo.join(' ')}`);
+                        }
+                        if (wifi == null) {
+                            finish();
+                            return;
+                        }
                         send('BUZZ WIFI ' + JSON.stringify({
                             ssid: wifi.ssid,
                             pass: wifi.passphrase,
                             host: wifi.serverAddress,
                             port: ConfigService.get().udpBuzzer.listenPort
                         }));
-                    } else if (line === 'BUZZ OK' || line.startsWith('BUZZ ERROR')) {
-                        clearInterval(hello);
-                        resolve(line);
+                    } else if (line === 'BUZZ OK') {
+                        finish();
+                    } else if (line.startsWith('BUZZ ERROR')) {
+                        finish('rejected');
                     }
                 });
             });
-            if (result === 'BUZZ OK') {
-                LoggerService.log(`Buzzer ${mac} at ${path} now knows the WiFi ${wifi.ssid}`);
-            } else {
-                LoggerService.warn(`Could not set up the buzzer at ${path}: ${result}`);
-            }
         } finally {
-            port.close();
+            if (port.isOpen) {
+                port.close();
+            }
         }
     }
 
@@ -159,13 +281,15 @@ export class BuzzerProvisioningService {
     /**
      * The settings file has KEY=value lines; on the box buzzerbox-apply-settings writes it from buzzerbox.txt
      */
-    private readWifiSettings(): IWifiSettings {
+    private readWifiSettings(quiet = false): IWifiSettings {
         const file = ConfigService.get().udpBuzzer.provisioning.settingsFile;
         let content: string;
         try {
             content = fs.readFileSync(file, 'utf8');
         } catch (e) {
-            LoggerService.warn(`Can't set up buzzers without the WiFi settings in ${file}`, e);
+            if (!quiet) {
+                LoggerService.warn(`Can't adopt buzzers without the WiFi settings in ${file}`, e);
+            }
             return null;
         }
         const settings = new Map<string, string>();

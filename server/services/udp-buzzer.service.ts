@@ -149,6 +149,10 @@ export class UdpBuzzerService {
         this.stateProvider = provider;
     }
 
+    public isOnline(macAddress: string): boolean {
+        return this.buzzers.get(macAddress.toUpperCase())?.online === true;
+    }
+
     /**
      * All buzzers found since the server started, in the order they were found
      */
@@ -226,8 +230,7 @@ export class UdpBuzzerService {
             buzzer = {
                 id: BuzzerHelper.makeUdpBuzzerId(key),
                 macAddress: key,
-                // the end of the MAC address tells the buzzers apart, it is printed on them
-                name: 'Funkbuzzer ' + key.slice(-5),
+                name: BuzzerHelper.makeUdpBuzzerName(key),
                 ip: rinfo.address,
                 port: UdpBuzzerService.isValidPort(listenPort) ? listenPort : rinfo.port,
                 lastSeen: Date.now(),

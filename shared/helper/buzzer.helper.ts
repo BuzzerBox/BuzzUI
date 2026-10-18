@@ -15,6 +15,13 @@ export class BuzzerHelper {
         return BuzzerHelper.UDP_ID_PREFIX + macAddress.toUpperCase();
     }
 
+    /**
+     * The name the master sees: the end of the MAC address, which tells the buzzers apart
+     */
+    public static makeUdpBuzzerName(macAddress: string): string {
+        return 'Funkbuzzer ' + macAddress.toUpperCase().slice(-5);
+    }
+
     public static isUdpBuzzerId(buzzerId: string): boolean {
         return typeof buzzerId === 'string' && buzzerId.startsWith(BuzzerHelper.UDP_ID_PREFIX);
     }

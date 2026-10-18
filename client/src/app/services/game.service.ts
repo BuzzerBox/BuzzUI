@@ -41,6 +41,9 @@ import {
   IUpdateTeamsPacket,
   IBuzzer,
   IAvailableBuzzersPacket,
+  IUsbBuzzer,
+  IUsbBuzzersPacket,
+  IAdoptUsbBuzzerPacket,
   BuzzerHelper,
   PacketHelper
 } from '../../../../shared/shared';
@@ -107,6 +110,8 @@ export class GameService implements OnDestroy {
   private autosaveInfoSubject = new ReplaySubject<IAutosaveInfoPacket>(1);
   // whenever the buzzers that teams can be put on change, e.g. a UDP buzzer was found
   private availableBuzzersSubject = new Subject<IBuzzer[]>();
+  // the wireless buzzers plugged into the box over USB
+  private usbBuzzersSubject = new BehaviorSubject<IUsbBuzzer[]>([]);
   private masterRejection: IMasterRejection | null = null;
   private masterRetryTimer: ReturnType<typeof setTimeout> | null = null;
   // refusals since the last time the user asked to try again, which the wait before the next try depends on
@@ -322,6 +327,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.AVAILABLE_BUZZERS:
         this.setAvailableBuzzers((message as IAvailableBuzzersPacket).availableBuzzers);
+        break;
+      case EPacketTypes.USB_BUZZERS:
+        this.usbBuzzersSubject.next((message as IUsbBuzzersPacket).buzzers ?? []);
         break;
       default:
         break;
@@ -964,6 +972,20 @@ export class GameService implements OnDestroy {
    */
   public installUpdate(fileName: string, allowUnsigned = false): void {
     this.webSocketService.send<IInstallUpdatePacket>({packetType: EPacketTypes.INSTALL_UPDATE, fileName, allowUnsigned});
+  }
+
+  /**
+   * The wireless buzzers plugged into the box over USB, which can be adopted (given the box's WiFi)
+   */
+  public observeUsbBuzzers(): Observable<IUsbBuzzer[]> {
+    return this.usbBuzzersSubject.asObservable();
+  }
+
+  /**
+   * Gives the buzzer the box's WiFi; observeUsbBuzzers() tells how it goes
+   */
+  public adoptUsbBuzzer(path: string): void {
+    this.webSocketService.send<IAdoptUsbBuzzerPacket>({packetType: EPacketTypes.ADOPT_USB_BUZZER, path});
   }
 
   /**

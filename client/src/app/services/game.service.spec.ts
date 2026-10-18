@@ -13,6 +13,8 @@ import {
   IGameState,
   IRegisterMasterPacket,
   ITeam,
+  IUsbBuzzer,
+  IUsbBuzzersPacket,
   IWebSocketMessage,
   PacketHelper
 } from '../../../../shared/shared';
@@ -179,6 +181,22 @@ describe('GameService', () => {
     tick(10000);
     expect(registrations().length).toBe(1);
   }));
+
+  describe('with buzzers plugged in over USB', () => {
+    it('remembers the latest list, also for pages that open later', () => {
+      receive({packetType: EPacketTypes.USB_BUZZERS, buzzers: [{path: '/dev/ttyACM0', state: 'detected', macAddress: 'AA:BB:CC:DD:EE:01'}]} as IUsbBuzzersPacket);
+      let seen: IUsbBuzzer[] = [];
+      service.observeUsbBuzzers().subscribe(buzzers => seen = buzzers);
+      expect(seen.map(b => b.state)).toEqual(['detected']);
+      receive({packetType: EPacketTypes.USB_BUZZERS, buzzers: []} as IUsbBuzzersPacket);
+      expect(seen).toEqual([]);
+    });
+
+    it('asks the server to adopt one', () => {
+      service.adoptUsbBuzzer('/dev/ttyACM0');
+      expect(sent).toContain(jasmine.objectContaining({packetType: EPacketTypes.ADOPT_USB_BUZZER, path: '/dev/ttyACM0'}));
+    });
+  });
 
   describe('with UDP buzzers', () => {
     const box = (id: string): IBuzzer => ({id, keyBind: '', byteBind: '', type: 'serial'});

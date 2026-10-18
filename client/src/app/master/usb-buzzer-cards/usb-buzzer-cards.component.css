@@ -1,0 +1,22 @@
+/* like the update card, as wide as the row of buttons above them on the home page */
+.usb-buzzer-card {
+  margin: 16px 0;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success mat-icon {
+  color: #2e7d32;
+}
+
+.error mat-icon {
+  color: #c62828;
+}
+
+.warning mat-icon {
+  color: #e65100;
+}

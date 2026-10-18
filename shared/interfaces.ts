@@ -40,6 +40,9 @@ import {IGameInfo, IGameVersionInfo, IGameStateInfo, IGameStorageRef, IGameImpor
 import {IAutosaveInfoPacket} from './interfaces/IAutosaveInfoPacket';
 import {IMasterTakenOverPacket} from './interfaces/IMasterTakenOverPacket';
 import {IAvailableBuzzersPacket} from './interfaces/IAvailableBuzzersPacket';
+import {IUsbBuzzer, TUsbBuzzerState, TUsbBuzzerError} from './interfaces/IUsbBuzzer';
+import {IUsbBuzzersPacket} from './interfaces/IUsbBuzzersPacket';
+import {IAdoptUsbBuzzerPacket} from './interfaces/IAdoptUsbBuzzerPacket';
 import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
 
 export {
@@ -97,6 +100,11 @@ export {
 	IAutosaveInfoPacket,
 	IMasterTakenOverPacket,
 	IAvailableBuzzersPacket,
+	IUsbBuzzer,
+	TUsbBuzzerState,
+	TUsbBuzzerError,
+	IUsbBuzzersPacket,
+	IAdoptUsbBuzzerPacket,
 	IStorageEntry,
 	IStorageFolder
 }
