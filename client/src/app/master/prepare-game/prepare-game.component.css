@@ -167,3 +167,21 @@ button.theme.selected {
   color: rgba(0, 0, 0, 0.6);
   font-size: 0.9em;
 }
+
+.buzzer-status {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  vertical-align: text-bottom;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.buzzer-type {
+  margin-bottom: 0.25em;
+}
+
+.hint {
+  margin: 0 0 1em;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.9em;
+}

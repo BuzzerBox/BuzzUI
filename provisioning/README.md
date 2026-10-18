@@ -24,6 +24,7 @@ own settings (such as the WiFi name and password) from a file on the boot partit
 | USB sticks | `udiskie` mounts them at `/media/pi/<label>`, as before |
 | Splash screen | `splashscreen.service` (fbi), until the kiosk starts |
 | Buzzers | the GPIO UART `/dev/ttyS0` (`enable_uart=1`, no serial console) |
+| Wireless buzzers | UDP over the access point; plugged in over USB and adopted on the master's home page, they get the WiFi from `/etc/buzzerbox/wireless-buzzers.conf`, which `buzzerbox-settings.service` writes |
 | SSH | off, unless there are keys: built into the image (`ssh_authorized_keys`) or in `buzzerbox-ssh-keys.txt` on the boot partition |
 
 ## Building the image

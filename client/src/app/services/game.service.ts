@@ -40,6 +40,11 @@ import {
   IUpdateMediaStatePacket,
   IUpdateTeamsPacket,
   IBuzzer,
+  IAvailableBuzzersPacket,
+  IUsbBuzzer,
+  IUsbBuzzersPacket,
+  IAdoptUsbBuzzerPacket,
+  BuzzerHelper,
   PacketHelper
 } from '../../../../shared/shared';
 import {BehaviorSubject, Observable, ReplaySubject, Subject, Subscription} from 'rxjs';
@@ -103,6 +108,10 @@ export class GameService implements OnDestroy {
   // the token for the storage API, which the server gives the master only
   private storageTokenSubject = new BehaviorSubject<string | null>(null);
   private autosaveInfoSubject = new ReplaySubject<IAutosaveInfoPacket>(1);
+  // whenever the buzzers that teams can be put on change, e.g. a UDP buzzer was found
+  private availableBuzzersSubject = new Subject<IBuzzer[]>();
+  // the wireless buzzers plugged into the box over USB
+  private usbBuzzersSubject = new BehaviorSubject<IUsbBuzzer[]>([]);
   private masterRejection: IMasterRejection | null = null;
   private masterRetryTimer: ReturnType<typeof setTimeout> | null = null;
   // refusals since the last time the user asked to try again, which the wait before the next try depends on
@@ -316,6 +325,12 @@ export class GameService implements OnDestroy {
       case EPacketTypes.MASTER_TAKEN_OVER:
         this.handleMasterTakenOver();
         break;
+      case EPacketTypes.AVAILABLE_BUZZERS:
+        this.setAvailableBuzzers((message as IAvailableBuzzersPacket).availableBuzzers);
+        break;
+      case EPacketTypes.USB_BUZZERS:
+        this.usbBuzzersSubject.next((message as IUsbBuzzersPacket).buzzers ?? []);
+        break;
       default:
         break;
     }
@@ -332,12 +347,12 @@ export class GameService implements OnDestroy {
     // only accept this packet when the master was just accepted, hence no game is really started yet
     if (this.currentGameStateInAutomaton === EGameStatesMaster.MASTER_ACCEPTED) {
       this.setNewGameState(EGameStatesMaster.RECEIVED_PRESETUP_DATA);
-      this.presetupData = packet;
+      this.setAvailableBuzzers(packet.availableBuzzers);
       // the game of before a reset or a takeover is over; the play page shows it until it is left
       this.redirect(baseUrlMaster + pathsMaster.home).then(() => this.clearGameData());
     } else if (this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
       // registered again after a lost connection; a restarted server has new buzzer IDs
-      this.presetupData = packet;
+      this.setAvailableBuzzers(packet.availableBuzzers);
     }
   }
 
@@ -474,7 +489,7 @@ export class GameService implements OnDestroy {
       this.masterRetryCount = 0;
       if (packet.availableBuzzers) {
         // needed to change the teams later on
-        this.presetupData = {packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO, availableBuzzers: packet.availableBuzzers};
+        this.setAvailableBuzzers(packet.availableBuzzers);
       }
       this.setGameData(packet.teams, packet.questions, packet.currentGameState);
       // the screens still show the running game, so it goes on right away
@@ -756,6 +771,19 @@ export class GameService implements OnDestroy {
   }
 
   /**
+   * The available buzzers whenever they change. New ones are appended, so the others keep their index; the IDs of the
+   * buzzers of the box change when the server restarts.
+   */
+  public observeAvailableBuzzers(): Observable<IBuzzer[]> {
+    return this.availableBuzzersSubject.asObservable();
+  }
+
+  private setAvailableBuzzers(availableBuzzers: IBuzzer[]): void {
+    this.presetupData = {packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO, availableBuzzers: availableBuzzers ?? []};
+    this.availableBuzzersSubject.next(this.presetupData.availableBuzzers);
+  }
+
+  /**
    * Replaces the teams of the running game, see IUpdateTeamsPacket; the server sends back the teams it took
    */
   public updateTeams(teams: ITeam[]): void {
@@ -895,6 +923,8 @@ export class GameService implements OnDestroy {
 
   /**
    * Puts the teams of a savegame on the buzzers that are available now. Teams whose buzzer no longer exists are dropped.
+   * A UDP buzzer keeps its ID but not its index, which depends on the order the buzzers were found in; the buzzers of
+   * the box are found by index.
    */
   private setCurrentBuzzerIdsToTeams(teams: ITeam[]): ITeam[] {
     const availableBuzzers = this.presetupData.availableBuzzers;
@@ -902,8 +932,12 @@ export class GameService implements OnDestroy {
     for (let i = 0; i < teams.length; i++) {
       const team = teams[i];
       // savegames from before buzzerIndex existed have their teams on the buzzers in order
-      const buzzerIndex = team.buzzerIndex ?? i;
-      if (buzzerIndex >= availableBuzzers.length) {
+      const buzzerIndex = BuzzerHelper.isUdpBuzzerId(team.buzzerId)
+        ? availableBuzzers.findIndex(buzzer => buzzer.id === team.buzzerId)
+        : team.buzzerIndex ?? i;
+      const buzzer = availableBuzzers[buzzerIndex];
+      // nor does a team of the box end up on a UDP buzzer, e.g. from a config that had more buzzers
+      if (buzzer == null || BuzzerHelper.isUdpBuzzerId(buzzer.id) !== BuzzerHelper.isUdpBuzzerId(team.buzzerId)) {
         continue;
       }
       team.buzzerIndex = buzzerIndex;
@@ -938,6 +972,20 @@ export class GameService implements OnDestroy {
    */
   public installUpdate(fileName: string, allowUnsigned = false): void {
     this.webSocketService.send<IInstallUpdatePacket>({packetType: EPacketTypes.INSTALL_UPDATE, fileName, allowUnsigned});
+  }
+
+  /**
+   * The wireless buzzers plugged into the box over USB, which can be adopted (given the box's WiFi)
+   */
+  public observeUsbBuzzers(): Observable<IUsbBuzzer[]> {
+    return this.usbBuzzersSubject.asObservable();
+  }
+
+  /**
+   * Gives the buzzer the box's WiFi; observeUsbBuzzers() tells how it goes
+   */
+  public adoptUsbBuzzer(path: string): void {
+    this.webSocketService.send<IAdoptUsbBuzzerPacket>({packetType: EPacketTypes.ADOPT_USB_BUZZER, path});
   }
 
   /**

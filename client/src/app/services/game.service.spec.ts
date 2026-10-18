@@ -5,7 +5,19 @@ import {Subject, Subscription} from 'rxjs';
 import { GameService } from './game.service';
 import {WebSocketService} from './web-socket.service';
 import {EGameStatesMaster} from '../master/enums/EGameStatesMaster';
-import {EPacketTypes, IGamePacket, IRegisterMasterPacket, IWebSocketMessage, PacketHelper} from '../../../../shared/shared';
+import {
+  EPacketTypes,
+  IAvailableBuzzersPacket,
+  IBuzzer,
+  IGamePacket,
+  IGameState,
+  IRegisterMasterPacket,
+  ITeam,
+  IUsbBuzzer,
+  IUsbBuzzersPacket,
+  IWebSocketMessage,
+  PacketHelper
+} from '../../../../shared/shared';
 import {baseUrlMaster, pathsMaster} from '../master/paths-master';
 
 describe('GameService', () => {
@@ -169,4 +181,62 @@ describe('GameService', () => {
     tick(10000);
     expect(registrations().length).toBe(1);
   }));
+
+  describe('with buzzers plugged in over USB', () => {
+    it('remembers the latest list, also for pages that open later', () => {
+      receive({packetType: EPacketTypes.USB_BUZZERS, buzzers: [{path: '/dev/ttyACM0', state: 'detected', macAddress: 'AA:BB:CC:DD:EE:01'}]} as IUsbBuzzersPacket);
+      let seen: IUsbBuzzer[] = [];
+      service.observeUsbBuzzers().subscribe(buzzers => seen = buzzers);
+      expect(seen.map(b => b.state)).toEqual(['detected']);
+      receive({packetType: EPacketTypes.USB_BUZZERS, buzzers: []} as IUsbBuzzersPacket);
+      expect(seen).toEqual([]);
+    });
+
+    it('asks the server to adopt one', () => {
+      service.adoptUsbBuzzer('/dev/ttyACM0');
+      expect(sent).toContain(jasmine.objectContaining({packetType: EPacketTypes.ADOPT_USB_BUZZER, path: '/dev/ttyACM0'}));
+    });
+  });
+
+  describe('with UDP buzzers', () => {
+    const box = (id: string): IBuzzer => ({id, keyBind: '', byteBind: '', type: 'serial'});
+    const udp = (mac: string, online = true): IBuzzer => ({id: 'udp:' + mac, keyBind: '', byteBind: '', type: 'udp', online});
+
+    const accept = (availableBuzzers: IBuzzer[]) => {
+      service.useAsMaster();
+      receive(PacketHelper.makeResponsePacket(EPacketTypes.REGISTER_MASTER, true));
+      receive({packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO, availableBuzzers} as IGamePacket);
+    };
+
+    it('takes the buzzers the server found later and tells about them', () => {
+      accept([box('b0'), box('b1')]);
+      const seen: IBuzzer[][] = [];
+      service.observeAvailableBuzzers().subscribe(buzzers => seen.push(buzzers));
+      receive({packetType: EPacketTypes.AVAILABLE_BUZZERS, availableBuzzers: [box('b0'), box('b1'), udp('01')]} as IAvailableBuzzersPacket);
+      expect(service.getAvailableBuzzers().map(b => b.id)).toEqual(['b0', 'b1', 'udp:01']);
+      expect(seen.length).toBe(1);
+    });
+
+    it('puts a saved team back on its UDP buzzer by ID, wherever that buzzer is now', () => {
+      // the buzzers were found in another order than when the game was saved
+      accept([box('new0'), box('new1'), udp('02'), udp('01', false)]);
+      const saved: ITeam[] = [
+        {name: 'Box', buzzerId: 'old0', teamId: 'old0', buzzerIndex: 0},
+        {name: 'Funk', buzzerId: 'udp:01', teamId: 'udp:01', buzzerIndex: 2}
+      ];
+      const mapped = service.mapTeamsToBuzzers(saved, {markedTeamIds: ['udp:01']} as IGameState);
+      expect(mapped.teams.map(t => [t.name, t.buzzerId, t.buzzerIndex])).toEqual([['Box', 'new0', 0], ['Funk', 'udp:01', 3]]);
+      expect(mapped.gameState.markedTeamIds).toEqual(['udp:01']);
+    });
+
+    it('drops a saved team whose UDP buzzer is not there, and keeps teams of the box off UDP buzzers', () => {
+      accept([box('new0'), box('new1'), udp('02')]);
+      const saved: ITeam[] = [
+        {name: 'Funk', buzzerId: 'udp:01', teamId: 'udp:01', buzzerIndex: 2},
+        // saved with a config that had three buzzers of the box
+        {name: 'Box 3', buzzerId: 'old2', teamId: 'old2', buzzerIndex: 2}
+      ];
+      expect(service.mapTeamsToBuzzers(saved).teams).toEqual([]);
+    });
+  });
 });

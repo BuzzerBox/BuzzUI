@@ -1,8 +1,19 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Router} from '@angular/router';
+import {Subscription} from 'rxjs';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
-import {IBuzzer, IDirectoryTree, IGameDefinition, IGameInstanceState, IGameState, ITeam, MediaHelper, StorageApiHelper} from '../../../../../shared/shared';
+import {
+  BuzzerHelper,
+  IBuzzer,
+  IDirectoryTree,
+  IGameDefinition,
+  IGameInstanceState,
+  IGameState,
+  ITeam,
+  MediaHelper,
+  StorageApiHelper
+} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
@@ -34,7 +45,7 @@ interface IMissingMedia {
     styleUrls: ['./prepare-game.component.css'],
     standalone: false
 })
-export class PrepareGameComponent implements OnInit {
+export class PrepareGameComponent implements OnInit, OnDestroy {
   // like in the game, at least two teams have to play
   public readonly MIN_TEAMS = 2;
   public readonly homeUrl = '/' + baseUrlMaster + pathsMaster.home;
@@ -47,6 +58,9 @@ export class PrepareGameComponent implements OnInit {
   private mappedGameState: IGameState;
   public rows: ITeamRow[] = [];
   public teamsFormGroup = new UntypedFormGroup({});
+  // the buzzers of the box ('serial') or the wireless ones ('udp'): a game is played with one kind only, see
+  // BuzzerHelper.isMixed
+  public buzzerType: IBuzzer['type'] = 'serial';
   public stateName = new UntypedFormControl(GameFileHelper.makeStateName(), Validators.required);
   public error: string = null;
   public starting = false;
@@ -56,6 +70,7 @@ export class PrepareGameComponent implements OnInit {
   // how the screens look in this game
   public readonly themes: IScreenTheme[] = SCREEN_THEMES;
   public themeId: string = ScreenThemeHelper.getLastChosen().id;
+  private buzzersSubscription: Subscription;
 
   constructor(private game: GameService, private storage: StorageService, private router: Router, private dialog: MatDialog) {
     game.useAsMaster();
@@ -89,6 +104,10 @@ export class PrepareGameComponent implements OnInit {
     await this.findMissingMedia();
   }
 
+  ngOnDestroy(): void {
+    this.buzzersSubscription?.unsubscribe();
+  }
+
   private async findMissingMedia(): Promise<void> {
     let tree: IDirectoryTree;
     try {
@@ -119,24 +138,80 @@ export class PrepareGameComponent implements OnInit {
   }
 
   private initTeams(): void {
+    // a continued game is played with the buzzers it was played with, also when they haven't turned up yet
+    const savedTeam = this.state?.teams?.[0];
+    if (savedTeam != null) {
+      this.buzzerType = BuzzerHelper.getType(savedTeam.buzzerId);
+    }
+    this.updateTeams(this.game.getAvailableBuzzers());
+    this.buzzersSubscription = this.game.observeAvailableBuzzers().subscribe(buzzers => this.updateTeams(buzzers));
+  }
+
+  /**
+   * Whether the master can choose the wireless buzzers: once one was found, or for a game that was played with them
+   */
+  public canChooseBuzzerType(): boolean {
+    return this.buzzerType === 'udp' || this.game.getAvailableBuzzers().some(buzzer => BuzzerHelper.isUdpBuzzerId(buzzer.id));
+  }
+
+  public chooseBuzzerType(type: IBuzzer['type']): void {
+    if (type === this.buzzerType) {
+      return;
+    }
+    this.buzzerType = type;
+    this.clearRows();
+    this.updateTeams(this.game.getAvailableBuzzers());
+  }
+
+  /**
+   * The continued game was played with the other kind of buzzers, so its teams don't play on
+   */
+  public dropsSavedTeams(): boolean {
+    const savedTeam = this.state?.teams?.[0];
+    return savedTeam != null && BuzzerHelper.getType(savedTeam.buzzerId) !== this.buzzerType;
+  }
+
+  private clearRows(): void {
+    this.rows = [];
+    this.teamsFormGroup = new UntypedFormGroup({});
+  }
+
+  /**
+   * Puts the teams on the buzzers of the chosen kind, and again whenever these change: a UDP buzzer found later gets a
+   * row, and in a continued game its team. The rows that are there keep what was entered.
+   */
+  private updateTeams(buzzers: IBuzzer[]): void {
     const mapped = this.game.mapTeamsToBuzzers(this.state?.teams ?? [], this.state?.gameState);
     this.mappedGameState = mapped.gameState;
-    this.rows = this.game.getAvailableBuzzers().map((buzzer, buzzerIndex) => ({
-      buzzer,
-      buzzerIndex,
-      team: mapped.teams.find(team => team.buzzerIndex === buzzerIndex),
-      controlName: 'buzzer' + buzzerIndex
-    }));
-    const controls: Record<string, UntypedFormControl> = {};
-    for (const row of this.rows) {
-      const control = new UntypedFormControl(row.team?.name ?? 'Team ' + (row.buzzerIndex + 1), Validators.required);
-      // a continued game keeps its teams; a new one starts with as few as can play, the others are added by hand
-      if (this.isContinuing() ? row.team == null : row.buzzerIndex >= this.MIN_TEAMS) {
-        control.disable();
-      }
-      controls[row.controlName] = control;
+    // a restarted server has new IDs for the buzzers of the box, and may have found the UDP buzzers in another order
+    if (this.rows.some(row => buzzers[row.buzzerIndex]?.id !== row.buzzer.id)) {
+      this.clearRows();
     }
-    this.teamsFormGroup = new UntypedFormGroup(controls);
+    buzzers.forEach((buzzer, buzzerIndex) => {
+      if (BuzzerHelper.getType(buzzer.id) !== this.buzzerType) {
+        return;
+      }
+      const team = mapped.teams.find(t => t.buzzerIndex === buzzerIndex);
+      let row = this.rows.find(r => r.buzzerIndex === buzzerIndex);
+      if (row == null) {
+        const position = this.rows.length;
+        row = {buzzer, buzzerIndex, team, controlName: 'buzzer' + buzzerIndex};
+        this.rows.push(row);
+        const control = new UntypedFormControl(team?.name ?? 'Team ' + (position + 1), Validators.required);
+        // a continued game keeps its teams; a new one starts with as few as can play, the others are added by hand
+        if (this.isContinuing() ? team == null : position >= this.MIN_TEAMS) {
+          control.disable();
+        }
+        this.teamsFormGroup.addControl(row.controlName, control);
+      } else if (row.team == null && team != null) {
+        // the buzzer of a team of the continued game turned up
+        const control = this.teamsFormGroup.get(row.controlName);
+        control.setValue(team.name);
+        control.enable();
+      }
+      row.buzzer = buzzer;
+      row.team = team;
+    });
   }
 
   public isActive(row: ITeamRow): boolean {

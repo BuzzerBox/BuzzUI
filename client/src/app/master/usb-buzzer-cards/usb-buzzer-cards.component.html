@@ -1,0 +1,63 @@
+@for (buzzer of buzzers; track buzzer.path) {
+  <mat-card class="usb-buzzer-card" appearance="outlined">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>usb</mat-icon>
+      <mat-card-title>{{getName(buzzer)}}</mat-card-title>
+      <mat-card-subtitle>{{getDetails(buzzer)}}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @switch (buzzer.state) {
+        @case ('identifying') {
+          <div class="status"><mat-spinner diameter="24"></mat-spinner><span>Der Buzzer wird erkannt …</span></div>
+        }
+        @case ('detected') {
+          @if (buzzer.isAdopted) {
+            <p class="status success">
+              <mat-icon>check_circle</mat-icon>
+              Bereits für diese BuzzerBox übernommen (WLAN „{{buzzer.ssid}}“){{buzzer.isConnected ? ' und verbunden' : ''}}.
+            </p>
+          } @else if (buzzer.ssid) {
+            <p>
+              Der Buzzer ist für das WLAN „{{buzzer.ssid}}“ eingerichtet, nicht für diese BuzzerBox. Übernimm ihn, damit er
+              sich mit ihr verbindet.
+            </p>
+          } @else {
+            <p>Übernimm den Buzzer, damit er sich mit dem WLAN der BuzzerBox verbindet.</p>
+          }
+        }
+        @case ('no-answer') {
+          <p class="status warning">
+            <mat-icon>warning</mat-icon>Das Gerät antwortet nicht. Ist es ein Funkbuzzer? Übernehmen versucht es erneut.
+          </p>
+        }
+        @case ('adopting') {
+          <div class="status"><mat-spinner diameter="24"></mat-spinner><span>Der Buzzer wird übernommen …</span></div>
+        }
+        @case ('adopted') {
+          <p class="status success">
+            <mat-icon>check_circle</mat-icon>
+            @if (buzzer.isConnected) {
+              Übernommen und verbunden (WLAN „{{buzzer.ssid}}“). Du kannst ihn jetzt abstecken.
+            } @else {
+              Übernommen: Der Buzzer verbindet sich mit dem WLAN „{{buzzer.ssid}}“ …
+            }
+          </p>
+        }
+        @case ('failed') {
+          <p class="status error"><mat-icon>error</mat-icon>Das Übernehmen hat nicht geklappt. {{getErrorMessage(buzzer.error)}}</p>
+        }
+      }
+    </mat-card-content>
+    @if (buzzer.state === 'detected' && buzzer.isAdopted) {
+      <mat-card-actions align="end">
+        <button mat-stroked-button (click)="adopt(buzzer)">Erneut übernehmen</button>
+      </mat-card-actions>
+    } @else if (buzzer.state === 'detected' || buzzer.state === 'no-answer' || buzzer.state === 'failed') {
+      <mat-card-actions align="end">
+        <button mat-flat-button color="primary" (click)="adopt(buzzer)">
+          {{buzzer.state === 'failed' ? 'Erneut versuchen' : 'Übernehmen'}}
+        </button>
+      </mat-card-actions>
+    }
+  </mat-card>
+}

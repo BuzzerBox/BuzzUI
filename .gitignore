@@ -6,6 +6,8 @@
 
 # Local config
 config.dev.json
+# the WiFi the dev server gives wireless buzzers (CLAUDE.md)
+wireless-buzzers.dev.conf
 
 # Media files
 server/media/

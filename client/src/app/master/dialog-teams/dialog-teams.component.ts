@@ -1,7 +1,8 @@
-import {Component} from '@angular/core';
+import {Component, OnDestroy} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
-import {IBuzzer, ITeam} from '../../../../../shared/shared';
+import {Subscription} from 'rxjs';
+import {BuzzerHelper, IBuzzer, ITeam} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 
 interface ITeamRow {
@@ -13,8 +14,8 @@ interface ITeamRow {
 }
 
 /**
- * Changes the teams while the game is running, like the teams step of the setup: one row per buzzer, which can be
- * activated for a team or not
+ * Changes the teams while the game is running, like the teams step of the setup: one row per buzzer of the kind the game
+ * is played with (BuzzerHelper.isMixed), which can be activated for a team or not
  */
 @Component({
     selector: 'app-dialog-teams',
@@ -22,30 +23,55 @@ interface ITeamRow {
     styleUrls: ['./dialog-teams.component.css'],
     standalone: false
 })
-export class DialogTeamsComponent {
+export class DialogTeamsComponent implements OnDestroy {
   // like in the setup, a game needs at least two teams
   public readonly MIN_TEAMS = 2;
 
-  public rows: ITeamRow[];
-  public teamsFormGroup: UntypedFormGroup;
+  public rows: ITeamRow[] = [];
+  public teamsFormGroup = new UntypedFormGroup({});
+  private buzzersSubscription: Subscription;
+  private readonly buzzerType: IBuzzer['type'];
 
   constructor(private game: GameService, private dialogRef: MatDialogRef<DialogTeamsComponent>) {
+    this.buzzerType = BuzzerHelper.getType(this.game.getTeams()?.[0]?.buzzerId);
+    this.updateRows(this.game.getAvailableBuzzers());
+    // a UDP buzzer found while the dialog is open can be added right away
+    this.buzzersSubscription = this.game.observeAvailableBuzzers().subscribe(buzzers => this.updateRows(buzzers));
+  }
+
+  ngOnDestroy(): void {
+    this.buzzersSubscription?.unsubscribe();
+  }
+
+  /**
+   * One row per buzzer of the game's kind; the rows that are there keep what was entered
+   */
+  private updateRows(buzzers: IBuzzer[]): void {
     const teams = this.game.getTeams() ?? [];
-    this.rows = this.game.getAvailableBuzzers().map((buzzer, buzzerIndex) => ({
-      buzzer,
-      buzzerIndex,
-      team: teams.find(team => team.buzzerId === buzzer.id),
-      controlName: 'buzzer' + buzzerIndex
-    }));
-    const controls: Record<string, UntypedFormControl> = {};
-    for (const row of this.rows) {
-      const control = new UntypedFormControl(row.team?.name ?? 'Team ' + (row.buzzerIndex + 1), Validators.required);
-      if (row.team == null) {
-        control.disable();
-      }
-      controls[row.controlName] = control;
+    // a restarted server has new IDs for the buzzers of the box, and may have found the UDP buzzers in another order
+    if (this.rows.some(row => buzzers[row.buzzerIndex]?.id !== row.buzzer.id)) {
+      this.rows = [];
+      this.teamsFormGroup = new UntypedFormGroup({});
     }
-    this.teamsFormGroup = new UntypedFormGroup(controls);
+    buzzers.forEach((buzzer, buzzerIndex) => {
+      if (BuzzerHelper.getType(buzzer.id) !== this.buzzerType) {
+        return;
+      }
+      const team = teams.find(t => t.buzzerId === buzzer.id);
+      let row = this.rows.find(r => r.buzzerIndex === buzzerIndex);
+      if (row == null) {
+        const position = this.rows.length;
+        row = {buzzer, buzzerIndex, team, controlName: 'buzzer' + buzzerIndex};
+        this.rows.push(row);
+        const control = new UntypedFormControl(team?.name ?? 'Team ' + (position + 1), Validators.required);
+        if (team == null) {
+          control.disable();
+        }
+        this.teamsFormGroup.addControl(row.controlName, control);
+      }
+      row.buzzer = buzzer;
+      row.team = team;
+    });
   }
 
   public isActive(row: ITeamRow): boolean {
