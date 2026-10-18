@@ -56,7 +56,7 @@ export class GameImportComponent implements OnDestroy {
   }
 
   /**
-   * E.g. "12 Fragen", and for a bundle with a state "und ein Spielstand (3 Teams, bei Frage 4 von 12)"
+   * E.g. "12 Fragen", and for a bundle with a state "und ein Spielstand (3 Teams, Frage 4 von 12)"
    */
   public getBundleSummary(): string {
     const rounds = this.bundle.game.rounds;
@@ -67,7 +67,7 @@ export class GameImportComponent implements OnDestroy {
       return contents;
     }
     const progress = GameFormatHelper.describeProgress(GameFormatHelper.getProgress(rounds, state.gameState));
-    return `${contents} und ein Spielstand (${state.teams.length} Teams, bei ${progress})`;
+    return `${contents} und ein Spielstand (${state.teams.length} Teams, ${progress})`;
   }
 
   public getSanitizedName(): string {

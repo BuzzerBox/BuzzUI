@@ -72,7 +72,7 @@ describe('GameFormatHelper', () => {
     expect((migrated as unknown as {currentQuestionNumber?: number}).currentQuestionNumber).toBeUndefined();
     expect(migrated.currentRoundId).toBe(GameFormatHelper.LEGACY_ROUND_ID);
     expect(GameFormatHelper.getCurrentQuestion(rounds, migrated).text).toBe('C');
-    expect(GameFormatHelper.getProgress(rounds, migrated)).toEqual({roundNumber: 1, roundCount: 1, questionNumber: 3, questionCount: 3});
+    expect(GameFormatHelper.getProgress(rounds, migrated)).toEqual({roundNumber: 1, roundCount: 1, mode: 'classic', questionNumber: 3, questionCount: 3});
   });
 
   it('starts over what does not fit the rounds', () => {
@@ -86,8 +86,19 @@ describe('GameFormatHelper', () => {
   });
 
   it('describes where a game is', () => {
-    expect(GameFormatHelper.describeProgress({roundNumber: 1, roundCount: 1, questionNumber: 4, questionCount: 10})).toBe('Frage 4 von 10');
-    expect(GameFormatHelper.describeProgress({roundNumber: 2, roundCount: 3, questionNumber: 1, questionCount: 5})).toBe('Runde 2 von 3, Frage 1 von 5');
+    expect(GameFormatHelper.describeProgress({roundNumber: 1, roundCount: 1, mode: 'classic', questionNumber: 4, questionCount: 10})).toBe('Frage 4 von 10');
+    expect(GameFormatHelper.describeProgress({roundNumber: 2, roundCount: 3, mode: 'classic', questionNumber: 1, questionCount: 5})).toBe('Runde 2 von 3, Frage 1 von 5');
+    expect(GameFormatHelper.describeProgress({roundNumber: 1, roundCount: 2, mode: 'jeopardy', questionNumber: 3, questionCount: 4})).toBe('Runde 1 von 2, 3 von 4 Kacheln gespielt');
+    expect(GameFormatHelper.describeProgress({roundNumber: 2, roundCount: 2, mode: 'final', questionNumber: 1, questionCount: 1})).toBe('Runde 2 von 2, Finale');
+  });
+
+  it('counts the played tiles of a board as its progress', () => {
+    const board = GameFormatHelper.makeJeopardyRound('j', 'J', [100, 200], [
+      {name: 'A', questions: [question('A1', 'a1'), question('A2', 'a2')]},
+      {name: 'B', questions: [question('B1', 'b1'), question('B2', 'b2')]}
+    ]);
+    const state = gameState({currentRoundId: 'j', roundProgress: {j: {playedQuestionIds: ['a1', 'b2', 'a2'], openQuestionId: null, pickingTeamId: null}}});
+    expect(GameFormatHelper.getProgress([board], state)).toEqual({roundNumber: 1, roundCount: 1, mode: 'jeopardy', questionNumber: 3, questionCount: 4});
   });
 
   it('migrates bundles and old savegames when they are imported', () => {

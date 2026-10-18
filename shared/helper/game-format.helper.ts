@@ -1,7 +1,7 @@
 import {CURRENT_GAME_FORMAT_VERSION, IGameDefinition, IGameInstanceState} from '../interfaces/IGameDefinition';
 import {IGameState} from '../interfaces/IGameState';
 import {IQuestion} from '../interfaces/IQuestion';
-import {IClassicRound, IFinalRound, IGameProgress, IJeopardyCategory, IJeopardyRound, IRound, IRoundProgress} from '../interfaces/IRound';
+import {IClassicRound, IFinalRound, IGameProgress, IJeopardyCategory, IJeopardyRound, IJeopardyRoundProgress, IRound, IRoundProgress} from '../interfaces/IRound';
 import {RoundRulesHelper} from '../rules/round-rules.helper';
 
 /**
@@ -85,12 +85,36 @@ export class GameFormatHelper {
             const name = typeof round.name === 'string' && round.name.trim() !== '' ? round.name : this.makeRoundName(roundIndex);
             const withId: IRound = {...round, id, name};
             let questionIndex = 0;
-            return RoundRulesHelper.get(withId).mapQuestions(withId, question => {
+            // the IDs that changed in this round, by the one the question had first, unless a question of the round kept it
+            const renamed = new Map<string, string>();
+            const kept = new Set<string>();
+            const checked = RoundRulesHelper.get(withId).mapQuestions(withId, question => {
                 // the IDs of a version from before are their places, so they are the same every time it is loaded
                 const fallback = id === this.LEGACY_ROUND_ID ? `question-${++questionIndex}` : `${id}-question-${++questionIndex}`;
-                return {...question, id: makeUnique(question.id, fallback, questionIds)};
+                const unique = makeUnique(question.id, fallback, questionIds);
+                if (question.id === unique) {
+                    kept.add(unique);
+                } else if (typeof question.id === 'string' && !kept.has(question.id) && !renamed.has(question.id)) {
+                    renamed.set(question.id, unique);
+                }
+                return {...question, id: unique};
             });
+            return checked.mode === 'jeopardy' ? this.checkDailyDoubles(checked, renamed) : checked;
         });
+    }
+
+    /**
+     * The Daily Doubles of a board whose question IDs were made unique: they follow their questions, and those that
+     * aren't a question of the board are left out
+     */
+    private static checkDailyDoubles(round: IJeopardyRound, renamed: Map<string, string>): IJeopardyRound {
+        if (round.dailyDoubleQuestionIds == null) {
+            return round;
+        }
+        const ids = new Set(RoundRulesHelper.get(round).getQuestions(round).map(question => question.id));
+        const dailyDoubleQuestionIds = [...new Set(round.dailyDoubleQuestionIds.map(questionId => renamed.get(questionId) ?? questionId))]
+            .filter(questionId => ids.has(questionId));
+        return {...round, dailyDoubleQuestionIds};
     }
 
     private static isSupportedRound(round: unknown): boolean {
@@ -197,23 +221,35 @@ export class GameFormatHelper {
         const roundIndex = Math.max(0, this.getRoundIndex(rounds, gameState?.currentRoundId));
         const round = rounds[roundIndex];
         if (round == null) {
-            return {roundNumber: 1, roundCount: rounds.length, questionNumber: 1, questionCount: 0};
+            return {roundNumber: 1, roundCount: rounds.length, mode: 'classic', questionNumber: 1, questionCount: 0};
         }
         const rules = RoundRulesHelper.get(round);
         const progress = rules.completeProgress(round, gameState?.roundProgress?.[round.id]);
         return {
             roundNumber: roundIndex + 1,
             roundCount: rounds.length,
-            questionNumber: rules.getCurrentQuestionIndex(round, progress) + 1,
+            mode: round.mode,
+            // a board is played in any order, so how far it got is how many tiles are played
+            questionNumber: round.mode === 'jeopardy'
+                ? (progress as IJeopardyRoundProgress).playedQuestionIds.length
+                : rules.getCurrentQuestionIndex(round, progress) + 1,
             questionCount: rules.getQuestions(round).length
         };
     }
 
     /**
-     * E.g. "Runde 2 von 3, Frage 4 von 10", or just "Frage 4 von 10" for a game of one round
+     * E.g. "Runde 2 von 3, Frage 4 von 10", or just "Frage 4 von 10" for a game of one round; "4 von 25 Kacheln
+     * gespielt" on a Jeopardy board, "Finale" in the final
      */
     public static describeProgress(progress: IGameProgress): string {
-        const question = `Frage ${Math.min(progress.questionNumber, progress.questionCount)} von ${progress.questionCount}`;
-        return progress.roundCount > 1 ? `Runde ${progress.roundNumber} von ${progress.roundCount}, ${question}` : question;
+        let where: string;
+        if (progress.mode === 'jeopardy') {
+            where = `${progress.questionNumber} von ${progress.questionCount} Kacheln gespielt`;
+        } else if (progress.mode === 'final') {
+            where = 'Finale';
+        } else {
+            where = `Frage ${Math.min(progress.questionNumber, progress.questionCount)} von ${progress.questionCount}`;
+        }
+        return progress.roundCount > 1 ? `Runde ${progress.roundNumber} von ${progress.roundCount}, ${where}` : where;
     }
 }

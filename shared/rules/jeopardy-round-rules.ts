@@ -38,12 +38,16 @@ export class JeopardyRoundRules implements IRoundRules<IJeopardyRound, IJeopardy
         const ids = new Set(this.getQuestions(round).map(question => question.id));
         const played = Array.isArray(progress?.playedQuestionIds) ? progress.playedQuestionIds.filter(id => ids.has(id)) : [];
         const openQuestionId = ids.has(progress?.openQuestionId) ? progress.openQuestionId : null;
+        // states from before attemptQuestionId kept the wagers and lockouts of the open tile only
+        const attempt = progress?.attemptQuestionId !== undefined ? progress.attemptQuestionId : openQuestionId;
+        const attemptQuestionId = ids.has(attempt) && !played.includes(attempt) ? attempt : null;
         return {
             playedQuestionIds: [...new Set(played)],
             openQuestionId,
             pickingTeamId: typeof progress?.pickingTeamId === 'string' ? progress.pickingTeamId : null,
-            wagers: openQuestionId == null ? {} : WagerHelper.completeWagers(progress?.wagers),
-            lockedOutTeamIds: openQuestionId != null && Array.isArray(progress?.lockedOutTeamIds)
+            attemptQuestionId,
+            wagers: attemptQuestionId == null ? {} : WagerHelper.completeWagers(progress?.wagers),
+            lockedOutTeamIds: attemptQuestionId != null && Array.isArray(progress?.lockedOutTeamIds)
                 ? progress.lockedOutTeamIds.filter(id => typeof id === 'string') : []
         };
     }
@@ -96,18 +100,22 @@ export class JeopardyRoundRules implements IRoundRules<IJeopardyRound, IJeopardy
      * Whether the team answered the open tile wrong
      */
     public isLockedOut(progress: IJeopardyRoundProgress | undefined, teamId: string): boolean {
-        return (progress?.lockedOutTeamIds ?? []).includes(teamId);
+        return progress?.openQuestionId != null && progress.attemptQuestionId === progress.openQuestionId
+            && (progress.lockedOutTeamIds ?? []).includes(teamId);
     }
 
     /**
-     * Any team on an open tile; on a Daily Double only the team that picked it, once it wagered
+     * Any team on an open tile, except with one try per tile a team that answered it wrong already; on a Daily Double
+     * only the team that picked it, once it wagered
      */
-    public mayGrade(round: IJeopardyRound, progress: IJeopardyRoundProgress, teamId: string): boolean {
+    public mayGrade(round: IJeopardyRound, progress: IJeopardyRoundProgress, teamId: string, options: IPlayOptions): boolean {
         if (!this.isOpenAndUnplayed(progress)) {
             return false;
         }
-        return !this.isDailyDouble(round, progress.openQuestionId)
-            || (teamId === progress.pickingTeamId && progress.wagers?.[teamId] != null);
+        if (this.isDailyDouble(round, progress.openQuestionId)) {
+            return teamId === progress.pickingTeamId && progress.wagers?.[teamId] != null;
+        }
+        return !(options?.oneTryPerTile !== false && this.isLockedOut(progress, teamId));
     }
 
     public getGradePoints(round: IJeopardyRound, progress: IJeopardyRoundProgress, result: EGradeResults, teamId: string): number {
@@ -161,18 +169,25 @@ export class JeopardyRoundRules implements IRoundRules<IJeopardyRound, IJeopardy
     }
 
     /**
-     * Opens a tile, or closes the open one; null if the packet doesn't fit the board, e.g. opens a played tile
+     * Opens a tile, or closes the open one; null if the packet doesn't fit the board, e.g. opens a played tile. Going
+     * back to the board without closing the tile for good keeps its wager and lockouts for when it is opened again.
      */
     public applySelectQuestion(round: IJeopardyRound, progress: IJeopardyRoundProgress, packet: ISelectQuestionPacket): IJeopardyRoundProgress | null {
         if (packet.questionId == null) {
             const openId = progress.openQuestionId;
             const playedQuestionIds = packet.markPlayed && openId != null ? this.addPlayed(progress, openId) : progress.playedQuestionIds;
-            return {...progress, playedQuestionIds, openQuestionId: null, wagers: {}, lockedOutTeamIds: []};
+            const closed = {...progress, playedQuestionIds, openQuestionId: null};
+            return progress.attemptQuestionId != null && playedQuestionIds.includes(progress.attemptQuestionId)
+                ? {...closed, attemptQuestionId: null, wagers: {}, lockedOutTeamIds: []}
+                : closed;
         }
         if (this.getTile(round, packet.questionId) == null || this.isPlayed(progress, packet.questionId)) {
             return null;
         }
-        return {...progress, openQuestionId: packet.questionId, wagers: {}, lockedOutTeamIds: []};
+        if (packet.questionId === progress.attemptQuestionId) {
+            return {...progress, openQuestionId: packet.questionId};
+        }
+        return {...progress, openQuestionId: packet.questionId, attemptQuestionId: packet.questionId, wagers: {}, lockedOutTeamIds: []};
     }
 
     public applySetPickingTeam(progress: IJeopardyRoundProgress, teamId: string | null): IJeopardyRoundProgress {

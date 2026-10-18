@@ -54,7 +54,7 @@ export class ClassicRoundRules implements IRoundRules<IClassicRound, IClassicRou
         return true;
     }
 
-    public mayGrade(round: IClassicRound, progress: IClassicRoundProgress, teamId: string): boolean {
+    public mayGrade(round: IClassicRound, progress: IClassicRoundProgress, teamId: string, options: IPlayOptions): boolean {
         return true;
     }
 

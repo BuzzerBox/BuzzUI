@@ -469,7 +469,7 @@ export class GameService {
             return;
         }
         const rules = RoundRulesHelper.get(round);
-        if (!rules.mayGrade(round, this.getCurrentProgress(), team.teamId)) {
+        if (!rules.mayGrade(round, this.getCurrentProgress(), team.teamId, this.currentGameState.playOptions ?? {})) {
             LoggerService.warn(`The rules of the round don't let the answer of ${team.name} be graded now`);
             return;
         }

@@ -1,9 +1,18 @@
 <ng-template #roundEndActions>
+  <!-- stands out once the round is over, e.g. when every tile of the board is played -->
   @if (getFollowingRound(); as nextRound) {
-    <button mat-button class="large-controls" (click)="startNextRound()" [title]="'Weiter mit ' + nextRound.name">Nächste Runde</button>
+    @if (isRoundOver()) {
+      <button mat-raised-button color="primary" class="large-controls" (click)="startNextRound()" [title]="'Weiter mit ' + nextRound.name">Nächste Runde</button>
+    } @else {
+      <button mat-button class="large-controls" (click)="startNextRound()" [title]="'Weiter mit ' + nextRound.name">Nächste Runde</button>
+    }
   } @else {
     <!-- after the last question, the game ends here instead -->
-    <button mat-button class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+    @if (isRoundOver()) {
+      <button mat-raised-button color="primary" class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+    } @else {
+      <button mat-button class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+    }
   }
 </ng-template>
 

@@ -739,6 +739,20 @@ export class GameService implements OnDestroy {
   }
 
   /**
+   * Whether the round is done by its rules, see IRoundRules.isOver; the final once every team is graded
+   */
+  public isCurrentRoundOver(): boolean {
+    const round = this.getCurrentRound();
+    if (!round) {
+      return false;
+    }
+    if (round.mode === 'final') {
+      return (this.teams ?? []).every(team => this.getFinalGradeResult(team.teamId) != null);
+    }
+    return RoundRulesHelper.get(round).isOver(round, this.getCurrentProgress());
+  }
+
+  /**
    * The round after the current one, also before the current one is over; undefined after the last round
    */
   public getFollowingRound(): IRound | undefined {
@@ -952,7 +966,7 @@ export class GameService implements OnDestroy {
 
   public mayGrade(teamId: string): boolean {
     const round = this.getCurrentRound();
-    return !!round && RoundRulesHelper.get(round).mayGrade(round, this.getCurrentProgress(), teamId);
+    return !!round && RoundRulesHelper.get(round).mayGrade(round, this.getCurrentProgress(), teamId, this.currentGameState?.playOptions ?? {});
   }
 
   /**

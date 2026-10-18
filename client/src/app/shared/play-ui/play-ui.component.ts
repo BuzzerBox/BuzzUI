@@ -113,6 +113,10 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     return this.game.getFollowingRound();
   }
 
+  public isRoundOver(): boolean {
+    return this.game.isCurrentRoundOver();
+  }
+
   public isJeopardyRound(): boolean {
     return this.game.getCurrentJeopardyRound() != null;
   }

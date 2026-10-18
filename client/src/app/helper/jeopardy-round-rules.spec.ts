@@ -11,7 +11,7 @@ describe('JeopardyRoundRules', () => {
   const open = (id: string, progress = start()) => rules.applySelectQuestion(round, progress, PacketHelper.makeSelectQuestionPacket(id));
 
   it('starts with the board and nobody picking', () => {
-    expect(start()).toEqual({playedQuestionIds: [], openQuestionId: null, pickingTeamId: null, wagers: {}, lockedOutTeamIds: []});
+    expect(start()).toEqual({playedQuestionIds: [], openQuestionId: null, pickingTeamId: null, attemptQuestionId: null, wagers: {}, lockedOutTeamIds: []});
     expect(rules.getCurrentQuestion(round, start())).toBeUndefined();
     expect(rules.mayBuzz(round, start(), 'a', {})).toBeFalse();
   });
@@ -30,8 +30,8 @@ describe('JeopardyRoundRules', () => {
     const afterWrong = rules.afterGrade(round, open('g1'), 'a', EGradeResults.WRONG);
     expect(afterWrong.playedQuestionIds).toEqual([]);
     const afterCorrect = rules.afterGrade(round, afterWrong, 'b', EGradeResults.CORRECT);
-    expect(afterCorrect).toEqual({playedQuestionIds: ['g1'], openQuestionId: 'g1', pickingTeamId: 'b', wagers: {}, lockedOutTeamIds: ['a']});
-    expect(rules.mayGrade(round, afterCorrect, 'a')).toBeFalse();
+    expect(afterCorrect).toEqual({playedQuestionIds: ['g1'], openQuestionId: 'g1', pickingTeamId: 'b', attemptQuestionId: 'g1', wagers: {}, lockedOutTeamIds: ['a']});
+    expect(rules.mayGrade(round, afterCorrect, 'a', {})).toBeFalse();
     // shown until the master goes back, but nobody buzzes any more
     expect(rules.mayBuzz(round, afterCorrect, 'a', {})).toBeFalse();
     const board = rules.applySelectQuestion(round, afterCorrect, PacketHelper.makeSelectQuestionPacket(null));
@@ -50,6 +50,30 @@ describe('JeopardyRoundRules', () => {
     const next = rules.applySelectQuestion(round, rules.applySelectQuestion(round, wrong, PacketHelper.makeSelectQuestionPacket(null)),
       PacketHelper.makeSelectQuestionPacket('m1'));
     expect(rules.mayBuzz(round, next, 'a', {})).toBeTrue();
+  });
+
+  it('keeps the lockouts of a tile the master goes back from, until another tile is opened', () => {
+    const wrong = rules.afterGrade(round, open('g2'), 'a', EGradeResults.WRONG);
+    const back = rules.applySelectQuestion(round, wrong, PacketHelper.makeSelectQuestionPacket(null, false));
+    const reopened = rules.applySelectQuestion(round, back, PacketHelper.makeSelectQuestionPacket('g2'));
+    expect(rules.mayBuzz(round, reopened, 'a', {})).toBeFalse();
+    expect(rules.mayGrade(round, reopened, 'a', {})).toBeFalse();
+    expect(rules.mayBuzz(round, reopened, 'b', {})).toBeTrue();
+    // a state saved while the board was shown keeps them too
+    expect(rules.mayBuzz(round, rules.applySelectQuestion(round, rules.completeProgress(round, back),
+      PacketHelper.makeSelectQuestionPacket('g2')), 'a', {})).toBeFalse();
+    const other = rules.applySelectQuestion(round, back, PacketHelper.makeSelectQuestionPacket('m1'));
+    expect(rules.mayBuzz(round, other, 'a', {})).toBeTrue();
+    // closed for good, nothing is left of them
+    const closed = rules.applySelectQuestion(round, reopened, PacketHelper.makeSelectQuestionPacket(null, true));
+    expect(closed).toEqual(jasmine.objectContaining({attemptQuestionId: null, lockedOutTeamIds: []}));
+  });
+
+  it("doesn't grade a team again that answered the tile wrong, unless the play allows another try", () => {
+    const wrong = rules.afterGrade(round, open('g2'), 'a', EGradeResults.WRONG);
+    expect(rules.mayGrade(round, wrong, 'a', {})).toBeFalse();
+    expect(rules.mayGrade(round, wrong, 'a', {oneTryPerTile: false})).toBeTrue();
+    expect(rules.mayGrade(round, wrong, 'b', {})).toBeTrue();
   });
 
   it('closes a tile without points, or keeps it for later', () => {
@@ -72,8 +96,21 @@ describe('JeopardyRoundRules', () => {
 
   it('keeps what a state saved only if it fits the board', () => {
     expect(rules.completeProgress(round, {playedQuestionIds: ['g1', 'x', 'g1'], openQuestionId: 'x', pickingTeamId: 'a'}))
-      .toEqual({playedQuestionIds: ['g1'], openQuestionId: null, pickingTeamId: 'a', wagers: {}, lockedOutTeamIds: []});
+      .toEqual({playedQuestionIds: ['g1'], openQuestionId: null, pickingTeamId: 'a', attemptQuestionId: null, wagers: {}, lockedOutTeamIds: []});
     expect(rules.applySetPickingTeam(start(), 'c').pickingTeamId).toBe('c');
+  });
+
+  it('keeps Daily Doubles on their tiles when question IDs are made unique', () => {
+    const first = GameFormatHelper.makeClassicRound('c', 'Klassisch', [question('m1')]);
+    const board = {...round, dailyDoubleQuestionIds: ['m1', 'gone']};
+    const checked = GameFormatHelper.checkRounds([first, board])[1] as IJeopardyRound;
+    // m1 is taken by the classic round, so the tile gets another ID, and the Daily Double follows it
+    const renamedId = checked.categories[1].questions[0].id;
+    expect(renamedId).not.toBe('m1');
+    expect(checked.dailyDoubleQuestionIds).toEqual([renamedId]);
+    // a question of the board that kept a doubled ID keeps the Daily Double
+    const doubled = {...round, categories: [{name: 'A', questions: [question('x'), question('x')]}], dailyDoubleQuestionIds: ['x']};
+    expect((GameFormatHelper.checkRounds([doubled])[0] as IJeopardyRound).dailyDoubleQuestionIds).toEqual(['x']);
   });
 
   it('is read from files only with a question for every value of every category', () => {
@@ -93,11 +130,11 @@ describe('JeopardyRoundRules', () => {
     it('is answered by the team that picked it, after it wagered', () => {
       const progress = opened();
       expect(rules.mayBuzz(board, progress, 'a', {})).toBeFalse();
-      expect(rules.mayGrade(board, progress, 'a')).toBeFalse();
+      expect(rules.mayGrade(board, progress, 'a', {})).toBeFalse();
       const wagered = rules.applySetWager(board, progress, 'a', 150, 50);
       expect(wagered.wagers).toEqual({a: 150});
-      expect(rules.mayGrade(board, wagered, 'a')).toBeTrue();
-      expect(rules.mayGrade(board, wagered, 'b')).toBeFalse();
+      expect(rules.mayGrade(board, wagered, 'a', {})).toBeTrue();
+      expect(rules.mayGrade(board, wagered, 'b', {})).toBeFalse();
       expect(rules.getGradePoints(board, wagered, EGradeResults.CORRECT, 'a')).toBe(150);
       expect(rules.getGradePoints(board, wagered, EGradeResults.WRONG, 'a')).toBe(-150);
       // a wrong answer closes it too, and the team picks again
@@ -116,9 +153,11 @@ describe('JeopardyRoundRules', () => {
       expect(rules.applySetWager(board, open('g1'), 'a', 100, 50)).toBeNull();
     });
 
-    it('forgets the wager when the board is shown again', () => {
+    it('keeps the wager when the master goes back to the board, and forgets it for another tile', () => {
       const wagered = rules.applySetWager(board, opened(), 'a', 100, 50);
-      expect(rules.applySelectQuestion(board, wagered, PacketHelper.makeSelectQuestionPacket(null)).wagers).toEqual({});
+      const back = rules.applySelectQuestion(board, wagered, PacketHelper.makeSelectQuestionPacket(null));
+      expect(rules.applySelectQuestion(board, back, PacketHelper.makeSelectQuestionPacket('m1')).wagers).toEqual({a: 100});
+      expect(rules.applySelectQuestion(board, back, PacketHelper.makeSelectQuestionPacket('g1')).wagers).toEqual({});
     });
   });
 });
@@ -143,14 +182,14 @@ describe('FinalRoundRules', () => {
     progress = rules.applySetWager(final, progress, 'b', 900, 400);
     expect(progress.wagers).toEqual({a: 300, b: 400});
     expect(rules.applySetWager(final, progress, 'c', 50, -20).wagers.c).toBe(0);
-    expect(rules.mayGrade(final, progress, 'a')).toBeFalse();
+    expect(rules.mayGrade(final, progress, 'a', {})).toBeFalse();
     progress = rules.applySelectQuestion(final, progress, PacketHelper.makeSelectQuestionPacket('q'));
     expect(rules.mayBuzz(final, progress, 'a', {})).toBeFalse();
     expect(rules.getGradePoints(final, progress, EGradeResults.CORRECT, 'a')).toBe(300);
     expect(rules.getGradePoints(final, progress, EGradeResults.WRONG, 'b')).toBe(-400);
     progress = rules.afterGrade(final, progress, 'a', EGradeResults.CORRECT);
-    expect(rules.mayGrade(final, progress, 'a')).toBeFalse();
-    expect(rules.mayGrade(final, progress, 'b')).toBeTrue();
+    expect(rules.mayGrade(final, progress, 'a', {})).toBeFalse();
+    expect(rules.mayGrade(final, progress, 'b', {})).toBeTrue();
   });
 
   it('is read from files with its category and question', () => {

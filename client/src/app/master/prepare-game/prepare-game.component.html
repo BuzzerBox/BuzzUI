@@ -53,7 +53,7 @@
         <mat-slide-toggle [(ngModel)]="oneTryPerTile">Ein Versuch pro Kachel</mat-slide-toggle>
         <p class="hint">{{oneTryPerTile ? 'Ein Team, das eine Kachel falsch beantwortet, kann bei ihr nicht mehr buzzern.' : 'Nach einer falschen Antwort dürfen alle Teams wieder buzzern, auch das Team, das falsch lag.'}}</p>
         @if (!isContinuing()) {
-          <p class="label">Wer wählt die erste Kachel?</p>
+          <p class="label">Wer wählt die erste Kachel{{hasSeveralJeopardyRounds() ? ' der ersten Jeopardy-Runde' : ''}}?</p>
           <mat-radio-group class="first-pick" [(ngModel)]="firstPickingBuzzerIndex" aria-label="Wer wählt die erste Kachel?">
             <mat-radio-button [value]="null">Auf dem Spielbrett wählen</mat-radio-button>
             @for (row of getActiveRows(); track row.buzzerIndex) {

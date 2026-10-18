@@ -131,6 +131,10 @@ export class PrepareGameComponent implements OnInit {
     return this.definition?.rounds.some(round => round.mode === 'jeopardy') ?? false;
   }
 
+  public hasSeveralJeopardyRounds(): boolean {
+    return (this.definition?.rounds.filter(round => round.mode === 'jeopardy').length ?? 0) > 1;
+  }
+
   public getPlayOptions(): IPlayOptions {
     return {oneTryPerTile: this.oneTryPerTile};
   }
@@ -147,14 +151,14 @@ export class PrepareGameComponent implements OnInit {
   }
 
   /**
-   * A new play starts with the chosen team picking in every Jeopardy round; the master can change it on the board
+   * A new play starts with the chosen team picking in the first Jeopardy round; who starts a later one is chosen on its
+   * board, and the master can change it
    */
-  private makeFirstPicksState(teamId: string): IGameState {
+  private makeFirstPickState(teamId: string): IGameState {
     const roundProgress: IGameState['roundProgress'] = {};
-    for (const round of this.definition.rounds) {
-      if (round.mode === 'jeopardy') {
-        roundProgress[round.id] = {pickingTeamId: teamId} as IJeopardyRoundProgress;
-      }
+    const firstBoard = this.definition.rounds.find(round => round.mode === 'jeopardy');
+    if (firstBoard) {
+      roundProgress[firstBoard.id] = {pickingTeamId: teamId} as IJeopardyRoundProgress;
     }
     return GameFormatHelper.completeGameState({...GameService.makeInitialGameState(), roundProgress}, this.definition.rounds);
   }
@@ -198,6 +202,10 @@ export class PrepareGameComponent implements OnInit {
       control.enable();
     } else {
       control.disable();
+      // a team that doesn't play can't pick first, so the board decides again
+      if (this.firstPickingBuzzerIndex === row.buzzerIndex) {
+        this.firstPickingBuzzerIndex = null;
+      }
     }
   }
 
@@ -218,9 +226,9 @@ export class PrepareGameComponent implements OnInit {
       const rounds = this.definition.rounds.length;
       return rounds > 1 ? `${rounds} Runden, ${this.getQuestionCount()} Fragen` : `${this.getQuestionCount()} Fragen`;
     }
-    // e.g. "bei Frage 4 von 10"
+    // e.g. "Weiter: Frage 4 von 10"
     const progress = GameFormatHelper.describeProgress(GameFormatHelper.getProgress(this.definition.rounds, this.state.gameState));
-    return `${this.state.finished ? 'Beendet' : 'Weiter'} bei ${progress}`;
+    return `${this.state.finished ? 'Beendet' : 'Weiter'}: ${progress}`;
   }
 
   public canStart(): boolean {
@@ -258,7 +266,7 @@ export class PrepareGameComponent implements OnInit {
     } else if (this.hasJeopardyRound() && this.firstPickingBuzzerIndex != null) {
       const firstPicking = teams.find(team => team.buzzerIndex === this.firstPickingBuzzerIndex);
       if (firstPicking) {
-        gameState = this.makeFirstPicksState(firstPicking.teamId);
+        gameState = this.makeFirstPickState(firstPicking.teamId);
       }
     }
     // the questions without their own config start as the game's defaults for their media say

@@ -94,11 +94,17 @@ export interface IJeopardyRoundProgress {
      */
     pickingTeamId: string | null;
     /**
-     * The wager on the open Daily Double, by team ID; empty for other tiles and while the board is shown
+     * The tile that wagers and lockedOutTeamIds belong to: the one opened last, unless it was closed for good. Going back
+     * to the board keeps them, so opening the tile again goes on where it was.
+     */
+    attemptQuestionId: string | null;
+    /**
+     * The wager on the Daily Double of attemptQuestionId, by team ID; empty for other tiles
      */
     wagers: Record<string, number>;
     /**
-     * The teams that answered the open tile wrong; with IPlayOptions.oneTryPerTile they can't buzz on it again
+     * The teams that answered the tile of attemptQuestionId wrong; with IPlayOptions.oneTryPerTile they can't buzz on it
+     * again, and can't be graded on it again
      */
     lockedOutTeamIds: string[];
 }
@@ -143,7 +149,11 @@ export interface IGameProgress {
     roundNumber: number;
     roundCount: number;
     /**
-     * Within the round
+     * Of the current round
+     */
+    mode: TRoundMode;
+    /**
+     * Within the round: the question that is shown, or on a Jeopardy board how many tiles are played
      */
     questionNumber: number;
     /**

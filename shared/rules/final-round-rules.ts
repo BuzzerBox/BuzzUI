@@ -73,7 +73,7 @@ export class FinalRoundRules implements IRoundRules<IFinalRound, IFinalRoundProg
     /**
      * Every team once, after the question was shown
      */
-    public mayGrade(round: IFinalRound, progress: IFinalRoundProgress, teamId: string): boolean {
+    public mayGrade(round: IFinalRound, progress: IFinalRoundProgress, teamId: string, options: IPlayOptions): boolean {
         return !!progress?.questionShown && progress.gradeResults?.[teamId] == null;
     }
 

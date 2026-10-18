@@ -60,7 +60,7 @@ export interface IRoundRules<R extends IRound = IRound, P extends IRoundProgress
     /**
      * Whether the master may grade the answer of the team now, e.g. not twice in the final
      */
-    mayGrade(round: R, progress: P, teamId: string): boolean;
+    mayGrade(round: R, progress: P, teamId: string, options: IPlayOptions): boolean;
 
     /**
      * What a graded answer of the team adds to its points; negative for a wrong one
