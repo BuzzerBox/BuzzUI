@@ -1,4 +1,5 @@
-import {IGamePacket, EPacketTypes, IAnswer} from '../shared';
+import {IAnswer} from './IAnswer';
+import {IPlayOptions, IRoundProgress} from './IRound';
 import {IMediaQuestionState} from "./IMediaQuestionState";
 import {IMediaVolume} from "./IMediaVolume";
 
@@ -17,7 +18,15 @@ import {IMediaVolume} from "./IMediaVolume";
 export const CURRENT_SAVEGAME_VERSION = 3;
 
 export interface IGameState {
-    currentQuestionNumber: number;
+    /**
+     * The round that is played, see IRound.id
+     */
+    currentRoundId: string;
+    /**
+     * How far each round got, by IRound.id, so going back to a round continues it. States saved before rounds existed
+     * had currentQuestionNumber instead, see GameFormatHelper.migrateGameState.
+     */
+    roundProgress: Record<string, IRoundProgress>;
     markedTeamIds: string[];
     loggedAnswers: IAnswer[];
     // the answers of the current question that were revealed; missing in savegames from before it was tracked
@@ -30,4 +39,9 @@ export interface IGameState {
      * before themes existed, and an unknown one (e.g. from a newer version), means the default theme.
      */
     themeId?: string;
+    /**
+     * How this play goes, chosen when the game is set up like themeId; missing in states from before they existed,
+     * which play with the defaults
+     */
+    playOptions?: IPlayOptions;
 }

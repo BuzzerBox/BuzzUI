@@ -12,7 +12,8 @@ import {
   IGameInfo,
   IGameInstanceState,
   IGameVersionInfo,
-  IQuestion,
+  IRound,
+  GameFormatHelper,
   IStorageEntry,
   IStorageFolder,
   IStorageLocation,
@@ -115,10 +116,10 @@ export class StorageService {
   }
 
   /**
-   * The questions of a game version as they are played: with the URLs of their media
+   * The rounds of a game version as they are played: with the URLs of the media of their questions
    */
-  public static resolveMediaUrls(ref: IGameRef, questions: IQuestion[]): IQuestion[] {
-    return questions.map(question => {
+  public static resolveMediaUrls(ref: IGameRef, rounds: IRound[]): IRound[] {
+    return GameFormatHelper.mapQuestions(rounds, question => {
       if (!question.mediaDetails?.fileSrc) {
         return question;
       }
@@ -214,10 +215,10 @@ export class StorageService {
   }
 
   /**
-   * Saves the questions and media defaults as a new version, unless they are the same as in the latest one
+   * Saves the rounds and media defaults as a new version, unless they are the same as in the latest one
    */
-  public saveVersion(ref: IGameRef, questions: IQuestion[], mediaDefaults: IMediaQuestionDefaults): Promise<IGameVersionInfo & {unchanged: boolean}> {
-    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {questions, mediaDefaults}, {headers: this.headers()}).toPromise();
+  public saveVersion(ref: IGameRef, rounds: IRound[], mediaDefaults: IMediaQuestionDefaults): Promise<IGameVersionInfo & {unchanged: boolean}> {
+    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {rounds, mediaDefaults}, {headers: this.headers()}).toPromise();
   }
 
   public deleteVersion(ref: IGameRef, version: number): Promise<void> {

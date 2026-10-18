@@ -92,7 +92,9 @@
     "address": "/dev/ttyS0",
     "commands": {
       "softRelease": 1,
-      "setBuzzer": 2
+      "setBuzzer": 2,
+      "disableBuzzer": 3,
+      "enableAllBuzzers": 4
     },
     "stuffingBit": 0,
     "eol": 255,

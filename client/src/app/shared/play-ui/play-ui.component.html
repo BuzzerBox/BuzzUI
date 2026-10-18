@@ -1,3 +1,21 @@
+<ng-template #roundEndActions>
+  <!-- stands out once the round is over, e.g. when every tile of the board is played -->
+  @if (getFollowingRound(); as nextRound) {
+    @if (isRoundOver()) {
+      <button mat-raised-button color="primary" class="large-controls" (click)="startNextRound()" [title]="'Weiter mit ' + nextRound.name">Nächste Runde</button>
+    } @else {
+      <button mat-button class="large-controls" (click)="startNextRound()" [title]="'Weiter mit ' + nextRound.name">Nächste Runde</button>
+    }
+  } @else {
+    <!-- after the last question, the game ends here instead -->
+    @if (isRoundOver()) {
+      <button mat-raised-button color="primary" class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+    } @else {
+      <button mat-button class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+    }
+  }
+</ng-template>
+
 <div class="play-container" [class.below-toolbar]="isMaster">
   @if (!isGameOver) {
     <div class="teams-left-pane">
@@ -15,23 +33,86 @@
         }
       }
       <div class="parent">
-        <mat-card class="question">
-          <app-question-pane [question]="currentQuestion" [isMaster]="isMaster"></app-question-pane>
-          @if (isMaster) {
-            <mat-card-actions class="master-actions">
-              <button mat-button class="large-controls" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage">Vorherige Frage</button>
-              <span class="spacer"></span>
-              <app-buzzer-lock></app-buzzer-lock>
-              <span class="spacer"></span>
-              @if (hasNextQuestion()) {
-                <button mat-button class="large-controls" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
-              } @else {
-                <!-- after the last question, the game ends here instead -->
-                <button mat-button class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+        @if (isWagerStage()) {
+          <mat-card class="question wager">
+            <app-wager-panel [isMaster]="isMaster" (questionShown)="currentQuestion = $event"></app-wager-panel>
+            @if (isMaster && isJeopardyRound()) {
+              <mat-card-actions class="master-actions">
+                <button mat-button class="large-controls" (click)="closeTile(false)" title="Zeige wieder das Spielbrett; die Kachel bleibt offen">Zurück</button>
+              </mat-card-actions>
+            }
+          </mat-card>
+        } @else if (isFinalRound()) {
+          @for (question of [currentQuestion]; track question?.id) {
+            <mat-card class="question tile-open">
+              <app-question-pane [question]="question" [isMaster]="isMaster"></app-question-pane>
+              @if (isMaster) {
+                <app-wager-grading></app-wager-grading>
+                <mat-card-actions class="master-actions">
+                  <span class="spacer"></span>
+                  <ng-container *ngTemplateOutlet="roundEndActions"></ng-container>
+                </mat-card-actions>
               }
-            </mat-card-actions>
+            </mat-card>
           }
-        </mat-card>
+        } @else if (isJeopardyRound()) {
+          @if (isBoardShown()) {
+            <mat-card class="question board">
+              <app-jeopardy-board [isMaster]="isMaster" (tileOpened)="currentQuestion = $event"></app-jeopardy-board>
+              @if (isMaster) {
+                <mat-card-actions class="master-actions">
+                  <span class="spacer"></span>
+                  <ng-container *ngTemplateOutlet="roundEndActions"></ng-container>
+                </mat-card-actions>
+              }
+            </mat-card>
+          } @else {
+            <!-- one card per tile, so it opens with its animation -->
+            @for (question of [currentQuestion]; track question?.id) {
+              <mat-card class="question tile-open">
+                <app-question-pane [question]="question" [isMaster]="isMaster"></app-question-pane>
+                @if (isMaster) {
+                  @if (isDailyDouble()) {
+                    <app-wager-grading></app-wager-grading>
+                  }
+                  <mat-card-actions class="master-actions">
+                    @if (isOpenTilePlayed()) {
+                      <button mat-button class="large-controls" (click)="closeTile(false)" title="Zeige wieder das Spielbrett">Zum Spielbrett</button>
+                    } @else {
+                      <button mat-button class="large-controls" (click)="closeTile(false)" title="Zeige wieder das Spielbrett; die Kachel bleibt offen">Zurück</button>
+                    }
+                    <span class="spacer"></span>
+                    <!-- nobody buzzes on a Daily Double -->
+                    @if (!isDailyDouble()) {
+                      <app-buzzer-lock></app-buzzer-lock>
+                    }
+                    <span class="spacer"></span>
+                    @if (!isOpenTilePlayed()) {
+                      <button mat-button class="large-controls" (click)="closeTile(true)" title="Niemand wusste es: Kachel ohne Punkte schließen">Ohne Punkte schließen</button>
+                    }
+                  </mat-card-actions>
+                }
+              </mat-card>
+            }
+          }
+        } @else {
+          <mat-card class="question">
+            <app-question-pane [question]="currentQuestion" [isMaster]="isMaster"></app-question-pane>
+            @if (isMaster) {
+              <mat-card-actions class="master-actions">
+                <button mat-button class="large-controls" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage">Vorherige Frage</button>
+                <span class="spacer"></span>
+                <app-buzzer-lock></app-buzzer-lock>
+                <span class="spacer"></span>
+                @if (hasNextQuestion()) {
+                  <button mat-button class="large-controls" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
+                } @else {
+                  <ng-container *ngTemplateOutlet="roundEndActions"></ng-container>
+                }
+              </mat-card-actions>
+            }
+          </mat-card>
+        }
       </div>
     </div>
     <div class="teams-right-pane">

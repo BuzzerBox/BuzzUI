@@ -1,6 +1,11 @@
 import {IAnswer, IMediaDetails, IMediaQuestionState} from '../shared';
 
 export interface IQuestion {
+    /**
+     * Stable within the game, so a state remembers questions by it rather than by their place. Versions saved before
+     * it existed get one when they are loaded, see GameFormatHelper.
+     */
+    id: string;
     text: string;
     answers: IAnswer[];
     show: boolean;

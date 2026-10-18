@@ -47,6 +47,23 @@
       <p class="warning">Es müssen mindestens {{MIN_TEAMS}} Teams spielen.</p>
     }
 
+    @if (hasJeopardyRound()) {
+      <h2>Jeopardy</h2>
+      <div class="play-options">
+        <mat-slide-toggle [(ngModel)]="oneTryPerTile">Ein Versuch pro Kachel</mat-slide-toggle>
+        <p class="hint">{{oneTryPerTile ? 'Ein Team, das eine Kachel falsch beantwortet, kann bei ihr nicht mehr buzzern.' : 'Nach einer falschen Antwort dürfen alle Teams wieder buzzern, auch das Team, das falsch lag.'}}</p>
+        @if (!isContinuing()) {
+          <p class="label">Wer wählt die erste Kachel{{hasSeveralJeopardyRounds() ? ' der ersten Jeopardy-Runde' : ''}}?</p>
+          <mat-radio-group class="first-pick" [(ngModel)]="firstPickingBuzzerIndex" aria-label="Wer wählt die erste Kachel?">
+            <mat-radio-button [value]="null">Auf dem Spielbrett wählen</mat-radio-button>
+            @for (row of getActiveRows(); track row.buzzerIndex) {
+              <mat-radio-button [value]="row.buzzerIndex">{{getTeamName(row)}}</mat-radio-button>
+            }
+          </mat-radio-group>
+        }
+      </div>
+    }
+
     <h2>Aussehen der Anzeige</h2>
     <div class="themes" role="radiogroup" aria-label="Aussehen der Anzeige">
       @for (theme of themes; track theme.id) {
@@ -74,15 +91,15 @@
       }
     </div>
 
-    @if (definition.questions.length === 0) {
+    @if (getQuestionCount() === 0) {
       <p class="warning">Diese Version hat keine Fragen.</p>
     }
     @if (missingMedia.length > 0) {
       <div class="missing-media" role="alert">
         <p class="missing-title"><mat-icon>warning</mat-icon>Diese Medien fehlen im Spiel, die Fragen zeigen dann nichts an:</p>
         <ul>
-          @for (media of missingMedia; track media.questionNumber + '/' + media.path) {
-            <li>Frage {{media.questionNumber}}: <code>{{media.path}}</code></li>
+          @for (media of missingMedia; track media.roundNumber + '/' + media.questionNumber + '/' + media.path) {
+            <li>Frage {{getQuestionLabel(media)}}: <code>{{media.path}}</code></li>
           }
         </ul>
         <p>Lade sie in „Spiele verwalten“ in die Medien des Spiels hoch, oder leite eine neue Version ohne sie ab.</p>

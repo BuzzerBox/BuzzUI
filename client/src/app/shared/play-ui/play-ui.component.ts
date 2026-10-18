@@ -3,6 +3,7 @@ import {GameService} from '../../services/game.service';
 import {
   ITeam,
   IQuestion,
+  IRound,
   IEndGamePacket,
   IMarkTeamPacket
 } from '../../../../../shared/shared';
@@ -106,6 +107,51 @@ export class PlayUiComponent implements OnInit, OnDestroy {
 
   public hasNextQuestion(): boolean {
     return this.game.hasNextQuestion();
+  }
+
+  public getFollowingRound(): IRound | undefined {
+    return this.game.getFollowingRound();
+  }
+
+  public isRoundOver(): boolean {
+    return this.game.isCurrentRoundOver();
+  }
+
+  public isJeopardyRound(): boolean {
+    return this.game.getCurrentJeopardyRound() != null;
+  }
+
+  public isFinalRound(): boolean {
+    return this.game.getCurrentFinalRound() != null;
+  }
+
+  public isWagerStage(): boolean {
+    return this.game.isWagerStage();
+  }
+
+  public isDailyDouble(): boolean {
+    return this.game.isOpenTileDailyDouble();
+  }
+
+  public isBoardShown(): boolean {
+    return this.game.isBoardShown();
+  }
+
+  /**
+   * Whether the open tile was answered correctly, so it is closed once the master goes back to the board
+   */
+  public isOpenTilePlayed(): boolean {
+    const tile = this.game.getOpenTile();
+    return tile != null && this.game.isQuestionPlayed(tile.question.id);
+  }
+
+  public closeTile(markPlayed: boolean): void {
+    this.game.closeTile(markPlayed);
+    this.currentQuestion = this.game.getCurrentQuestion();
+  }
+
+  public startNextRound(): void {
+    this.currentQuestion = this.game.startNextRound();
   }
 
   public endGame(): void {

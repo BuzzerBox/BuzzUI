@@ -5,6 +5,9 @@
   }
   <mat-card-header>
     <mat-card-title>{{getName()}}</mat-card-title>
+    @if (isLockedOut) {
+      <mat-card-subtitle class="locked-out-label">gesperrt</mat-card-subtitle>
+    }
   </mat-card-header>
   <mat-card-content>
     <p>

@@ -9,6 +9,7 @@ import * as tar from 'tar';
 import {
     CURRENT_GAME_FORMAT_VERSION,
     FileExtensionsService,
+    GameFormatHelper,
     IDirectoryTree,
     IGameBundle,
     IGameCopyResult,
@@ -21,6 +22,7 @@ import {
     IGameVersionInfo,
     IMediaQuestionDefaults,
     IQuestion,
+    IRound,
     IStorageEntry,
     IStorageFolder,
     IStorageLocation,
@@ -310,17 +312,26 @@ export class StorageService {
 
     private async getGameInfo(resolved: IResolvedLocation, gameName: string): Promise<IGameInfo> {
         const dirs = this.getGameDirectories(resolved, gameName);
+        const definitions = new Map<number, IGameDefinition>();
+        for (const version of await this.listVersionNumbers(dirs.versions)) {
+            const definition = await this.readDefinitionOrNull(dirs, version);
+            if (definition != null) {
+                definitions.set(version, definition);
+            }
+        }
         const states: IGameStateInfo[] = [];
         for (const name of await this.listJsonNames(dirs.states)) {
             const state = await this.readJsonOrNull<IGameInstanceState>(path.join(dirs.states, name + StorageApiHelper.JSON_EXTENSION));
             if (state != null) {
+                const definition = definitions.get(state.gameVersion);
                 states.push({
                     name,
                     gameVersion: state.gameVersion,
                     createdAt: state.createdAt,
                     updatedAt: state.updatedAt,
                     finished: !!state.finished,
-                    currentQuestionNumber: state.gameState?.currentQuestionNumber ?? 0,
+                    progress: definition == null ? null : GameFormatHelper.getProgress(definition.rounds,
+                        state.gameState == null ? null : GameFormatHelper.migrateGameState(state.gameState, definition.rounds)),
                     teams: (state.teams ?? []).map(team => ({name: team.name, points: team.points ?? 0}))
                 });
             }
@@ -328,17 +339,15 @@ export class StorageService {
         const versions: IGameVersionInfo[] = [];
         // walked only once a version shows media, which keeps listing many games on a slow stick quick
         let existingMedia: Set<string> | undefined;
-        for (const version of await this.listVersionNumbers(dirs.versions)) {
-            const definition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, version));
-            if (definition != null) {
-                versions.push({
-                    version,
-                    savedAt: definition.savedAt,
-                    questionCount: definition.questions?.length ?? 0,
-                    missingMediaCount: await this.countMissingMedia(definition, dirs, () => existingMedia, paths => existingMedia = paths),
-                    stateCount: states.filter(state => state.gameVersion === version).length
-                });
-            }
+        for (const [version, definition] of definitions) {
+            versions.push({
+                version,
+                savedAt: definition.savedAt,
+                questionCount: GameFormatHelper.getAllQuestions(definition.rounds).length,
+                roundCount: definition.rounds.length,
+                missingMediaCount: await this.countMissingMedia(definition, dirs, () => existingMedia, paths => existingMedia = paths),
+                stateCount: states.filter(state => state.gameVersion === version).length
+            });
         }
         versions.sort((a, b) => b.version - a.version);
         states.sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
@@ -624,8 +633,8 @@ export class StorageService {
             throw new StorageError(400, 'The archive has no version of a game');
         }
         for (const version of versions) {
-            const definition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, version));
-            if (definition?.kind !== 'game' || definition.version !== version || !Array.isArray(definition.questions)) {
+            const definition = await this.readDefinitionOrNull(dirs, version);
+            if (definition == null || definition.version !== version) {
                 throw new StorageError(400, `Version ${version} in the archive is broken`);
             }
         }
@@ -685,21 +694,41 @@ export class StorageService {
         if (number == null || !Number.isInteger(number)) {
             throw new StorageError(404, `${gameName} has no version ${version}`);
         }
-        return this.readJson<IGameDefinition>(this.getVersionFile(dirs, number), `${gameName} has no version ${version}`);
+        return this.readDefinition(dirs, number, `${gameName} has no version ${version}`);
     }
 
     /**
-     * Stores the questions as a new version of the game, which is created if it doesn't exist yet. If they are the same
+     * A version in the current format, see GameFormatHelper; the file itself stays as it is
+     */
+    private async readDefinition(dirs: IGameDirectories, version: number, notFoundMessage: string): Promise<IGameDefinition> {
+        const definition = GameFormatHelper.migrateDefinition(await this.readJson<unknown>(this.getVersionFile(dirs, version), notFoundMessage));
+        if (definition == null) {
+            throw new StorageError(500, `Version ${version} is broken or made by a newer version of the BuzzerBox`);
+        }
+        return definition;
+    }
+
+    private async readDefinitionOrNull(dirs: IGameDirectories, version: number): Promise<IGameDefinition | null> {
+        const json = await this.readJsonOrNull<unknown>(this.getVersionFile(dirs, version));
+        const definition = json == null ? null : GameFormatHelper.migrateDefinition(json);
+        if (json != null && definition == null) {
+            LoggerService.warn(`Ignoring version ${version} in ${dirs.versions}, which is broken or made by a newer version`);
+        }
+        return definition;
+    }
+
+    /**
+     * Stores the rounds as a new version of the game, which is created if it doesn't exist yet. If they are the same
      * as in the latest version, no version is added.
      */
-    public async saveVersion(locationId: string, gameName: string, body: {questions?: unknown, mediaDefaults?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
-        if (!Array.isArray(body?.questions)) {
-            throw new StorageError(400, 'A game version needs its questions');
+    public async saveVersion(locationId: string, gameName: string, body: {rounds?: unknown, mediaDefaults?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
+        const rounds: IRound[] | null = GameFormatHelper.checkRounds(body?.rounds);
+        if (rounds == null) {
+            throw new StorageError(400, 'A game version needs its rounds, in modes this version can play');
         }
         if (body.mediaDefaults != null && (typeof body.mediaDefaults !== 'object' || Array.isArray(body.mediaDefaults))) {
             throw new StorageError(400, 'The media defaults of a game version must be an object');
         }
-        const questions = body.questions as IQuestion[];
         const mediaDefaults = body.mediaDefaults as Partial<IMediaQuestionDefaults> | undefined;
         const resolved = await this.getWritableLocation(locationId);
         const dirs = this.getGameDirectories(resolved, gameName);
@@ -708,8 +737,8 @@ export class StorageService {
         await fs.mkdir(dirs.media, {recursive: true});
         const latest = await this.getLatestVersionNumber(dirs);
         if (latest != null) {
-            const latestDefinition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, latest));
-            if (latestDefinition != null && isEqual(latestDefinition.questions, questions)
+            const latestDefinition = await this.readDefinitionOrNull(dirs, latest);
+            if (latestDefinition != null && isEqual(latestDefinition.rounds, rounds)
                 && isEqual(latestDefinition.mediaDefaults, mediaDefaults)) {
                 return {...await this.getVersionInfo(resolved, gameName, latest), unchanged: true};
             }
@@ -720,7 +749,7 @@ export class StorageService {
             kind: 'game',
             version,
             savedAt: ClockService.get().nowAsIsoString(),
-            questions
+            rounds
         };
         if (mediaDefaults != null) {
             definition.mediaDefaults = mediaDefaults;
@@ -732,14 +761,14 @@ export class StorageService {
 
     private async countMissingMedia(definition: IGameDefinition, dirs: IGameDirectories, getPaths: () => Set<string> | undefined,
                                     setPaths: (paths: Set<string>) => void): Promise<number> {
-        const showsMedia = (definition.questions ?? []).some(question => question.mediaDetails?.fileSrc || question.mediaDetails?.slides?.length);
+        const showsMedia = GameFormatHelper.getAllQuestions(definition.rounds).some(question => question.mediaDetails?.fileSrc || question.mediaDetails?.slides?.length);
         if (!showsMedia) {
             return 0;
         }
         if (getPaths() == null) {
             setPaths(await this.listMediaPaths(dirs.media));
         }
-        return MediaHelper.findMissingMedia(definition.questions, getPaths()).length;
+        return MediaHelper.findMissingMedia(definition.rounds, getPaths()).length;
     }
 
     /**
@@ -803,9 +832,14 @@ export class StorageService {
         return path.join(dirs.states, stateName + StorageApiHelper.JSON_EXTENSION);
     }
 
+    /**
+     * The state in the current format, for the version it plays, see GameFormatHelper; the file itself stays as it is
+     */
     public async getState(locationId: string, gameName: string, stateName: string): Promise<IGameInstanceState> {
         const {dirs} = await this.getExistingGame(locationId, gameName);
-        return this.readJson<IGameInstanceState>(this.getStateFile(dirs, stateName), `There is no state ${stateName}`);
+        const state = await this.readJson<IGameInstanceState>(this.getStateFile(dirs, stateName), `There is no state ${stateName}`);
+        const definition = await this.readDefinitionOrNull(dirs, state.gameVersion);
+        return definition == null ? state : GameFormatHelper.migrateState(state, definition);
     }
 
     public async getStateOrNull(ref: IGameStorageRef): Promise<IGameInstanceState | null> {
@@ -932,9 +966,9 @@ export class StorageService {
     private async readMediaUsage(dirs: IGameDirectories): Promise<{version: number, paths: string[]}[]> {
         const usage: {version: number, paths: string[]}[] = [];
         for (const version of await this.listVersionNumbers(dirs.versions)) {
-            const definition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, version));
+            const definition = await this.readDefinitionOrNull(dirs, version);
             const paths: string[] = [];
-            for (const question of definition?.questions ?? []) {
+            for (const question of GameFormatHelper.getAllQuestions(definition?.rounds)) {
                 paths.push(question.mediaDetails?.fileSrc, ...(question.mediaDetails?.slides ?? []));
             }
             usage.push({version, paths: paths.filter(p => !!p).map(p => this.normalizeRelativePath(p))});
@@ -1127,8 +1161,10 @@ export class StorageService {
      * uploading a file with the same name into the game makes them work.
      */
     public async importBundle(locationId: string, gameName: string, bundle: IGameBundle): Promise<IGameImportResult> {
-        if (bundle?.kind !== 'bundle' || !Array.isArray(bundle.game?.questions)) {
-            throw new StorageError(400, 'This is not a game');
+        // bundles from before rounds existed have questions instead
+        const game = bundle?.kind === 'bundle' ? GameFormatHelper.migrateDefinition(bundle.game) : null;
+        if (game == null) {
+            throw new StorageError(400, 'This is not a game, or one made by a newer version of the BuzzerBox');
         }
         const resolved = await this.getWritableLocation(locationId);
         const dirs = this.getGameDirectories(resolved, gameName);
@@ -1137,16 +1173,19 @@ export class StorageService {
         }
         await this.createGame(locationId, gameName);
         const missingMedia: string[] = [];
-        const questions: IQuestion[] = [];
+        const importedQuestions: IQuestion[] = [];
         // the same file may be shown by several questions, but is only copied once
         const copies = new Map<string, string>();
-        for (const question of bundle.game.questions) {
-            questions.push(await this.importQuestionMedia(question, dirs.media, missingMedia, copies));
+        for (const question of GameFormatHelper.getAllQuestions(game.rounds)) {
+            importedQuestions.push(await this.importQuestionMedia(question, dirs.media, missingMedia, copies));
         }
+        // the questions are in the same order as they were taken out of the rounds
+        let questionIndex = 0;
+        const rounds = GameFormatHelper.mapQuestions(game.rounds, () => importedQuestions[questionIndex++]);
         const now = ClockService.get().nowAsIsoString();
-        const definition: IGameDefinition = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'game', version: 1, savedAt: now, questions};
-        if (bundle.game.mediaDefaults != null) {
-            definition.mediaDefaults = bundle.game.mediaDefaults;
+        const definition: IGameDefinition = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'game', version: 1, savedAt: now, rounds};
+        if (game.mediaDefaults != null) {
+            definition.mediaDefaults = game.mediaDefaults;
         }
         await this.writeJsonAtomically(this.getVersionFile(dirs, 1), definition, false);
         const result: IGameImportResult = {gameName, missingMedia};
@@ -1160,7 +1199,7 @@ export class StorageService {
                 updatedAt: bundle.state.updatedAt ?? now,
                 finished: !!bundle.state.finished,
                 teams: bundle.state.teams ?? [],
-                gameState: bundle.state.gameState
+                gameState: bundle.state.gameState == null ? bundle.state.gameState : GameFormatHelper.migrateGameState(bundle.state.gameState, rounds)
             };
             await this.writeJsonAtomically(this.getStateFile(dirs, stateName), state, false);
             result.stateName = stateName;

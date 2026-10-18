@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { MatMenuModule } from '@angular/material/menu';
+
 import { SetupComponent } from './setup.component';
 
 describe('SetupComponent', () => {
@@ -8,7 +10,9 @@ describe('SetupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ SetupComponent ]
+      declarations: [ SetupComponent ],
+      // the menu that adds a round is referenced in the template
+      imports: [ MatMenuModule ]
     })
     .compileComponents();
   });

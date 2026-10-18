@@ -30,6 +30,11 @@ export class TeamCardComponent implements OnInit, DoCheck, OnDestroy {
     return this.isScreen && ScreenThemeHelper.isShowStyle(this.game.getGameStateData()?.themeId);
   }
 
+  // answered the open tile wrong and can't buzz on it again
+  @HostBinding('class.locked-out') get isLockedOut(): boolean {
+    return !!this.team && this.game.isLockedOut(this.team.teamId);
+  }
+
   @HostBinding('style.--team-color') get teamColor(): string {
     return TeamColorHelper.getColor(this.team, this.game.getTeams() ?? []);
   }

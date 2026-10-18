@@ -1,0 +1,13 @@
+@for (team of getTeams(); track team.teamId) {
+  <div class="grading-row">
+    <span class="team-name">{{team.name}}</span>
+    <span class="wager">Einsatz {{getWager(team)}}</span>
+    <span class="spacer"></span>
+    @if (getResult(team); as result) {
+      <span class="result">{{result}}</span>
+    } @else if (mayGrade(team)) {
+      <button mat-raised-button class="correct" type="button" (click)="grade(team, true)">Richtig (+{{getWager(team)}})</button>
+      <button mat-raised-button class="wrong" type="button" (click)="grade(team, false)">Falsch (−{{getWager(team)}})</button>
+    }
+  </div>
+}

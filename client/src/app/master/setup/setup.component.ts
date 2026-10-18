@@ -4,7 +4,20 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService} from '../../services/game.service';
 import {MatStepper} from '@angular/material/stepper';
-import {IQuestion, IAnswer, IMediaQuestionDefaults, IMediaQuestionState, IStorageLocation, MediaHelper, StorageApiHelper, TMediaKind} from '../../../../../shared/shared';
+import {
+  GameFormatHelper,
+  IAnswer,
+  IMediaQuestionDefaults,
+  IMediaQuestionState,
+  IQuestion,
+  IRound,
+  IStorageLocation,
+  MediaHelper,
+  StorageApiHelper,
+  TMediaKind,
+  TRoundMode
+} from '../../../../../shared/shared';
+import * as Uuid from 'uuid';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IMediaSelection} from '../interfaces/IMediaSelection';
 import {IGameRef, StorageService} from '../../services/storage.service';
@@ -12,8 +25,35 @@ import {IEditorNavigationState, INewGameNavigationState, IPrepareNavigationState
 import {baseUrlMaster, pathsMaster} from '../paths-master';
 
 /**
- * The editor of a game: its name and where it is stored, and its questions. Saving adds a new version of the game;
- * the teams are chosen when it is played.
+ * What the editor knows of a round: its settings, and the form of its questions. A Jeopardy round has its tiles in the
+ * form category by category: the question of category c and value v is number c * values.length + v. A final has its
+ * one question in the form.
+ */
+interface IRoundEditor {
+  id: string;
+  mode: TRoundMode;
+  name: string;
+  // Jeopardy only
+  values: number[];
+  categoryNames: string[];
+  // the questions of the tiles that are a Daily Double, by their IDs
+  dailyDoubleIds: string[];
+  // the final only
+  category: string;
+  questionsFormGroup: UntypedFormGroup;
+  questionFormGroupNames: string[];
+  questionInitialConfig: IMediaQuestionState[];
+  step: number;
+}
+
+// the board of a new Jeopardy round
+const NEW_BOARD_CATEGORIES = 5;
+const NEW_BOARD_VALUES = [100, 200, 300, 400, 500];
+
+/**
+ * The editor of a game: its name and where it is stored, and its rounds with their questions. Saving adds a new version
+ * of the game; the teams are chosen when it is played. The questions form (questionsFormGroup and the fields next to
+ * it) is the one of the round that is shown; the others wait in roundEditors.
  */
 @Component({
     selector: 'app-setup',
@@ -47,6 +87,12 @@ export class SetupComponent implements OnInit {
   public saving = false;
   public saveError: string = null;
 
+  public roundEditors: IRoundEditor[] = [];
+  public activeRoundIndex = 0;
+  public readonly roundModes: TRoundMode[] = ['classic', 'jeopardy', 'final'];
+  public readonly roundModeLabels: Record<TRoundMode, string> = {classic: 'Klassisch', jeopardy: 'Jeopardy', final: 'Finale'};
+  public readonly roundModeIcons: Record<TRoundMode, string> = {classic: 'format_list_numbered', jeopardy: 'grid_view', final: 'emoji_events'};
+
   public questionsFormGroup: UntypedFormGroup;
   public questionFormGroupNames: string[];
   // a question's own config, undefined for the questions that start as the game's media defaults say
@@ -71,7 +117,7 @@ export class SetupComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.initQuestionsFormControls();
+    this.initRoundEditors([]);
     if (this.navigation != null) {
       await this.loadGame(this.navigation);
     }
@@ -101,8 +147,8 @@ export class SetupComponent implements OnInit {
         const definition = await this.storage.getVersion(ref, baseVersion);
         this.loadedVersion = definition.version;
         this.latestVersion = info.latestVersion;
-        this.initMediaDefaults(definition.questions, definition.mediaDefaults);
-        this.initQuestionsFormControls(definition.questions);
+        this.initMediaDefaults(GameFormatHelper.getAllQuestions(definition.rounds), definition.mediaDefaults);
+        this.initRoundEditors(definition.rounds);
       }
       this.ref = ref;
       // continue with the questions
@@ -164,12 +210,336 @@ export class SetupComponent implements OnInit {
     });
   }
 
-  private initQuestionsFormControls(importedQuestions: IQuestion[] | null = null): void {
+  // ---- rounds ----
+
+  /**
+   * One editor for each round; a new game starts with a classic round
+   */
+  private initRoundEditors(rounds: IRound[]): void {
+    this.roundEditors = [];
+    const list = rounds.length > 0 ? rounds : [GameFormatHelper.makeClassicRound(Uuid.v4(), GameFormatHelper.makeRoundName(0), [])];
+    for (const round of list) {
+      if (round.mode === 'jeopardy') {
+        this.initQuestionsFormControls(GameFormatHelper.getAllQuestions([round]), false);
+        this.roundEditors.push(this.captureRoundEditor(round.id, round.mode, round.name, {
+          values: [...round.values],
+          categoryNames: round.categories.map(c => c.name),
+          dailyDoubleIds: [...(round.dailyDoubleQuestionIds ?? [])]
+        }));
+      } else if (round.mode === 'final') {
+        this.initQuestionsFormControls([round.question], false);
+        this.roundEditors.push(this.captureRoundEditor(round.id, round.mode, round.name, {category: round.category}));
+      } else {
+        this.initQuestionsFormControls(round.questions);
+        this.roundEditors.push(this.captureRoundEditor(round.id, round.mode, round.name));
+      }
+    }
+    this.activeRoundIndex = 0;
+    this.loadRoundEditor(this.roundEditors[0]);
+  }
+
+  /**
+   * An editor for the questions form as it is now
+   */
+  private captureRoundEditor(id: string, mode: TRoundMode, name: string,
+                             settings: Partial<Pick<IRoundEditor, 'values' | 'categoryNames' | 'dailyDoubleIds' | 'category'>> = {}): IRoundEditor {
+    return {
+      id, mode, name,
+      values: settings.values ?? [],
+      categoryNames: settings.categoryNames ?? [],
+      dailyDoubleIds: settings.dailyDoubleIds ?? [],
+      category: settings.category ?? '',
+      questionsFormGroup: this.questionsFormGroup,
+      questionFormGroupNames: this.questionFormGroupNames,
+      questionInitialConfig: this.questionInitialConfig,
+      step: this.step
+    };
+  }
+
+  /**
+   * Keeps the questions form of the round that is shown in its editor, before another one is shown or the rounds are saved
+   */
+  private storeActiveRoundEditor(): void {
+    const editor = this.roundEditors[this.activeRoundIndex];
+    if (editor) {
+      editor.questionsFormGroup = this.questionsFormGroup;
+      editor.questionFormGroupNames = this.questionFormGroupNames;
+      editor.questionInitialConfig = this.questionInitialConfig;
+      editor.step = this.step;
+    }
+  }
+
+  private loadRoundEditor(editor: IRoundEditor): void {
+    this.questionsFormGroup = editor.questionsFormGroup;
+    this.questionFormGroupNames = editor.questionFormGroupNames;
+    this.questionInitialConfig = editor.questionInitialConfig;
+    this.step = editor.step;
+  }
+
+  public getActiveRoundEditor(): IRoundEditor {
+    return this.roundEditors[this.activeRoundIndex];
+  }
+
+  /**
+   * Jeopardy tiles are worth their value, and the final the wagers, rather than points of the question
+   */
+  public hidesQuestionPoints(): boolean {
+    return this.getActiveRoundEditor()?.mode !== 'classic';
+  }
+
+  public showRound(index: number): void {
+    if (index === this.activeRoundIndex) {
+      return;
+    }
+    this.storeActiveRoundEditor();
+    this.activeRoundIndex = index;
+    this.loadRoundEditor(this.roundEditors[index]);
+  }
+
+  public addRound(mode: TRoundMode): void {
+    this.storeActiveRoundEditor();
+    const name = GameFormatHelper.makeRoundName(this.roundEditors.length);
+    let editor: IRoundEditor;
+    if (mode === 'jeopardy') {
+      this.initQuestionsFormControls([], false);
+      for (let i = 0; i < NEW_BOARD_CATEGORIES * NEW_BOARD_VALUES.length; i++) {
+        this.appendQuestionFormGroup(this.createJeopardyQuestionFormGroup());
+      }
+      const categoryNames = Array.from({length: NEW_BOARD_CATEGORIES}, (_, i) => `Kategorie ${i + 1}`);
+      editor = this.captureRoundEditor(Uuid.v4(), mode, name, {values: [...NEW_BOARD_VALUES], categoryNames});
+    } else if (mode === 'final') {
+      this.initQuestionsFormControls([], false);
+      // like a tile: the master grades it, answer options are optional
+      this.appendQuestionFormGroup(this.createJeopardyQuestionFormGroup());
+      editor = this.captureRoundEditor(Uuid.v4(), mode, 'Finale');
+    } else {
+      this.initQuestionsFormControls([]);
+      editor = this.captureRoundEditor(Uuid.v4(), mode, name);
+    }
+    this.roundEditors = [...this.roundEditors, editor];
+    this.activeRoundIndex = this.roundEditors.length - 1;
+    this.setStep(0);
+    this.onQuestionsChanged();
+  }
+
+  public removeRound(index: number): void {
+    if (this.roundEditors.length < 2) {
+      return;
+    }
+    this.storeActiveRoundEditor();
+    const removed = this.roundEditors[index];
+    this.roundEditors = this.roundEditors.filter((_, i) => i !== index);
+    this.activeRoundIndex = Math.min(index, this.roundEditors.length - 1);
+    this.loadRoundEditor(this.roundEditors[this.activeRoundIndex]);
+    this.onQuestionsChanged();
+    const snackBarRef = this.snackBar.open(`${removed.name} gelöscht`, 'Rückgängig', {duration: 5000});
+    snackBarRef.onAction().subscribe(() => {
+      this.storeActiveRoundEditor();
+      this.roundEditors = [...this.roundEditors.slice(0, index), removed, ...this.roundEditors.slice(index)];
+      this.activeRoundIndex = index;
+      this.loadRoundEditor(removed);
+      this.onQuestionsChanged();
+    });
+  }
+
+  /**
+   * Moves the round that is shown one place earlier (-1) or later (1)
+   */
+  public moveRound(delta: number): void {
+    const target = this.activeRoundIndex + delta;
+    if (target < 0 || target >= this.roundEditors.length) {
+      return;
+    }
+    const editors = [...this.roundEditors];
+    [editors[this.activeRoundIndex], editors[target]] = [editors[target], editors[this.activeRoundIndex]];
+    this.roundEditors = editors;
+    this.activeRoundIndex = target;
+    this.onQuestionsChanged();
+  }
+
+  private getEditorForm(index: number): {group: UntypedFormGroup, names: string[]} {
+    const editor = this.roundEditors[index];
+    return index === this.activeRoundIndex
+      ? {group: this.questionsFormGroup, names: this.questionFormGroupNames}
+      : {group: editor.questionsFormGroup, names: editor.questionFormGroupNames};
+  }
+
+  /**
+   * Whether the round can be saved: its questions are complete, and a board has named categories and whole values
+   */
+  public isRoundValid(index: number): boolean {
+    const editor = this.roundEditors[index];
+    const form = this.getEditorForm(index);
+    if (!editor || !form.group.valid || (editor.name ?? '').trim() === '') {
+      return false;
+    }
+    if (editor.mode === 'final') {
+      return (editor.category ?? '').trim() !== '' && form.names.length === 1;
+    }
+    if (editor.mode === 'jeopardy') {
+      return editor.values.length > 0 && editor.categoryNames.length > 0
+        && editor.values.every(value => Number.isInteger(value) && value >= 1)
+        && editor.categoryNames.every(name => (name ?? '').trim() !== '');
+    }
+    return form.names.length > 0;
+  }
+
+  public areAllRoundsValid(): boolean {
+    return this.roundEditors.length > 0 && this.roundEditors.every((_, i) => this.isRoundValid(i));
+  }
+
+  // ---- the Jeopardy board of the round that is shown ----
+
+  public getTileIndex(categoryIndex: number, valueIndex: number): number {
+    return categoryIndex * this.getActiveRoundEditor().values.length + valueIndex;
+  }
+
+  /**
+   * E.g. "Geografie · 300" for the selected tile
+   */
+  public getTileTitle(index: number): string {
+    const editor = this.getActiveRoundEditor();
+    const valueCount = editor.values.length;
+    if (valueCount === 0) {
+      return '';
+    }
+    const categoryName = (editor.categoryNames[Math.floor(index / valueCount)] ?? '').trim() || 'Kategorie';
+    return `${categoryName} · ${editor.values[index % valueCount]}`;
+  }
+
+  public addCategory(): void {
+    const editor = this.getActiveRoundEditor();
+    editor.categoryNames = [...editor.categoryNames, `Kategorie ${editor.categoryNames.length + 1}`];
+    // the new category's tiles come last, as its questions do in the form
+    editor.values.forEach(() => this.appendQuestionFormGroup(this.createJeopardyQuestionFormGroup()));
+    this.setStep(this.getTileIndex(editor.categoryNames.length - 1, 0));
+    this.onQuestionsChanged();
+  }
+
+  public removeCategory(categoryIndex: number): void {
+    const editor = this.getActiveRoundEditor();
+    const valueCount = editor.values.length;
+    this.rearrangeQuestions(this.getQuestionEntries().filter((_, i) => Math.floor(i / valueCount) !== categoryIndex));
+    editor.categoryNames = editor.categoryNames.filter((_, i) => i !== categoryIndex);
+    this.setStep(0);
+    this.onQuestionsChanged();
+  }
+
+  /**
+   * A new row at the bottom of the board, worth as much more as the row above is worth more than the one before
+   */
+  public addValue(): void {
+    const editor = this.getActiveRoundEditor();
+    const valueCount = editor.values.length;
+    const last = editor.values[valueCount - 1];
+    const step = valueCount > 1 ? last - editor.values[valueCount - 2] : 100;
+    const entries = this.getQuestionEntries();
+    const rearranged: ({group: UntypedFormGroup, config: IMediaQuestionState} | null)[] = [];
+    editor.categoryNames.forEach((_, c) => rearranged.push(...entries.slice(c * valueCount, (c + 1) * valueCount), null));
+    this.rearrangeQuestions(rearranged);
+    editor.values = [...editor.values, valueCount > 0 ? last + (step > 0 ? step : 100) : 100];
+    this.setStep(this.getTileIndex(0, valueCount));
+    this.onQuestionsChanged();
+  }
+
+  public removeValue(valueIndex: number): void {
+    const editor = this.getActiveRoundEditor();
+    const valueCount = editor.values.length;
+    this.rearrangeQuestions(this.getQuestionEntries().filter((_, i) => i % valueCount !== valueIndex));
+    editor.values = editor.values.filter((_, i) => i !== valueIndex);
+    this.setStep(0);
+    this.onQuestionsChanged();
+  }
+
+  public setBoardValue(valueIndex: number, value: unknown): void {
+    const editor = this.getActiveRoundEditor();
+    editor.values = editor.values.map((v, i) => i === valueIndex ? Number(value) : v);
+    this.onQuestionsChanged();
+  }
+
+  public setCategoryName(categoryIndex: number, name: string): void {
+    const editor = this.getActiveRoundEditor();
+    editor.categoryNames = editor.categoryNames.map((n, i) => i === categoryIndex ? name : n);
+    this.onQuestionsChanged();
+  }
+
+  private getQuestionId(index: number): string | undefined {
+    return this.questionsFormGroup.get(this.questionFormGroupNames[index])?.get('id').value;
+  }
+
+  public isDailyDouble(index: number): boolean {
+    const id = this.getQuestionId(index);
+    return id != null && this.getActiveRoundEditor().dailyDoubleIds.includes(id);
+  }
+
+  /**
+   * Makes the tile a Daily Double, or a tile like the others again
+   */
+  public setDailyDouble(index: number, isDailyDouble: boolean): void {
+    const editor = this.getActiveRoundEditor();
+    const id = this.getQuestionId(index);
+    if (id == null) {
+      return;
+    }
+    editor.dailyDoubleIds = isDailyDouble ? [...editor.dailyDoubleIds.filter(i => i !== id), id] : editor.dailyDoubleIds.filter(i => i !== id);
+    this.onQuestionsChanged();
+  }
+
+  public isTileValid(index: number): boolean {
+    return !!this.questionsFormGroup.get(this.questionFormGroupNames[index])?.valid;
+  }
+
+  private getQuestionEntries(): {group: UntypedFormGroup, config: IMediaQuestionState}[] {
+    return this.questionFormGroupNames.map((name, i) => ({
+      group: this.questionsFormGroup.get(name) as UntypedFormGroup,
+      config: this.questionInitialConfig[i]
+    }));
+  }
+
+  /**
+   * Puts the questions of the round that is shown in a new order; null makes a new tile
+   */
+  private rearrangeQuestions(entries: ({group: UntypedFormGroup, config: IMediaQuestionState} | null)[]): void {
+    const newGroup = new UntypedFormGroup({});
+    const names: string[] = [];
+    const configs: IMediaQuestionState[] = [];
+    entries.forEach((entry, i) => {
+      const name = 'question' + i;
+      names.push(name);
+      configs.push(entry?.config);
+      newGroup.addControl(name, entry?.group ?? this.createJeopardyQuestionFormGroup());
+    });
+    this.questionsFormGroup = newGroup;
+    this.questionFormGroupNames = names;
+    this.questionInitialConfig = configs;
+  }
+
+  /**
+   * A tile's question: the master grades it, answer options are optional and start turned off
+   */
+  private createJeopardyQuestionFormGroup(): UntypedFormGroup {
+    const group = this.createQuestionFormGroup();
+    group.get('answersVisible').setValue(false);
+    for (let i = 0; i < 4; i++) {
+      group.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i).disable();
+    }
+    return group;
+  }
+
+  // ---- questions ----
+
+  /**
+   * @param addIfEmpty a classic round gets its first question, a board starts empty
+   */
+  private initQuestionsFormControls(importedQuestions: IQuestion[] | null = null, addIfEmpty = true): void {
     this.questionsFormGroup = new UntypedFormGroup({});
     this.questionFormGroupNames = [];
     this.questionInitialConfig = [];
+    this.step = 0;
     if (!importedQuestions?.length) {
-      this.addQuestionToFormGroup();
+      if (addIfEmpty) {
+        this.addQuestionToFormGroup();
+      }
       return;
     }
     importedQuestions.forEach((q, i) => {
@@ -186,6 +556,7 @@ export class SetupComponent implements OnInit {
       // built like a new question so the imported one gets the same validators
       const questionFormGroup = this.createQuestionFormGroup();
       questionFormGroup.patchValue({
+        id: q.id,
         text: q.text,
         mediaSrc: q.mediaDetails?.fileSrc ?? '',
         slides: q.mediaDetails?.slides ?? null,
@@ -271,16 +642,21 @@ export class SetupComponent implements OnInit {
   }
 
   public addQuestionToFormGroup(): void {
-    const qfc: UntypedFormGroup = this.createQuestionFormGroup();
+    this.appendQuestionFormGroup(this.createQuestionFormGroup());
+    this.setStep(this.questionFormGroupNames.length - 1);
+  }
+
+  private appendQuestionFormGroup(group: UntypedFormGroup): void {
     const formGroupName: string = 'question' + this.questionFormGroupNames.length;
     this.questionFormGroupNames.push(formGroupName);
     this.questionInitialConfig.push(undefined);
-    this.questionsFormGroup.addControl(formGroupName, qfc);
-    this.setStep(this.questionFormGroupNames.length - 1);
+    this.questionsFormGroup.addControl(formGroupName, group);
   }
 
   private createQuestionFormGroup(): UntypedFormGroup {
     return new UntypedFormGroup({
+      // stays the same when the question is changed or moved, see IQuestion.id
+      id: new UntypedFormControl(Uuid.v4()),
       text: new UntypedFormControl(null, Validators.required),
       // relative to the game's media folder
       mediaSrc: new UntypedFormControl(''),
@@ -330,15 +706,15 @@ export class SetupComponent implements OnInit {
   }
 
   public getNumberOfQuestions(): number {
-    return this.questionFormGroupNames.length;
+    return this.roundEditors.reduce((sum, _, i) => sum + this.getEditorForm(i).names.length, 0);
   }
 
-  private buildSetupQuestionsObject(): IQuestion[] {
+  private buildQuestions(editor: IRoundEditor): IQuestion[] {
     const ret: IQuestion[] = [];
-    this.questionFormGroupNames.forEach((name, index) => {
-      const questionFormGroup: UntypedFormGroup = this.questionsFormGroup.get(name) as UntypedFormGroup;
-      const questionText: string = questionFormGroup.get('text').value.toString();
-      const mediaSrc: string = questionFormGroup.get('mediaSrc').value.toString();
+    editor.questionFormGroupNames.forEach((name, index) => {
+      const questionFormGroup: UntypedFormGroup = editor.questionsFormGroup.get(name) as UntypedFormGroup;
+      const questionText: string = (questionFormGroup.get('text').value ?? '').toString();
+      const mediaSrc: string = (questionFormGroup.get('mediaSrc').value ?? '').toString();
       const answers: IAnswer[] = [];
       for (let i = 0; i < 4; i++) {
         const answerFormGroup: UntypedFormGroup = questionFormGroup.get('answers').get(this.ANSWER_FORM_GROUP_BASE_NAME + i) as UntypedFormGroup;
@@ -349,6 +725,7 @@ export class SetupComponent implements OnInit {
         });
       }
       const question: IQuestion = {
+        id: questionFormGroup.get('id').value,
         text: questionText,
         answers,
         show: questionFormGroup.get('answersVisible').value as boolean
@@ -371,13 +748,44 @@ export class SetupComponent implements OnInit {
           question.mediaDetails.slides = slides;
         }
         // only a question's own config is stored, the others start as the game's media defaults say
-        if (this.questionInitialConfig[index]) {
-          question.initialConfig = this.questionInitialConfig[index];
+        if (editor.questionInitialConfig[index]) {
+          question.initialConfig = editor.questionInitialConfig[index];
         }
       }
       ret.push(question);
     });
     return ret;
+  }
+
+  /**
+   * The rounds of the game as they are saved
+   */
+  private buildRounds(): IRound[] {
+    this.storeActiveRoundEditor();
+    return this.roundEditors.map((editor, index) => {
+      const name = editor.name.trim() || GameFormatHelper.makeRoundName(index);
+      // a tile is worth its value and the final the wagers, not points of their own
+      const questions = this.buildQuestions(editor).map(question => {
+        if (editor.mode === 'classic') {
+          return question;
+        }
+        const withoutPoints = {...question};
+        delete withoutPoints.points;
+        return withoutPoints;
+      });
+      if (editor.mode === 'final') {
+        return GameFormatHelper.makeFinalRound(editor.id, name, editor.category.trim(), questions[0]);
+      }
+      if (editor.mode === 'jeopardy') {
+        const valueCount = editor.values.length;
+        const ids = new Set(questions.map(question => question.id));
+        return GameFormatHelper.makeJeopardyRound(editor.id, name, [...editor.values], editor.categoryNames.map((categoryName, c) => ({
+          name: categoryName.trim(),
+          questions: questions.slice(c * valueCount, (c + 1) * valueCount)
+        })), editor.dailyDoubleIds.filter(id => ids.has(id)));
+      }
+      return GameFormatHelper.makeClassicRound(editor.id, name, questions);
+    });
   }
 
   /**
@@ -390,7 +798,7 @@ export class SetupComponent implements OnInit {
     this.saving = true;
     this.saveError = null;
     try {
-      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults);
+      const result = await this.storage.saveVersion(this.ref, this.buildRounds(), this.mediaDefaults);
       this.savedVersion = result.version;
       this.loadedVersion = result.version;
       this.snackBar.open(result.unchanged ? `Nichts geändert, es bleibt bei Version ${result.version}.` : `Version ${result.version} wurde gespeichert.`,

@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '
 import {Router} from '@angular/router';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {IGameInfo, IGameStateInfo, IGameVersionInfo, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
+import {GameFormatHelper, IGameInfo, IGameStateInfo, IGameVersionInfo, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {FormatHelper} from '../../helper/format.helper';
 import {GameFileHelper} from '../../helper/game-file.helper';
@@ -98,16 +98,19 @@ export class GameListComponent implements OnChanges {
     }
     const latest = game.versions[0];
     const states = game.states.length === 1 ? '1 Spielstand' : `${game.states.length} Spielstände`;
-    return `Version ${latest.version} · ${latest.questionCount} Fragen · ${states}`;
+    return `Version ${latest.version} · ${this.getContents(latest)} · ${states}`;
   }
 
-  public getQuestionCount(game: IGameInfo, version: number): number {
-    return game.versions.find(v => v.version === version)?.questionCount ?? 0;
+  /**
+   * E.g. "12 Fragen", or "3 Runden, 30 Fragen"
+   */
+  public getContents(version: IGameVersionInfo): string {
+    return version.roundCount > 1 ? `${version.roundCount} Runden, ${version.questionCount} Fragen` : `${version.questionCount} Fragen`;
   }
 
   public getStateDetails(game: IGameInfo, state: IGameStateInfo): string {
-    const questionCount = this.getQuestionCount(game, state.gameVersion);
-    const progress = state.finished ? 'beendet' : `Frage ${Math.min(state.currentQuestionNumber + 1, questionCount)} von ${questionCount}`;
+    // e.g. "Frage 4 von 10"; nothing for a state whose version can't be read
+    const progress = state.finished ? 'beendet' : (state.progress ? GameFormatHelper.describeProgress(state.progress) : 'Version fehlt');
     return `${progress} · zuletzt ${FormatHelper.formatDateTime(state.updatedAt)}`;
   }
 
