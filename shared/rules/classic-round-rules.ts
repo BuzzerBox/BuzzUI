@@ -1,5 +1,5 @@
 import {IQuestion} from '../interfaces/IQuestion';
-import {IClassicRound, IClassicRoundProgress} from '../interfaces/IRound';
+import {IClassicRound, IClassicRoundProgress, IPlayOptions} from '../interfaces/IRound';
 import {EGradeResults} from '../enums/EGradeResults';
 import {IRoundRules} from './round-rules';
 
@@ -50,7 +50,7 @@ export class ClassicRoundRules implements IRoundRules<IClassicRound, IClassicRou
         return !this.hasNextQuestion(round, progress);
     }
 
-    public mayBuzz(round: IClassicRound, progress: IClassicRoundProgress, teamId: string): boolean {
+    public mayBuzz(round: IClassicRound, progress: IClassicRoundProgress, teamId: string, options: IPlayOptions): boolean {
         return true;
     }
 

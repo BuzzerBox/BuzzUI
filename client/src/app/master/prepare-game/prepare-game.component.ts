@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {Router} from '@angular/router';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
-import {GameFormatHelper, IBuzzer, IDirectoryTree, IGameDefinition, IGameInstanceState, IGameState, ITeam, MediaHelper, StorageApiHelper} from '../../../../../shared/shared';
+import {GameFormatHelper, IBuzzer, IJeopardyRoundProgress, IPlayOptions, IDirectoryTree, IGameDefinition, IGameInstanceState, IGameState, ITeam, MediaHelper, StorageApiHelper} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
@@ -57,6 +57,10 @@ export class PrepareGameComponent implements OnInit {
   // how the screens look in this game
   public readonly themes: IScreenTheme[] = SCREEN_THEMES;
   public themeId: string = ScreenThemeHelper.getLastChosen().id;
+  // Jeopardy: a team that answered a tile wrong can't buzz on it again, see IPlayOptions
+  public oneTryPerTile = true;
+  // Jeopardy, new plays only: the buzzer of the team that picks the first tile, null to choose it on the board
+  public firstPickingBuzzerIndex: number | null = null;
 
   constructor(private game: GameService, private storage: StorageService, private router: Router, private dialog: MatDialog) {
     game.useAsMaster();
@@ -85,6 +89,7 @@ export class PrepareGameComponent implements OnInit {
     // a continued game keeps its theme; one from before themes gets the default
     if (this.state != null) {
       this.themeId = ScreenThemeHelper.getTheme(this.state.gameState?.themeId).id;
+      this.oneTryPerTile = this.state.gameState?.playOptions?.oneTryPerTile !== false;
     }
     this.initTeams();
     await this.findMissingMedia();
@@ -120,6 +125,38 @@ export class PrepareGameComponent implements OnInit {
 
   public getQuestionCount(): number {
     return GameFormatHelper.getAllQuestions(this.definition?.rounds).length;
+  }
+
+  public hasJeopardyRound(): boolean {
+    return this.definition?.rounds.some(round => round.mode === 'jeopardy') ?? false;
+  }
+
+  public getPlayOptions(): IPlayOptions {
+    return {oneTryPerTile: this.oneTryPerTile};
+  }
+
+  /**
+   * The teams that can pick first: the ones that play
+   */
+  public getActiveRows(): ITeamRow[] {
+    return this.rows.filter(row => this.isActive(row));
+  }
+
+  public getTeamName(row: ITeamRow): string {
+    return (this.teamsFormGroup.get(row.controlName).value ?? '').toString().trim() || 'Team ' + (row.buzzerIndex + 1);
+  }
+
+  /**
+   * A new play starts with the chosen team picking in every Jeopardy round; the master can change it on the board
+   */
+  private makeFirstPicksState(teamId: string): IGameState {
+    const roundProgress: IGameState['roundProgress'] = {};
+    for (const round of this.definition.rounds) {
+      if (round.mode === 'jeopardy') {
+        roundProgress[round.id] = {pickingTeamId: teamId} as IJeopardyRoundProgress;
+      }
+    }
+    return GameFormatHelper.completeGameState({...GameService.makeInitialGameState(), roundProgress}, this.definition.rounds);
   }
 
   public chooseTheme(theme: IScreenTheme): void {
@@ -218,6 +255,11 @@ export class PrepareGameComponent implements OnInit {
         ...GameFormatHelper.completeGameState(this.mappedGameState, this.definition.rounds),
         markedTeamIds: (this.mappedGameState.markedTeamIds ?? []).filter(id => teamIds.includes(id))
       };
+    } else if (this.hasJeopardyRound() && this.firstPickingBuzzerIndex != null) {
+      const firstPicking = teams.find(team => team.buzzerIndex === this.firstPickingBuzzerIndex);
+      if (firstPicking) {
+        gameState = this.makeFirstPicksState(firstPicking.teamId);
+      }
     }
     // the questions without their own config start as the game's defaults for their media say
     const rounds = StorageService.resolveMediaUrls(this.ref, MediaHelper.applyMediaDefaults(this.definition.rounds, this.definition.mediaDefaults));
@@ -226,7 +268,7 @@ export class PrepareGameComponent implements OnInit {
       gameName: this.ref.gameName,
       gameVersion: this.definition.version,
       stateName: this.isContinuing() ? this.navigation.stateName : this.getStateName()
-    }, !this.isContinuing(), this.themeId);
+    }, !this.isContinuing(), this.themeId, this.hasJeopardyRound() ? this.getPlayOptions() : undefined);
     ScreenThemeHelper.rememberChosen(this.themeId);
     // the server's answer takes the master to the start of the game
   }

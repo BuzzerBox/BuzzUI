@@ -167,3 +167,26 @@ button.theme.selected {
   color: rgba(0, 0, 0, 0.6);
   font-size: 0.9em;
 }
+
+.play-options {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.play-options .hint {
+  margin: 0 0 8px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.play-options .label {
+  margin: 8px 0 0;
+  font-weight: 500;
+}
+
+.first-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}

@@ -92,9 +92,8 @@ export class GameService {
     // whether the game was ended, for its saved state
     private gameFinished = false;
     private keyOrByteCodesInUse: string[] = [];
-    private ignoredKeypresses: string[] = [];
-    // TODO: maybe rename it to lastBuzzerPressed to reflect an upcoming change in behavior for this field
-    private lastKeyPressed: string;
+    // the buzzers the box has turned off, by their IDs in the firmware, see syncDisabledBuzzers()
+    private disabledBuzzerIds = new Set<number>();
     private configInvalidReason: string;
 
     private constructor() {
@@ -111,6 +110,10 @@ export class GameService {
         this.getBuzzerConfig();
         SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
         SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
+        // the box turns all buzzers on again after a reset, so it gets the disabled ones with every heartbeat
+        if (ConfigService.get().serial.enabled) {
+            setInterval(() => this.resendDisabledBuzzers(), ConfigService.get().serial.heartbeatIntervalInMS);
+        }
         UpdateService.get().observeInfo().subscribe(info => this.sendToMaster<IUpdateInfoPacket>(info));
         AutosaveService.get().observeInfo().subscribe(info => this.sendToMaster<IAutosaveInfoPacket>(info));
     }
@@ -135,6 +138,7 @@ export class GameService {
             // a broken packet must not take the server and the running game down
             try {
                 this.onPacket(con, sub, packet);
+                this.syncDisabledBuzzers();
                 // most packets change the game; the autosave only writes once things calm down
                 if (this.isGameSetUp()) {
                     AutosaveService.get().changed();
@@ -310,6 +314,9 @@ export class GameService {
             if (packet.themeId) {
                 this.currentGameState.themeId = packet.themeId;
             }
+            if (packet.playOptions) {
+                this.currentGameState.playOptions = packet.playOptions;
+            }
             this.resumesRunningGame = false;
             this.gameFinished = false;
             this.setNewState(EGameStates.WAITING_FOR_START);
@@ -484,6 +491,8 @@ export class GameService {
         if (!isCorrect) {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
+            // a team that is out for the tile is turned off before the others may buzz again
+            this.syncDisabledBuzzers();
             this.releaseHardwareBuzzerLock(true);
         }
         // the screens and the master flash the answers for a wrong one
@@ -563,11 +572,6 @@ export class GameService {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
             this.releaseHardwareBuzzerLock(true);
-            if (this.lastKeyPressed != null) {
-                // if the answer is wrong an there is a last key press, then ignore it for this round
-                // TODO: shall be configurable, will be done somewhat later
-                // this.ignoredKeypresses.push(this.lastKeyPressed);
-            }
         }
         this.sendToAllScreens(packet);
     }
@@ -655,7 +659,6 @@ export class GameService {
         GameStateHelper.resetQuestionProgress(this.currentGameState);
         const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
         this.onSetBuzzerLockPacket(null, lockPacket);
-        this.ignoredKeypresses = [];
         const questionConfig = this.getCurrentQuestion()?.initialConfig ?? PacketHelper.getDefaultMediaState();
         this.currentGameState.mediaQuestionState = questionConfig;
         const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(questionConfig.mediaState, questionConfig.questionState, questionConfig.answerState);
@@ -679,7 +682,7 @@ export class GameService {
      */
     private mayBuzz(team: ITeam): boolean {
         const round = this.getCurrentRound();
-        return round != null && RoundRulesHelper.get(round).mayBuzz(round, this.getCurrentProgress(), team.teamId);
+        return round != null && RoundRulesHelper.get(round).mayBuzz(round, this.getCurrentProgress(), team.teamId, this.currentGameState.playOptions ?? {});
     }
 
     private getIdOfAnswer(answer: IAnswer): number {
@@ -737,6 +740,48 @@ export class GameService {
         this.resetServerData();
     }
 
+    /**
+     * Turns off the buzzers of the teams that the rules of the round don't let buzz now, e.g. a team that answered the
+     * open tile wrong, so pressing them neither locks the box nor lights them up. Firmware from before the commands
+     * ignores them; the server then releases the box right away when such a team buzzes, see mayBuzz().
+     */
+    private syncDisabledBuzzers(): void {
+        const wanted = new Set<number>();
+        if (this.isGameRunning()) {
+            for (const team of this.teams) {
+                const buzzerId = this.getFirmwareBuzzerId(team.buzzerId);
+                if (buzzerId != null && !this.mayBuzz(team)) {
+                    wanted.add(buzzerId);
+                }
+            }
+        }
+        // the box can only turn single buzzers off, and all on again
+        if ([...this.disabledBuzzerIds].some(id => !wanted.has(id))) {
+            MicroControllerSerialAdapter.sendSerialCommandEnableAllBuzzers();
+            this.disabledBuzzerIds.clear();
+        }
+        for (const id of wanted) {
+            if (!this.disabledBuzzerIds.has(id)) {
+                MicroControllerSerialAdapter.sendSerialCommandDisableBuzzer(id);
+                this.disabledBuzzerIds.add(id);
+            }
+        }
+    }
+
+    private resendDisabledBuzzers(): void {
+        this.disabledBuzzerIds.forEach(id => MicroControllerSerialAdapter.sendSerialCommandDisableBuzzer(id));
+    }
+
+    /**
+     * The firmware numbers the buzzers 0-9 and sends the number as an ASCII digit, which the config has as its byte
+     * (e.g. 31 for "1"); null for a buzzer that isn't one of those
+     */
+    private getFirmwareBuzzerId(buzzerId: string): number | null {
+        const buzzer = this.getBuzzerConfig().find(b => b.id === buzzerId);
+        const id = buzzer ? parseInt(buzzer.byteBind, 16) - 0x30 : NaN;
+        return Number.isInteger(id) && id >= 0 && id <= 9 ? id : null;
+    }
+
     private resetServerData(): void {
         // saves the game as it was, before it is cleared
         AutosaveService.get().end();
@@ -744,10 +789,10 @@ export class GameService {
         this.rounds = [];
         this.setKeypressLocked(false)
         this.releaseHardwareBuzzerLock(true);
-        this.ignoredKeypresses = [];
-        this.lastKeyPressed = null;
         this.resumesRunningGame = false;
         this.currentGameState = this.makeInitialGameState();
+        // no game: every buzzer counts again
+        this.syncDisabledBuzzers();
     }
 
     private makeInitialGameState(): IGameState {
@@ -775,7 +820,7 @@ export class GameService {
         if (packet.keyCode === ConfigService.get().softReleaseKey) {
             this.releaseHardwareBuzzerLock(true);
             this.unmarkAllTeams();
-        } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
+        } else if (!this.isKeypressLocked()) {
             const team: ITeam = this.getTeamForKeyPressCode(packet.keyCode);
             if (team == null) {
                 LoggerService.log("no team found for keycode " + packet.keyCode)
@@ -784,7 +829,6 @@ export class GameService {
             if (!this.mayBuzz(team)) {
                 return;
             }
-            this.lastKeyPressed = packet.keyCode;
             this.lockOnTeam(team);
         }
     }
@@ -1009,6 +1053,7 @@ export class GameService {
             // like a broken packet, a failing buzzer press must not take the server down
             try {
                 this.onSerialByteIn(byte);
+                this.syncDisabledBuzzers();
                 if (this.isGameSetUp()) {
                     AutosaveService.get().changed();
                 }
@@ -1028,7 +1073,7 @@ export class GameService {
             this.releaseHardwareBuzzerLock(false);
         } else {
             const inputAsString = input.toString(10);
-            if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(inputAsString)) {
+            if (!this.isKeypressLocked()) {
                 const team: ITeam = this.getTeamForByteCode(inputAsString);
                 if (team == null) {
                     LoggerService.error("no team found for byte code " + inputAsString)

@@ -130,6 +130,6 @@ describe('ClassicRoundRules', () => {
     expect(rules.getGradePoints(round, second, EGradeResults.CORRECT, 'team')).toBe(3);
     expect(rules.getGradePoints(round, second, EGradeResults.DOUBLE, 'team')).toBe(6);
     expect(rules.getGradePoints(round, second, EGradeResults.WRONG, 'team')).toBe(-3);
-    expect(rules.mayBuzz(round, second, 'team')).toBeTrue();
+    expect(rules.mayBuzz(round, second, 'team', {})).toBeTrue();
   });
 });

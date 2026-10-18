@@ -11,16 +11,16 @@ describe('JeopardyRoundRules', () => {
   const open = (id: string, progress = start()) => rules.applySelectQuestion(round, progress, PacketHelper.makeSelectQuestionPacket(id));
 
   it('starts with the board and nobody picking', () => {
-    expect(start()).toEqual({playedQuestionIds: [], openQuestionId: null, pickingTeamId: null, wagers: {}});
+    expect(start()).toEqual({playedQuestionIds: [], openQuestionId: null, pickingTeamId: null, wagers: {}, lockedOutTeamIds: []});
     expect(rules.getCurrentQuestion(round, start())).toBeUndefined();
-    expect(rules.mayBuzz(round, start(), 'a')).toBeFalse();
+    expect(rules.mayBuzz(round, start(), 'a', {})).toBeFalse();
   });
 
   it('opens a tile, which every team may buzz on and which is worth its value', () => {
     const progress = open('m2');
     expect(rules.getCurrentQuestion(round, progress).id).toBe('m2');
     expect(rules.getTile(round, 'm2')).toEqual(jasmine.objectContaining({categoryIndex: 1, valueIndex: 1, value: 200}));
-    expect(rules.mayBuzz(round, progress, 'a')).toBeTrue();
+    expect(rules.mayBuzz(round, progress, 'a', {})).toBeTrue();
     expect(rules.getGradePoints(round, progress, EGradeResults.CORRECT, 'a')).toBe(200);
     expect(rules.getGradePoints(round, progress, EGradeResults.WRONG, 'a')).toBe(-200);
     expect(rules.getGradePoints(round, progress, EGradeResults.DOUBLE, 'a')).toBe(400);
@@ -30,13 +30,26 @@ describe('JeopardyRoundRules', () => {
     const afterWrong = rules.afterGrade(round, open('g1'), 'a', EGradeResults.WRONG);
     expect(afterWrong.playedQuestionIds).toEqual([]);
     const afterCorrect = rules.afterGrade(round, afterWrong, 'b', EGradeResults.CORRECT);
-    expect(afterCorrect).toEqual({playedQuestionIds: ['g1'], openQuestionId: 'g1', pickingTeamId: 'b', wagers: {}});
+    expect(afterCorrect).toEqual({playedQuestionIds: ['g1'], openQuestionId: 'g1', pickingTeamId: 'b', wagers: {}, lockedOutTeamIds: ['a']});
     expect(rules.mayGrade(round, afterCorrect, 'a')).toBeFalse();
     // shown until the master goes back, but nobody buzzes any more
-    expect(rules.mayBuzz(round, afterCorrect, 'a')).toBeFalse();
+    expect(rules.mayBuzz(round, afterCorrect, 'a', {})).toBeFalse();
     const board = rules.applySelectQuestion(round, afterCorrect, PacketHelper.makeSelectQuestionPacket(null));
     expect(board.openQuestionId).toBeNull();
     expect(open('g1', board)).toBeNull();
+  });
+
+  it('locks out a team that answered wrong, unless the play allows another try', () => {
+    const wrong = rules.afterGrade(round, open('g2'), 'a', EGradeResults.WRONG);
+    expect(wrong.lockedOutTeamIds).toEqual(['a']);
+    expect(rules.mayBuzz(round, wrong, 'a', {})).toBeFalse();
+    expect(rules.mayBuzz(round, wrong, 'a', {oneTryPerTile: true})).toBeFalse();
+    expect(rules.mayBuzz(round, wrong, 'a', {oneTryPerTile: false})).toBeTrue();
+    expect(rules.mayBuzz(round, wrong, 'b', {})).toBeTrue();
+    // only for this tile
+    const next = rules.applySelectQuestion(round, rules.applySelectQuestion(round, wrong, PacketHelper.makeSelectQuestionPacket(null)),
+      PacketHelper.makeSelectQuestionPacket('m1'));
+    expect(rules.mayBuzz(round, next, 'a', {})).toBeTrue();
   });
 
   it('closes a tile without points, or keeps it for later', () => {
@@ -59,7 +72,7 @@ describe('JeopardyRoundRules', () => {
 
   it('keeps what a state saved only if it fits the board', () => {
     expect(rules.completeProgress(round, {playedQuestionIds: ['g1', 'x', 'g1'], openQuestionId: 'x', pickingTeamId: 'a'}))
-      .toEqual({playedQuestionIds: ['g1'], openQuestionId: null, pickingTeamId: 'a', wagers: {}});
+      .toEqual({playedQuestionIds: ['g1'], openQuestionId: null, pickingTeamId: 'a', wagers: {}, lockedOutTeamIds: []});
     expect(rules.applySetPickingTeam(start(), 'c').pickingTeamId).toBe('c');
   });
 
@@ -79,7 +92,7 @@ describe('JeopardyRoundRules', () => {
 
     it('is answered by the team that picked it, after it wagered', () => {
       const progress = opened();
-      expect(rules.mayBuzz(board, progress, 'a')).toBeFalse();
+      expect(rules.mayBuzz(board, progress, 'a', {})).toBeFalse();
       expect(rules.mayGrade(board, progress, 'a')).toBeFalse();
       const wagered = rules.applySetWager(board, progress, 'a', 150, 50);
       expect(wagered.wagers).toEqual({a: 150});
@@ -132,7 +145,7 @@ describe('FinalRoundRules', () => {
     expect(rules.applySetWager(final, progress, 'c', 50, -20).wagers.c).toBe(0);
     expect(rules.mayGrade(final, progress, 'a')).toBeFalse();
     progress = rules.applySelectQuestion(final, progress, PacketHelper.makeSelectQuestionPacket('q'));
-    expect(rules.mayBuzz(final, progress, 'a')).toBeFalse();
+    expect(rules.mayBuzz(final, progress, 'a', {})).toBeFalse();
     expect(rules.getGradePoints(final, progress, EGradeResults.CORRECT, 'a')).toBe(300);
     expect(rules.getGradePoints(final, progress, EGradeResults.WRONG, 'b')).toBe(-400);
     progress = rules.afterGrade(final, progress, 'a', EGradeResults.CORRECT);

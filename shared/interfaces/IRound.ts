@@ -97,6 +97,10 @@ export interface IJeopardyRoundProgress {
      * The wager on the open Daily Double, by team ID; empty for other tiles and while the board is shown
      */
     wagers: Record<string, number>;
+    /**
+     * The teams that answered the open tile wrong; with IPlayOptions.oneTryPerTile they can't buzz on it again
+     */
+    lockedOutTeamIds: string[];
 }
 
 /**
@@ -121,6 +125,16 @@ export interface IFinalRoundProgress {
  * How far a round got; IGameState.roundProgress has one for each round of the game
  */
 export type IRoundProgress = IClassicRoundProgress | IJeopardyRoundProgress | IFinalRoundProgress;
+
+/**
+ * How a play of a game goes, chosen when it is set up
+ */
+export interface IPlayOptions {
+    /**
+     * Jeopardy: a team that answered a tile wrong can't buzz on it again. On unless it is false.
+     */
+    oneTryPerTile?: boolean;
+}
 
 /**
  * Where a game is, for lists and the master, all counted from 1

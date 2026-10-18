@@ -1,5 +1,5 @@
 import {IAnswer} from './IAnswer';
-import {IRoundProgress} from './IRound';
+import {IPlayOptions, IRoundProgress} from './IRound';
 import {IMediaQuestionState} from "./IMediaQuestionState";
 import {IMediaVolume} from "./IMediaVolume";
 
@@ -39,4 +39,9 @@ export interface IGameState {
      * before themes existed, and an unknown one (e.g. from a newer version), means the default theme.
      */
     themeId?: string;
+    /**
+     * How this play goes, chosen when the game is set up like themeId; missing in states from before they existed,
+     * which play with the defaults
+     */
+    playOptions?: IPlayOptions;
 }

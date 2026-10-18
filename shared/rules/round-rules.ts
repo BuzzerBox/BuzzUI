@@ -1,5 +1,5 @@
 import {IQuestion} from '../interfaces/IQuestion';
-import {IRound, IRoundProgress} from '../interfaces/IRound';
+import {IPlayOptions, IRound, IRoundProgress} from '../interfaces/IRound';
 import {EGradeResults} from '../enums/EGradeResults';
 
 /**
@@ -53,9 +53,9 @@ export interface IRoundRules<R extends IRound = IRound, P extends IRoundProgress
     isOver(round: R, progress: P): boolean;
 
     /**
-     * Whether the team may buzz now
+     * Whether the team may buzz now; the server turns off the buzzers of the teams that may not, see GameService
      */
-    mayBuzz(round: R, progress: P, teamId: string): boolean;
+    mayBuzz(round: R, progress: P, teamId: string, options: IPlayOptions): boolean;
 
     /**
      * Whether the master may grade the answer of the team now, e.g. not twice in the final

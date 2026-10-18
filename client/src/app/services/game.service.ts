@@ -45,6 +45,7 @@ import {
   IFinalRound,
   IFinalRoundProgress,
   ISetWagerPacket,
+  IPlayOptions,
   ISetupPacket,
   IStartGamePacket,
   IStorageAccessPacket,
@@ -442,18 +443,22 @@ export class GameService implements OnDestroy {
    * @param rounds with the URLs of their media
    * @param gameState undefined for a new state
    * @param themeId how the screens look, see screen-themes.ts
+   * @param playOptions how this play goes, see IGameState.playOptions
    */
   public setupStoredGame(teams: ITeam[], rounds: IRound[], gameState: IGameState | undefined, storage: IGameStorageRef,
-                         isNewState: boolean, themeId?: string): Promise<void> {
-    return this.setupGame(teams, rounds, gameState, true, storage, isNewState, themeId);
+                         isNewState: boolean, themeId?: string, playOptions?: IPlayOptions): Promise<void> {
+    return this.setupGame(teams, rounds, gameState, true, storage, isNewState, themeId, playOptions);
   }
 
   public setupGame(teams: ITeam[], rounds: IRound[], currentGameState?: IGameState, sendPacket: boolean = true,
-                   storage?: IGameStorageRef, isNewState?: boolean, themeId?: string): Promise<void> {
+                   storage?: IGameStorageRef, isNewState?: boolean, themeId?: string, playOptions?: IPlayOptions): Promise<void> {
     const promise: Promise<void> = this.setGameData(teams, rounds, currentGameState, true);
     // the master shows parts of the theme too, e.g. the answers' letters
     if (themeId) {
       this.currentGameState.themeId = themeId;
+    }
+    if (playOptions) {
+      this.currentGameState.playOptions = playOptions;
     }
     // console.log("current 2", currentGameState);
     // if (currentGameState == null) {
@@ -467,7 +472,8 @@ export class GameService implements OnDestroy {
         currentGameState,
         storage,
         isNewState,
-        themeId
+        themeId,
+        playOptions
       });
     }
     return promise;
@@ -542,6 +548,27 @@ export class GameService implements OnDestroy {
     return GameFormatHelper.getCurrentRound(this.rounds, this.currentGameState);
   }
 
+  /**
+   * The state a game starts with
+   */
+  public static makeInitialGameState(): IGameState {
+    return {
+      currentRoundId: '',
+      roundProgress: {},
+      loggedAnswers: [],
+      activatedAnswers: [],
+      markedTeamIds: [],
+      // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
+      setBuzzerLock: false,
+      mediaQuestionState: {
+        mediaState: EMediaStates.NO_MEDIA,
+        questionState: EQuestionAnswerStates.SHOWN,
+        answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
+      },
+      mediaVolume: PacketHelper.getDefaultMediaVolume()
+    };
+  }
+
   public async setGameData(teams: ITeam[], rounds: IRound[], gameState?: IGameState, dotNotMergeBuzzerIds: boolean = false): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!dotNotMergeBuzzerIds) {
@@ -556,21 +583,7 @@ export class GameService implements OnDestroy {
       }
       this.rounds = rounds ?? [];
       if (gameState == null) {
-        this.currentGameState = GameFormatHelper.completeGameState({
-          currentRoundId: '',
-          roundProgress: {},
-          loggedAnswers: [],
-          activatedAnswers: [],
-          markedTeamIds: [],
-          // if no gameState was passed, we can probably assume that the lock is not set since the game might be just starting
-          setBuzzerLock: false,
-          mediaQuestionState: {
-            mediaState: EMediaStates.NO_MEDIA,
-            questionState: EQuestionAnswerStates.SHOWN,
-            answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
-          },
-          mediaVolume: PacketHelper.getDefaultMediaVolume()
-        }, this.rounds);
+        this.currentGameState = GameFormatHelper.completeGameState(GameService.makeInitialGameState(), this.rounds);
       } else {
         // the server sends complete states; one passed in from a file may not be
         this.currentGameState = GameFormatHelper.completeGameState(gameState, this.rounds);
@@ -776,6 +789,14 @@ export class GameService implements OnDestroy {
   public getOpenTile(): IJeopardyTile | undefined {
     const round = this.getCurrentJeopardyRound();
     return round ? RoundRulesHelper.jeopardy.getTile(round, this.getCurrentJeopardyProgress()?.openQuestionId) : undefined;
+  }
+
+  /**
+   * Whether the team answered the open tile wrong and can't buzz on it again, see IPlayOptions.oneTryPerTile
+   */
+  public isLockedOut(teamId: string): boolean {
+    return this.currentGameState?.playOptions?.oneTryPerTile !== false && this.getOpenTile() != null
+      && RoundRulesHelper.jeopardy.isLockedOut(this.getCurrentJeopardyProgress(), teamId);
   }
 
   public isQuestionPlayed(questionId: string): boolean {

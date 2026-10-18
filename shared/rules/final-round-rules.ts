@@ -1,5 +1,5 @@
 import {IQuestion} from '../interfaces/IQuestion';
-import {IFinalRound, IFinalRoundProgress} from '../interfaces/IRound';
+import {IFinalRound, IFinalRoundProgress, IPlayOptions} from '../interfaces/IRound';
 import {ISelectQuestionPacket} from '../interfaces/ISelectQuestionPacket';
 import {EGradeResults} from '../enums/EGradeResults';
 import {IRoundRules} from './round-rules';
@@ -66,7 +66,7 @@ export class FinalRoundRules implements IRoundRules<IFinalRound, IFinalRoundProg
         return !!progress?.questionShown;
     }
 
-    public mayBuzz(round: IFinalRound, progress: IFinalRoundProgress, teamId: string): boolean {
+    public mayBuzz(round: IFinalRound, progress: IFinalRoundProgress, teamId: string, options: IPlayOptions): boolean {
         return false;
     }
 

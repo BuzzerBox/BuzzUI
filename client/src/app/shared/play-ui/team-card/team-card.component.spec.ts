@@ -24,6 +24,7 @@ describe('TeamCardComponent', () => {
   let gameState: Partial<IGameState>;
   let markTeam: Subject<IMarkTeamPacket>;
   let gradeAnswer: Subject<IGradeAnswerPacket>;
+  let lockedOutTeamIds: string[];
 
   beforeEach(async () => {
     teams = [
@@ -33,7 +34,9 @@ describe('TeamCardComponent', () => {
     gameState = {markedTeamIds: []};
     markTeam = new Subject();
     gradeAnswer = new Subject();
+    lockedOutTeamIds = [];
     const game = {
+      isLockedOut: (teamId: string) => lockedOutTeamIds.includes(teamId),
       getTeams: () => teams,
       getGameStateData: () => gameState,
       getCurrentQuestion: () => null,
@@ -64,6 +67,14 @@ describe('TeamCardComponent', () => {
     expect(card().classList).toContain('marked');
     expect(card().classList).not.toContain('dimmed');
     expect(otherCard().classList).toContain('dimmed');
+  });
+
+  it('shows that its team is out for the open tile', () => {
+    lockedOutTeamIds = ['A'];
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-team-card').classList).toContain('locked-out');
+    expect(text()).toContain('gesperrt');
+    expect(fixture.nativeElement.querySelector('.other').classList).not.toContain('locked-out');
   });
 
   it('counts up to new points and shows the change above them for a moment', fakeAsync(() => {

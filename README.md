@@ -154,7 +154,15 @@ games/<Name>/                      on the box: <storage.boxPath>/games (default 
   the tile's value and lets that team pick next, a wrong one costs it. On a Daily Double only the picking team
   answers, for a wager up to its points (or the board's highest value, if that is more). A final shows its category,
   every team wagers up to its points, then the question follows and the master grades every team. Questions and
-  rounds have IDs that stay the same, which states remember their progress by. Versions and states saved before rounds existed (format 4 and older, see
+  rounds have IDs that stay the same, which states remember their progress by. When a game is started, the master
+  chooses who picks the first tile and whether a team that answered a tile wrong is out for the rest of it ("Ein
+  Versuch pro Kachel", on by default).
+- **Buzzers that may not buzz:** the server turns off the buzzers of the teams the rules don't let buzz (e.g. on the
+  board, on a Daily Double, or after a wrong answer with one try per tile) with the box's `DISABLE_BUZZER` and
+  `ENABLE_ALL_BUZZERS` commands (`serial.commands` in `config.json`, see the BuzzController README), so pressing them
+  neither locks the box nor lights them up. It sends the disabled ones again with every heartbeat, since the box turns
+  all on again after a reset. Firmware from before the commands ignores them; the server then releases the box right
+  away when such a team buzzes. Keypress buzzers in the browser are ignored the same way. Versions and states saved before rounds existed (format 4 and older, see
   `CURRENT_GAME_FORMAT_VERSION`) are read as one classic round each time they are loaded or imported
   (`GameFormatHelper`); their files stay as they are.
 - **States:** each time a game is played gets a state with its teams and progress, which plays the version it was

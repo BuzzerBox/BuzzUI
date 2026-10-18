@@ -1,5 +1,5 @@
 import {IGamePacket, EPacketTypes, ITeam, IGameState, IGameStorageRef} from '../shared';
-import {IRound} from './IRound';
+import {IPlayOptions, IRound} from './IRound';
 
 export interface ISetupPacket extends IGamePacket {
     packetType: EPacketTypes.SETUP_GAME;
@@ -21,4 +21,8 @@ export interface ISetupPacket extends IGamePacket {
      * How the screens look in this game, see IGameState.themeId
      */
     themeId?: string;
+    /**
+     * How this play goes, see IGameState.playOptions
+     */
+    playOptions?: IPlayOptions;
 }
