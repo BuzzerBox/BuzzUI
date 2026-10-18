@@ -1,9 +1,30 @@
 import * as fs from 'fs';
+import {execFile} from 'child_process';
 import {ReadlineParser, SerialPort} from 'serialport';
 import {IUsbBuzzer, TUsbBuzzerError} from '../../shared/shared';
 import {ConfigService} from './config.service';
 import {LoggerService} from './logger.service';
 import {UdpBuzzerService} from './udp-buzzer.service';
+
+/**
+ * Pulls EN low through RTS, as esptool does, with DTR off so that the ESP32 starts its firmware and not the bootloader.
+ * serialport's set() can't do it on Linux: it clears a break (TIOCCBRK) before it sets the lines, and the kernel's
+ * cdc_acm driver refuses that for the Feather's USB serial chip (EOPNOTSUPP), so the lines are never set. This sets
+ * only the lines, on a second file descriptor of the port; python3 is on the box (Raspberry Pi OS, and Ansible needs it).
+ */
+const RESET_SCRIPT = `
+import fcntl, os, struct, sys, termios, time
+fd = os.open(sys.argv[1], os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+try:
+    dtr = struct.pack('I', termios.TIOCM_DTR)
+    rts = struct.pack('I', termios.TIOCM_RTS)
+    fcntl.ioctl(fd, termios.TIOCMBIC, dtr)
+    fcntl.ioctl(fd, termios.TIOCMBIS, rts)
+    time.sleep(0.1)
+    fcntl.ioctl(fd, termios.TIOCMBIC, rts)
+finally:
+    os.close(fd)
+`;
 
 interface IWifiSettings {
     ssid: string;
@@ -190,7 +211,9 @@ export class BuzzerProvisioningService {
      * Greets the buzzer, and gives it the WiFi if there is one to give. Never rejects.
      */
     private async talk(path: string, wifi: IWifiSettings | null): Promise<ISessionResult> {
-        const port = new SerialPort({path, baudRate: 115200, autoOpen: false, hupcl: false});
+        // not locked, so that reset() can open the port as well; opening raises DTR and RTS together, which doesn't
+        // reset the ESP32
+        const port = new SerialPort({path, baudRate: 115200, autoOpen: false, hupcl: false, lock: false});
         try {
             await new Promise<void>((resolve, reject) => port.open(err => err ? reject(err) : resolve()));
         } catch (e) {
@@ -198,8 +221,6 @@ export class BuzzerProvisioningService {
             return {error: 'port-error', openFailed: true};
         }
         port.on('error', err => LoggerService.warn(`Serial error of the buzzer at ${path}`, err));
-        // DTR and RTS reset the ESP32 (as for flashing); both off leaves it running
-        this.setLines(port, false);
         const lines = port.pipe(new ReadlineParser({delimiter: '\n'}));
         const send = (line: string) => port.write(line + '\n');
         const started = Date.now();
@@ -215,7 +236,7 @@ export class BuzzerProvisioningService {
                     if (result.macAddress == null && !wasReset
                             && Date.now() - started > BuzzerProvisioningService.RESET_AFTER_IN_MS) {
                         wasReset = true;
-                        this.reset(port);
+                        this.reset(path);
                     }
                     if (Date.now() - started > BuzzerProvisioningService.TIMEOUT_IN_MS) {
                         finish('no-answer');
@@ -262,19 +283,13 @@ export class BuzzerProvisioningService {
     }
 
     /**
-     * Pulls EN low through RTS, as esptool does, with DTR off so that the ESP32 starts its firmware and not the
-     * bootloader
+     * Restarts the ESP32, which wakes a sleeping buzzer, see RESET_SCRIPT
      */
-    private reset(port: SerialPort): void {
-        this.setLines(port, true, () => setTimeout(() => this.setLines(port, false), 100));
-    }
-
-    private setLines(port: SerialPort, rts: boolean, then?: () => void): void {
-        port.set({dtr: false, rts}, err => {
+    private reset(path: string): void {
+        execFile('python3', ['-I', '-c', RESET_SCRIPT, path], {timeout: 5000}, (err, stdout, stderr) => {
             if (err) {
-                LoggerService.warn(`Could not set DTR/RTS of ${port.path}`, err);
+                LoggerService.warn(`Could not reset the buzzer at ${path}: ${stderr || err.message}`);
             }
-            then?.();
         });
     }
 
