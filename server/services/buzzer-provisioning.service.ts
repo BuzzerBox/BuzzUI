@@ -28,9 +28,13 @@ export class BuzzerProvisioningService {
     // a buzzer in deep sleep doesn't answer; then it is reset, which wakes it
     private static readonly RESET_AFTER_IN_MS = 2000;
     private static readonly TIMEOUT_IN_MS = 15000;
+    // a port that can't be opened yet (e.g. right after it showed up) is tried again with the next look, this often
+    private static readonly MAX_OPEN_ATTEMPTS = 5;
 
     // the ports of buzzers that are plugged in, so each is set up once
     private readonly knownPaths = new Set<string>();
+    // how often each port couldn't be opened, until it is unplugged
+    private readonly failedOpens = new Map<string, number>();
 
     private constructor() {
         const conf = ConfigService.get().udpBuzzer;
@@ -56,6 +60,7 @@ export class BuzzerProvisioningService {
         for (const path of [...this.knownPaths]) {
             if (!paths.has(path)) {
                 this.knownPaths.delete(path);
+                this.failedOpens.delete(path);
             }
         }
         for (const path of paths) {
@@ -73,7 +78,18 @@ export class BuzzerProvisioningService {
         }
         LoggerService.log(`Setting up the buzzer at ${path}`);
         const port = new SerialPort({path, baudRate: 115200, autoOpen: false, hupcl: false});
-        await new Promise<void>((resolve, reject) => port.open(err => err ? reject(err) : resolve()));
+        try {
+            await new Promise<void>((resolve, reject) => port.open(err => err ? reject(err) : resolve()));
+        } catch (e) {
+            const attempts = (this.failedOpens.get(path) ?? 0) + 1;
+            this.failedOpens.set(path, attempts);
+            if (attempts < BuzzerProvisioningService.MAX_OPEN_ATTEMPTS) {
+                LoggerService.warn(`Could not open the buzzer at ${path}, trying again`, e);
+                this.knownPaths.delete(path);
+                return;
+            }
+            throw e;
+        }
         port.on('error', err => LoggerService.warn(`Serial error of the buzzer at ${path}`, err));
         // DTR and RTS reset the ESP32 (as for flashing); both off leaves it running
         this.setLines(port, false);

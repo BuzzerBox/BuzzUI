@@ -21,8 +21,24 @@
     }
 
     <h2>Teams</h2>
+    @if (canChooseBuzzerType()) {
+      <mat-button-toggle-group class="buzzer-type" [value]="buzzerType" (change)="chooseBuzzerType($event.value)"
+                               aria-label="Buzzer">
+        <mat-button-toggle value="serial">Analoge Buzzer</mat-button-toggle>
+        <mat-button-toggle value="udp">Digitale Buzzer</mat-button-toggle>
+      </mat-button-toggle-group>
+      <p class="hint">Ein Spiel läuft entweder mit den Buzzern an der Box oder mit den Funkbuzzern.</p>
+    }
+    @if (dropsSavedTeams()) {
+      <p class="warning">Dieser Spielstand wurde mit den {{buzzerType === 'udp' ? 'analogen' : 'digitalen'}} Buzzern gespielt.
+        Seine Teams und ihre Punkte fallen weg.</p>
+    }
     @if (rows.length === 0) {
-      <p>Die Buzzer sind nicht bekannt. Lade die Seite neu.</p>
+      @if (buzzerType === 'udp') {
+        <p>Kein Funkbuzzer ist verbunden. Schalte die Funkbuzzer ein, sie erscheinen hier, sobald sie sich melden.</p>
+      } @else {
+        <p>Die Buzzer sind nicht bekannt. Lade die Seite neu.</p>
+      }
     }
     <form [formGroup]="teamsFormGroup">
       @for (row of rows; track row.controlName) {

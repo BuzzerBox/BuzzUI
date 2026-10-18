@@ -2,7 +2,7 @@ import {Component, OnDestroy} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
 import {Subscription} from 'rxjs';
-import {IBuzzer, ITeam} from '../../../../../shared/shared';
+import {BuzzerHelper, IBuzzer, ITeam} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 
 interface ITeamRow {
@@ -14,8 +14,8 @@ interface ITeamRow {
 }
 
 /**
- * Changes the teams while the game is running, like the teams step of the setup: one row per buzzer, which can be
- * activated for a team or not
+ * Changes the teams while the game is running, like the teams step of the setup: one row per buzzer of the kind the game
+ * is played with (BuzzerHelper.isMixed), which can be activated for a team or not
  */
 @Component({
     selector: 'app-dialog-teams',
@@ -30,8 +30,10 @@ export class DialogTeamsComponent implements OnDestroy {
   public rows: ITeamRow[] = [];
   public teamsFormGroup = new UntypedFormGroup({});
   private buzzersSubscription: Subscription;
+  private readonly buzzerType: IBuzzer['type'];
 
   constructor(private game: GameService, private dialogRef: MatDialogRef<DialogTeamsComponent>) {
+    this.buzzerType = BuzzerHelper.getType(this.game.getTeams()?.[0]?.buzzerId);
     this.updateRows(this.game.getAvailableBuzzers());
     // a UDP buzzer found while the dialog is open can be added right away
     this.buzzersSubscription = this.game.observeAvailableBuzzers().subscribe(buzzers => this.updateRows(buzzers));
@@ -42,22 +44,26 @@ export class DialogTeamsComponent implements OnDestroy {
   }
 
   /**
-   * One row per buzzer; the rows that are there keep what was entered
+   * One row per buzzer of the game's kind; the rows that are there keep what was entered
    */
   private updateRows(buzzers: IBuzzer[]): void {
     const teams = this.game.getTeams() ?? [];
-    if (buzzers.length < this.rows.length) {
-      // only a restarted server has fewer buzzers, which may be in another order now
+    // a restarted server has new IDs for the buzzers of the box, and may have found the UDP buzzers in another order
+    if (this.rows.some(row => buzzers[row.buzzerIndex]?.id !== row.buzzer.id)) {
       this.rows = [];
       this.teamsFormGroup = new UntypedFormGroup({});
     }
     buzzers.forEach((buzzer, buzzerIndex) => {
+      if (BuzzerHelper.getType(buzzer.id) !== this.buzzerType) {
+        return;
+      }
       const team = teams.find(t => t.buzzerId === buzzer.id);
-      let row = this.rows[buzzerIndex];
+      let row = this.rows.find(r => r.buzzerIndex === buzzerIndex);
       if (row == null) {
+        const position = this.rows.length;
         row = {buzzer, buzzerIndex, team, controlName: 'buzzer' + buzzerIndex};
         this.rows.push(row);
-        const control = new UntypedFormControl(team?.name ?? 'Team ' + (buzzerIndex + 1), Validators.required);
+        const control = new UntypedFormControl(team?.name ?? 'Team ' + (position + 1), Validators.required);
         if (team == null) {
           control.disable();
         }

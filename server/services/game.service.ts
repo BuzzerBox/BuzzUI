@@ -42,6 +42,7 @@ import {
     IUpdateInfoPacket,
     IUpdateMediaStatePacket,
     IUpdateTeamsPacket,
+    BuzzerHelper,
     PacketHelper
 } from "../../shared/shared";
 import config from '../../config.json';
@@ -287,6 +288,10 @@ export class GameService {
         if (packet.teams.length < 2) {
             packetOk = false;
         }
+        if (BuzzerHelper.isMixed(packet.teams.map(team => team.buzzerId))) {
+            LoggerService.warn('Ignoring a setup with teams on the buzzers of the box and on UDP buzzers');
+            packetOk = false;
+        }
 
         const responsePacket: IResponsePacket = {
             packetType: EPacketTypes.RESPONSE_PACKET,
@@ -516,8 +521,8 @@ export class GameService {
                 points: existingTeam?.points ?? 0
             });
         }
-        // like in the setup, a game needs at least two teams
-        if (newTeams.length < 2) {
+        // like in the setup, a game needs at least two teams, all on the same kind of buzzers
+        if (newTeams.length < 2 || BuzzerHelper.isMixed(newTeams.map(team => team.buzzerId))) {
             LoggerService.warn('Ignoring invalid teams', packet.teams);
             // let the master show the teams that are still in place
             this.sendToMaster<IUpdateTeamsPacket>({packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams});
@@ -1010,15 +1015,15 @@ export class GameService {
     }
 
     /**
-     * What a UDP buzzer shows: whether its team buzzed and is marked, and whether presses count. While a game is running
-     * (also while its master is away), the buzzers stay awake.
+     * What a UDP buzzer shows: whether its team buzzed and is marked, and whether presses count. While a game with UDP
+     * buzzers is running (also while its master is away), they stay awake.
      */
     private getUdpBuzzerState(buzzerId: string): IUdpBuzzerState {
         const team = this.teams.find(t => t.buzzerId === buzzerId);
         return {
             selected: team != null && (this.currentGameState.markedTeamIds ?? []).includes(team.teamId),
             locked: this.keypressLocked,
-            game: this.isGameRunning()
+            game: this.isGameRunning() && this.teams.some(t => BuzzerHelper.isUdpBuzzerId(t.buzzerId))
         };
     }
 }

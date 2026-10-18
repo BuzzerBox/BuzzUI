@@ -98,6 +98,9 @@ export type UdpBuzzerStateProvider = (buzzerId: string) => IUdpBuzzerState;
  */
 export class UdpBuzzerService {
     private static instance: UdpBuzzerService;
+    private static readonly MAC_ADDRESS = /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/i;
+    // the longest a press can take to arrive: the buzzer sends it again for 300 ms (BuzzController/wireless config.h)
+    private static readonly MAX_PRESS_DELAY_IN_US = 500000;
 
     private socket: dgram.Socket;
     // by MAC address, in the order they were found, which is the order of their buzzerIndex
@@ -167,7 +170,12 @@ export class UdpBuzzerService {
     public sendStateToAll(): void {
         for (const buzzer of this.buzzers.values()) {
             if (buzzer.online) {
-                this.sendState(buzzer);
+                // the game calls this while it locks and releases; a buzzer must not break that
+                try {
+                    this.sendState(buzzer);
+                } catch (e) {
+                    LoggerService.error(`Could not send the state to UDP buzzer ${buzzer.macAddress}`, e);
+                }
             }
         }
     }
@@ -180,8 +188,9 @@ export class UdpBuzzerService {
             LoggerService.warn(`Ignoring broken UDP packet from ${rinfo.address}: ${msg}`);
             return;
         }
-        if (typeof packet?.id !== 'string' || packet.id === '') {
-            LoggerService.warn(`Ignoring UDP packet without buzzer ID from ${rinfo.address}: ${msg}`);
+        // anything on the WiFi can send here; only MAC addresses become buzzers, so the list can't fill up with junk
+        if (typeof packet?.id !== 'string' || !UdpBuzzerService.MAC_ADDRESS.test(packet.id)) {
+            LoggerService.warn(`Ignoring UDP packet without a valid buzzer ID from ${rinfo.address}: ${msg}`);
             return;
         }
         // a failing packet must not take the server down
@@ -197,7 +206,7 @@ export class UdpBuzzerService {
                 const isRepeated = typeof packet.n === 'number' && packet.n === buzzer.lastPressNumber;
                 if (!isRepeated) {
                     buzzer.lastPressNumber = packet.n;
-                    this.onPress(buzzer, packet.ts);
+                    this.onPress(buzzer, packet.ts, this.now());
                 }
                 // so that the buzzer stops sending it; whether it won follows after the collection window
                 this.sendState(buzzer, {pa: packet.n});
@@ -220,7 +229,7 @@ export class UdpBuzzerService {
                 // the end of the MAC address tells the buzzers apart, it is printed on them
                 name: 'Funkbuzzer ' + key.slice(-5),
                 ip: rinfo.address,
-                port: listenPort ?? rinfo.port,
+                port: UdpBuzzerService.isValidPort(listenPort) ? listenPort : rinfo.port,
                 lastSeen: Date.now(),
                 online: true,
                 batteryLow: false
@@ -235,7 +244,7 @@ export class UdpBuzzerService {
         }
         buzzer.lastSeen = Date.now();
         buzzer.ip = rinfo.address;
-        if (listenPort != null) {
+        if (UdpBuzzerService.isValidPort(listenPort)) {
             buzzer.port = listenPort;
         }
         if (changed) {
@@ -280,13 +289,23 @@ export class UdpBuzzerService {
         }
     }
 
+    private static isValidPort(port: unknown): port is number {
+        return Number.isInteger(port) && (port as number) > 0 && (port as number) < 65536;
+    }
+
     /**
      * Presses that arrive within the collection window are compared by when they happened, so a press that took longer
      * over the WiFi still wins. The buzzers synchronize their clocks with the server's (STATE.st) and send the time of
-     * the press on it; with a window of 0 the first press that arrives wins.
+     * the press on it; with a window of 0 the first press that arrives wins. A time after the press arrived, or before
+     * it could have been sent, comes from a clock that is off; then the press counts as made when it arrived, so such a
+     * buzzer can't win every press.
      */
-    private onPress(buzzer: IUdpBuzzer, timestamp: number): void {
-        const time = typeof timestamp === 'number' ? timestamp : Number.MAX_SAFE_INTEGER;
+    private onPress(buzzer: IUdpBuzzer, timestamp: number, arrivedAt: number): void {
+        let time = Number.MAX_SAFE_INTEGER;
+        if (Number.isFinite(timestamp)) {
+            const isPlausible = timestamp <= arrivedAt && timestamp >= arrivedAt - UdpBuzzerService.MAX_PRESS_DELAY_IN_US;
+            time = isPlausible ? timestamp : arrivedAt;
+        }
         if (!this.presses.has(buzzer.id) || time < this.presses.get(buzzer.id)) {
             this.presses.set(buzzer.id, time);
         }
