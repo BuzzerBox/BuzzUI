@@ -387,12 +387,13 @@ void setup() {
     WiFi.setSleep(false);
     WiFi.setAutoReconnect(true);
     snprintf(mac, sizeof(mac), "%s", WiFi.macAddress().c_str());
+    // before BUZZ READY, which tells the box the WiFi the buzzer has
+    loadWifi();
     printReady();
 
     policy.onWake(millis());
     batteryMv = readBattery();
     lastBatteryMs = millis();
-    loadWifi();
     if (hasWifi) {
         connectWifi(true);
     } else {
