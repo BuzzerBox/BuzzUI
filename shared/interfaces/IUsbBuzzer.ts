@@ -31,5 +31,10 @@ export interface IUsbBuzzer {
     isAdopted?: boolean;
     /** It talks to this server over WiFi right now (UdpBuzzerService) */
     isConnected?: boolean;
+    /**
+     * The color of its case as the buzzer told when it was detected, or as it was given when it was adopted; missing if
+     * it has none. Only buzzers with firmware 1.2.0 and later keep a color, see BuzzerHelper.supportsCaseColor().
+     */
+    color?: string;
     error?: TUsbBuzzerError;
 }

@@ -8,6 +8,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {IUsbBuzzer} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {UsbBuzzerCardsComponent} from './usb-buzzer-cards.component';
+import {BuzzerColorComponent} from '../buzzer-color/buzzer-color.component';
 
 describe('UsbBuzzerCardsComponent', () => {
   let fixture: ComponentFixture<UsbBuzzerCardsComponent>;
@@ -20,7 +21,7 @@ describe('UsbBuzzerCardsComponent', () => {
     game.observeUsbBuzzers.and.returnValue(buzzers.asObservable());
     await TestBed.configureTestingModule({
       declarations: [UsbBuzzerCardsComponent],
-      imports: [MatCardModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule],
+      imports: [BuzzerColorComponent, MatCardModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule],
       providers: [{provide: GameService, useValue: game}, provideZoneChangeDetection()]
     }).compileComponents();
     fixture = TestBed.createComponent(UsbBuzzerCardsComponent);
@@ -43,7 +44,7 @@ describe('UsbBuzzerCardsComponent', () => {
     expect(text()).toContain('Funkbuzzer 8F:DC');
     expect(text()).toContain('Firmware 1.0.1');
     button().click();
-    expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0');
+    expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
   });
 
   it('shows the WiFi it was given, without a button, and when it is connected', () => {
@@ -59,7 +60,7 @@ describe('UsbBuzzerCardsComponent', () => {
     expect(text()).toContain('Bereits für diese BuzzerBox übernommen (WLAN „BuzzerBoxNetwork“) und verbunden.');
     expect(button().textContent).toContain('Erneut übernehmen');
     button().click();
-    expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0');
+    expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
   });
 
   it('tells about the WiFi of another box', () => {
@@ -78,5 +79,47 @@ describe('UsbBuzzerCardsComponent', () => {
     show({path: '/dev/ttyACM0', state: 'identifying'}, {path: '/dev/ttyACM1', state: 'adopting', macAddress: 'AA:BB:CC:DD:EE:01'});
     expect(fixture.nativeElement.querySelectorAll('mat-card').length).toBe(2);
     expect(button()).toBeNull();
+  });
+
+  describe('the color of the case', () => {
+    const action = () => (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('mat-card-actions button');
+    const swatch = (name: string) =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(`.swatch[aria-label="${name}"]`);
+
+    it('is chosen when adopting a buzzer', () => {
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0'});
+      swatch('Blau').click();
+      fixture.detectChanges();
+      expect(swatch('Blau').getAttribute('aria-checked')).toBe('true');
+      action().click();
+      expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', '#1e88e5');
+    });
+
+    it('is kept without a choice', () => {
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835'});
+      expect(text()).toContain('Gehäuse Gelb');
+      expect(swatch('Gelb').getAttribute('aria-checked')).toBe('true');
+      action().click();
+      expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
+    });
+
+    it('of an adopted buzzer can be changed', () => {
+      show({path: '/dev/ttyACM0', state: 'adopted', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835',
+        ssid: 'BuzzerBoxNetwork', isAdopted: true});
+      expect(action()).toBeNull();
+      swatch('Keine').click();
+      fixture.detectChanges();
+      expect(action().textContent).toContain('Farbe übernehmen');
+      action().click();
+      expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', '');
+    });
+
+    it('needs a newer firmware', () => {
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.1.2'});
+      expect(swatch('Blau')).toBeNull();
+      expect(text()).toContain('Firmware 1.2.0 oder neuer');
+      action().click();
+      expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
+    });
   });
 });

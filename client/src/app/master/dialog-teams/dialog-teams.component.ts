@@ -4,6 +4,7 @@ import {MatDialogRef} from '@angular/material/dialog';
 import {Subscription} from 'rxjs';
 import {BuzzerHelper, IBuzzer, ITeam} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
+import {TeamColorHelper} from '../../helper/team-color.helper';
 
 interface ITeamRow {
   buzzer: IBuzzer;
@@ -85,6 +86,17 @@ export class DialogTeamsComponent implements OnDestroy {
     } else {
       control.disable();
     }
+  }
+
+  /**
+   * The color the team on this buzzer has on the screens
+   */
+  public getColor(row: ITeamRow): string {
+    return TeamColorHelper.getBuzzerColor(row.buzzer, row.buzzerIndex);
+  }
+
+  public hasCaseColor(row: ITeamRow): boolean {
+    return row.buzzer.type === 'udp' && !!row.buzzer.color;
   }
 
   public getActiveCount(): number {

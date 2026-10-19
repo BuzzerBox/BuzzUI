@@ -15,6 +15,7 @@ import {
   StorageApiHelper
 } from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
+import {TeamColorHelper} from '../../helper/team-color.helper';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
 import {IPrepareNavigationState} from '../game-navigation';
@@ -225,6 +226,28 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
     } else {
       control.disable();
     }
+  }
+
+  /**
+   * The color the team on this buzzer has on the screens
+   */
+  public getColor(row: ITeamRow): string {
+    return TeamColorHelper.getBuzzerColor(row.buzzer, row.buzzerIndex);
+  }
+
+  public hasCaseColor(row: ITeamRow): boolean {
+    return row.buzzer.type === 'udp' && !!row.buzzer.color;
+  }
+
+  /**
+   * The names of the active teams that share their color with another one, as wireless buzzers in cases of the same
+   * color do; on the screens they only differ by their names
+   */
+  public getTeamsWithSameColor(): string[] {
+    const active = this.rows.filter(row => this.isActive(row));
+    return active
+      .filter(row => active.some(other => other !== row && this.getColor(other) === this.getColor(row)))
+      .map(row => this.teamsFormGroup.get(row.controlName).value);
   }
 
   public getActiveCount(): number {

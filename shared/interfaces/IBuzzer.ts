@@ -16,4 +16,9 @@ export interface IBuzzer {
     online?: boolean;
     /** For a UDP buzzer: its battery is low, see udpBuzzer.batteryLowInMV in the config */
     batteryLow?: boolean;
+    /**
+     * The color of the buzzer ("#rrggbb"): of a buzzer of the box as set in the config, of a UDP buzzer the color of its
+     * case, which it keeps in its flash (given when it was adopted, see BuzzerHelper.CASE_COLORS). Missing if unknown.
+     */
+    color?: string;
 }

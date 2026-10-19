@@ -7,6 +7,7 @@
     @for (row of rows; track row.controlName) {
       <div class="team-row" [class.inactive]="!isActive(row)">
         <mat-checkbox [checked]="isActive(row)" (change)="setActive(row, $event.checked)">
+          <app-buzzer-color [color]="getColor(row)" [isCaseColor]="hasCaseColor(row)"></app-buzzer-color>
           {{row.buzzer.name}}
           @if (row.buzzer.online === false) {
             <mat-icon class="buzzer-status" title="Dieser Funkbuzzer ist gerade nicht verbunden">wifi_off</mat-icon>

@@ -34,6 +34,8 @@ interface IHeartbeatPacket {
     // how often its WiFi dropped since then, and the reason of the last drop (ESP-IDF wifi_err_reason_t)
     wd?: number;
     wr?: number;
+    // the color of its case, "#rrggbb" (firmware 1.2.0 and later, once the box gave it one)
+    col?: string;
 }
 
 interface IPressPacket {
@@ -73,6 +75,8 @@ interface IUdpBuzzer {
     // the n of the last press, so that a press sent again is taken once
     lastPressNumber?: number;
     batteryLow: boolean;
+    // of its case, as the last heartbeat told
+    color?: string;
     // of the last heartbeat, to notice restarts and WiFi drops
     lastUptimeS?: number;
     lastWifiDrops?: number;
@@ -164,7 +168,8 @@ export class UdpBuzzerService {
             byteBind: '',
             type: 'udp',
             online: buzzer.online,
-            batteryLow: buzzer.batteryLow
+            batteryLow: buzzer.batteryLow,
+            color: buzzer.color
         }));
     }
 
@@ -202,6 +207,7 @@ export class UdpBuzzerService {
             if (packet.t === EUdpPacketType.HEARTBEAT) {
                 const buzzer = this.onSignOfLife(packet.id, rinfo, packet.lp);
                 this.onBattery(buzzer, packet.bat);
+                this.onColor(buzzer, packet.col);
                 this.onDiagnostics(buzzer, packet);
                 this.sendState(buzzer, {ack: packet.seq});
             } else if (packet.t === EUdpPacketType.PRESS) {
@@ -288,6 +294,19 @@ export class UdpBuzzerService {
         if (batteryLow !== buzzer.batteryLow) {
             LoggerService.log(`UDP buzzer ${buzzer.macAddress}: battery ${batteryLow ? 'low' : 'ok'} (${millivolts} mV)`);
             buzzer.batteryLow = batteryLow;
+            this.notifyBuzzersChanged();
+        }
+    }
+
+    /**
+     * The buzzer tells its color with every heartbeat, so a buzzer that got another one while it was adopted shows it
+     * right away
+     */
+    private onColor(buzzer: IUdpBuzzer, color: unknown): void {
+        const normalized = BuzzerHelper.normalizeColor(color);
+        if (normalized !== buzzer.color) {
+            LoggerService.log(`UDP buzzer ${buzzer.macAddress}: color ${normalized ?? 'none'}`);
+            buzzer.color = normalized;
             this.notifyBuzzersChanged();
         }
     }

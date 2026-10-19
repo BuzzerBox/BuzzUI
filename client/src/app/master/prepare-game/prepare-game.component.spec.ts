@@ -92,4 +92,17 @@ describe('PrepareGameComponent', () => {
     expect(component.dropsSavedTeams()).toBeTrue();
     expect(component.getActiveCount()).toBe(0);
   });
+
+  it('shows the colors of the cases and tells which teams share one', () => {
+    buzzers = [box('b0'), box('b1'), {...udp('01'), color: '#1e88e5'}, {...udp('02'), color: '#1e88e5'}, udp('03')];
+    create();
+    component.chooseBuzzerType('udp');
+    expect(component.getColor(component.rows[0])).toBe('#1e88e5');
+    expect(component.hasCaseColor(component.rows[0])).toBeTrue();
+    expect(component.hasCaseColor(component.rows[2])).toBeFalse();
+    expect(component.getTeamsWithSameColor()).toEqual(['Team 1', 'Team 2']);
+    component.setActive(component.rows[1], false);
+    component.setActive(component.rows[2], true);
+    expect(component.getTeamsWithSameColor()).toEqual([]);
+  });
 });
