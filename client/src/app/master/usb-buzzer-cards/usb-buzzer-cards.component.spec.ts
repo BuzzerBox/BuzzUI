@@ -17,8 +17,9 @@ describe('UsbBuzzerCardsComponent', () => {
 
   beforeEach(async () => {
     buzzers = new BehaviorSubject<IUsbBuzzer[]>([]);
-    game = jasmine.createSpyObj<GameService>('GameService', ['observeUsbBuzzers', 'adoptUsbBuzzer']);
+    game = jasmine.createSpyObj<GameService>('GameService', ['observeUsbBuzzers', 'adoptUsbBuzzer', 'getAvailableBuzzers']);
     game.observeUsbBuzzers.and.returnValue(buzzers.asObservable());
+    game.getAvailableBuzzers.and.returnValue([]);
     await TestBed.configureTestingModule({
       declarations: [UsbBuzzerCardsComponent],
       imports: [BuzzerColorComponent, MatCardModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule],
@@ -98,6 +99,7 @@ describe('UsbBuzzerCardsComponent', () => {
     it('is kept without a choice', () => {
       show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835'});
       expect(text()).toContain('Gehäuse Gelb');
+      expect(text()).toContain('Gelber Wireless Buzzer');
       expect(swatch('Gelb').getAttribute('aria-checked')).toBe('true');
       action().click();
       expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
@@ -120,6 +122,13 @@ describe('UsbBuzzerCardsComponent', () => {
       expect(text()).toContain('Firmware 1.2.0 oder neuer');
       action().click();
       expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
+    });
+
+    it('names the buzzer as the server does among the others of its color', () => {
+      game.getAvailableBuzzers.and.returnValue([{id: 'udp:14:2B:2F:AF:8F:DC', name: 'Gelber Wireless Buzzer (8F:DC)',
+        keyBind: '', byteBind: '', type: 'udp', color: '#fdd835'}]);
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2b:2f:af:8f:dc', firmwareVersion: '1.2.0', color: '#fdd835'});
+      expect(text()).toContain('Gelber Wireless Buzzer (8F:DC)');
     });
   });
 });

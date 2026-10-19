@@ -5,6 +5,7 @@ import {Subscription} from 'rxjs';
 import {BuzzerHelper, IBuzzer, ITeam} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {TeamColorHelper} from '../../helper/team-color.helper';
+import {TeamHelper} from '../../helper/team.helper';
 
 interface ITeamRow {
   buzzer: IBuzzer;
@@ -12,6 +13,8 @@ interface ITeamRow {
   // the team that is on this buzzer now, if any
   team?: ITeam;
   controlName: string;
+  // the name a new team on it started with, which follows the buzzer's color until it is changed by hand
+  defaultName?: string;
 }
 
 /**
@@ -61,10 +64,10 @@ export class DialogTeamsComponent implements OnDestroy {
       const team = teams.find(t => t.buzzerId === buzzer.id);
       let row = this.rows.find(r => r.buzzerIndex === buzzerIndex);
       if (row == null) {
-        const position = this.rows.length;
         row = {buzzer, buzzerIndex, team, controlName: 'buzzer' + buzzerIndex};
         this.rows.push(row);
-        const control = new UntypedFormControl(team?.name ?? 'Team ' + (position + 1), Validators.required);
+        // a new team gets its name in updateDefaultNames()
+        const control = new UntypedFormControl(team?.name ?? '', Validators.required);
         if (team == null) {
           control.disable();
         }
@@ -72,6 +75,28 @@ export class DialogTeamsComponent implements OnDestroy {
       }
       row.buzzer = buzzer;
       row.team = team;
+    });
+    this.updateDefaultNames();
+  }
+
+  /**
+   * New teams are named after their buzzer's color, also when it turns up or changes later, as long as the name wasn't
+   * changed by hand
+   */
+  private updateDefaultNames(): void {
+    const taken: string[] = [];
+    this.rows.forEach((row, position) => {
+      if (row.team != null) {
+        taken.push(row.team.name);
+        return;
+      }
+      const name = TeamHelper.makeDefaultName(row.buzzer, position, taken);
+      taken.push(name);
+      const control = this.teamsFormGroup.get(row.controlName);
+      if (row.defaultName == null || control.value === row.defaultName) {
+        control.setValue(name);
+      }
+      row.defaultName = name;
     });
   }
 

@@ -66,7 +66,6 @@ interface IStatePacket {
 interface IUdpBuzzer {
     id: string;
     macAddress: string;
-    name: string;
     ip: string;
     port: number;
     // Date.now() of the last packet from it
@@ -158,12 +157,16 @@ export class UdpBuzzerService {
     }
 
     /**
-     * All buzzers found since the server started, in the order they were found
+     * All buzzers found since the server started, in the order they were found. They are named after the color of their
+     * case, so a name changes with it; buzzers of the same color also get the end of their MAC address.
      */
     public getBuzzers(): IBuzzer[] {
-        return [...this.buzzers.values()].map(buzzer => ({
+        const buzzers = [...this.buzzers.values()];
+        const hasSameColor = (buzzer: IUdpBuzzer) =>
+            buzzer.color != null && buzzers.some(other => other !== buzzer && other.color === buzzer.color);
+        return buzzers.map(buzzer => ({
             id: buzzer.id,
-            name: buzzer.name,
+            name: BuzzerHelper.makeUdpBuzzerName(buzzer.macAddress, buzzer.color, hasSameColor(buzzer)),
             keyBind: '',
             byteBind: '',
             type: 'udp',
@@ -236,7 +239,6 @@ export class UdpBuzzerService {
             buzzer = {
                 id: BuzzerHelper.makeUdpBuzzerId(key),
                 macAddress: key,
-                name: BuzzerHelper.makeUdpBuzzerName(key),
                 ip: rinfo.address,
                 port: UdpBuzzerService.isValidPort(listenPort) ? listenPort : rinfo.port,
                 lastSeen: Date.now(),

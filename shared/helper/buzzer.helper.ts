@@ -12,16 +12,16 @@ export class BuzzerHelper {
      * black are greys, so that a team in them still shows on both the light and the dark screens.
      */
     public static readonly CASE_COLORS: ICaseColor[] = [
-        {color: '#e53935', name: 'Rot'},
-        {color: '#fb8c00', name: 'Orange'},
-        {color: '#fdd835', name: 'Gelb'},
-        {color: '#43a047', name: 'Grün'},
-        {color: '#00acc1', name: 'Türkis'},
-        {color: '#1e88e5', name: 'Blau'},
-        {color: '#8e24aa', name: 'Lila'},
-        {color: '#ec407a', name: 'Pink'},
-        {color: '#cfd8dc', name: 'Weiß'},
-        {color: '#546e7a', name: 'Schwarz'}
+        {color: '#e53935', name: 'Rot', adjective: 'Roter'},
+        {color: '#fb8c00', name: 'Orange', adjective: 'Oranger'},
+        {color: '#fdd835', name: 'Gelb', adjective: 'Gelber'},
+        {color: '#43a047', name: 'Grün', adjective: 'Grüner'},
+        {color: '#00acc1', name: 'Türkis', adjective: 'Türkiser'},
+        {color: '#1e88e5', name: 'Blau', adjective: 'Blauer'},
+        {color: '#8e24aa', name: 'Lila', adjective: 'Lila'},
+        {color: '#ec407a', name: 'Pink', adjective: 'Pinker'},
+        {color: '#cfd8dc', name: 'Weiß', adjective: 'Weißer'},
+        {color: '#546e7a', name: 'Schwarz', adjective: 'Schwarzer'}
     ];
 
     private constructor() {
@@ -37,10 +37,18 @@ export class BuzzerHelper {
     }
 
     /**
-     * The name the master sees: the end of the MAC address, which tells the buzzers apart
+     * The name the master sees: after the color of its case, e.g. "Blauer Wireless Buzzer", or else the end of the MAC
+     * address, which tells the buzzers apart
+     * @param withMacAddress also for a buzzer with a color, when another one has the same
      */
-    public static makeUdpBuzzerName(macAddress: string): string {
-        return 'Funkbuzzer ' + macAddress.toUpperCase().slice(-5);
+    public static makeUdpBuzzerName(macAddress: string, color?: string, withMacAddress = false): string {
+        const macEnd = macAddress.toUpperCase().slice(-5);
+        const caseColor = BuzzerHelper.getCaseColor(color);
+        if (caseColor == null) {
+            return 'Funkbuzzer ' + macEnd;
+        }
+        const name = caseColor.adjective + ' Wireless Buzzer';
+        return withMacAddress ? `${name} (${macEnd})` : name;
     }
 
     /**
@@ -54,8 +62,12 @@ export class BuzzerHelper {
      * The name of one of the CASE_COLORS, or undefined for another color
      */
     public static getCaseColorName(color: string): string | undefined {
+        return BuzzerHelper.getCaseColor(color)?.name;
+    }
+
+    public static getCaseColor(color: string): ICaseColor | undefined {
         const normalized = BuzzerHelper.normalizeColor(color);
-        return BuzzerHelper.CASE_COLORS.find(caseColor => caseColor.color === normalized)?.name;
+        return BuzzerHelper.CASE_COLORS.find(caseColor => caseColor.color === normalized);
     }
 
     /**

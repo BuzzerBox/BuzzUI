@@ -38,8 +38,20 @@ export class UsbBuzzerCardsComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
+  /**
+   * As the server names it among the other buzzers once it connected (see UdpBuzzerService), or else by its color
+   */
   public getName(buzzer: IUsbBuzzer): string {
-    return buzzer.macAddress ? BuzzerHelper.makeUdpBuzzerName(buzzer.macAddress) : 'Funkbuzzer';
+    if (!buzzer.macAddress) {
+      return 'Funkbuzzer';
+    }
+    const id = BuzzerHelper.makeUdpBuzzerId(buzzer.macAddress);
+    const known = this.game.getAvailableBuzzers().find(available => available.id === id);
+    // the server's name follows the heartbeats, which may lag behind a color that was just given
+    if (known?.name && known.color === buzzer.color) {
+      return known.name;
+    }
+    return BuzzerHelper.makeUdpBuzzerName(buzzer.macAddress, buzzer.color);
   }
 
   public getDetails(buzzer: IUsbBuzzer): string {

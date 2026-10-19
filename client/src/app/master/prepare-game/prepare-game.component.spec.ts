@@ -100,9 +100,27 @@ describe('PrepareGameComponent', () => {
     expect(component.getColor(component.rows[0])).toBe('#1e88e5');
     expect(component.hasCaseColor(component.rows[0])).toBeTrue();
     expect(component.hasCaseColor(component.rows[2])).toBeFalse();
-    expect(component.getTeamsWithSameColor()).toEqual(['Team 1', 'Team 2']);
+    expect(component.getTeamsWithSameColor()).toEqual(['Blau', 'Blau 2']);
     component.setActive(component.rows[1], false);
     component.setActive(component.rows[2], true);
     expect(component.getTeamsWithSameColor()).toEqual([]);
+  });
+
+  it('names new teams after the color of their buzzer, until the name is changed by hand', () => {
+    buzzers = [box('b0'), {...udp('01'), color: '#e53935'}, udp('02'), udp('03')];
+    create();
+    component.chooseBuzzerType('udp');
+    const names = () => component.rows.map(row => component.teamsFormGroup.get(row.controlName).value);
+    expect(names()).toEqual(['Rot', 'Team 2', 'Team 3']);
+    // a color that turns up later
+    component.teamsFormGroup.get(component.rows[2].controlName).setValue('Die Füchse');
+    changeBuzzers([box('b0'), {...udp('01'), color: '#e53935'}, {...udp('02'), color: '#fdd835'}, {...udp('03'), color: '#fdd835'}]);
+    expect(names()).toEqual(['Rot', 'Gelb', 'Die Füchse']);
+  });
+
+  it('keeps the names of a continued game', () => {
+    buzzers = [box('b0'), {...udp('01'), color: '#e53935'}, {...udp('02'), color: '#1e88e5'}];
+    create({teams: [{name: 'A', buzzerId: 'udp:01', teamId: 'udp:01', buzzerIndex: 1, points: 3}]} as IGameInstanceState);
+    expect(component.rows.map(row => component.teamsFormGroup.get(row.controlName).value)).toEqual(['A', 'Blau']);
   });
 });

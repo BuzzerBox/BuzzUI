@@ -16,6 +16,7 @@ import {
 } from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {TeamColorHelper} from '../../helper/team-color.helper';
+import {TeamHelper} from '../../helper/team.helper';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
 import {IPrepareNavigationState} from '../game-navigation';
@@ -30,6 +31,8 @@ interface ITeamRow {
   // the team of the continued state that is on this buzzer, if any
   team?: ITeam;
   controlName: string;
+  // the name a new team on it started with, which follows the buzzer's color until it is changed by hand
+  defaultName?: string;
 }
 
 interface IMissingMedia {
@@ -198,7 +201,8 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
         const position = this.rows.length;
         row = {buzzer, buzzerIndex, team, controlName: 'buzzer' + buzzerIndex};
         this.rows.push(row);
-        const control = new UntypedFormControl(team?.name ?? 'Team ' + (position + 1), Validators.required);
+        // a new team gets its name in updateDefaultNames()
+        const control = new UntypedFormControl(team?.name ?? '', Validators.required);
         // a continued game keeps its teams; a new one starts with as few as can play, the others are added by hand
         if (this.isContinuing() ? team == null : position >= this.MIN_TEAMS) {
           control.disable();
@@ -212,6 +216,28 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
       }
       row.buzzer = buzzer;
       row.team = team;
+    });
+    this.updateDefaultNames();
+  }
+
+  /**
+   * New teams are named after their buzzer's color, also when it turns up or changes later, as long as the name wasn't
+   * changed by hand
+   */
+  private updateDefaultNames(): void {
+    const taken: string[] = [];
+    this.rows.forEach((row, position) => {
+      if (row.team != null) {
+        taken.push(row.team.name);
+        return;
+      }
+      const name = TeamHelper.makeDefaultName(row.buzzer, position, taken);
+      taken.push(name);
+      const control = this.teamsFormGroup.get(row.controlName);
+      if (row.defaultName == null || control.value === row.defaultName) {
+        control.setValue(name);
+      }
+      row.defaultName = name;
     });
   }
 
