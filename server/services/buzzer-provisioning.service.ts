@@ -8,6 +8,8 @@ import {UdpBuzzerService} from './udp-buzzer.service';
 
 /**
  * Pulls EN low through RTS, as esptool does, with DTR off so that the ESP32 starts its firmware and not the bootloader.
+ * Only for buzzers with a USB serial chip (udpBuzzer.provisioning.wakeUsbIds): a Feather ESP32-S3 has its own USB, where
+ * RTS doesn't reset it, and with DTR off it stops sending.
  * serialport's set() can't do it on Linux: it clears a break (TIOCCBRK) before it sets the lines, and the kernel's
  * cdc_acm driver refuses that for the Feather's USB serial chip (EOPNOTSUPP), so the lines are never set. This sets
  * only the lines, on a second file descriptor of the port; python3 is on the box (Raspberry Pi OS, and Ansible needs it).
@@ -46,8 +48,8 @@ export type UsbBuzzersChangedCallback = (buzzers: IUsbBuzzer[]) => void;
 
 /**
  * Wireless buzzers (BuzzController/wireless) plugged into the box over USB: the box finds out who they are, and gives
- * one the box's WiFi when the master adopts it. The buzzer's USB serial chip shows up as a serial port
- * (udpBuzzer.provisioning.usbIds). Text lines at 115200 baud:
+ * one the box's WiFi when the master adopts it. The buzzer shows up as a serial port (udpBuzzer.provisioning.usbIds):
+ * the USB serial chip of a Feather V2, or the Feather ESP32-S3 itself. Text lines at 115200 baud:
  *
  *   box → buzzer: BUZZ HELLO
  *   buzzer → box: BUZZ READY <mac> <firmware version> {"ssid":…,"host":…,"port":…,"color":…}    (also when it
@@ -62,7 +64,7 @@ export class BuzzerProvisioningService {
     private static instance: BuzzerProvisioningService;
     private static readonly POLL_INTERVAL_IN_MS = 2000;
     private static readonly HELLO_INTERVAL_IN_MS = 500;
-    // a buzzer in deep sleep doesn't answer; then it is reset, which wakes it
+    // a buzzer in deep sleep doesn't answer; then it is reset, which wakes it (see wakeByReset)
     private static readonly RESET_AFTER_IN_MS = 2000;
     private static readonly TIMEOUT_IN_MS = 15000;
     // a port that can't be opened yet (e.g. right after it showed up) is tried again with the next look, this often
@@ -70,6 +72,8 @@ export class BuzzerProvisioningService {
 
     // the buzzers that are plugged in, by their port
     private readonly buzzers = new Map<string, IUsbBuzzer>();
+    // the ports whose buzzer sleeps while it is plugged in and is woken by a reset (udpBuzzer.provisioning.wakeUsbIds)
+    private readonly wakeByReset = new Set<string>();
     private readonly onChangedCallbacks: UsbBuzzersChangedCallback[] = [];
     // how often each port couldn't be opened while identifying, until it is unplugged
     private readonly failedOpens = new Map<string, number>();
@@ -145,10 +149,14 @@ export class BuzzerProvisioningService {
     }
 
     private async lookForBuzzers(): Promise<void> {
-        const usbIds: string[] = ConfigService.get().udpBuzzer.provisioning.usbIds.map(id => id.toLowerCase());
-        const ports = (await SerialPort.list())
-            .filter(port => usbIds.includes(`${port.vendorId}:${port.productId}`.toLowerCase()));
+        const provisioning = ConfigService.get().udpBuzzer.provisioning;
+        const usbIds: string[] = provisioning.usbIds.map(id => id.toLowerCase());
+        const wakeUsbIds: string[] = (provisioning.wakeUsbIds ?? []).map(id => id.toLowerCase());
+        const usbId = (port: {vendorId?: string, productId?: string}) => `${port.vendorId}:${port.productId}`.toLowerCase();
+        const ports = (await SerialPort.list()).filter(port => usbIds.includes(usbId(port)));
         const paths = new Set(ports.map(port => port.path));
+        this.wakeByReset.clear();
+        ports.filter(port => wakeUsbIds.includes(usbId(port))).forEach(port => this.wakeByReset.add(port.path));
         let changed = false;
         for (const path of [...this.buzzers.keys()]) {
             if (!paths.has(path)) {
@@ -251,7 +259,7 @@ export class BuzzerProvisioningService {
                     resolve({...result, error});
                 };
                 const hello = setInterval(() => {
-                    if (result.macAddress == null && !wasReset
+                    if (result.macAddress == null && !wasReset && this.wakeByReset.has(path)
                             && Date.now() - started > BuzzerProvisioningService.RESET_AFTER_IN_MS) {
                         wasReset = true;
                         this.reset(path);

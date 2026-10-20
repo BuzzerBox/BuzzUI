@@ -32,7 +32,7 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDialogModule} from '@angular/material/dialog';
 import {DialogTeamsComponent} from './dialog-teams/dialog-teams.component';
 import {UpdateCardComponent} from './update-card/update-card.component';
-import {UsbBuzzerCardsComponent} from './usb-buzzer-cards/usb-buzzer-cards.component';
+import {WirelessBuzzersComponent} from './wireless-buzzers/wireless-buzzers.component';
 import {BuzzerColorComponent} from './buzzer-color/buzzer-color.component';
 import {FormsModule} from '@angular/forms';
 import {MatTabsModule} from '@angular/material/tabs';
@@ -67,7 +67,7 @@ import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component'
     FileDropEventsDirective,
     DialogTeamsComponent,
     UpdateCardComponent,
-    UsbBuzzerCardsComponent,
+    WirelessBuzzersComponent,
     HomeComponent,
     LoadGameComponent,
     StorageManagerComponent,
