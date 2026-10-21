@@ -8,37 +8,51 @@
     <mat-card-content>
       @for (row of rows; track row.key) {
         <div class="buzzer" [class.plugged]="row.usb">
-          <div class="summary">
-            <span class="name">
-              @if (getColor(row); as color) {
-                <app-buzzer-color [color]="color" [isCaseColor]="true"></app-buzzer-color>
-              } @else {
-                <span class="no-color" title="Keine Farbe des Gehäuses"></span>
-              }
-              {{getName(row)}}
-            </span>
-            <span class="facts">
-              @if (row.usb) {
-                <span class="connection" title="Über USB angesteckt"><mat-icon>usb</mat-icon>USB</span>
-              }
-              @if (row.wifi) {
-                <span class="connection" title="Über das WLAN mit der BuzzerBox verbunden"><mat-icon>wifi</mat-icon>WLAN</span>
-              }
-              @if (row.usb || hasBatteryPercent(row) || isBatteryLow(row)) {
-                <span class="battery" [class.low]="isBatteryLow(row)"
-                      [attr.title]="row.usb ? 'Lädt über USB' : isBatteryLow(row) ? 'Akku schwach' : 'Akku'">
-                  <mat-icon>{{getBatteryIcon(row)}}</mat-icon>
-                  @if (hasBatteryPercent(row)) {
-                    {{getBatteryPercent(row)}} %
-                  } @else if (isBatteryLow(row)) {
-                    schwach
-                  }
-                </span>
-              }
-              @if (getFirmwareVersion(row); as firmwareVersion) {
-                <span class="firmware">Firmware {{firmwareVersion}}</span>
-              }
-            </span>
+          <div class="top">
+            <div class="summary">
+              <span class="name">
+                @if (getColor(row); as color) {
+                  <app-buzzer-color [color]="color" [isCaseColor]="true"></app-buzzer-color>
+                } @else {
+                  <span class="no-color" title="Keine Farbe des Gehäuses"></span>
+                }
+                {{getName(row)}}
+              </span>
+              <span class="facts">
+                @if (row.usb) {
+                  <span class="connection" title="Über USB angesteckt"><mat-icon>usb</mat-icon>USB</span>
+                }
+                @if (row.wifi) {
+                  <span class="connection" title="Über das WLAN mit der BuzzerBox verbunden"><mat-icon>wifi</mat-icon>WLAN</span>
+                }
+                @if (row.usb || hasBatteryPercent(row) || isBatteryLow(row)) {
+                  <span class="battery" [class.low]="isBatteryLow(row)"
+                        [attr.title]="row.usb ? 'Lädt über USB' : isBatteryLow(row) ? 'Akku schwach' : 'Akku'">
+                    <mat-icon>{{getBatteryIcon(row)}}</mat-icon>
+                    @if (hasBatteryPercent(row)) {
+                      {{getBatteryPercent(row)}} %
+                    } @else if (isBatteryLow(row)) {
+                      schwach
+                    }
+                  </span>
+                }
+                @if (getFirmwareVersion(row); as firmwareVersion) {
+                  <span class="firmware">Firmware {{firmwareVersion}}</span>
+                }
+              </span>
+            </div>
+            @if (row.usb && hasColorMenu(row.usb)) {
+              <button mat-icon-button class="more" [matMenuTriggerFor]="buzzerMenu" aria-label="Weitere Einstellungen"
+                      title="Weitere Einstellungen">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #buzzerMenu="matMenu">
+                <button mat-menu-item (click)="toggleColorChange(row.usb)">
+                  <mat-icon>{{isChangingColor(row.usb) ? 'close' : 'palette'}}</mat-icon>
+                  <span>{{isChangingColor(row.usb) ? 'Farbe nicht ändern' : 'Farbe des Gehäuses ändern'}}</span>
+                </button>
+              </mat-menu>
+            }
           </div>
           @if (row.usb; as buzzer) {
             <div class="usb">
@@ -83,13 +97,13 @@
                   <p class="status error"><mat-icon>error</mat-icon><span>Das Übernehmen hat nicht geklappt. {{getErrorMessage(buzzer.error)}}</span></p>
                 }
               }
-              @if (canChooseColor(buzzer)) {
+              @if (isColorPickerShown(buzzer)) {
                 <div class="case-colors">
                   <span class="case-colors-label">Farbe des Gehäuses</span>
                   <div class="swatches" role="radiogroup" aria-label="Farbe des Gehäuses">
                     @for (caseColor of caseColors; track caseColor.color) {
                       <button type="button" class="swatch" role="radio" [style.background]="caseColor.color"
-                              [class.selected]="getChosenColor(buzzer) === caseColor.color"
+                              [class.light]="isLight(caseColor.color)" [class.selected]="getChosenColor(buzzer) === caseColor.color"
                               [attr.aria-checked]="getChosenColor(buzzer) === caseColor.color"
                               [attr.title]="caseColor.name" [attr.aria-label]="caseColor.name"
                               (click)="chooseColor(buzzer, caseColor.color)">
@@ -101,24 +115,26 @@
                     <button type="button" class="swatch none" role="radio" [class.selected]="!getChosenColor(buzzer)"
                             [attr.aria-checked]="!getChosenColor(buzzer)" title="Keine" aria-label="Keine"
                             (click)="chooseColor(buzzer, '')">
-                      <mat-icon>{{getChosenColor(buzzer) ? 'block' : 'check'}}</mat-icon>
+                      <mat-icon>block</mat-icon>
                     </button>
                   </div>
                 </div>
               } @else if (needsNewerFirmwareForColor(buzzer)) {
                 <p class="hint">Für die Farbe des Gehäuses braucht der Buzzer Firmware 1.2.0 oder neuer.</p>
               }
-              @if ((buzzer.state === 'detected' && buzzer.isAdopted) || buzzer.state === 'adopted') {
-                @if (isColorChanged(buzzer)) {
-                  <div class="actions"><button mat-flat-button color="primary" (click)="adopt(buzzer)">Farbe übernehmen</button></div>
-                } @else if (buzzer.state === 'detected') {
-                  <div class="actions"><button mat-stroked-button (click)="adopt(buzzer)">Erneut übernehmen</button></div>
-                }
-              } @else if (buzzer.state === 'detected' || buzzer.state === 'no-answer' || buzzer.state === 'failed') {
+              @if (hasActions(buzzer)) {
                 <div class="actions">
-                  <button mat-flat-button color="primary" (click)="adopt(buzzer)">
-                    {{buzzer.state === 'failed' ? 'Erneut versuchen' : 'Übernehmen'}}
-                  </button>
+                  @if ((buzzer.state === 'detected' && buzzer.isAdopted) || buzzer.state === 'adopted') {
+                    @if (isColorChanged(buzzer)) {
+                      <button mat-flat-button color="primary" (click)="adopt(buzzer)">Farbe übernehmen</button>
+                    } @else if (buzzer.state === 'detected') {
+                      <button mat-stroked-button (click)="adopt(buzzer)">Erneut übernehmen</button>
+                    }
+                  } @else if (buzzer.state === 'detected' || buzzer.state === 'no-answer' || buzzer.state === 'failed') {
+                    <button mat-flat-button color="primary" (click)="adopt(buzzer)">
+                      {{buzzer.state === 'failed' ? 'Erneut versuchen' : 'Übernehmen'}}
+                    </button>
+                  }
                 </div>
               }
             </div>

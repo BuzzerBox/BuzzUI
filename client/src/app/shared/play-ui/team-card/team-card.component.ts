@@ -34,6 +34,10 @@ export class TeamCardComponent implements OnInit, DoCheck, OnDestroy {
     return TeamColorHelper.getColor(this.team, this.game.getTeams() ?? []);
   }
 
+  @HostBinding('style.--team-on-color') get teamTextColor(): string {
+    return TeamColorHelper.getTextColor(this.teamColor);
+  }
+
   private markTeamPacketsSubscription: Subscription;
   private gradeAnswerSubscription: Subscription;
   public isMarked = false;

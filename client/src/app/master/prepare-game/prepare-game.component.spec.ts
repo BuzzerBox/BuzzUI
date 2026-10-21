@@ -107,19 +107,19 @@ describe('PrepareGameComponent', () => {
   });
 
   it('names new teams after the color of their buzzer, until the name is changed by hand', () => {
-    buzzers = [box('b0'), {...udp('01'), color: '#e53935'}, udp('02'), udp('03')];
+    buzzers = [box('b0'), {...udp('01'), color: '#fb8c00'}, udp('02'), udp('03')];
     create();
     component.chooseBuzzerType('udp');
     const names = () => component.rows.map(row => component.teamsFormGroup.get(row.controlName).value);
-    expect(names()).toEqual(['Rot', 'Team 2', 'Team 3']);
+    expect(names()).toEqual(['Orange', 'Team 2', 'Team 3']);
     // a color that turns up later
     component.teamsFormGroup.get(component.rows[2].controlName).setValue('Die Füchse');
-    changeBuzzers([box('b0'), {...udp('01'), color: '#e53935'}, {...udp('02'), color: '#fdd835'}, {...udp('03'), color: '#fdd835'}]);
-    expect(names()).toEqual(['Rot', 'Gelb', 'Die Füchse']);
+    changeBuzzers([box('b0'), {...udp('01'), color: '#fb8c00'}, {...udp('02'), color: '#fdd835'}, {...udp('03'), color: '#fdd835'}]);
+    expect(names()).toEqual(['Orange', 'Gelb', 'Die Füchse']);
   });
 
   it('keeps the names of a continued game', () => {
-    buzzers = [box('b0'), {...udp('01'), color: '#e53935'}, {...udp('02'), color: '#1e88e5'}];
+    buzzers = [box('b0'), {...udp('01'), color: '#fb8c00'}, {...udp('02'), color: '#1e88e5'}];
     create({teams: [{name: 'A', buzzerId: 'udp:01', teamId: 'udp:01', buzzerIndex: 1, points: 3}]} as IGameInstanceState);
     expect(component.rows.map(row => component.teamsFormGroup.get(row.controlName).value)).toEqual(['A', 'Blau']);
   });

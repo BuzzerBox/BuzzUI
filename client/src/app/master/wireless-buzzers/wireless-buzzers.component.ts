@@ -32,6 +32,8 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
   public rows: IWirelessBuzzerRow[] = [];
   // the color chosen for a buzzer plugged in over USB, by IUsbBuzzer.path, until it is unplugged
   private readonly chosenColors = new Map<string, string>();
+  // the buzzers plugged in over USB, by IUsbBuzzer.path, whose color is changed through the menu, until it is unplugged
+  private readonly colorChanges = new Set<string>();
   private subscription: Subscription;
 
   constructor(private game: GameService) { }
@@ -43,6 +45,11 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
       for (const path of [...this.chosenColors.keys()]) {
         if (!usbBuzzers.some(buzzer => buzzer.path === path)) {
           this.chosenColors.delete(path);
+        }
+      }
+      for (const path of [...this.colorChanges]) {
+        if (!usbBuzzers.some(buzzer => buzzer.path === path)) {
+          this.colorChanges.delete(path);
         }
       }
     });
@@ -138,6 +145,42 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * The buzzer was set up before, by this box or another one: it has a WiFi or a color, which is then taken to be right
+   */
+  public isInitialized(buzzer: IUsbBuzzer): boolean {
+    return !!buzzer.ssid || !!buzzer.color;
+  }
+
+  /**
+   * The colors are shown right away for a buzzer that wasn't set up yet, and else once they were asked for in the menu
+   */
+  public isColorPickerShown(buzzer: IUsbBuzzer): boolean {
+    return this.canChooseColor(buzzer) && (!this.isInitialized(buzzer) || this.colorChanges.has(buzzer.path));
+  }
+
+  /**
+   * The menu offers to change the color of a buzzer that was set up before
+   */
+  public hasColorMenu(buzzer: IUsbBuzzer): boolean {
+    return this.canChooseColor(buzzer) && this.isInitialized(buzzer);
+  }
+
+  public isChangingColor(buzzer: IUsbBuzzer): boolean {
+    return this.colorChanges.has(buzzer.path);
+  }
+
+  /**
+   * Shows the colors, or hides them again and forgets the color chosen there
+   */
+  public toggleColorChange(buzzer: IUsbBuzzer): void {
+    if (this.colorChanges.delete(buzzer.path)) {
+      this.chosenColors.delete(buzzer.path);
+    } else {
+      this.colorChanges.add(buzzer.path);
+    }
+  }
+
+  /**
    * The firmware is known but too old to keep a color
    */
   public needsNewerFirmwareForColor(buzzer: IUsbBuzzer): boolean {
@@ -151,6 +194,14 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
     return this.chosenColors.get(buzzer.path) ?? buzzer.color;
   }
 
+  /**
+   * A light color, on which the check mark is dark
+   */
+  public isLight(color: string): boolean {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16));
+    return 0.299 * r + 0.587 * g + 0.114 * b > 186;
+  }
+
   public chooseColor(buzzer: IUsbBuzzer, color: string): void {
     this.chosenColors.set(buzzer.path, color);
   }
@@ -161,6 +212,16 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
   public isColorChanged(buzzer: IUsbBuzzer): boolean {
     const chosen = this.chosenColors.get(buzzer.path);
     return chosen != null && chosen !== (buzzer.color ?? '');
+  }
+
+  /**
+   * There is a button for the buzzer: to adopt it (again), or to give it the color that was chosen
+   */
+  public hasActions(buzzer: IUsbBuzzer): boolean {
+    if ((buzzer.state === 'detected' && buzzer.isAdopted) || buzzer.state === 'adopted') {
+      return this.isColorChanged(buzzer) || buzzer.state === 'detected';
+    }
+    return buzzer.state === 'detected' || buzzer.state === 'no-answer' || buzzer.state === 'failed';
   }
 
   public getErrorMessage(error: TUsbBuzzerError): string {
@@ -181,5 +242,6 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
     // without a choice the buzzer keeps its color
     this.game.adoptUsbBuzzer(buzzer.path, this.canChooseColor(buzzer) ? this.chosenColors.get(buzzer.path) : undefined);
     this.chosenColors.delete(buzzer.path);
+    this.colorChanges.delete(buzzer.path);
   }
 }

@@ -23,7 +23,8 @@
     <div class="title">Endstand</div>
     <div class="podium">
       @for (entry of podium; track entry.team.teamId) {
-        <div class="podium-place place-{{entry.place}}" [style.--team-color]="entry.color" [style.--order]="entry.order">
+        <div class="podium-place place-{{entry.place}}" [style.--team-color]="entry.color" [style.--order]="entry.order"
+             [style.--team-on-color]="getTextColor(entry.color)">
           <div class="podium-team">
             @if (entry.place === 1) {
               <mat-icon class="crown">emoji_events</mat-icon>

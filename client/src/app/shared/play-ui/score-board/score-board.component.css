@@ -167,7 +167,7 @@ mat-card.scores {
   border-top: calc(var(--u) * 1.2) solid var(--medal);
   /* darker towards the floor */
   background: linear-gradient(180deg, transparent, rgba(13, 16, 36, 0.55)), var(--team-color);
-  color: var(--bb-on-team);
+  color: var(--team-on-color, var(--bb-on-team));
   font-size: calc(var(--u) * 9);
   font-weight: 700;
 }

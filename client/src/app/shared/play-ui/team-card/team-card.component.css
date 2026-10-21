@@ -98,7 +98,7 @@ mat-card-content p {
 
 :host(.screen.show) .team-card.marked {
   background: var(--team-color);
-  color: var(--bb-on-team);
+  color: var(--team-on-color, var(--bb-on-team));
   transform: scale(1.03);
   box-shadow: 0 0 calc(4cqh * var(--bb-glow)) calc(1cqh * var(--bb-glow)) var(--team-color);
   z-index: 1;

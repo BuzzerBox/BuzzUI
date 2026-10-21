@@ -27,4 +27,10 @@ describe('TeamColorHelper', () => {
     expect(TeamColorHelper.getBuzzerColor({...buzzer, color: '#fdd835'}, 11)).toBe('#fdd835');
     expect(TeamColorHelper.getBuzzerColor(buzzer, 11)).toBe(TeamColorHelper.PALETTE[1]);
   });
+
+  it('writes white on black, and else the theme\'s text on a team\'s color', () => {
+    expect(TeamColorHelper.getTextColor('#000000')).toBe('#ffffff');
+    expect(TeamColorHelper.getTextColor('#ffffff')).toBe('var(--bb-on-team)');
+    expect(TeamColorHelper.getTextColor('#8e24aa')).toBe('var(--bb-on-team)');
+  });
 });

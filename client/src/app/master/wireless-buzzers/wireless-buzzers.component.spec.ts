@@ -5,6 +5,7 @@ import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatMenuModule} from '@angular/material/menu';
 import {IBuzzer, IUsbBuzzer} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {WirelessBuzzersComponent} from './wireless-buzzers.component';
@@ -29,7 +30,7 @@ describe('WirelessBuzzersComponent', () => {
     game.getAvailableBuzzers.and.returnValue([]);
     await TestBed.configureTestingModule({
       declarations: [WirelessBuzzersComponent],
-      imports: [BuzzerColorComponent, MatCardModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule],
+      imports: [BuzzerColorComponent, MatCardModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule, MatMenuModule],
       providers: [{provide: GameService, useValue: game}, provideZoneChangeDetection()]
     }).compileComponents();
     fixture = TestBed.createComponent(WirelessBuzzersComponent);
@@ -152,6 +153,12 @@ describe('WirelessBuzzersComponent', () => {
 
   describe('the color of the case', () => {
     const swatch = (name: string) => element().querySelector<HTMLButtonElement>(`.swatch[aria-label="${name}"]`);
+    // opens the menu of the buzzer and returns its item for the color, which is in the overlay
+    const menuItem = () => {
+      element().querySelector<HTMLButtonElement>('.buzzer .more').click();
+      fixture.detectChanges();
+      return document.querySelector<HTMLButtonElement>('.mat-mdc-menu-panel button[mat-menu-item]');
+    };
 
     it('is chosen when adopting a buzzer', () => {
       show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0'});
@@ -163,22 +170,71 @@ describe('WirelessBuzzersComponent', () => {
     });
 
     it('is kept without a choice', () => {
-      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835'});
-      expect(text()).toContain('Gelber Wireless Buzzer');
-      expect(swatch('Gelb').getAttribute('aria-checked')).toBe('true');
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0'});
+      expect(swatch('Keine').getAttribute('aria-checked')).toBe('true');
+      // no check mark on "Keine", which keeps its own icon
+      expect(swatch('Keine').textContent.trim()).toBe('block');
       button().click();
       expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
     });
 
-    it('of an adopted buzzer can be changed', () => {
+    it('of a buzzer set up before is taken as it is, also from another box', () => {
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835',
+        ssid: 'OtherBox'});
+      expect(text()).toContain('Gelber Wireless Buzzer');
+      expect(swatch('Gelb')).toBeNull();
+      expect(element().querySelector('.buzzer .more')).not.toBeNull();
+      button().click();
+      expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
+    });
+
+    it('of a buzzer without WiFi but with a color is taken as it is', () => {
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835'});
+      expect(swatch('Gelb')).toBeNull();
+    });
+
+    it('of an adopted buzzer can be changed through the menu', () => {
       show({path: '/dev/ttyACM0', state: 'adopted', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835',
         ssid: 'BuzzerBoxNetwork', isAdopted: true});
       expect(button()).toBeNull();
+      expect(swatch('Gelb')).toBeNull();
+      menuItem().click();
+      fixture.detectChanges();
+      expect(swatch('Gelb').getAttribute('aria-checked')).toBe('true');
       swatch('Keine').click();
       fixture.detectChanges();
       expect(button().textContent).toContain('Farbe übernehmen');
       button().click();
       expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', '');
+      fixture.detectChanges();
+      expect(swatch('Gelb')).toBeNull();
+    });
+
+    it('can be left as it was through the menu', () => {
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0', color: '#fdd835',
+        ssid: 'BuzzerBoxNetwork', isAdopted: true});
+      menuItem().click();
+      fixture.detectChanges();
+      swatch('Blau').click();
+      fixture.detectChanges();
+      expect(button().textContent).toContain('Farbe übernehmen');
+      menuItem().click();
+      fixture.detectChanges();
+      expect(swatch('Blau')).toBeNull();
+      expect(button().textContent).toContain('Erneut übernehmen');
+    });
+
+    it('offers neither red nor green, and white and black as they are', () => {
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.2.0'});
+      expect(swatch('Rot')).toBeNull();
+      expect(swatch('Grün')).toBeNull();
+      swatch('Weiß').click();
+      button().click();
+      expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', '#ffffff');
+      show({path: '/dev/ttyACM1', state: 'detected', macAddress: '14:2B:2F:AF:8F:DD', firmwareVersion: '1.2.0'});
+      swatch('Schwarz').click();
+      button().click();
+      expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM1', '#000000');
     });
 
     it('needs a newer firmware', () => {
