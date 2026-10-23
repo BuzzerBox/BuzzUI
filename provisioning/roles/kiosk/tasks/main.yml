@@ -1,12 +1,58 @@
-# The screen: Chromium in kiosk mode on the HDMI output, in the cage Wayland compositor. There is no desktop.
+# The screen: Chromium in kiosk mode on the HDMI output, in the sway Wayland compositor. There is no desktop. On a box
+# with a touch display (TOUCH_DISPLAY in buzzerbox.txt), the master runs on that display too, with an on-screen keyboard.
 
-- name: Install cage, Chromium and the audio stack
+- name: Install Chromium and the audio stack
   ansible.builtin.apt:
-    # PipeWire plays the media's audio over HDMI; wlr-randr switches cage's output off and on for the HDMI sound, see
-    # files/buzzerbox-hdmi-audio
-    name: [cage, chromium, pipewire, pipewire-pulse, wireplumber, wlr-randr, fonts-noto-color-emoji]
+    # PipeWire plays the media's audio over HDMI; wlr-randr switches sway's HDMI output off and on for the HDMI sound,
+    # see files/buzzerbox-hdmi-audio
+    name: [chromium, pipewire, pipewire-pulse, wireplumber, wlr-randr, fonts-noto-color-emoji]
     update_cache: true
     cache_valid_time: 3600
+
+# without its recommendations (wallpapers, a terminal, a screen locker), which the kiosk doesn't use. squeekboard
+# needs the session's D-Bus.
+- name: Install sway and the on-screen keyboard
+  ansible.builtin.apt:
+    name: [sway, squeekboard, dbus-user-session]
+    install_recommends: false
+    update_cache: true
+    cache_valid_time: 3600
+
+# the compositor of the kiosk before there was a touch display, which can only show one browser
+- name: Remove cage
+  ansible.builtin.apt:
+    name: cage
+    state: absent
+
+- name: Install the configuration of sway
+  ansible.builtin.copy:
+    src: sway.conf
+    dest: /etc/buzzerbox/sway.conf
+    mode: "0644"
+
+- name: Install the script that starts the browsers
+  ansible.builtin.copy:
+    src: buzzerbox-kiosk-session.sh
+    dest: /usr/local/bin/buzzerbox-kiosk-session
+    mode: "0755"
+
+# squeekboard only shows itself for text fields while the screen keyboard is enabled in GSettings, and it takes its
+# layout from the input sources there. The kiosk has no settings of its own, so these become the defaults.
+- name: Enable the on-screen keyboard, with a German layout
+  ansible.builtin.copy:
+    dest: /usr/share/glib-2.0/schemas/90_buzzerbox.gschema.override
+    content: |
+      [org.gnome.desktop.a11y.applications]
+      screen-keyboard-enabled=true
+
+      [org.gnome.desktop.input-sources]
+      sources=[('xkb', 'de')]
+    mode: "0644"
+  register: gschema_override
+
+- name: Compile the GSettings schemas
+  ansible.builtin.command: glib-compile-schemas /usr/share/glib-2.0/schemas
+  when: gschema_override.changed
 
 - name: Install the PAM configuration of the kiosk session
   ansible.builtin.copy:
@@ -14,9 +60,9 @@
     dest: /etc/pam.d/buzzerbox-kiosk
     mode: "0644"
 
-# cage always draws a mouse cursor, even without a mouse. It only loads the cursor theme "default", so the kiosk gets its
-# own XCURSOR_PATH with a "default" theme whose cursor is one transparent pixel (files/hidden-cursor, an Xcursor file).
-# Chromium inherits it, so a mouse plugged in stays invisible too.
+# The compositor draws a mouse cursor, even without a mouse. The kiosk gets its own XCURSOR_PATH with a "default" theme
+# (sway.conf) whose cursor is one transparent pixel (files/hidden-cursor, an Xcursor file). Chromium inherits it, so a
+# mouse plugged in stays invisible too.
 - name: Create the directory of the cursor theme
   ansible.builtin.file:
     path: /usr/share/buzzerbox/cursors/default/cursors
