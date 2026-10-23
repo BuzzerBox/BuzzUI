@@ -33,6 +33,9 @@ server_ip_address: 10.0.0.5
 server_hostnames:
   - buzzer.box
   - buzzerbox.local
+# none, 5inch, 7inch or 10inch, and its rotation, see roles/access_point/templates/buzzerbox.txt.j2
+touch_display: none
+touch_display_rotation: 90
 
 # SSH is off unless there are keys: given here, they are built into the image; on a box, they can also be put into
 # buzzerbox-ssh-keys.txt on the boot partition (roles/ssh). They are for buzzerbox_admin_user, who may use sudo; the

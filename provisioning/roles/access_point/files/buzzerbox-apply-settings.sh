@@ -1,6 +1,7 @@
 #!/bin/bash
 # Applies the per-box settings from buzzerbox.txt on the boot partition: the WiFi access point of NetworkManager, the
-# names the box answers to in it, the WiFi country, the WiFi antenna and the WiFi the wireless buzzers are given.
+# names the box answers to in it, the WiFi country, the WiFi antenna, the WiFi the wireless buzzers are given and the
+# touch display.
 # buzzerbox-settings.service runs it on every boot, before NetworkManager starts, with --boot: only then does it restart
 # the box for a changed antenna. Values that are missing or invalid fall back to the defaults in
 # /etc/buzzerbox/settings.defaults, which the setup wrote (provisioning/group_vars/all.yml). Files are only written when
@@ -20,6 +21,7 @@ CONFIG_FILE="/boot/firmware/config.txt"
 CONNECTION_FILE="/etc/NetworkManager/system-connections/buzzerbox-ap.nmconnection"
 DNSMASQ_FILE="/etc/NetworkManager/dnsmasq-shared.d/buzzerbox.conf"
 WIRELESS_BUZZERS_FILE="/etc/buzzerbox/wireless-buzzers.conf"
+KIOSK_FILE="/etc/buzzerbox/kiosk.conf"
 # fixed, so that the connection file stays the same as long as the settings do
 CONNECTION_UUID="6f1d6a52-8c3b-4a51-9a2e-1b8e0c5d2b77"
 # the addresses devices get, in the /24 network of SERVER_IP_ADDRESS
@@ -86,6 +88,8 @@ isValid() {
       [ "${last}" -ge 1 ] && [ "${last}" -le 254 ] && { [ "${last}" -lt "${DHCP_FIRST}" ] || [ "${last}" -gt "${DHCP_LAST}" ]; }
       ;;
     SERVER_HOSTNAMES) [[ "${value}" =~ ^[A-Za-z0-9.-]+([[:space:]]+[A-Za-z0-9.-]+)*$ ]] ;;
+    TOUCH_DISPLAY) [[ "${value,,}" =~ ^(none|5inch|7inch|10inch)$ ]] ;;
+    TOUCH_DISPLAY_ROTATION) [[ "${value}" =~ ^(0|90|180|270)$ ]] ;;
     *) return 1 ;;
   esac
 }
@@ -193,35 +197,79 @@ if [ -f "${NM_STATE}" ]; then
   sed -i 's/^WirelessEnabled=.*/WirelessEnabled=true/' "${NM_STATE}"
 fi
 
-# The antenna of a CM4 is chosen in config.txt: dtparam=ant2 is the external one, and without it the internal one is
-# used. So only the external antenna gets a block, under [cm4], which a Raspberry Pi 4 (no connector) skips. The firmware
-# reads config.txt before Linux starts, so the change only counts after a restart. This is last, so that the other
-# settings are written before.
-ANTENNA="${settings[WIFI_ANTENNA],,}"
-ANTENNA_BEGIN="# BEGIN BuzzerBox antenna (buzzerbox-settings)"
-ANTENNA_END="# END BuzzerBox antenna (buzzerbox-settings)"
-CONFIG="$(cat "${CONFIG_FILE}")"
-NEW_CONFIG="$(awk -v begin="${ANTENNA_BEGIN}" -v end="${ANTENNA_END}" \
-  '$0 == begin { skip = 1 } !skip { print } $0 == end { skip = 0 }' <<< "${CONFIG}")"
-if [ "${ANTENNA}" = "external" ]; then
-  NEW_CONFIG+=$'\n'"${ANTENNA_BEGIN}"$'\n[cm4]\ndtparam=ant2\n[all]\n'"${ANTENNA_END}"
-fi
-if [ "${NEW_CONFIG}" != "${CONFIG}" ]; then
+# The kiosk (roles/kiosk) opens the master on the touch display under the first hostname, for the reason above, and
+# turns the display the way it is mounted
+printf 'MASTER_URL=http://%s/master/\nTOUCH_DISPLAY_ROTATION=%s\n' "${HOSTNAMES[0]}" "${settings[TOUCH_DISPLAY_ROTATION]}" \
+  | writeIfChanged "${KIOSK_FILE}" 644 || true
+
+# Puts a block of lines into config.txt between markers, where the block was before (so that the file stays the same
+# when the lines do), or removes the block if there are no lines.
+# name::string: names the markers
+# lines::string
+# -> 0 if config.txt changed, 1 if it already had the lines, 2 if it could not be written
+setConfigBlock() {
+  local name="$1" lines="$2" config new
+  config="$(cat "${CONFIG_FILE}")"
+  new="$(BEGIN="# BEGIN BuzzerBox ${name} (buzzerbox-settings)" END="# END BuzzerBox ${name} (buzzerbox-settings)" \
+    LINES="${lines}" awk '
+      function block() { if (ENVIRON["LINES"] != "") { print ENVIRON["BEGIN"]; print ENVIRON["LINES"]; print ENVIRON["END"] } }
+      $0 == ENVIRON["BEGIN"] { skip = 1; if (!done) block(); done = 1 }
+      !skip { print }
+      $0 == ENVIRON["END"] { skip = 0 }
+      END { if (!done) block() }' <<< "${config}")"
+  if [ "${new}" = "${config}" ]; then
+    return 1
+  fi
   # FAT has no file modes
-  printf '%s\n' "${NEW_CONFIG}" > "${CONFIG_FILE}.tmp"
+  printf '%s\n' "${new}" > "${CONFIG_FILE}.tmp"
   mv -f "${CONFIG_FILE}.tmp" "${CONFIG_FILE}"
   sync
+  # only if the file really says so now, or the box would restart over and over
+  if [ "$(cat "${CONFIG_FILE}")" != "${new}" ]; then
+    log "Could not write ${CONFIG_FILE}"
+    return 2
+  fi
+}
+
+# The firmware reads config.txt before Linux starts, so changes there only count after a restart. This is last, so that
+# the other settings are written before.
+RESTART_FOR=()
+MODEL="$(tr -d '\0' < /proc/device-tree/model 2>/dev/null || true)"
+
+# The antenna of a CM4 is chosen in config.txt: dtparam=ant2 is the external one, and without it the internal one is
+# used. So only the external antenna gets a block, under [cm4], which a Raspberry Pi 4 (no connector) skips.
+ANTENNA="${settings[WIFI_ANTENNA],,}"
+ANTENNA_LINES=""
+if [ "${ANTENNA}" = "external" ]; then
+  ANTENNA_LINES=$'[cm4]\ndtparam=ant2\n[all]'
+fi
+if setConfigBlock antenna "${ANTENNA_LINES}"; then
   log "Set the ${ANTENNA} WiFi antenna in ${CONFIG_FILE}"
-  MODEL="$(tr -d '\0' < /proc/device-tree/model 2>/dev/null || true)"
   if [[ "${MODEL}" != *"Compute Module 4"* ]]; then
     log "This box (${MODEL:-unknown model}) has no antenna connector, WIFI_ANTENNA only counts on a Compute Module 4"
-  elif [ "${BOOT}" != "true" ]; then
-    log "The antenna changes with the next restart"
-  # only if the file really says so now, or the box would restart over and over
-  elif [ "$(cat "${CONFIG_FILE}")" = "${NEW_CONFIG}" ]; then
-    log "Restarting the box for the new antenna"
-    systemctl --no-block reboot
   else
-    log "Could not write ${CONFIG_FILE}, keeping the old antenna"
+    RESTART_FOR+=("the new antenna")
+  fi
+fi
+
+# A Compute Module doesn't detect DSI displays, so the Touch Display 2 is named in config.txt. It goes on DISP1 (the
+# 10" one needs its four lanes). The overlay leaves it portrait: the kiosk turns it.
+case "${settings[TOUCH_DISPLAY],,}" in
+  5inch) TOUCH_OVERLAY="vc4-kms-dsi-ili9881-5inch" ;;
+  7inch) TOUCH_OVERLAY="vc4-kms-dsi-ili9881-7inch" ;;
+  10inch) TOUCH_OVERLAY="vc4-kms-dsi-ili79600-10-1inch" ;;
+  *) TOUCH_OVERLAY="" ;;
+esac
+if setConfigBlock "touch display" "${TOUCH_OVERLAY:+$'[all]\n'dtoverlay=${TOUCH_OVERLAY}}"; then
+  log "Set the touch display ${settings[TOUCH_DISPLAY],,} in ${CONFIG_FILE}"
+  RESTART_FOR+=("the touch display")
+fi
+
+if [ "${#RESTART_FOR[@]}" -gt 0 ]; then
+  if [ "${BOOT}" != "true" ]; then
+    log "${RESTART_FOR[*]} only count after the next restart"
+  else
+    log "Restarting the box for ${RESTART_FOR[*]}"
+    systemctl --no-block reboot
   fi
 fi
