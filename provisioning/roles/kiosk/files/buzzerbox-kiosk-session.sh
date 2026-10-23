@@ -1,7 +1,7 @@
 #!/bin/bash
 # The browsers of the kiosk, started by sway (sway.conf): the screen on HDMI and, on a box with a touch display
 # (TOUCH_DISPLAY in buzzerbox.txt), the master on that display, with an on-screen keyboard. Each one is started again
-# when it exits.
+# when it exits. When this script ends, sway ends the session (sway.conf).
 
 set -uo pipefail
 
@@ -100,4 +100,7 @@ if [ -n "${TOUCH_OUTPUT}" ]; then
     --app="${MASTER_URL}" &
 fi
 
-wait
+# The loops above only end if something killed them. Then the session starts again as a whole (sway.conf), rather than
+# going on without that browser.
+wait -n
+log "A browser or the on-screen keyboard is no longer started again, ending the session"
