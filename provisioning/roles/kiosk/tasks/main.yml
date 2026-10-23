@@ -9,10 +9,10 @@
     cache_valid_time: 3600
 
 # without its recommendations (wallpapers, a terminal, a screen locker), which the kiosk doesn't use. squeekboard
-# needs the session's D-Bus.
+# needs the session's D-Bus, and its settings below need glib-compile-schemas (libglib2.0-bin).
 - name: Install sway and the on-screen keyboard
   ansible.builtin.apt:
-    name: [sway, squeekboard, dbus-user-session]
+    name: [sway, squeekboard, dbus-user-session, libglib2.0-bin]
     install_recommends: false
     update_cache: true
     cache_valid_time: 3600
