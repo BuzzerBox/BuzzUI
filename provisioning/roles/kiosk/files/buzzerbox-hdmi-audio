@@ -4,7 +4,8 @@
 # HDMI output is switched on again (error 524). The card then only has the profiles "off" and "pro-audio" and the media
 # play into the "Dummy Output". This waits until the HDMI output takes sound and lets WirePlumber probe the card again.
 # The TV (seen with an LG) then still stays silent until the output is switched on again while the sound is already
-# running, so it switches cage's output off and on, which keeps Chromium and its media running.
+# running, so it switches sway's HDMI output off and on, which keeps Chromium and its media running (sway moves the
+# screen's workspace back onto HDMI when the output is on again).
 user="${BUZZERBOX_USER:?}"
 
 as_user() {
@@ -20,14 +21,14 @@ is_tv_connected() {
     grep -qx connected /sys/class/drm/card*-HDMI-A-1/status
 }
 
-# fails as long as cage isn't running yet; it switches the output on itself then
+# fails as long as sway isn't running yet; it switches the output on itself then
 switch_output_off_and_on() {
     as_user wlr-randr --output HDMI-A-1 --off 2>/dev/null || return 0
     sleep 1
     as_user wlr-randr --output HDMI-A-1 --on
 }
 
-# until WirePlumber and cage have reacted to the TV
+# until WirePlumber and sway have reacted to the TV
 sleep 3
 for second in $(seq 180); do
     if has_hdmi_sink || ! is_tv_connected; then

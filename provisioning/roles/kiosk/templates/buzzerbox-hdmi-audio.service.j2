@@ -4,7 +4,7 @@ Description=BuzzerBox HDMI sound after the TV reported in
 
 [Service]
 Type=oneshot
-# as root, for runuser: WirePlumber and cage run in the kiosk user's session
+# as root, for runuser: WirePlumber and sway run in the kiosk user's session
 Environment=BUZZERBOX_USER={{ buzzerbox_user }}
 ExecStart=/usr/share/buzzerbox/buzzerbox-hdmi-audio
 # it waits up to 3 minutes for a TV that is still starting up
