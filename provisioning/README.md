@@ -98,7 +98,7 @@ has no antenna connector and ignores the setting.
 10" one needs that connector's four lanes. The box then shows the master on the display and the screen on HDMI. Another
 device can still take over the master, and the display can take it back on its page "Steuerung zurückholen". Like the
 antenna, the display is set in `config.txt`, so the box restarts once by itself when it changes.
-`TOUCH_DISPLAY_ROTATION` turns the picture and the touch input clockwise; the display is portrait by itself.
+`TOUCH_DISPLAY_ROTATION` turns the picture clockwise (the touch input turns with it); the display is portrait by itself.
 
 ### SSH access
 

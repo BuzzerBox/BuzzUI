@@ -71,16 +71,14 @@ if [ -n "${SCREEN_OUTPUT}" ]; then
 fi
 
 if [ -n "${TOUCH_OUTPUT}" ]; then
-  # The display is portrait by itself. Turning it doesn't turn its touch input, so libinput turns that by the same
-  # angle (its calibration matrices for clockwise rotations).
-  case "${TOUCH_DISPLAY_ROTATION}" in
-    90) TRANSFORM=90 MATRIX="0 -1 1 1 0 0" ;;
-    180) TRANSFORM=180 MATRIX="-1 0 1 0 -1 1" ;;
-    270) TRANSFORM=270 MATRIX="0 1 0 -1 0 1" ;;
-    *) TRANSFORM=normal MATRIX="1 0 0 0 1 0" ;;
-  esac
+  # The display is portrait by itself. Raspberry Pi's wlroots turns the touch input along with the output, so it only
+  # needs to be tied to the display (measured on the 10" display: a calibration matrix on top turned it twice).
+  TRANSFORM="${TOUCH_DISPLAY_ROTATION}"
+  if [[ ! "${TRANSFORM}" =~ ^(90|180|270)$ ]]; then
+    TRANSFORM=normal
+  fi
   swaymsg "output ${TOUCH_OUTPUT} transform ${TRANSFORM}" > /dev/null
-  swaymsg "input type:touch map_to_output ${TOUCH_OUTPUT}; input type:touch calibration_matrix ${MATRIX}" > /dev/null
+  swaymsg "input type:touch map_to_output ${TOUCH_OUTPUT}" > /dev/null
 
   # It shows itself when a text field gets the focus, see roles/kiosk/tasks/main.yml. It takes the bottom of the
   # display, and the master's window gets smaller, so that the field stays visible.
