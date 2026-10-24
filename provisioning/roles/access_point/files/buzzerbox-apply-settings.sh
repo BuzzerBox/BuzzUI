@@ -1,6 +1,7 @@
 #!/bin/bash
-# Applies the per-box settings from buzzerbox.txt on the boot partition: the WiFi access point of NetworkManager, the
-# names the box answers to in it, the WiFi country, the WiFi antenna and the WiFi the wireless buzzers are given.
+# Applies the per-box settings from buzzerbox.txt on the boot partition: the WiFi access point of NetworkManager, its
+# counterpart on Ethernet (for a notebook on a cable, without a router), the names the box answers to in both, the WiFi
+# country, the WiFi antenna and the WiFi the wireless buzzers are given.
 # buzzerbox-settings.service runs it on every boot, before NetworkManager starts, with --boot: only then does it restart
 # the box for a changed antenna. Values that are missing or invalid fall back to the defaults in
 # /etc/buzzerbox/settings.defaults, which the setup wrote (provisioning/group_vars/all.yml). Files are only written when
@@ -18,11 +19,15 @@ SETTINGS_FILE="/boot/firmware/buzzerbox.txt"
 CMDLINE_FILE="/boot/firmware/cmdline.txt"
 CONFIG_FILE="/boot/firmware/config.txt"
 CONNECTION_FILE="/etc/NetworkManager/system-connections/buzzerbox-ap.nmconnection"
+ETHERNET_CONNECTION_FILE="/etc/NetworkManager/system-connections/buzzerbox-ethernet.nmconnection"
 DNSMASQ_FILE="/etc/NetworkManager/dnsmasq-shared.d/buzzerbox.conf"
+# not in dnsmasq-shared.d, where every file is read as configuration
+HOSTS_FILE="/etc/buzzerbox/hosts"
 WIRELESS_BUZZERS_FILE="/etc/buzzerbox/wireless-buzzers.conf"
-# fixed, so that the connection file stays the same as long as the settings do
+# fixed, so that the connection files stay the same as long as the settings do
 CONNECTION_UUID="6f1d6a52-8c3b-4a51-9a2e-1b8e0c5d2b77"
-# the addresses devices get, in the /24 network of SERVER_IP_ADDRESS
+ETHERNET_CONNECTION_UUID="0b6c3f0e-5d7a-4e21-8f4b-3c9a2d1e7f58"
+# the addresses devices get, in the /24 network of SERVER_IP_ADDRESS and of ETHERNET_IP_ADDRESS
 DHCP_FIRST=50
 DHCP_LAST=150
 
@@ -80,7 +85,7 @@ isValid() {
     WIFI_COUNTRY_CODE) [[ "${value}" =~ ^[A-Za-z]{2}$ ]] ;;
     WIFI_CHANNEL) [[ "${value}" =~ ^([1-9]|1[0-3])$ ]] ;;
     WIFI_ANTENNA) [[ "${value,,}" =~ ^(internal|external)$ ]] ;;
-    SERVER_IP_ADDRESS)
+    SERVER_IP_ADDRESS|ETHERNET_IP_ADDRESS)
       [[ "${value}" =~ ^${octet}\.${octet}\.${octet}\.${octet}$ ]] || return 1
       local last="${value##*.}"
       [ "${last}" -ge 1 ] && [ "${last}" -le 254 ] && { [ "${last}" -lt "${DHCP_FIRST}" ] || [ "${last}" -gt "${DHCP_LAST}" ]; }
@@ -142,11 +147,41 @@ CONNECTION="$(nmcli --offline connection add \
   ipv6.method disabled)"
 writeIfChanged "${CONNECTION_FILE}" 600 <<< "${CONNECTION}" || true
 
-# NetworkManager's dnsmasq of the shared connection answers for the hostnames
+# The same for a notebook on a cable: any wired interface (the built-in port, or a USB adapter, whose name differs from
+# box to box) hands out addresses in its own /24 network. Both networks can't share one.
+ETHERNET_IP="${settings[ETHERNET_IP_ADDRESS]}"
+if [ "${ETHERNET_IP%.*}" = "${SUBNET_PREFIX}" ]; then
+  log "ETHERNET_IP_ADDRESS ${ETHERNET_IP} is in the WiFi's network ${SUBNET_PREFIX}.0/24, using the default"
+  ETHERNET_IP="$(grep -E '^ETHERNET_IP_ADDRESS=' "${DEFAULTS_FILE}" | cut -d= -f2)"
+fi
+ETHERNET_PREFIX="${ETHERNET_IP%.*}"
+if [ "${ETHERNET_PREFIX}" = "${SUBNET_PREFIX}" ]; then
+  log "The default ETHERNET_IP_ADDRESS ${ETHERNET_IP} is in the WiFi's network too, leaving Ethernet off"
+  ETHERNET_IP=""
+  if [ -f "${ETHERNET_CONNECTION_FILE}" ]; then
+    rm -f "${ETHERNET_CONNECTION_FILE}"
+    log "Removed ${ETHERNET_CONNECTION_FILE}"
+  fi
+else
+  ETHERNET_CONNECTION="$(nmcli --offline connection add \
+    connection.id "BuzzerBox Ethernet" connection.uuid "${ETHERNET_CONNECTION_UUID}" connection.autoconnect yes \
+    type ethernet \
+    ipv4.method shared ipv4.addresses "${ETHERNET_IP}/24" \
+    ipv4.shared-dhcp-range "${ETHERNET_PREFIX}.${DHCP_FIRST},${ETHERNET_PREFIX}.${DHCP_LAST}" \
+    ipv6.method disabled)"
+  writeIfChanged "${ETHERNET_CONNECTION_FILE}" 600 <<< "${ETHERNET_CONNECTION}" || true
+fi
+
+# NetworkManager runs a dnsmasq for each shared connection, and all of them read dnsmasq-shared.d. So the hostnames
+# have both addresses, and localise-queries answers each network with the address in it.
 read -r -a HOSTNAMES <<< "${settings[SERVER_HOSTNAMES]}"
-for hostname in "${HOSTNAMES[@]}"; do
-  echo "address=/${hostname}/${IP}"
-done | writeIfChanged "${DNSMASQ_FILE}" 644 || true
+{
+  echo "${IP}	${HOSTNAMES[*]}"
+  if [ -n "${ETHERNET_IP}" ]; then
+    echo "${ETHERNET_IP}	${HOSTNAMES[*]}"
+  fi
+} | writeIfChanged "${HOSTS_FILE}" 644 || true
+printf 'addn-hosts=%s\nlocalise-queries\n' "${HOSTS_FILE}" | writeIfChanged "${DNSMASQ_FILE}" 644 || true
 
 # The game server gives the wireless buzzers the WiFi when they are plugged into the box over USB
 # (BuzzerProvisioningService). It runs as a member of dialout, for the serial ports, which may read the passphrase.

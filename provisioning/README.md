@@ -21,6 +21,7 @@ own settings (such as the WiFi name and password) from a file on the boot partit
 | Client | nginx serves `current/frontend` |
 | Screen | `buzzerbox-kiosk.service`: Chromium in kiosk mode in the Wayland compositor `cage` on tty1, without a desktop |
 | WiFi access point | a NetworkManager connection with DHCP (`.50`–`.150`) and DNS for the hostnames, written by `buzzerbox-settings.service` |
+| Ethernet | the same for a notebook on a cable (the built-in port or a USB adapter), in its own network `10.0.1.0/24` |
 | USB sticks | `udiskie` mounts them at `/media/pi/<label>`, as before |
 | Splash screen | `splashscreen.service` (fbi), until the kiosk starts |
 | Buzzers | the GPIO UART `/dev/ttyS0` (`enable_uart=1`, no serial console) |
@@ -79,6 +80,7 @@ WIFI_COUNTRY_CODE=DE
 WIFI_CHANNEL=8
 WIFI_ANTENNA=internal
 SERVER_IP_ADDRESS=10.0.0.5
+ETHERNET_IP_ADDRESS=10.0.1.5
 SERVER_HOSTNAMES=buzzer.box buzzerbox.local
 ```
 
@@ -86,6 +88,11 @@ Edit it after flashing, or later by putting the card back into a computer (for t
 applies it on every start (`roles/access_point/files/buzzerbox-apply-settings.sh`). Missing or invalid values fall back
 to the defaults in `group_vars/all.yml`, and `journalctl -u buzzerbox-settings` shows why a value was ignored. **Give
 every box its own WiFi password**: the default one is public in this repository.
+
+A notebook can also be connected to the box by an Ethernet cable, without a router in between: the box gives it an
+address in the network of `ETHERNET_IP_ADDRESS`, and the hostnames work there too. Any wired interface counts, so a USB
+Ethernet adapter works as well as the built-in port. Don't connect the box to a network that has a router, since the
+box would hand out addresses in it.
 
 `WIFI_ANTENNA=external` switches a CM4 to the antenna on its U.FL connector (`dtparam=ant2` in `config.txt`). The
 firmware only reads `config.txt` at boot, so when the setting changes, the box restarts once by itself. A Raspberry Pi 4
