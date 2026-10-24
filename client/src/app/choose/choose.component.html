@@ -1,7 +1,106 @@
-<div class="container">
-  <button mat-raised-button color="primary" routerLink="/master">Registriere als Mastergerät</button>
-  <button mat-raised-button color="primary" routerLink="/screen">Registriere als Anzeigegerät</button>
-  @if (isDevBoardAvailable) {
-    <button mat-raised-button color="primary" routerLink="/dev-board">Benutze virtuelles DevBoard</button>
-  }
+<div class="choose">
+  <header class="header">
+    <img class="logo" src="assets/images/logo.png" alt="">
+    <h1><span class="brand-bold">Buzzer</span>Box</h1>
+    <p class="lead">Wofür soll dieses Gerät verwendet werden?</p>
+  </header>
+
+  <div class="roles">
+    <a mat-raised-button color="primary" class="role" routerLink="/master">
+      <span class="role-body">
+        <mat-icon class="role-icon">smartphone</mat-icon>
+        <span class="role-title">Spielleitung</span>
+        <span class="role-text">
+          Für dein Handy, Tablet oder Notebook: Quizze erstellen und verwalten, Spiele starten und leiten,
+          Antworten bewerten. Es steuert immer nur ein Gerät.
+        </span>
+      </span>
+    </a>
+    <a mat-raised-button class="role" routerLink="/screen">
+      <span class="role-body">
+        <mat-icon class="role-icon">tv</mat-icon>
+        <span class="role-title">Anzeige</span>
+        <span class="role-text">
+          Für Fernseher oder Beamer, die alle sehen: zeigt Fragen, Bilder, Videos und den Punktestand. Es kann beliebig
+          viele Anzeigen geben, auch mehrere Browserfenster auf demselben Gerät.
+        </span>
+      </span>
+    </a>
+    @if (isDevBoardAvailable) {
+      <a mat-raised-button class="role" routerLink="/dev-board">
+        <span class="role-body">
+          <mat-icon class="role-icon">developer_board</mat-icon>
+          <span class="role-title">Virtuelles DevBoard</span>
+          <span class="role-text">Nur zum Entwickeln: Buzzer per Mausklick drücken, ohne echte BuzzerBox.</span>
+        </span>
+      </a>
+    }
+  </div>
+
+  <section class="guide">
+    <h2>So startest du ein Spiel</h2>
+    <ol class="steps">
+      <li>
+        <mat-icon class="step-icon">wifi</mat-icon>
+        <div>
+          <strong>Verbinden.</strong>
+          Verbinde jedes Gerät mit dem WLAN <strong>{{join.wifiName}}</strong> und öffne
+          <strong>{{join.masterAddress}}</strong> im Browser. Dann landest du auf dieser Seite.
+        </div>
+      </li>
+      <li>
+        <mat-icon class="step-icon">tv</mat-icon>
+        <div>
+          <strong>Anzeige einrichten.</strong>
+          Ein Bildschirm am HDMI-Anschluss der BuzzerBox zeigt die Anzeige von selbst. Für jede weitere Anzeige öffnest
+          du diese Seite in einem eigenen Browserfenster und wählst „Anzeige“.
+          <p class="tip">
+            <mat-icon>open_in_new</mat-icon>
+            <span>
+              <strong>Mehrere Fenster, ein Gerät:</strong> Ein Notebook kann gleichzeitig Spielleitung und Anzeige sein.
+              Öffne dazu ein zweites Browserfenster, wähle dort „Anzeige“ und schiebe es auf den Beamer oder Fernseher
+              (am besten im Vollbild mit F11). So bekommst du auch mehrere Anzeigen an einem Gerät, eine pro Fenster.
+            </span>
+          </p>
+        </div>
+      </li>
+      <li>
+        <mat-icon class="step-icon">smartphone</mat-icon>
+        <div>
+          <strong>Steuerung übernehmen.</strong>
+          Wähle auf deinem Gerät „Spielleitung“, in einem eigenen Fenster, falls es auch eine Anzeige ist. Funkbuzzer verbindest du auf der Startseite der Steuerung,
+          indem du sie per USB an die BuzzerBox steckst und „Übernehmen“ antippst.
+        </div>
+      </li>
+      <li>
+        <mat-icon class="step-icon">quiz</mat-icon>
+        <div>
+          <strong>Quiz wählen.</strong>
+          „Neues Spiel“ beginnt ein gespeichertes Quiz von vorne, „Spiel fortsetzen“ macht bei einem Spielstand weiter.
+          Noch kein Quiz da? Unter „Spiele verwalten“ erstellst oder importierst du eines.
+        </div>
+      </li>
+      <li>
+        <mat-icon class="step-icon">groups</mat-icon>
+        <div>
+          <strong>Teams anlegen.</strong>
+          Gib jedem Team einen Buzzer, wähle das Aussehen der Anzeige und tippe auf „Spiel starten“.
+        </div>
+      </li>
+      <li>
+        <mat-icon class="step-icon">notifications_active</mat-icon>
+        <div>
+          <strong>Spielen.</strong>
+          Drückt ein Team seinen Buzzer, sind alle anderen gesperrt, und du bewertest die Antwort mit „Richtig“ oder
+          „Falsch“. Bei „Falsch“ dürfen die anderen wieder buzzern. Mit „Nächste Frage“ geht es weiter, nach der letzten
+          Frage mit „Spiel beenden“.
+        </div>
+      </li>
+    </ol>
+    <p class="hint">
+      <mat-icon>info</mat-icon>
+      Das Spiel wird laufend gespeichert. Lädt ein Gerät neu oder verliert kurz das WLAN, geht es danach an derselben
+      Stelle weiter.
+    </p>
+  </section>
 </div>

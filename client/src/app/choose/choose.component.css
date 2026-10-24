@@ -1,18 +1,160 @@
-.container {
-  max-width: 500px !important;
-  margin: auto;
-  width: 50%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%);
-  height: 8em;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: stretch;
+.choose {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
 }
 
-.center {
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
 
+.logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+
+h1 {
+  margin: 8px 0 0;
+  font-size: 2.4em;
+  font-weight: 400;
+}
+
+.brand-bold {
+  font-weight: 700;
+}
+
+.lead {
+  margin: 8px 0 0;
+  font-size: 1.2em;
+  opacity: 0.8;
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.role {
+  height: auto;
+  min-height: 200px;
+  padding: 24px 16px;
+  white-space: normal;
+  letter-spacing: normal;
+}
+
+/* the whole card; a mat-icon directly in the button would go into its icon slot */
+.role-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.role-icon {
+  width: 56px;
+  height: 56px;
+  font-size: 56px;
+  margin: 0;
+}
+
+.role-title {
+  font-size: 1.4em;
+  font-weight: 500;
+}
+
+.role-text {
+  font-size: 0.95em;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+.guide {
+  margin-top: 32px;
+  padding: 16px 24px 8px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+h2 {
+  font-weight: 400;
+  margin: 8px 0 16px;
+}
+
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.steps li {
+  counter-increment: step;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+/* the step's number, with its icon below */
+.steps li::before {
+  content: counter(step);
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3f51b5;
+  color: #fff;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-icon {
+  flex: none;
+  color: #3f51b5;
+  margin-top: 2px;
+}
+
+.hint {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 24px 0 8px;
+  font-size: 0.95em;
+  opacity: 0.8;
+}
+
+.hint mat-icon {
+  flex: none;
+}
+
+/* on a phone, the cards are stacked, so they don't need to be as tall */
+@media (max-width: 600px) {
+  .role {
+    min-height: 0;
+  }
+}
+
+/* stands out within its step, since it's easy to miss that one device can open several windows */
+.tip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-left: 4px solid #3f51b5;
+  border-radius: 4px;
+  background: #e8eaf6;
+}
+
+.tip mat-icon {
+  flex: none;
+  color: #3f51b5;
 }
