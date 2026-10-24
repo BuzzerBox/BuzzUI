@@ -44,7 +44,8 @@
       @for (row of rows; track row.controlName) {
         <div class="team-row" [class.inactive]="!isActive(row)">
           <mat-checkbox [checked]="isActive(row)" (change)="setActive(row, $event.checked)">
-            {{row.buzzer.name}}
+            <app-buzzer-color [color]="getColor(row)" [isCaseColor]="hasCaseColor(row)"></app-buzzer-color>
+          {{row.buzzer.name}}
             @if (row.buzzer.online === false) {
               <mat-icon class="buzzer-status" title="Dieser Funkbuzzer ist gerade nicht verbunden">wifi_off</mat-icon>
             }
@@ -69,6 +70,11 @@
     </form>
     @if (getActiveCount() < MIN_TEAMS) {
       <p class="warning">Es müssen mindestens {{MIN_TEAMS}} Teams spielen.</p>
+    }
+    @if (getTeamsWithSameColor(); as sameColor) {
+      @if (sameColor.length > 0) {
+        <p class="hint">{{sameColor.join(', ')}} haben dieselbe Farbe. Auf der Anzeige unterscheiden sie sich nur am Namen.</p>
+      }
     }
 
     <h2>Aussehen der Anzeige</h2>

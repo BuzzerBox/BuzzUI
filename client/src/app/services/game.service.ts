@@ -984,8 +984,11 @@ export class GameService implements OnDestroy {
   /**
    * Gives the buzzer the box's WiFi; observeUsbBuzzers() tells how it goes
    */
-  public adoptUsbBuzzer(path: string): void {
-    this.webSocketService.send<IAdoptUsbBuzzerPacket>({packetType: EPacketTypes.ADOPT_USB_BUZZER, path});
+  /**
+   * @param color the color of the buzzer's case ("#rrggbb", "" for none), which it keeps; undefined keeps the one it has
+   */
+  public adoptUsbBuzzer(path: string, color?: string): void {
+    this.webSocketService.send<IAdoptUsbBuzzerPacket>({packetType: EPacketTypes.ADOPT_USB_BUZZER, path, color});
   }
 
   /**

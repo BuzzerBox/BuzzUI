@@ -5,6 +5,7 @@ import {IPresetupAvailableInfoPacket} from './interfaces/IPresetupAvailableInfoP
 import {ITeam} from './interfaces/ITeam';
 import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
+import {ICaseColor} from './interfaces/ICaseColor';
 import {IQuestion} from './interfaces/IQuestion';
 import {IMediaDetails} from './interfaces/IMediaDetails';
 import {IMediaQuestionState, IMediaQuestionDefaults, TMediaKind} from './interfaces/IMediaQuestionState';
@@ -105,6 +106,7 @@ export {
 	TUsbBuzzerError,
 	IUsbBuzzersPacket,
 	IAdoptUsbBuzzerPacket,
+	ICaseColor,
 	IStorageEntry,
 	IStorageFolder
 }

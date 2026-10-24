@@ -111,6 +111,15 @@ export class GameService {
         UdpBuzzerService.get().setStateProvider(this.getUdpBuzzerState.bind(this));
         UdpBuzzerService.get().addOnPressCallback(this.onUdpBuzzerPress.bind(this));
         UdpBuzzerService.get().addOnBuzzersChangedCallback(() => {
+            // a buzzer that got another color shows its team in it
+            if (this.applyBuzzerColors(this.teams)) {
+                const updateTeamsPacket: IUpdateTeamsPacket = {packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams};
+                this.sendToMaster<IUpdateTeamsPacket>(updateTeamsPacket);
+                this.sendToAllScreens<IUpdateTeamsPacket>(updateTeamsPacket);
+                if (this.isGameSetUp()) {
+                    AutosaveService.get().changed();
+                }
+            }
             this.sendToMaster<IAvailableBuzzersPacket>({
                 packetType: EPacketTypes.AVAILABLE_BUZZERS,
                 availableBuzzers: this.getAvailableBuzzers()
@@ -203,7 +212,8 @@ export class GameService {
         } else if (packet.packetType === EPacketTypes.INSTALL_UPDATE) {
             this.onInstallUpdatePacket(packet as IInstallUpdatePacket);
         } else if (packet.packetType === EPacketTypes.ADOPT_USB_BUZZER) {
-            BuzzerProvisioningService.get().adopt((packet as IAdoptUsbBuzzerPacket).path);
+            const adoptPacket = packet as IAdoptUsbBuzzerPacket;
+            BuzzerProvisioningService.get().adopt(adoptPacket.path, adoptPacket.color);
         }
     }
 
@@ -277,7 +287,9 @@ export class GameService {
                     id,
                     keyBind: buzzConf.key,
                     byteBind: buzzConf.byte.toString(10),
-                    type: 'serial'
+                    type: 'serial',
+                    // optional in the config, so missing from its type
+                    color: BuzzerHelper.normalizeColor((buzzConf as {color?: string}).color)
                     // TODO remove EKeyBind
                 }
                 this.buzzerConfig.push(c);
@@ -317,6 +329,7 @@ export class GameService {
 
         if (packetOk) {
             this.teams = packet.teams;
+            this.applyBuzzerColors(this.teams);
             this.questions = packet.questions;
             // a new game is set up without a game state; a loaded save may lack fields added since it was made
             this.currentGameState = {...this.makeInitialGameState(), ...packet.currentGameState};
@@ -549,6 +562,7 @@ export class GameService {
             return;
         }
         this.teams = newTeams;
+        this.applyBuzzerColors(this.teams);
         const isRemoved = (teamId: string) => !newTeams.some(team => team.teamId === teamId);
         if ((this.currentGameState.markedTeamIds ?? []).some(isRemoved)) {
             this.unmarkAllTeams();
@@ -558,6 +572,27 @@ export class GameService {
         const updateTeamsPacket: IUpdateTeamsPacket = {packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams};
         this.sendToMaster<IUpdateTeamsPacket>(updateTeamsPacket);
         this.sendToAllScreens<IUpdateTeamsPacket>(updateTeamsPacket);
+    }
+
+    /**
+     * Gives each team the color of its buzzer, so that the screens show it without knowing the buzzers
+     * @return whether a team's color changed
+     */
+    private applyBuzzerColors(teams: ITeam[]): boolean {
+        const buzzers = this.getAvailableBuzzers();
+        let changed = false;
+        for (const team of teams) {
+            const color = buzzers.find(buzzer => buzzer.id === team.buzzerId)?.color;
+            if (team.color !== color) {
+                if (color == null) {
+                    delete team.color;
+                } else {
+                    team.color = color;
+                }
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     // TODO move to some shared resource

@@ -2,7 +2,12 @@
   <mat-card class="usb-buzzer-card" appearance="outlined">
     <mat-card-header>
       <mat-icon mat-card-avatar>usb</mat-icon>
-      <mat-card-title>{{getName(buzzer)}}</mat-card-title>
+      <mat-card-title>
+        @if (buzzer.color) {
+          <app-buzzer-color [color]="buzzer.color" [isCaseColor]="true"></app-buzzer-color>
+        }
+        {{getName(buzzer)}}
+      </mat-card-title>
       <mat-card-subtitle>{{getDetails(buzzer)}}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -47,10 +52,39 @@
           <p class="status error"><mat-icon>error</mat-icon>Das Übernehmen hat nicht geklappt. {{getErrorMessage(buzzer.error)}}</p>
         }
       }
+      @if (canChooseColor(buzzer)) {
+        <div class="case-colors">
+          <span class="case-colors-label">Farbe des Gehäuses</span>
+          <div class="swatches" role="radiogroup" aria-label="Farbe des Gehäuses">
+            @for (caseColor of caseColors; track caseColor.color) {
+              <button type="button" class="swatch" role="radio" [style.background]="caseColor.color"
+                      [class.selected]="getChosenColor(buzzer) === caseColor.color"
+                      [attr.aria-checked]="getChosenColor(buzzer) === caseColor.color"
+                      [attr.title]="caseColor.name" [attr.aria-label]="caseColor.name"
+                      (click)="chooseColor(buzzer, caseColor.color)">
+                @if (getChosenColor(buzzer) === caseColor.color) {
+                  <mat-icon>check</mat-icon>
+                }
+              </button>
+            }
+            <button type="button" class="swatch none" role="radio" [class.selected]="!getChosenColor(buzzer)"
+                    [attr.aria-checked]="!getChosenColor(buzzer)" title="Keine" aria-label="Keine"
+                    (click)="chooseColor(buzzer, '')">
+              <mat-icon>{{getChosenColor(buzzer) ? 'block' : 'check'}}</mat-icon>
+            </button>
+          </div>
+        </div>
+      } @else if (needsNewerFirmwareForColor(buzzer)) {
+        <p class="hint">Für die Farbe des Gehäuses braucht der Buzzer Firmware 1.2.0 oder neuer.</p>
+      }
     </mat-card-content>
-    @if (buzzer.state === 'detected' && buzzer.isAdopted) {
+    @if ((buzzer.state === 'detected' && buzzer.isAdopted) || buzzer.state === 'adopted') {
       <mat-card-actions align="end">
-        <button mat-stroked-button (click)="adopt(buzzer)">Erneut übernehmen</button>
+        @if (isColorChanged(buzzer)) {
+          <button mat-flat-button color="primary" (click)="adopt(buzzer)">Farbe übernehmen</button>
+        } @else if (buzzer.state === 'detected') {
+          <button mat-stroked-button (click)="adopt(buzzer)">Erneut übernehmen</button>
+        }
       </mat-card-actions>
     } @else if (buzzer.state === 'detected' || buzzer.state === 'no-answer' || buzzer.state === 'failed') {
       <mat-card-actions align="end">

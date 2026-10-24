@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {execFile} from 'child_process';
 import {ReadlineParser, SerialPort} from 'serialport';
-import {IUsbBuzzer, TUsbBuzzerError} from '../../shared/shared';
+import {BuzzerHelper, IUsbBuzzer, TUsbBuzzerError} from '../../shared/shared';
 import {ConfigService} from './config.service';
 import {LoggerService} from './logger.service';
 import {UdpBuzzerService} from './udp-buzzer.service';
@@ -37,8 +37,8 @@ interface ISessionResult {
     openFailed?: boolean;
     macAddress?: string;
     firmwareVersion?: string;
-    // the WiFi the buzzer has, as it told in BUZZ READY (firmware 1.1.0 and later)
-    wifi?: {ssid?: string, host?: string, port?: number};
+    // the WiFi the buzzer has, as it told in BUZZ READY (firmware 1.1.0 and later), and the color of its case (1.2.0)
+    wifi?: {ssid?: string, host?: string, port?: number, color?: string};
     error?: TUsbBuzzerError;
 }
 
@@ -50,9 +50,10 @@ export type UsbBuzzersChangedCallback = (buzzers: IUsbBuzzer[]) => void;
  * (udpBuzzer.provisioning.usbIds). Text lines at 115200 baud:
  *
  *   box → buzzer: BUZZ HELLO
- *   buzzer → box: BUZZ READY <mac> <firmware version> {"ssid":…,"host":…,"port":…}    (also when it starts; the
- *                 WiFi it has, without the passphrase, or {} without one; older firmware leaves it out)
- *   box → buzzer: BUZZ WIFI {"ssid":…,"pass":…,"host":…,"port":…}
+ *   buzzer → box: BUZZ READY <mac> <firmware version> {"ssid":…,"host":…,"port":…,"color":…}    (also when it
+ *                 starts; the WiFi it has, without the passphrase, or {} without one; older firmware leaves it out;
+ *                 the color of its case since firmware 1.2.0, if it has one)
+ *   box → buzzer: BUZZ WIFI {"ssid":…,"pass":…,"host":…,"port":…,"color":…}    (color: "#rrggbb", or "" for none)
  *   buzzer → box: BUZZ OK | BUZZ ERROR <reason>
  *
  * The master sees the buzzers and their state (IUsbBuzzer) and adopts them (IAdoptUsbBuzzerPacket).
@@ -107,8 +108,9 @@ export class BuzzerProvisioningService {
 
     /**
      * Gives the buzzer at that port the box's WiFi; also one that didn't answer or failed before
+     * @param color the color of its case ("#rrggbb", "" for none), which the buzzer keeps; undefined keeps the one it has
      */
-    public adopt(path: string): void {
+    public adopt(path: string, color?: string): void {
         const buzzer = this.buzzers.get(path);
         if (buzzer == null || buzzer.state === 'identifying' || buzzer.state === 'adopting') {
             return;
@@ -118,12 +120,23 @@ export class BuzzerProvisioningService {
             this.update(path, {state: 'failed', error: 'no-wifi-settings'});
             return;
         }
+        // anything else isn't sent, so that the buzzer doesn't refuse the WiFi for it
+        const caseColor = color === '' ? '' : BuzzerHelper.normalizeColor(color);
         this.update(path, {state: 'adopting', error: undefined});
-        LoggerService.log(`Adopting the buzzer at ${path}`);
-        this.talk(path, wifi).then(result => {
+        LoggerService.log(`Adopting the buzzer at ${path}` + (caseColor != null ? ` with the color ${caseColor || 'none'}` : ''));
+        this.talk(path, wifi, caseColor).then(result => {
             if (result.error == null) {
                 LoggerService.log(`Buzzer ${result.macAddress} at ${path} now knows the WiFi ${wifi.ssid}`);
-                this.update(path, {...this.describe(result), state: 'adopted', ssid: wifi.ssid, isAdopted: true});
+                // older firmware doesn't keep a color
+                const keepsColor = caseColor != null && BuzzerHelper.supportsCaseColor(result.firmwareVersion);
+                const described = this.describe(result);
+                this.update(path, {
+                    ...described,
+                    color: keepsColor ? caseColor || undefined : described.color,
+                    state: 'adopted',
+                    ssid: wifi.ssid,
+                    isAdopted: true
+                });
             } else {
                 LoggerService.warn(`Could not adopt the buzzer at ${path}: ${result.error}`);
                 this.update(path, {...this.describe(result), state: 'failed', error: result.error});
@@ -187,7 +200,11 @@ export class BuzzerProvisioningService {
      * What the master gets of a session's result
      */
     private describe(result: ISessionResult): Partial<IUsbBuzzer> {
-        return {macAddress: result.macAddress, firmwareVersion: result.firmwareVersion};
+        return {
+            macAddress: result.macAddress,
+            firmwareVersion: result.firmwareVersion,
+            color: BuzzerHelper.normalizeColor(result.wifi?.color)
+        };
     }
 
     /**
@@ -208,9 +225,10 @@ export class BuzzerProvisioningService {
     }
 
     /**
-     * Greets the buzzer, and gives it the WiFi if there is one to give. Never rejects.
+     * Greets the buzzer, and gives it the WiFi if there is one to give, with the color of its case unless that is
+     * undefined. Never rejects.
      */
-    private async talk(path: string, wifi: IWifiSettings | null): Promise<ISessionResult> {
+    private async talk(path: string, wifi: IWifiSettings | null, color?: string): Promise<ISessionResult> {
         // not locked, so that reset() can open the port as well; opening raises DTR and RTS together, which doesn't
         // reset the ESP32
         const port = new SerialPort({path, baudRate: 115200, autoOpen: false, hupcl: false, lock: false});
@@ -266,7 +284,8 @@ export class BuzzerProvisioningService {
                             ssid: wifi.ssid,
                             pass: wifi.passphrase,
                             host: wifi.serverAddress,
-                            port: ConfigService.get().udpBuzzer.listenPort
+                            port: ConfigService.get().udpBuzzer.listenPort,
+                            ...(color != null && BuzzerHelper.supportsCaseColor(result.firmwareVersion) ? {color} : {})
                         }));
                     } else if (line === 'BUZZ OK') {
                         finish();
