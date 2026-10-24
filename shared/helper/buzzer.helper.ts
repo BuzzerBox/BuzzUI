@@ -8,20 +8,18 @@ export class BuzzerHelper {
     private static readonly FIRST_FIRMWARE_WITH_CASE_COLOR = '1.2.0';
 
     /**
-     * The colors the cases of the wireless buzzers come in, which the master chooses from when adopting one. White and
-     * black are greys, so that a team in them still shows on both the light and the dark screens.
+     * The colors the cases of the wireless buzzers come in, which the master chooses from when adopting one. Red and
+     * green are left out, since they stand for wrong and right answers on the screens.
      */
     public static readonly CASE_COLORS: ICaseColor[] = [
-        {color: '#e53935', name: 'Rot', adjective: 'Roter'},
         {color: '#fb8c00', name: 'Orange', adjective: 'Oranger'},
         {color: '#fdd835', name: 'Gelb', adjective: 'Gelber'},
-        {color: '#43a047', name: 'Grün', adjective: 'Grüner'},
         {color: '#00acc1', name: 'Türkis', adjective: 'Türkiser'},
         {color: '#1e88e5', name: 'Blau', adjective: 'Blauer'},
         {color: '#8e24aa', name: 'Lila', adjective: 'Lila'},
         {color: '#ec407a', name: 'Pink', adjective: 'Pinker'},
-        {color: '#cfd8dc', name: 'Weiß', adjective: 'Weißer'},
-        {color: '#546e7a', name: 'Schwarz', adjective: 'Schwarzer'}
+        {color: '#ffffff', name: 'Weiß', adjective: 'Weißer'},
+        {color: '#000000', name: 'Schwarz', adjective: 'Schwarzer'}
     ];
 
     private constructor() {

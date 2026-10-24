@@ -95,7 +95,7 @@ mat-card.question {
   padding: calc(var(--u) * 2) calc(var(--u) * 3);
   border-radius: calc(var(--u) * 2);
   background: var(--team-color);
-  color: var(--bb-on-team);
+  color: var(--team-on-color, var(--bb-on-team));
   box-shadow: 0 0 calc(var(--u) * 6 * var(--bb-glow)) var(--team-color);
   font-family: var(--bb-display-font);
   font-weight: 700;

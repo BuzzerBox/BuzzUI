@@ -11,7 +11,8 @@
       @if (buzzBanner; as banner) {
         <!-- one element per buzz, so its animation starts again -->
         @for (b of [banner]; track b.id) {
-          <div class="buzz-banner" [style.--team-color]="b.color">{{b.name}}!</div>
+          <div class="buzz-banner" [style.--team-color]="b.color"
+               [style.--team-on-color]="getTextColor(b.color)">{{b.name}}!</div>
         }
       }
       <div class="parent">

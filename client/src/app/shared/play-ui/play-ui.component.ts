@@ -80,6 +80,10 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     return this.isMaster ? this.game.getGameState() === EGameStatesMaster.END : this.isScreenGameOver;
   }
 
+  public getTextColor(color: string): string {
+    return TeamColorHelper.getTextColor(color);
+  }
+
   public getTeams(): ITeam[] {
     return this.game.getTeams();
   }

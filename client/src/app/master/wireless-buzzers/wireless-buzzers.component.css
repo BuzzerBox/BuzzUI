@@ -1,0 +1,189 @@
+/* like the update card, as wide as the row of buttons above it on the home page */
+.wireless-buzzers {
+  margin: 16px 0;
+}
+
+.buzzer {
+  padding: 12px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.buzzer:first-child {
+  border-top: 0;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+/* the menu at the top right of the buzzer, also when its facts wrap */
+.top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.top .summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.more {
+  flex: none;
+  margin: -8px -8px -8px 0;
+}
+
+.no-color {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.facts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.9em;
+}
+
+.connection,
+.battery {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.connection {
+  padding: 0 8px 0 6px;
+  border-radius: 12px;
+  background: rgba(63, 81, 181, 0.1);
+  color: #283593;
+  line-height: 24px;
+}
+
+.facts mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.battery.low {
+  color: #c62828;
+}
+
+.usb {
+  margin-top: 8px;
+}
+
+.usb p {
+  margin: 0 0 8px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success mat-icon {
+  color: #2e7d32;
+}
+
+.error mat-icon {
+  color: #c62828;
+}
+
+.warning mat-icon {
+  color: #e65100;
+}
+
+.status mat-icon {
+  flex: none;
+}
+
+.case-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.case-colors-label {
+  font-weight: 500;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.swatch.selected {
+  outline: 3px solid #3f51b5;
+  outline-offset: 2px;
+}
+
+.swatch mat-icon {
+  color: #fff;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.8));
+}
+
+.swatch.light mat-icon {
+  color: rgba(0, 0, 0, 0.8);
+  filter: none;
+}
+
+.swatch.none {
+  background: #fff;
+}
+
+.swatch.none mat-icon {
+  color: rgba(0, 0, 0, 0.45);
+  filter: none;
+}
+
+.swatch.none.selected mat-icon {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.9em;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}

@@ -36,6 +36,8 @@ interface IHeartbeatPacket {
     wr?: number;
     // the color of its case, "#rrggbb" (firmware 1.2.0 and later, once the box gave it one)
     col?: string;
+    // the charge of its battery in %, from a fuel gauge (firmware 1.3.0 and later, Feather ESP32-S3)
+    pct?: number;
 }
 
 interface IPressPacket {
@@ -74,6 +76,9 @@ interface IUdpBuzzer {
     // the n of the last press, so that a press sent again is taken once
     lastPressNumber?: number;
     batteryLow: boolean;
+    // as the last heartbeat told
+    batteryPercent?: number;
+    firmwareVersion?: string;
     // of its case, as the last heartbeat told
     color?: string;
     // of the last heartbeat, to notice restarts and WiFi drops
@@ -172,6 +177,8 @@ export class UdpBuzzerService {
             type: 'udp',
             online: buzzer.online,
             batteryLow: buzzer.batteryLow,
+            batteryPercent: buzzer.batteryPercent,
+            firmwareVersion: buzzer.firmwareVersion,
             color: buzzer.color
         }));
     }
@@ -210,6 +217,8 @@ export class UdpBuzzerService {
             if (packet.t === EUdpPacketType.HEARTBEAT) {
                 const buzzer = this.onSignOfLife(packet.id, rinfo, packet.lp);
                 this.onBattery(buzzer, packet.bat);
+                this.onBatteryPercent(buzzer, packet.pct);
+                this.onFirmwareVersion(buzzer, packet.fw);
                 this.onColor(buzzer, packet.col);
                 this.onDiagnostics(buzzer, packet);
                 this.sendState(buzzer, {ack: packet.seq});
@@ -296,6 +305,26 @@ export class UdpBuzzerService {
         if (batteryLow !== buzzer.batteryLow) {
             LoggerService.log(`UDP buzzer ${buzzer.macAddress}: battery ${batteryLow ? 'low' : 'ok'} (${millivolts} mV)`);
             buzzer.batteryLow = batteryLow;
+            this.notifyBuzzersChanged();
+        }
+    }
+
+    /**
+     * The charge changes slowly, so the master hears of each whole percent
+     */
+    private onBatteryPercent(buzzer: IUdpBuzzer, percent: unknown): void {
+        const rounded = typeof percent === 'number' && Number.isFinite(percent)
+            ? Math.min(100, Math.max(0, Math.round(percent))) : undefined;
+        if (rounded !== buzzer.batteryPercent) {
+            buzzer.batteryPercent = rounded;
+            this.notifyBuzzersChanged();
+        }
+    }
+
+    private onFirmwareVersion(buzzer: IUdpBuzzer, version: unknown): void {
+        const firmwareVersion = typeof version === 'string' && version !== '' ? version : undefined;
+        if (firmwareVersion !== buzzer.firmwareVersion) {
+            buzzer.firmwareVersion = firmwareVersion;
             this.notifyBuzzersChanged();
         }
     }

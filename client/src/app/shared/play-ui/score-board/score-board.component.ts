@@ -60,6 +60,10 @@ export class ScoreBoardComponent implements OnInit {
     }
   }
 
+  public getTextColor(color: string): string {
+    return TeamColorHelper.getTextColor(color);
+  }
+
   /**
    * @param sortedTeams with the most points first
    */
