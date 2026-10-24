@@ -2,7 +2,8 @@
 
 Firmware for a battery-powered buzzer on an [Adafruit ESP32 Feather V2](https://www.adafruit.com/product/5400). It
 talks to the BuzzerBox's game server over the box's WiFi, and the box shows it to the game master like its own buzzers
-(as "Funkbuzzer" with the end of its MAC address).
+(named after the color of its case, e.g. "Blauer Wireless Buzzer", or as "Funkbuzzer" with the end of its MAC
+address while it has no color).
 
 ## How it behaves
 
@@ -17,7 +18,9 @@ talks to the BuzzerBox's game server over the box's WiFi, and the box shows it t
   goes to sleep) wakes it when it is released, not right away.
 - **Plugged into the box over USB**, it shows up as a card on the game master's home page. "Übernehmen" there gives
   it the box's WiFi name and password and its address; the NeoPixel flashes green three times when it got them. A
-  buzzer that has the box's WiFi already shows as adopted. The
+  buzzer that has the box's WiFi already shows as adopted. The card also asks for the **color of the case**: the
+  buzzer keeps it in its flash and tells it to every box, which shows it next to the buzzer and as its team's color
+  on the screens. Changing it later works the same way ("Farbe übernehmen"). The
   box wakes a sleeping buzzer for that (through the reset line). The USB cable also charges the battery.
 
 ## Lights
@@ -75,7 +78,7 @@ JSON over UDP with the game server (BuzzUI `server/services/udp-buzzer.service.t
 
 | Direction | Packet |
 |---|---|
-| buzzer → server, every second | `{"t":"HB","id":<MAC>,"lp":5006,"seq":<n>,"bat":<mV>,"fw":<version>}` |
+| buzzer → server, every second | `{"t":"HB","id":<MAC>,"lp":5006,"seq":<n>,"bat":<mV>,"fw":<version>,"col":<"#rrggbb">}` |
 | buzzer → server | `{"t":"PRESS","id":<MAC>,"n":<press number>,"ts":<µs on the server's clock>}` |
 | server → buzzer | `{"t":"STATE","selected":…,"locked":…,"game":…,"st":<server µs>,"ack":<seq>,"pa":<n>}` |
 
@@ -90,11 +93,16 @@ USB, text lines at 115200 baud (BuzzUI `server/services/buzzer-provisioning.serv
 
 ```
 box → buzzer   BUZZ HELLO
-buzzer → box   BUZZ READY <MAC> <firmware version> {"ssid":…,"host":…,"port":…}
+buzzer → box   BUZZ READY <MAC> <firmware version> {"ssid":…,"host":…,"port":…,"color":…}
                (also when it starts; the WiFi it has, never the passphrase, or {} without one)
-box → buzzer   BUZZ WIFI {"ssid":…,"pass":…,"host":…,"port":…}
+box → buzzer   BUZZ WIFI {"ssid":…,"pass":…,"host":…,"port":…,"color":…}
 buzzer → box   BUZZ OK | BUZZ ERROR <reason>
 ```
+
+`color` is the color of the case, `#rrggbb` (since firmware 1.2.0). It is optional in `BUZZ WIFI`: without it the
+buzzer keeps the color it has, `""` takes it away, and anything else is refused (`BUZZ ERROR`). The buzzer leaves it
+out of `BUZZ READY` and the heartbeat while it has none. Older firmware ignores it, so the box only sends it to 1.2.0
+and later.
 
 With the WiFi it has, the box shows a buzzer that already has its WiFi as adopted, and one that is connected to it
 right now as connected.
@@ -104,7 +112,7 @@ The buzzer only uses the serial connection while USB is plugged in. Without USB 
 chip then didn't show up on the computer when USB was plugged in, as long as the buzzer was awake on its battery. So the
 ESP32 leaves TX alone until it sees the chip's output (its RX, GPIO 3) high, and lets go of it again when RX stays low.
 
-The settings are kept in the flash (`Preferences`, namespace `buzzer`). To give a buzzer another network by hand, e.g.
+The settings and the color are kept in the flash (`Preferences`, namespace `buzzer`). To give a buzzer another network by hand, e.g.
 for a dev server on your computer, send those lines in a serial terminal.
 
 ## Code

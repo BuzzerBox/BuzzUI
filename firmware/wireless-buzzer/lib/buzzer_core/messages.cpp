@@ -1,5 +1,6 @@
 #include "messages.h"
 
+#include <ctype.h>
 #include <string.h>
 #include <ArduinoJson.h>
 
@@ -14,7 +15,7 @@ static size_t serialize(const JsonDocument &doc, char *out, size_t size) {
 }
 
 size_t buildHeartbeat(char *out, size_t size, const char *mac, uint16_t listenPort, uint32_t seq, uint16_t batteryMv,
-                      const char *firmwareVersion, const Diagnostics &diagnostics) {
+                      const char *firmwareVersion, const Diagnostics &diagnostics, const char *color) {
     JsonDocument doc;
     doc["t"] = "HB";
     doc["id"] = mac;
@@ -29,6 +30,9 @@ size_t buildHeartbeat(char *out, size_t size, const char *mac, uint16_t listenPo
     doc["wd"] = diagnostics.wifiDrops;
     if (diagnostics.wifiDrops > 0) {
         doc["wr"] = diagnostics.lastWifiReason;
+    }
+    if (color != nullptr && color[0] != '\0') {
+        doc["col"] = color;
     }
     return serialize(doc, out, size);
 }
@@ -51,6 +55,9 @@ size_t buildWifiInfo(char *out, size_t size, bool hasWifi, const WifiSettings &s
         doc["ssid"] = settings.ssid;
         doc["host"] = settings.host;
         doc["port"] = settings.port;
+    }
+    if (settings.color[0] != '\0') {
+        doc["color"] = settings.color;
     }
     return serialize(doc, out, size);
 }
@@ -88,6 +95,26 @@ static bool copy(const char *value, char *out, size_t size, size_t minLength) {
     return true;
 }
 
+/** "#rrggbb" in lower case, or "" */
+static bool copyColor(const char *value, char *out) {
+    size_t length = strlen(value);
+    if (length != 0 && length != 7) {
+        return false;
+    }
+    if (length == 7 && value[0] != '#') {
+        return false;
+    }
+    for (size_t i = 1; i < length; i++) {
+        if (!isxdigit((unsigned char) value[i])) {
+            return false;
+        }
+        out[i] = (char) tolower((unsigned char) value[i]);
+    }
+    out[0] = value[0];
+    out[length] = '\0';
+    return true;
+}
+
 bool parseWifi(const char *json, WifiSettings &settings) {
     JsonDocument doc;
     if (deserializeJson(doc, json) != DeserializationError::Ok) {
@@ -105,6 +132,13 @@ bool parseWifi(const char *json, WifiSettings &settings) {
         return false;
     }
     result.port = (uint16_t) port;
+    if (!doc["color"].isNull()) {
+        const char *color = doc["color"];
+        if (color == nullptr || !copyColor(color, result.color)) {
+            return false;
+        }
+        result.hasColor = true;
+    }
     settings = result;
     return true;
 }

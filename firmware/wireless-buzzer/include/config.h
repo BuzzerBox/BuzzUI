@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.1.2"
+#define FIRMWARE_VERSION "1.2.0"
 
 // ----- Hardware (Adafruit ESP32 Feather V2)
 

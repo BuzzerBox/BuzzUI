@@ -60,7 +60,7 @@ static struct {
     uint32_t lastSendMs;
 } press = {};
 
-static char line[256];
+static char line[320];
 static size_t lineLength = 0;
 // the rest of a line that was too long is skipped
 static bool skippingLine = false;
@@ -87,7 +87,7 @@ static const char *describeResetReason(esp_reset_reason_t reason) {
     }
 }
 
-// ----- WiFi settings, in the flash
+// ----- WiFi settings and the color of the case, in the flash
 
 static void loadWifi() {
     Preferences prefs;
@@ -100,6 +100,9 @@ static void loadWifi() {
         prefs.getString("host", wifi.host, sizeof(wifi.host));
         wifi.port = prefs.getUShort("port", 0);
     }
+    if (prefs.isKey("color")) {
+        prefs.getString("color", wifi.color, sizeof(wifi.color));
+    }
     prefs.end();
     hasWifi = wifi.ssid[0] != '\0' && wifi.host[0] != '\0' && wifi.port != 0;
 }
@@ -111,6 +114,7 @@ static void saveWifi() {
     prefs.putString("pass", wifi.passphrase);
     prefs.putString("host", wifi.host);
     prefs.putUShort("port", wifi.port);
+    prefs.putString("color", wifi.color);
     prefs.end();
 }
 
@@ -162,7 +166,7 @@ static void sendHeartbeat() {
     diagnostics.wifiDrops = wifiDrops;
     diagnostics.lastWifiReason = lastWifiReason;
     size_t length = messages::buildHeartbeat(packet, sizeof(packet), mac, LOCAL_PORT, heartbeatSeq, batteryMv,
-                                             FIRMWARE_VERSION, diagnostics);
+                                             FIRMWARE_VERSION, diagnostics, wifi.color);
     clockSync.onSent(heartbeatSeq, esp_timer_get_time());
     sendPacket(packet, length);
 }
@@ -210,8 +214,8 @@ static void receivePackets() {
 // ----- USB: the box gives the WiFi, see BuzzUI server/services/buzzer-provisioning.service.ts
 
 static void printReady() {
-    // which WiFi it has, so that the box can tell whether it is adopted already
-    char wifiInfo[200];
+    // which WiFi it has, so that the box can tell whether it is adopted already, and its color
+    char wifiInfo[240];
     if (messages::buildWifiInfo(wifiInfo, sizeof(wifiInfo), hasWifi, wifi) == 0) {
         strcpy(wifiInfo, "{}");
     }
@@ -231,12 +235,18 @@ static void onLine(const char *text) {
             indicator.flash(255, 0, 0, 3);
             return;
         }
+        if (!received.hasColor) {
+            strcpy(received.color, wifi.color);
+        }
         bool changed = strcmp(received.ssid, wifi.ssid) != 0 || strcmp(received.passphrase, wifi.passphrase) != 0
             || strcmp(received.host, wifi.host) != 0 || received.port != wifi.port;
+        bool colorChanged = strcmp(received.color, wifi.color) != 0;
         wifi = received;
         hasWifi = true;
-        if (changed) {
+        if (changed || colorChanged) {
             saveWifi();
+        }
+        if (changed) {
             // another network, another access point
             lastChannel = 0;
             clockSync.reset();
