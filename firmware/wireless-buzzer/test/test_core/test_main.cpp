@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <string.h>
+#include <initializer_list>
 #include <unity.h>
 
 #include "clock_sync.h"
@@ -179,6 +181,15 @@ void test_builds_a_heartbeat() {
     TEST_ASSERT_NOT_NULL(strstr(out, "\"wd\":3,\"wr\":200}"));
 }
 
+void test_tells_the_color_in_the_heartbeat() {
+    char out[200];
+    messages::buildHeartbeat(out, sizeof(out), "AA:BB:CC:DD:EE:01", 5006, 7, 3912, "1.0.0", messages::Diagnostics(),
+                             "#1e88e5");
+    TEST_ASSERT_NOT_NULL(strstr(out, ",\"col\":\"#1e88e5\"}"));
+    messages::buildHeartbeat(out, sizeof(out), "AA:BB:CC:DD:EE:01", 5006, 7, 3912, "1.0.0", messages::Diagnostics(), "");
+    TEST_ASSERT_NULL(strstr(out, "col"));
+}
+
 void test_builds_a_press_with_and_without_the_server_time() {
     char out[200];
     messages::buildPress(out, sizeof(out), "AA:BB:CC:DD:EE:01", 3, true, 12345678901LL);
@@ -234,6 +245,9 @@ void test_tells_its_wifi_without_the_passphrase() {
     TEST_ASSERT_NULL(strstr(out, "secret"));
     messages::buildWifiInfo(out, sizeof(out), false, wifi);
     TEST_ASSERT_EQUAL_STRING("{}", out);
+    strcpy(wifi.color, "#fdd835");
+    messages::buildWifiInfo(out, sizeof(out), true, wifi);
+    TEST_ASSERT_EQUAL_STRING("{\"ssid\":\"Box \\\"7\\\"\",\"host\":\"10.0.0.5\",\"port\":5005,\"color\":\"#fdd835\"}", out);
 }
 
 void test_parses_the_wifi() {
@@ -244,6 +258,32 @@ void test_parses_the_wifi() {
     TEST_ASSERT_EQUAL_STRING("12345678=!", wifi.passphrase);
     TEST_ASSERT_EQUAL_STRING("10.0.0.5", wifi.host);
     TEST_ASSERT_EQUAL_UINT16(5005, wifi.port);
+    TEST_ASSERT_FALSE(wifi.hasColor);
+    TEST_ASSERT_EQUAL_STRING("", wifi.color);
+}
+
+void test_parses_the_color() {
+    messages::WifiSettings wifi;
+    TEST_ASSERT_TRUE(messages::parseWifi(
+        "{\"ssid\":\"a\",\"pass\":\"12345678\",\"host\":\"h\",\"port\":5005,\"color\":\"#1E88E5\"}", wifi));
+    TEST_ASSERT_TRUE(wifi.hasColor);
+    TEST_ASSERT_EQUAL_STRING("#1e88e5", wifi.color);
+    // an empty one takes the color away
+    TEST_ASSERT_TRUE(messages::parseWifi(
+        "{\"ssid\":\"a\",\"pass\":\"12345678\",\"host\":\"h\",\"port\":5005,\"color\":\"\"}", wifi));
+    TEST_ASSERT_TRUE(wifi.hasColor);
+    TEST_ASSERT_EQUAL_STRING("", wifi.color);
+}
+
+void test_rejects_an_invalid_color() {
+    messages::WifiSettings wifi;
+    strcpy(wifi.ssid, "kept");
+    for (const char *color : {"\"blue\"", "\"#12345\"", "\"#1234567\"", "\"#12345g\"", "\"112233\"", "3"}) {
+        char json[120];
+        snprintf(json, sizeof(json), "{\"ssid\":\"a\",\"pass\":\"12345678\",\"host\":\"h\",\"port\":5005,\"color\":%s}", color);
+        TEST_ASSERT_FALSE_MESSAGE(messages::parseWifi(json, wifi), color);
+    }
+    TEST_ASSERT_EQUAL_STRING("kept", wifi.ssid);
 }
 
 void test_rejects_invalid_wifi() {
@@ -275,6 +315,7 @@ int main() {
     RUN_TEST(test_timeouts_survive_the_millis_wraparound);
     RUN_TEST(test_an_event_a_moment_after_now_is_no_time_ago);
     RUN_TEST(test_builds_a_heartbeat);
+    RUN_TEST(test_tells_the_color_in_the_heartbeat);
     RUN_TEST(test_builds_a_press_with_and_without_the_server_time);
     RUN_TEST(test_does_not_overflow_a_small_buffer);
     RUN_TEST(test_parses_a_state);
@@ -282,6 +323,8 @@ int main() {
     RUN_TEST(test_rejects_other_packets);
     RUN_TEST(test_tells_its_wifi_without_the_passphrase);
     RUN_TEST(test_parses_the_wifi);
+    RUN_TEST(test_parses_the_color);
+    RUN_TEST(test_rejects_an_invalid_color);
     RUN_TEST(test_rejects_invalid_wifi);
     return UNITY_END();
 }
