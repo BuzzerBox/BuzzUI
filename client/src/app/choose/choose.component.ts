@@ -10,6 +10,8 @@ import {ConfigService} from '../services/config.service';
 export class ChooseComponent implements OnInit {
   // the server ignores the dev board's buzzer presses unless browser keypresses are enabled
   public readonly isDevBoardAvailable = ConfigService.get().enableBrowserKeypressEvents;
+  // what the guide tells the players to connect to, as on the screen's waiting page
+  public readonly join = ConfigService.get().join;
 
   constructor() {
   }
