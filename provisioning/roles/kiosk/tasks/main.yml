@@ -70,6 +70,14 @@
       ]
     mode: "0644"
 
+# WirePlumber probes the HDMI cards before cage switches the HDMI output on, which they need for sound, so the kiosk
+# lets it probe them again afterwards (files/buzzerbox-hdmi-audio)
+- name: Install the script that brings back the HDMI sound after the kiosk started
+  ansible.builtin.copy:
+    src: buzzerbox-hdmi-audio
+    dest: /usr/share/buzzerbox/buzzerbox-hdmi-audio
+    mode: "0755"
+
 - name: Install the kiosk service
   ansible.builtin.template:
     src: buzzerbox-kiosk.service.j2
