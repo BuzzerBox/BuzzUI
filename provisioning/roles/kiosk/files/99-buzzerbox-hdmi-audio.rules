@@ -1,0 +1,2 @@
+# a TV was plugged in, unplugged or switched on: bring back the HDMI sound, see roles/kiosk/files/buzzerbox-hdmi-audio
+ACTION=="change", SUBSYSTEM=="drm", ENV{HOTPLUG}=="1", RUN+="/usr/bin/systemctl --no-block start buzzerbox-hdmi-audio.service"
