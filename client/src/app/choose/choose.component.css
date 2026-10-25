@@ -158,3 +158,28 @@ h2 {
   flex: none;
   color: #3f51b5;
 }
+
+/* in the grey below the guide */
+.footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.github {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85em;
+  color: #888;
+  text-decoration: none;
+}
+
+.github:hover {
+  color: #555;
+  text-decoration: underline;
+}
+
+.github-logo {
+  width: 18px;
+  height: 18px;
+}

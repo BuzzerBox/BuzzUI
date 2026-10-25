@@ -711,6 +711,9 @@ export class GameService {
             availableBuzzers: this.getAvailableBuzzers()
         });
         this.sendToAllScreens(packet);
+        if (packet.discardState) {
+            AutosaveService.get().discard();
+        }
         this.resetServerData();
     }
 

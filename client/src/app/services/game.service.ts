@@ -723,13 +723,15 @@ export class GameService implements OnDestroy {
   }
 
   /**
-   * Ends the game; the server then sends the presetup data again, which takes the master to the start page
+   * Ends the game without the end screen; the server then sends the presetup data again, which takes the master to the
+   * start page. The game's state stays saved, so it can be continued, unless it is discarded.
    */
-  public resetServer(): void {
+  public resetServer(discardState = false): void {
     this.setNewGameState(EGameStatesMaster.MASTER_ACCEPTED);
     // the game data stays until the presetup data takes the master to the start page, since the play page is shown until then
     this.webSocketService.send<IResetServerPacket>({
-      packetType: EPacketTypes.RESET_SERVER
+      packetType: EPacketTypes.RESET_SERVER,
+      discardState: discardState || undefined
     });
   }
 

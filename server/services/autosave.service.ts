@@ -117,6 +117,33 @@ export class AutosaveService {
         this.infoSubject.next({packetType: EPacketTypes.AUTOSAVE_INFO, storage: null});
     }
 
+    /**
+     * Stops saving and deletes the state, e.g. since the game was discarded
+     */
+    public discard(): void {
+        if (this.ref == null) {
+            return;
+        }
+        const ref = this.ref;
+        const ready = this.ready;
+        const saving = this.saving;
+        // the state is no longer the active one, which can't be deleted
+        this.stop();
+        this.infoSubject.next({packetType: EPacketTypes.AUTOSAVE_INFO, storage: null});
+        (async () => {
+            // a new state gets its unique name first, and a save that is underway would write it again
+            await ready;
+            await saving;
+            await StorageService.get().deleteState(ref.locationId, ref.gameName, ref.stateName);
+            LoggerService.log(`Discarded ${ref.stateName} of ${ref.gameName}`);
+        })().catch(e => {
+            // a state that was never saved is gone already
+            if (!(e instanceof StorageError && e.status === 404)) {
+                LoggerService.error(`Could not delete ${ref.stateName} of ${ref.gameName}`, e);
+            }
+        });
+    }
+
     private stop(): void {
         if (this.timer != null) {
             clearTimeout(this.timer);

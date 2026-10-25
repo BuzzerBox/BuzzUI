@@ -19,11 +19,13 @@ import {EGameStatesMaster} from '../enums/EGameStatesMaster';
 export class ToolbarMasterComponent implements OnInit, OnDestroy {
   // the autosave status of the running game
   @Input() showSaveIcon = false;
-  // on the play page: the teams, ending the game and resetting the server behind one "more" icon; the buzzers are
+  // on the play page: the teams and ending, pausing or discarding the game behind one "more" icon; the buzzers are
   // released in the middle of the page, see BuzzerLockComponent
   @Input() showGameMenu = false;
   // back to the start page, which is only there while no game is set up
   @Input() showHomeIcon = false;
+  // only on the start page, where no game is set up
+  @Input() showResetServer = false;
   public readonly homeUrl = '/' + baseUrlMaster + pathsMaster.home;
   public autosave: IAutosaveInfoPacket = null;
   private subscription: Subscription;
@@ -67,16 +69,16 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   }
 
   public resetServer(): void {
-    const message = this.showGameMenu
-      ? 'Das laufende Spiel wird beendet, und alle Geräte starten von vorn.'
-      : 'Alle Geräte starten von vorn.';
-    this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
-      data: {title: 'Server zurücksetzen?', message, confirmText: 'Zurücksetzen'}
-    }).afterClosed().subscribe(confirmed => {
-      if (confirmed) {
-        this.game.resetServer();
-      }
-    });
+    this.confirm('Server zurücksetzen?', 'Alle Geräte starten von vorn.', 'Zurücksetzen', () => this.game.resetServer());
+  }
+
+  /**
+   * Back to choosing what this device is for, which gives up being the master; offered on every page but the running
+   * game's
+   */
+  public logout(): void {
+    // the page set the app up as master; loading it anew closes the connection, so the server lets another master in
+    window.location.assign('/choose');
   }
 
   public isGameOver(): boolean {
@@ -85,6 +87,38 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
 
   public endGame(): void {
     DialogConfirmEndingGameComponent.confirmAndEndGame(this.dialog, this.game);
+  }
+
+  /**
+   * Back to the start page without the end screen; the state stays saved, so the game can be continued
+   */
+  public pauseGame(): void {
+    const stateName = this.autosave?.storage?.stateName;
+    const message = stateName
+      ? `Der Spielstand „${stateName}“ bleibt gespeichert. Unter „Spiel fortsetzen“ geht es später an derselben Stelle weiter.`
+      : 'Dieses Spiel wird nicht gespeichert und kann daher nicht fortgesetzt werden.';
+    this.confirm('Spiel pausieren?', message, 'Pausieren', () => this.game.resetServer());
+  }
+
+  /**
+   * Back to the start page without the end screen, deleting the state, so it is no longer offered to be continued
+   */
+  public discardGame(): void {
+    const stateName = this.autosave?.storage?.stateName;
+    const message = stateName
+      ? `Der Spielstand „${stateName}“ wird gelöscht, auch wenn er schon früher gespielt wurde, und lässt sich nicht fortsetzen.`
+      : 'Das Spiel wird ohne Endstand beendet.';
+    this.confirm('Spiel verwerfen?', message, 'Verwerfen', () => this.game.resetServer(true));
+  }
+
+  private confirm(title: string, message: string, confirmText: string, onConfirmed: () => void): void {
+    this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
+      data: {title, message, confirmText}
+    }).afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        onConfirmed();
+      }
+    });
   }
 
 }
