@@ -1,0 +1,9 @@
+[Unit]
+Description=BuzzerBox HDMI sound after the TV reported in
+# started by the kiosk and by 99-buzzerbox-hdmi-audio.rules, see roles/kiosk/files/buzzerbox-hdmi-audio
+
+[Service]
+Type=oneshot
+# WirePlumber runs in the kiosk user's session
+User={{ buzzerbox_user }}
+ExecStart=/usr/share/buzzerbox/buzzerbox-hdmi-audio
