@@ -3,10 +3,16 @@
 # plugged in or switched on), WirePlumber probes the HDMI sound card at once, and vc4-hdmi refuses to open it until the
 # HDMI output is switched on again (error 524). The card then only has the profiles "off" and "pro-audio" and the media
 # play into the "Dummy Output". This waits until the HDMI output takes sound and lets WirePlumber probe the card again.
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+# The TV (seen with an LG) then still stays silent until the output is switched on again while the sound is already
+# running, so it switches cage's output off and on, which keeps Chromium and its media running.
+user="${BUZZERBOX_USER:?}"
+
+as_user() {
+    runuser -u "$user" -- env XDG_RUNTIME_DIR="/run/user/$(id -u "$user")" WAYLAND_DISPLAY=wayland-0 "$@"
+}
 
 has_hdmi_sink() {
-    wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q 'node.name = "alsa_output\.'
+    as_user wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q 'node.name = "alsa_output\.'
 }
 
 # HDMI-A-1, the output that roles/base forces on
@@ -22,7 +28,14 @@ for _ in $(seq 30); do
     fi
     # a tenth of a second of silence
     if aplay -q -D hdmi:CARD=vc4hdmi0,DEV=0 -f S16_LE -r 48000 -c 2 -s 4800 /dev/zero 2>/dev/null; then
-        systemctl --user restart wireplumber.service
+        as_user systemctl --user restart wireplumber.service
+        for _ in $(seq 10); do
+            has_hdmi_sink && break
+            sleep 1
+        done
+        as_user wlr-randr --output HDMI-A-1 --off
+        sleep 1
+        as_user wlr-randr --output HDMI-A-1 --on
         exit 0
     fi
     sleep 1

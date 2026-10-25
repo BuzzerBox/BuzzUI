@@ -2,8 +2,9 @@
 
 - name: Install cage, Chromium and the audio stack
   ansible.builtin.apt:
-    # PipeWire plays the media's audio over HDMI
-    name: [cage, chromium, pipewire, pipewire-pulse, wireplumber, fonts-noto-color-emoji]
+    # PipeWire plays the media's audio over HDMI; wlr-randr switches cage's output off and on for the HDMI sound, see
+    # files/buzzerbox-hdmi-audio
+    name: [cage, chromium, pipewire, pipewire-pulse, wireplumber, wlr-randr, fonts-noto-color-emoji]
     update_cache: true
     cache_valid_time: 3600
 
@@ -71,7 +72,8 @@
     mode: "0644"
 
 # Whenever the TV reports in, WirePlumber probes the HDMI card before the HDMI output is switched on again, which it
-# needs for sound, so the kiosk and every HDMI hotplug let it probe the card again afterwards
+# needs for sound, so the kiosk and every HDMI hotplug let it probe the card again afterwards and switch
+# the output off and on, since the TV only plays sound when the output is switched on with the sound running
 # (files/buzzerbox-hdmi-audio)
 - name: Install the script that brings back the HDMI sound
   ansible.builtin.copy:

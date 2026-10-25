@@ -4,6 +4,6 @@ Description=BuzzerBox HDMI sound after the TV reported in
 
 [Service]
 Type=oneshot
-# WirePlumber runs in the kiosk user's session
-User={{ buzzerbox_user }}
+# as root, for runuser: WirePlumber and cage run in the kiosk user's session
+Environment=BUZZERBOX_USER={{ buzzerbox_user }}
 ExecStart=/usr/share/buzzerbox/buzzerbox-hdmi-audio
