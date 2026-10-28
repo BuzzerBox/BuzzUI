@@ -48,13 +48,49 @@ describe('PrepareGameComponent', () => {
     buzzers = [box('b0'), box('b1'), udp('01'), udp('02'), udp('03')];
     create();
     expect(component.canChooseBuzzerType()).toBeTrue();
-    expect(rowIds()).toEqual(['b0', 'b1']);
-    component.chooseBuzzerType('udp');
+    // the wireless buzzers are online, so they are the default
+    expect(component.buzzerType).toBe('udp');
     expect(rowIds()).toEqual(['udp:01', 'udp:02', 'udp:03']);
     // the first two of them play, named in order, with their index among all buzzers
     expect(component.getActiveCount()).toBe(2);
     expect(component.rows.map(row => row.buzzerIndex)).toEqual([2, 3, 4]);
     expect(component.teamsFormGroup.get(component.rows[0].controlName).value).toBe('Team 1');
+    component.chooseBuzzerType('serial');
+    expect(rowIds()).toEqual(['b0', 'b1']);
+  });
+
+  it('keeps the buzzers of the box when the wireless ones are offline', () => {
+    buzzers = [box('b0'), box('b1'), {...udp('01'), online: false}];
+    create();
+    expect(component.buzzerType).toBe('serial');
+    expect(rowIds()).toEqual(['b0', 'b1']);
+  });
+
+  it('switches a new game to a wireless buzzer that comes online, until the master chose or changed the teams', () => {
+    buzzers = [box('b0'), box('b1'), {...udp('01'), online: false}];
+    create();
+    changeBuzzers([box('b0'), box('b1'), udp('01')]);
+    expect(component.buzzerType).toBe('udp');
+    expect(rowIds()).toEqual(['udp:01']);
+
+    buzzers = [box('b0'), box('b1')];
+    create();
+    component.teamsFormGroup.get(component.rows[0].controlName).markAsDirty();
+    changeBuzzers([box('b0'), box('b1'), udp('01')]);
+    expect(component.buzzerType).toBe('serial');
+
+    buzzers = [box('b0'), box('b1')];
+    create();
+    component.chooseBuzzerType('serial');
+    changeBuzzers([box('b0'), box('b1'), udp('01')]);
+    expect(component.buzzerType).toBe('serial');
+  });
+
+  it('continues a game of the box with its buzzers although wireless ones are online', () => {
+    buzzers = [box('b0'), box('b1'), udp('01')];
+    create({teams: [{name: 'A', buzzerId: 'b0', teamId: 'b0', buzzerIndex: 0, points: 3}]} as IGameInstanceState);
+    expect(component.buzzerType).toBe('serial');
+    expect(component.dropsSavedTeams()).toBeFalse();
   });
 
   it('adds a wireless buzzer that turns up, keeping what was entered', () => {
