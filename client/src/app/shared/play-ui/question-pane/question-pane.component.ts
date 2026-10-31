@@ -46,6 +46,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   private static readonly FLASH_WRONG_DURATION_IN_MS = 1000;
   @Input() isMaster = false;
   @Input() question: IQuestion;
+  // before the first question of a new game, see IGameState.welcome
+  @Input() welcome = false;
 
   @HostBinding('class.screen') get isScreen(): boolean {
     return !this.isMaster;
@@ -149,6 +151,13 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.game.getCurrentQuestionNumber() + 1;
   }
 
+  /**
+   * For the welcome screen; games set up without being stored have none
+   */
+  public getGameName(): string | undefined {
+    return this.game.getGameStateData()?.gameName;
+  }
+
   public getTotalQuestionNumber(): number {
     return this.game.getQuestions().length;
   }
@@ -168,8 +177,9 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.question?.text;
   }
 
-  // The master shows and hides the question and the answers on the screens with their status labels. Like the
-  // media, these states only exist for media questions, and answers turned off in setup can't be shown.
+  // The master shows and hides the question, the answers and the media on the screens in one pane, with their status
+  // labels. Like the media, the states of question and answers only exist for media questions, and answers turned off
+  // in setup can't be shown.
   public canToggleQuestion(): boolean {
     return this.isMaster && !!this.question?.mediaDetails;
   }
@@ -200,24 +210,85 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     return this.getVisibilityLabel(this.showAnswers, this.answerState);
   }
 
+  // the pane's title says that it is about the screens
   private getVisibilityLabel(visible: boolean, state: EQuestionAnswerStates): string {
     if (visible) {
-      return 'Auf der Anzeige sichtbar';
+      return 'sichtbar';
     }
     const media = this.question?.mediaDetails;
     if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && MediaHelper.hasEnd(media)) {
       if (MediaHelper.isSlideshow(media)) {
-        return 'Auf der Anzeige verborgen – erscheint nach der Bildserie';
+        return 'verborgen – erscheint nach der Bildserie';
       }
-      return 'Auf der Anzeige verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(media.fileSrc) ? 'Audio' : 'Video');
+      return 'verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(media.fileSrc) ? 'Audio' : 'Video');
     }
-    return 'Auf der Anzeige verborgen';
+    return 'verborgen';
+  }
+
+  /**
+   * Of the media that have a visibility toggle
+   */
+  public getMediaName(): string {
+    const media = this.question?.mediaDetails;
+    if (MediaHelper.isSlideshow(media)) {
+      return 'Bildserie';
+    }
+    return MediaHelper.isVideo(media) ? 'Video' : 'Bild';
+  }
+
+  public getMediaIcon(): string {
+    const media = this.question?.mediaDetails;
+    if (MediaHelper.isSlideshow(media)) {
+      return 'burst_mode';
+    }
+    if (MediaHelper.isVideo(media)) {
+      return 'movie';
+    }
+    return FileExtensionsService.isAudio(media?.fileSrc) ? 'audiotrack' : 'image';
+  }
+
+  private isMediaAudio(): boolean {
+    const media = this.question?.mediaDetails;
+    return !MediaHelper.isSlideshow(media) && FileExtensionsService.isAudio(media?.fileSrc);
+  }
+
+  /**
+   * Audio has nothing to hide, its note is always shown (see MediaQuestionComponent); video and audio are played in the
+   * media controls
+   */
+  public hasMediaVisibility(): boolean {
+    return !!this.question?.mediaDetails && !this.isMediaAudio();
+  }
+
+  public getMediaVisibilityLabel(): string {
+    return this.isMediaShown() ? 'sichtbar' : 'verborgen';
+  }
+
+  public getMediaToggleAction(): string {
+    return this.isMediaShown() ? 'Verbergen' : 'Zeigen';
+  }
+
+  public getMediaToggleTitle(): string {
+    return `${this.getMediaName()} auf der Anzeige ${this.getMediaToggleAction().toLowerCase()}`;
+  }
+
+  /**
+   * Shows or hides the media; the media controls below have the rest. A video is shown without playing it, e.g. its
+   * first frame before it starts, and hiding it also stops it. Playing it shows it, see MediaRemoteComponent.
+   */
+  public toggleMedia(): void {
+    const isVideo = MediaHelper.isVideo(this.question?.mediaDetails);
+    if (this.isMediaShown()) {
+      this.game.changeMediaState({mediaState: isVideo ? EMediaStates.HIDDEN : EMediaStates.PAUSED});
+    } else {
+      this.game.changeMediaState({mediaState: isVideo ? EMediaStates.PAUSED : EMediaStates.PLAYING});
+    }
   }
 
   /**
    * Whether the screens show the media, as decided in MediaQuestionComponent: while it plays, and a slideshow also
-   * once it is complete. A video keeps showing its picture once it was started, also paused and finished. The screens
-   * then show the answers below the media.
+   * once it is complete. A video shows its picture unless it is hidden, also paused (e.g. its first frame) and
+   * finished.
    */
   public isMediaShown(): boolean {
     const media = this.question?.mediaDetails;
@@ -401,11 +472,14 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.closeGradeDialog();
     this.gradeDialogTeamId = teamId;
     const dialogRef = this.dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, TGradeDialogResult>(DialogGradeAnswerComponent, {
+      // a tap next to it mustn't put the grade off by accident; the X and "Später bewerten" close it
+      disableClose: true,
       data: {
         teamName: team.name,
         points: GameService.getQuestionPoints(this.question),
         answers: this.getGradeAnswerOptions(),
-        answersHiddenOnScreens: !this.showAnswers
+        answersHiddenOnScreens: !this.showAnswers,
+        scoring: this.game.getScoring()
       }
     });
     this.gradeDialogRef = dialogRef;

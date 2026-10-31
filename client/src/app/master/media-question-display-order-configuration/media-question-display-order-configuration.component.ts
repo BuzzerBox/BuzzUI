@@ -3,16 +3,21 @@ import {EMediaStates, EQuestionAnswerStates, IMediaQuestionState, MediaHelper, T
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
-type MediaAnswerPreset = 'MEDIA_FIRST' | 'HIDE_BOTH' | 'SHOW_ANSWERS';
+type MediaAnswerPreset = 'MEDIA_FIRST' | 'PLAY_HIDE_ANSWERS' | 'HIDE_BOTH' | 'SHOW_ANSWERS';
 
+// HIDDEN rather than PAUSED hides the media: a paused video shows its picture (e.g. its first frame)
 const PRESET_TO_STATE: Record<MediaAnswerPreset, Pick<IMediaQuestionState, 'mediaState' | 'answerState'>> = {
-  MEDIA_FIRST:  { mediaState: EMediaStates.PLAYING, answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA },
-  HIDE_BOTH:    { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.HIDDEN },
-  SHOW_ANSWERS: { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.SHOWN },
+  MEDIA_FIRST:       { mediaState: EMediaStates.PLAYING, answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA },
+  PLAY_HIDE_ANSWERS: { mediaState: EMediaStates.PLAYING, answerState: EQuestionAnswerStates.HIDDEN },
+  HIDE_BOTH:         { mediaState: EMediaStates.HIDDEN,  answerState: EQuestionAnswerStates.HIDDEN },
+  SHOW_ANSWERS:      { mediaState: EMediaStates.PAUSED,  answerState: EQuestionAnswerStates.SHOWN },
 };
 
 function presetFromConfig(config: IMediaQuestionState): MediaAnswerPreset {
-  if (config?.answerState === EQuestionAnswerStates.HIDDEN) { return 'HIDE_BOTH'; }
+  if (config?.answerState === EQuestionAnswerStates.HIDDEN) {
+    // games saved before HIDE_BOTH used HIDDEN have it PAUSED
+    return config.mediaState === EMediaStates.PLAYING ? 'PLAY_HIDE_ANSWERS' : 'HIDE_BOTH';
+  }
   if (config?.answerState === EQuestionAnswerStates.SHOWN)  { return 'SHOW_ANSWERS'; }
   return 'MEDIA_FIRST';
 }
@@ -48,11 +53,18 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
   }
 
   get presetOptions(): { label: string; key: MediaAnswerPreset }[] {
-    return [
+    const options: { label: string; key: MediaAnswerPreset }[] = [
       { label: this.mediaKind === 'slideshow' ? 'Erstes Bild zeigen, Antworten nach dem letzten' : this.hasEnd ? 'Abspielen, Antworten danach' : 'Bild zeigen', key: 'MEDIA_FIRST' },
+    ];
+    // video and audio: the master shows the answers when they like, not when the media ends
+    if (this.mediaKind === 'playable') {
+      options.push({ label: 'Abspielen, Antworten verbergen', key: 'PLAY_HIDE_ANSWERS' });
+    }
+    options.push(
       { label: 'Beides verbergen', key: 'HIDE_BOTH' },
       { label: 'Antworten zeigen', key: 'SHOW_ANSWERS' },
-    ];
+    );
+    return options;
   }
 
   constructor() {}
@@ -80,6 +92,10 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
       }, {emitEvent: false});
     }
     if (!changes['mediaKind']) { return; }
+    const preset = this.questionConfig.get('preset');
+    if (this.mediaKind !== 'playable' && preset.value === 'PLAY_HIDE_ANSWERS') {
+      preset.setValue('HIDE_BOTH');
+    }
     if (!this.hasEnd) {
       const qs = this.questionConfig.get('questionState');
       if (qs.value === EQuestionAnswerStates.WAIT_FOR_MEDIA) {

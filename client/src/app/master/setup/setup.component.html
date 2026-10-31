@@ -1,4 +1,4 @@
-<ng-template #mediaDefaultsSection>
+<ng-template #gameSettingsSection>
   <mat-expansion-panel class="media-defaults">
     <mat-expansion-panel-header>
       <mat-panel-title>Medienfragen</mat-panel-title>
@@ -12,6 +12,27 @@
           <app-media-question-display-order-configuration [initialConfig]="mediaDefaults[kind]" [mediaKind]="kind" (questionConfigChange)="changeMediaDefault(kind, $event)"></app-media-question-display-order-configuration>
         </div>
       }
+    </div>
+  </mat-expansion-panel>
+  <mat-expansion-panel class="media-defaults">
+    <mat-expansion-panel-header>
+      <mat-panel-title>Wertung</mat-panel-title>
+      <mat-panel-description>Doppelte Punkte und Abzüge für falsche Antworten</mat-panel-description>
+    </mat-expansion-panel-header>
+    <p class="hint">So werden die Antworten in diesem Spiel bewertet. Ein Spielstand behält, was in seiner Version galt.</p>
+    <div class="scoring-settings">
+      <p class="label">Doppelt bewertete Antwort</p>
+      <mat-button-toggle-group aria-label="Doppelt bewertete Antwort" [value]="scoring.doubleAnswer" (change)="changeScoring({doubleAnswer: $event.value})">
+        @for (option of doubleAnswerOptions; track option.key) {
+          <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+      <p class="label">Falsche Antwort</p>
+      <mat-button-toggle-group aria-label="Falsche Antwort" [value]="scoring.wrongAnswer" (change)="changeScoring({wrongAnswer: $event.value})">
+        @for (option of wrongAnswerOptions; track option.key) {
+          <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+        }
+      </mat-button-toggle-group>
     </div>
   </mat-expansion-panel>
 </ng-template>
@@ -38,7 +59,7 @@
         </mat-form-field>
         <p class="label">Speichern auf</p>
         <app-storage-locations [initialId]="newGameLocationId" (selectedChange)="newGameLocation = $event"></app-storage-locations>
-        <ng-container *ngTemplateOutlet="mediaDefaultsSection"></ng-container>
+        <ng-container *ngTemplateOutlet="gameSettingsSection"></ng-container>
         @if (createError) {
           <p class="error"><mat-icon>error</mat-icon>{{createError}}</p>
         }
@@ -54,7 +75,7 @@
           Die neueste ist Version {{latestVersion}}; beim Speichern entsteht eine neue Version mit diesen Fragen.
         }
       </p>
-      <ng-container *ngTemplateOutlet="mediaDefaultsSection"></ng-container>
+      <ng-container *ngTemplateOutlet="gameSettingsSection"></ng-container>
       <div>
         <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
         <button mat-button matStepperNext>Weiter</button>

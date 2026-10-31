@@ -13,6 +13,7 @@ import {
   IGameInstanceState,
   IGameVersionInfo,
   IQuestion,
+  IScoring,
   IStorageEntry,
   IStorageFolder,
   IStorageLocation,
@@ -216,8 +217,8 @@ export class StorageService {
   /**
    * Saves the questions and media defaults as a new version, unless they are the same as in the latest one
    */
-  public saveVersion(ref: IGameRef, questions: IQuestion[], mediaDefaults: IMediaQuestionDefaults): Promise<IGameVersionInfo & {unchanged: boolean}> {
-    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {questions, mediaDefaults}, {headers: this.headers()}).toPromise();
+  public saveVersion(ref: IGameRef, questions: IQuestion[], mediaDefaults: IMediaQuestionDefaults, scoring?: Partial<IScoring>): Promise<IGameVersionInfo & {unchanged: boolean}> {
+    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {questions, mediaDefaults, scoring}, {headers: this.headers()}).toPromise();
   }
 
   public deleteVersion(ref: IGameRef, version: number): Promise<void> {

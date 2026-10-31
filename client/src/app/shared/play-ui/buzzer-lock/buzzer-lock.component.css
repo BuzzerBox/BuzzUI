@@ -4,13 +4,13 @@
   gap: 8px;
 }
 
-/* big enough to hit without looking, like on a tablet in the middle of a game */
-button.buzzer-lock {
-  min-width: 260px;
+/* tall enough to hit without looking, like on a tablet in the middle of a game */
+button.buzzer-lock, button.grade {
   min-height: 56px;
-  padding: 0 24px;
   border-radius: 28px;
-  font-size: 1.1em;
+}
+
+button.buzzer-lock {
   /* free: there is nothing to do, so it stays in the background */
   background-color: transparent;
   color: rgba(0, 0, 0, 0.6);
@@ -25,7 +25,7 @@ button.buzzer-lock.locked {
   animation: pulse 0.6s ease-out;
 }
 
-button.buzzer-lock mat-icon {
+button.buzzer-lock mat-icon, button.grade mat-icon {
   margin-right: 12px;
 }
 
@@ -50,7 +50,10 @@ button.buzzer-lock mat-icon {
   100% { transform: scale(1); }
 }
 
+/* as eye-catching as the locked buzzers, in the app's primary color rather than one of the grades' */
 button.grade {
-  min-height: 56px;
-  border-radius: 28px;
+  background-color: #3f51b5;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }

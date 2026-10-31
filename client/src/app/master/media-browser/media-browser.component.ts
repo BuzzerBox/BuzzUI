@@ -5,7 +5,7 @@ import {tap} from 'rxjs/operators';
 import {FileExtensionsService, IStorageEntry, IStorageFolder, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {FormatHelper} from '../../helper/format.helper';
-import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
+import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {DialogEditMediaComponent, IDialogEditMediaData, IDialogEditMediaResult} from '../dialog-edit-media/dialog-edit-media.component';
 
 interface IUpload {

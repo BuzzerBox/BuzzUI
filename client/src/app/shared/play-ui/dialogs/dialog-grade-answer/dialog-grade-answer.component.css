@@ -1,15 +1,45 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+/* like "Später bewerten" */
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* the team's name doesn't run under the X */
+h1[mat-dialog-title] {
+  padding-right: 56px;
+}
+
+/* the grades side by side, all as wide as the widest, however long their points are */
 .grade-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 0.5em;
+  /* the content's side padding rather than the dialog actions' narrower one, so they line up with the answer options */
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* a long label wraps rather than making its button wider than the others */
+.grade-actions button {
+  height: auto;
+  min-height: 36px;
+  white-space: normal;
+}
+
+/* the gap spaces them; the dialog's actions would also put a margin before each button after the first, narrowing it */
+.grade-actions button.mat-mdc-button-base {
+  margin-left: 0;
 }
 
 .release-actions {
   justify-content: center;
-}
-
-.grade-actions button {
-  flex: 1 1 auto;
 }
 
 /* the colors of correct and wrong answers in the question pane */
@@ -56,6 +86,34 @@ button.answer-option {
   padding: 6px 12px;
   text-align: left;
   white-space: normal;
+}
+
+/* Material's label around the content takes the button's whole width, so the row inside it can too */
+button.answer-option ::ng-deep .mdc-button__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* the radio, the letter and the text on the left, the check of a correct answer on the right */
+.option-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+.text {
+  flex: 1 1 auto;
+}
+
+.choice-icon {
+  flex: none;
+  margin-right: 8px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+button.answer-option.selected .choice-icon {
+  color: white;
 }
 
 .letter {

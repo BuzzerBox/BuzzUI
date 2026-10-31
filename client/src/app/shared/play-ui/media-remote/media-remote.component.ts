@@ -47,20 +47,37 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     this.mediaVolumeSubscription.unsubscribe();
   }
 
+  /**
+   * Muting keeps the volume, so turning the sound on again brings it back
+   */
   toggleMute(): void {
-    this.game.setMediaVolume({...this.mediaVolume, muted: !this.mediaVolume.muted});
+    if (!this.mediaVolume.muted) {
+      this.game.setMediaVolume({...this.mediaVolume, muted: true});
+      return;
+    }
+    // e.g. muted before the volume could be kept: nothing to bring back
+    const volume = this.mediaVolume.volume > 0 ? this.mediaVolume.volume : PacketHelper.getDefaultMediaVolume().volume;
+    this.game.setMediaVolume({volume, muted: false});
   }
 
   /**
    * @param percent 0 to 100, as shown on the slider
    */
   setVolume(percent: number): void {
-    // moving the slider is meant to be heard, so it also unmutes
+    if (percent === 0) {
+      // the same as muting: the volume is kept for turning the sound on again
+      this.game.setMediaVolume({...this.mediaVolume, muted: true});
+      return;
+    }
+    // moving the slider up is meant to be heard, so it also unmutes
     this.game.setMediaVolume({volume: percent / 100, muted: false});
   }
 
+  /**
+   * Muted shows as 0
+   */
   getVolumePercent(): number {
-    return Math.round(this.mediaVolume.volume * 100);
+    return this.mediaVolume.muted ? 0 : Math.round(this.mediaVolume.volume * 100);
   }
 
   play(): void {
@@ -89,13 +106,6 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
 
   public getSlideIndex(): number {
     return this.state.slideIndex ?? 0;
-  }
-
-  /**
-   * Whether the media is visible (or playing) on the screens; a complete slideshow keeps showing its last image
-   */
-  public isShown(): boolean {
-    return this.isPlaying() || (this.isSlideshow() && this.isFinished());
   }
 
   public isFinished(): boolean {
@@ -129,6 +139,16 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * What the next button does, see nextSlide()
+   */
+  public getNextSlideLabel(): string {
+    if (!this.isPlaying()) {
+      return 'Bild zeigen';
+    }
+    return this.getSlideIndex() < this.getSlideCount() - 1 ? 'Nächstes Bild' : 'Abschließen';
+  }
+
   public getNextSlideTitle(): string {
     if (!this.isPlaying()) {
       return 'Aktuelles Bild auf der Anzeige zeigen';
@@ -152,16 +172,12 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
     return !!this.state.fullscreen;
   }
 
-  public isVideo(): boolean {
-    return FileExtensionsService.isVideo(this.question.mediaDetails.fileSrc);
+  public isAudio(): boolean {
+    return !this.isSlideshow() && FileExtensionsService.isAudio(this.question.mediaDetails.fileSrc);
   }
 
   public isImage(): boolean {
     return FileExtensionsService.isImage(this.question.mediaDetails.fileSrc);
-  }
-
-  public isAudio(): boolean {
-    return FileExtensionsService.isAudio(this.question.mediaDetails.fileSrc);
   }
 
   public isPlayable(): boolean {

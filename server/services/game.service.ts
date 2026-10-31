@@ -45,7 +45,8 @@ import {
     IUpdateMediaStatePacket,
     IUpdateTeamsPacket,
     BuzzerHelper,
-    PacketHelper
+    PacketHelper,
+    ScoringHelper
 } from "../../shared/shared";
 import config from '../../config.json';
 import * as Uuid from 'uuid';
@@ -339,6 +340,15 @@ export class GameService {
             if (packet.themeId) {
                 this.currentGameState.themeId = packet.themeId;
             }
+            // from the game's version; a continued game plays the version its state was started with
+            this.currentGameState.scoring = ScoringHelper.complete(packet.scoring ?? this.currentGameState.scoring);
+            // a new play starts with the welcome screen; a continued one where it was
+            if (packet.isNewState && packet.currentGameState == null) {
+                this.currentGameState.welcome = true;
+            }
+            if (packet.storage?.gameName) {
+                this.currentGameState.gameName = packet.storage.gameName;
+            }
             this.resumesRunningGame = false;
             this.gameFinished = false;
             // a continued game may have a team marked
@@ -464,6 +474,11 @@ export class GameService {
         this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, isLegal));
         if (isLegal && isRejoin && this.currentGameState.mediaQuestionState) {
             this.onUpdateMediaStatePacket(PacketHelper.makeMediaStatePacketFromQuestionState(this.currentGameState.mediaQuestionState));
+        } else if (isLegal && this.currentGameState.welcome) {
+            // the welcome screen comes first: nobody may buzz yet, and the first question's media waits for it, see
+            // onSetQuestionPacket()
+            this.onSetBuzzerLockPacket(null, PacketHelper.makeBuzzerLockPacket(true));
+            this.onUpdateMediaStatePacket(PacketHelper.makeMediaStatePacketFromQuestionState(PacketHelper.getDefaultMediaState()));
         } else if (isLegal) {
             let questionConfig = PacketHelper.getDefaultMediaState();
             if (this.getCurrentQuestion()?.initialConfig) {
@@ -485,8 +500,9 @@ export class GameService {
 
     /**
      * Awards the team that buzzed the points of the question, twice them for a double answer, and takes them away for a
-     * wrong one. A correct answer solves the question: it reveals the correct answer options and keeps the buzzers
-     * locked. A wrong one releases the buzzers for the other teams.
+     * wrong one, as far as the game's scoring allows (IGameState.scoring). A correct answer solves the question: it
+     * reveals the correct answer options and keeps the buzzers locked. A wrong one releases the buzzers for the other
+     * teams.
      */
     private onGradeAnswerPacket(packet: IGradeAnswerPacket): void {
         const team: ITeam = this.findTeam(packet.teamId);
@@ -494,9 +510,14 @@ export class GameService {
             LoggerService.warn(`Can't grade the answer of unknown team ${packet.teamId}`);
             return;
         }
+        const scoring = this.currentGameState.scoring;
+        if (!ScoringHelper.isAllowed(packet.result, scoring)) {
+            LoggerService.warn(`Ignoring a double grade of team ${packet.teamId}: this game has no double points`);
+            return;
+        }
         const question = this.getCurrentQuestion();
-        const factor = packet.result === EGradeResults.DOUBLE ? 2 : packet.result === EGradeResults.CORRECT ? 1 : -1;
-        team.points = (team.points ?? 0) + factor * (question?.points ?? 1);
+        const isCorrect = packet.result !== EGradeResults.WRONG;
+        team.points = (team.points ?? 0) + ScoringHelper.getPointsChange(packet.result, question?.points ?? 1, scoring);
         const pointsPacket: ITeamSetPointsPacket = {packetType: EPacketTypes.TEAM_SET_POINTS, teamId: team.teamId, points: team.points};
         this.sendToMaster<ITeamSetPointsPacket>(pointsPacket);
         this.sendToAllScreens<ITeamSetPointsPacket>(pointsPacket);
@@ -504,10 +525,10 @@ export class GameService {
         const givenAnswer = packet.answer ? question?.answers?.find(a => GameStateHelper.isSameAnswer(a, packet.answer)) : undefined;
         if (givenAnswer) {
             this.activateAnswer(givenAnswer);
-        } else if (factor > 0 && packet.revealCorrectAnswers) {
+        } else if (isCorrect && packet.revealCorrectAnswers) {
             (question?.answers ?? []).filter(a => a.isCorrect).forEach(a => this.activateAnswer(a));
         }
-        if (factor < 0) {
+        if (!isCorrect) {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
             this.releaseHardwareBuzzerLock(true);
@@ -620,7 +641,11 @@ export class GameService {
         this.sendToAllScreens(packet);
     }
 
+    /**
+     * Also ends the welcome screen, see IGameState.welcome
+     */
     private onSetQuestionPacket(packet: ISetQuestionPacket): void {
+        this.currentGameState.welcome = false;
         const value: number = packet.set;
         if (value >= 0 && value <= this.questions.length - 1) {
             this.currentGameState.currentQuestionNumber = value;

@@ -45,7 +45,9 @@ import {
   IUsbBuzzersPacket,
   IAdoptUsbBuzzerPacket,
   BuzzerHelper,
-  PacketHelper
+  PacketHelper,
+  IScoring,
+  ScoringHelper
 } from '../../../../shared/shared';
 import {BehaviorSubject, Observable, ReplaySubject, Subject, Subscription} from 'rxjs';
 import {Router} from '@angular/router';
@@ -431,18 +433,29 @@ export class GameService implements OnDestroy {
    * @param questions with the URLs of their media
    * @param gameState undefined for a new state
    * @param themeId how the screens look, see screen-themes.ts
+   * @param scoring how answers are scored, from the game's version
    */
   public setupStoredGame(teams: ITeam[], questions: IQuestion[], gameState: IGameState | undefined, storage: IGameStorageRef,
-                         isNewState: boolean, themeId?: string): Promise<void> {
-    return this.setupGame(teams, questions, gameState, true, storage, isNewState, themeId);
+                         isNewState: boolean, themeId?: string, scoring?: Partial<IScoring>): Promise<void> {
+    return this.setupGame(teams, questions, gameState, true, storage, isNewState, themeId, scoring);
   }
 
   public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true,
-                   storage?: IGameStorageRef, isNewState?: boolean, themeId?: string): Promise<void> {
+                   storage?: IGameStorageRef, isNewState?: boolean, themeId?: string, scoring?: Partial<IScoring>): Promise<void> {
     const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
     // the master shows parts of the theme too, e.g. the answers' letters
     if (themeId) {
       this.currentGameState.themeId = themeId;
+    }
+    // the master's grade dialog only offers what the scoring allows; the server keeps it in the game state too
+    const completeScoring = ScoringHelper.complete(scoring ?? currentGameState?.scoring);
+    this.currentGameState.scoring = completeScoring;
+    // a new play starts with the welcome screen, as the server does it
+    if (isNewState && currentGameState == null) {
+      this.currentGameState.welcome = true;
+    }
+    if (storage?.gameName) {
+      this.currentGameState.gameName = storage.gameName;
     }
     // console.log("current 2", currentGameState);
     // if (currentGameState == null) {
@@ -456,7 +469,8 @@ export class GameService implements OnDestroy {
         currentGameState,
         storage,
         isNewState,
-        themeId
+        themeId,
+        scoring: completeScoring
       });
     }
     return promise;
@@ -581,6 +595,13 @@ export class GameService implements OnDestroy {
   }
 
   /**
+   * How answers are scored in the running game
+   */
+  public getScoring(): IScoring {
+    return ScoringHelper.complete(this.currentGameState?.scoring);
+  }
+
+  /**
    * Point values are only worth showing when they differ, i.e. some question is not worth the default 1 point
    */
   public hasCustomQuestionPoints(): boolean {
@@ -657,6 +678,24 @@ export class GameService implements OnDestroy {
       this.sendUnmarkAllTeamsPacket();
       this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(this.getCurrentQuestionNumber()));
     }
+    return this.getCurrentQuestion();
+  }
+
+  /**
+   * Whether the game shows its welcome screen and hasn't begun yet, see IGameState.welcome
+   */
+  public isWelcome(): boolean {
+    return !!this.currentGameState?.welcome;
+  }
+
+  /**
+   * Ends the welcome screen with the first question; the server releases the buzzers with it
+   */
+  public beginGame(): IQuestion {
+    this.currentGameState.welcome = false;
+    this.currentGameState.currentQuestionNumber = 0;
+    GameStateHelper.resetQuestionProgress(this.currentGameState);
+    this.webSocketService.send<ISetQuestionPacket>(PacketHelper.makeSetQuestionPacket(0));
     return this.getCurrentQuestion();
   }
 
@@ -826,6 +865,8 @@ export class GameService implements OnDestroy {
 
   private handleSetQuestionPacket(packet: ISetQuestionPacket): void {
     if (this.isUsedAsScreen()) {
+      // the first question also ends the welcome screen
+      this.currentGameState.welcome = false;
       this.currentGameState.currentQuestionNumber = packet.set;
       GameStateHelper.resetQuestionProgress(this.currentGameState);
       if (this.cbUpdateCurrentQuestion != null) {

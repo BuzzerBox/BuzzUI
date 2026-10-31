@@ -165,7 +165,112 @@ mat-card-content {
 }
 
 
-/* master only: whether the question and the answers are visible on the screens; clicking toggles it */
+/* the welcome screen of a new game, before its first question */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.welcome-title {
+  font-size: xx-large;
+  font-weight: 600;
+}
+
+.welcome-text, .welcome-hint {
+  opacity: 0.7;
+}
+
+:host(.screen) .welcome-title {
+  font-size: calc(var(--u) * 9);
+}
+
+:host(.screen) .welcome-text {
+  font-size: calc(var(--u) * 4);
+}
+
+:host(.screen.show) .welcome-title {
+  font-family: var(--bb-display-font);
+}
+
+/* master only: a box with a tab that names it, for what the screens show of the question, its answers and its media,
+   and for the media controls */
+.control-box {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  /* as wide as the answers below it */
+  box-sizing: border-box;
+  /* room for the tab above it */
+  margin: 24px 0 8px;
+  padding: 16px;
+  border: 1px solid #c4c4c4;
+  /* the tab's corner */
+  border-radius: 8px 0 8px 8px;
+  background-color: #f5f5f5;
+}
+
+/* a tab on the box's top right corner, so the controls have the whole row and go below each other when it's too narrow */
+.control-box-tab {
+  position: absolute;
+  bottom: 100%;
+  right: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  /* it ends at the inside of the box's border, so it covers the border where they meet */
+  padding: 2px 10px;
+  border: 1px solid #c4c4c4;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background-color: #f5f5f5;
+  font-size: small;
+  white-space: nowrap;
+}
+
+/* the question, the answers and the notes take the whole box */
+.control-box.content {
+  display: block;
+}
+
+.control-box.visibility {
+  justify-content: center;
+}
+
+/* the master has no media in the answers' place, so they just follow the question */
+:host(:not(.screen)) .videooptions {
+  display: block;
+  flex: none;
+}
+
+/* as high as the answers need, with text of a fixed size, rather than the screens' 2:1 tiles that scale their text */
+.control-box .answer-grid {
+  aspect-ratio: auto;
+  min-height: 0;
+  margin-top: 0;
+  grid-auto-rows: minmax(64px, auto);
+  container-type: normal;
+}
+
+.control-box .answer-cell button {
+  height: auto !important;
+  min-height: 56px;
+  padding: 8px 12px;
+  font-size: large !important;
+}
+
+.control-box-tab mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+/* whether a part is visible on the screens; clicking toggles it */
 button.screen-visibility {
   display: flex;
   align-items: center;
@@ -173,7 +278,7 @@ button.screen-visibility {
   width: fit-content;
   height: auto;
   min-height: 48px;
-  margin: 8px 0;
+  margin: 0;
   padding: 4px 16px;
   border: 1px solid currentColor;
   border-radius: 24px;
@@ -212,25 +317,8 @@ button.screen-visibility:disabled {
 }
 
 /* master only: the question's notes, like presenter notes */
-.notes {
-  margin-top: 16px;
-  padding: 8px 16px 12px;
-  border-left: 4px solid #c9a400;
-  border-radius: 4px;
-  background-color: #fff8d6;
-  color: #3d3200;
-  font-size: large;
-}
-
-.notes-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-  font-weight: bold;
-}
-
 .notes-text {
+  font-size: large;
   white-space: pre-wrap;
 }
 
