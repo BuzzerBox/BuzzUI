@@ -7,7 +7,7 @@ set -uo pipefail
 
 KIOSK_FILE="/etc/buzzerbox/kiosk.conf"
 MASTER_URL="http://buzzer.box/master/?touchDisplay=1"
-TOUCH_DISPLAY_ROTATION=90
+TOUCH_DISPLAY_ROTATION=270
 TOUCH_DISPLAY_SCALE=1
 
 log() {
