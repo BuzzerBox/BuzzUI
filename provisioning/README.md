@@ -85,6 +85,7 @@ ETHERNET_IP_ADDRESS=10.0.1.5
 SERVER_HOSTNAMES=buzzer.box buzzerbox.local
 TOUCH_DISPLAY=none
 TOUCH_DISPLAY_ROTATION=90
+TOUCH_DISPLAY_SCALE=auto
 ```
 
 Edit it after flashing, or later by putting the card back into a computer (for the eMMC, use `rpiboot` again). The box
@@ -106,6 +107,14 @@ has no antenna connector and ignores the setting.
 device can still take over the master, and the display can take it back on its page "Steuerung zurückholen". Like the
 antenna, the display is set in `config.txt`, so the box restarts once by itself when it changes.
 `TOUCH_DISPLAY_ROTATION` turns the picture clockwise (the touch input turns with it); the display is portrait by itself.
+`TOUCH_DISPLAY_SCALE` is how large the master is drawn there: the displays have so many pixels that at 1 it would be as
+small as on a desktop monitor. `auto` aims at about 150 pixels of the page per inch (1.5 on the 5" and 10" display, 1.25
+on the 7" one); a number from 1 to 3 (e.g. `1.75`) sets it by hand.
+
+On the display, a long press opens no context menu and selects no text (`client/src/app/helper/kiosk.helper.ts`, for
+the master opened with `?touchDisplay=1`). Chromium's policies (`/etc/chromium/policies/managed/buzzerbox-kiosk.json`)
+also turn off the developer tools, file and print dialogs, other profiles and Chromium's own pages in both kiosk
+browsers.
 
 ### SSH access
 

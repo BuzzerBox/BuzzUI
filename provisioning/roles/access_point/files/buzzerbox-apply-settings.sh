@@ -94,6 +94,7 @@ isValid() {
     SERVER_HOSTNAMES) [[ "${value}" =~ ^[A-Za-z0-9.-]+([[:space:]]+[A-Za-z0-9.-]+)*$ ]] ;;
     TOUCH_DISPLAY) [[ "${value,,}" =~ ^(none|5inch|7inch|10inch)$ ]] ;;
     TOUCH_DISPLAY_ROTATION) [[ "${value}" =~ ^(0|90|180|270)$ ]] ;;
+    TOUCH_DISPLAY_SCALE) [[ "${value,,}" == auto ]] || [[ "${value}" =~ ^(1(\.[0-9]{1,2})?|2(\.[0-9]{1,2})?|3(\.0{1,2})?)$ ]] ;;
     *) return 1 ;;
   esac
 }
@@ -231,9 +232,22 @@ if [ -f "${NM_STATE}" ]; then
   sed -i 's/^WirelessEnabled=.*/WirelessEnabled=true/' "${NM_STATE}"
 fi
 
-# The kiosk (roles/kiosk) opens the master on the touch display under the first hostname, for the reason above, and
-# turns the display the way it is mounted
-printf 'MASTER_URL=http://%s/master/\nTOUCH_DISPLAY_ROTATION=%s\n' "${HOSTNAMES[0]}" "${settings[TOUCH_DISPLAY_ROTATION]}" \
+# The kiosk (roles/kiosk) opens the master on the touch display under the first hostname, for the reason above, turns
+# the display the way it is mounted and draws the master at a scale that suits the display. All Touch Displays 2 are
+# 720x1280 or 1200x1920, so they would show the master as small as a desktop monitor does. "auto" aims at about 150
+# pixels of the page per inch, like a tablet: the 10" one (~224 ppi) gets 1.5, the 7" one (~210 ppi) 1.25, and the 5"
+# one (~294 ppi) 1.5 rather than 2, which would leave the master no room beside the on-screen keyboard.
+# touchDisplay=1 tells the client that it runs on the box's display (KioskHelper), where a long press opens no menu.
+SCALE="${settings[TOUCH_DISPLAY_SCALE],,}"
+if [ "${SCALE}" = "auto" ]; then
+  case "${settings[TOUCH_DISPLAY],,}" in
+    7inch) SCALE=1.25 ;;
+    5inch | 10inch) SCALE=1.5 ;;
+    *) SCALE=1 ;;
+  esac
+fi
+printf 'MASTER_URL=http://%s/master/?touchDisplay=1\nTOUCH_DISPLAY_ROTATION=%s\nTOUCH_DISPLAY_SCALE=%s\n' \
+  "${HOSTNAMES[0]}" "${settings[TOUCH_DISPLAY_ROTATION]}" "${SCALE}" \
   | writeIfChanged "${KIOSK_FILE}" 644 || true
 
 # Puts a block of lines into config.txt between markers, where the block was before (so that the file stays the same

@@ -36,6 +36,35 @@
     dest: /usr/local/bin/buzzerbox-kiosk-session
     mode: "0755"
 
+# Chromium's own menus and pages are no use in the kiosk, and someone at the touch display could leave the master with
+# them: the developer tools, dialogs for files and printing, other profiles, and Chromium's pages. A long press still
+# opens Chromium's context menu, which the client suppresses on the box's display (KioskHelper); these keep what is in
+# it harmless.
+- name: Create the directory of Chromium's policies
+  ansible.builtin.file:
+    path: /etc/chromium/policies/managed
+    state: directory
+    mode: "0755"
+
+- name: Lock Chromium down for the kiosk
+  ansible.builtin.copy:
+    dest: /etc/chromium/policies/managed/buzzerbox-kiosk.json
+    content: "{{ policies | to_nice_json }}\n"
+    mode: "0644"
+  vars:
+    policies:
+      # 2: not even for extensions or chrome:// pages
+      DeveloperToolsAvailability: 2
+      AllowFileSelectionDialogs: false
+      PrintingEnabled: false
+      TranslateEnabled: false
+      EnableMediaRouter: false
+      BrowserGuestModeEnabled: false
+      BrowserAddPersonEnabled: false
+      PasswordManagerEnabled: false
+      LensRegionSearchEnabled: false
+      URLBlocklist: ["chrome://*", "chrome-untrusted://*", "devtools://*", "view-source:*", "file://*"]
+
 # squeekboard only shows itself for text fields while the screen keyboard is enabled in GSettings. The kiosk has no
 # settings of its own, so this becomes the default.
 - name: Enable the on-screen keyboard
