@@ -9,6 +9,7 @@ import {DialogConfirmEndingGameComponent} from '../../shared/play-ui/dialogs/dia
 import {FormatHelper} from '../../helper/format.helper';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
 import {EGameStatesMaster} from '../enums/EGameStatesMaster';
+import {KioskHelper} from '../../helper/kiosk.helper';
 
 @Component({
     selector: 'app-toolbar-master',
@@ -27,6 +28,8 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   // only on the start page, where no game is set up
   @Input() showResetServer = false;
   public readonly homeUrl = '/' + baseUrlMaster + pathsMaster.home;
+  // the box's touch display stays the master
+  public readonly canLogout = !KioskHelper.isActive();
   public autosave: IAutosaveInfoPacket = null;
   private subscription: Subscription;
 

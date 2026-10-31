@@ -21,3 +21,12 @@ SERVER_IP_ADDRESS={{ server_ip_address }}
 ETHERNET_IP_ADDRESS={{ ethernet_ip_address }}
 # Names that devices on the WiFi or the cable can open the box under, separated by spaces
 SERVER_HOSTNAMES={{ server_hostnames | join(' ') }}
+# Raspberry Pi Touch Display 2 on the DSI connector DISP1: none, 5inch, 7inch or 10inch. With one, the box shows the
+# master on it and the screen on HDMI. When this changes, the box restarts once by itself.
+TOUCH_DISPLAY={{ touch_display }}
+# How far the picture on the touch display is turned clockwise, 0, 90, 180 or 270. The display is portrait by itself:
+# 90 or 270 make it landscape.
+TOUCH_DISPLAY_ROTATION={{ touch_display_rotation }}
+# How large the master is drawn on the touch display, as a factor from 1 to 3 (e.g. 1.5), or auto: by the display's
+# pixel density, about 150 pixels of the page per inch (5inch 1.5, 7inch 1.25, 10inch 1.5)
+TOUCH_DISPLAY_SCALE={{ touch_display_scale }}

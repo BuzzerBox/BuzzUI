@@ -41,10 +41,12 @@
         <mat-icon>refresh</mat-icon>
         Erneut versuchen
       </button>
-      <button mat-button (click)="useAsScreen()">
-        <mat-icon>tv</mat-icon>
-        Als Anzeige verwenden
-      </button>
+      @if (canUseAsScreen) {
+        <button mat-button (click)="useAsScreen()">
+          <mat-icon>tv</mat-icon>
+          Als Anzeige verwenden
+        </button>
+      }
     </mat-card-actions>
   </mat-card>
 </div>
