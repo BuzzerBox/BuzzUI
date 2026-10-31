@@ -6,8 +6,9 @@
 set -uo pipefail
 
 KIOSK_FILE="/etc/buzzerbox/kiosk.conf"
-MASTER_URL="http://buzzer.box/master/"
+MASTER_URL="http://buzzer.box/master/?touchDisplay=1"
 TOUCH_DISPLAY_ROTATION=90
+TOUCH_DISPLAY_SCALE=1
 
 log() {
   echo "buzzerbox-kiosk: $*" >&2
@@ -19,6 +20,7 @@ if [ -f "${KIOSK_FILE}" ]; then
     case "${key}" in
       MASTER_URL) MASTER_URL="${value}" ;;
       TOUCH_DISPLAY_ROTATION) TOUCH_DISPLAY_ROTATION="${value}" ;;
+      TOUCH_DISPLAY_SCALE) TOUCH_DISPLAY_SCALE="${value}" ;;
     esac
   done < "${KIOSK_FILE}"
 fi
@@ -90,9 +92,12 @@ if [ -n "${TOUCH_OUTPUT}" ]; then
 
   # Under the hostname, not localhost: the master stores media as full URLs on the host it was opened under, which
   # other devices load too. Its sound would play twice, since the screen plays it as well. The browser is an app window
-  # rather than in kiosk mode: a fullscreen window would hide the on-screen keyboard.
+  # rather than in kiosk mode: a fullscreen window would hide the on-screen keyboard. Chromium draws it at the scale
+  # itself (buzzerbox-apply-settings chose it): sharp at any factor, where an output scale of sway would make Chromium
+  # draw at twice the size and sway shrink it, which is blurry and costs the GPU.
   runBrowser master "${TOUCH_OUTPUT}" \
     --user-data-dir="${HOME}/.config/buzzerbox-master" \
+    --force-device-scale-factor="${TOUCH_DISPLAY_SCALE}" \
     --mute-audio --disable-pinch --overscroll-history-navigation=0 \
     --enable-wayland-ime --wayland-text-input-version=3 \
     --app="${MASTER_URL}" &
