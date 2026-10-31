@@ -38,7 +38,7 @@ server_hostnames:
 # none, 5inch, 7inch or 10inch, its rotation and how large the master is on it, see
 # roles/access_point/templates/buzzerbox.txt.j2
 touch_display: none
-touch_display_rotation: 90
+touch_display_rotation: 270
 touch_display_scale: auto
 
 # SSH is off unless there are keys: given here, they are built into the image; on a box, they can also be put into
