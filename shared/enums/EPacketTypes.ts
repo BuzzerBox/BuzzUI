@@ -41,6 +41,18 @@ export enum EPacketTypes {
      */
     MASTER_TAKEN_OVER,
     /**
+     * Sent from the server to the master when the available buzzers change, see IAvailableBuzzersPacket
+     */
+    AVAILABLE_BUZZERS,
+    /**
+     * Sent from the server to the master when the wireless buzzers plugged in over USB change, see IUsbBuzzersPacket
+     */
+    USB_BUZZERS,
+    /**
+     * Sent from the master to give a wireless buzzer plugged in over USB the box's WiFi, see IAdoptUsbBuzzerPacket
+     */
+    ADOPT_USB_BUZZER,
+    /**
      * Sent from the master to play another round of the game, see ISetRoundPacket
      */
     SET_ROUND,

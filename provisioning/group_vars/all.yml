@@ -29,7 +29,9 @@ wifi_channel: 8
 # internal or external, see roles/access_point/templates/buzzerbox.txt.j2
 wifi_antenna: internal
 server_ip_address: 10.0.0.5
-# the names that devices on the box's WiFi can open the master under
+# the box on a cable to a notebook, see roles/access_point/templates/buzzerbox.txt.j2
+ethernet_ip_address: 10.0.1.5
+# the names that devices on the box's WiFi or cable can open the master under
 server_hostnames:
   - buzzer.box
   - buzzerbox.local

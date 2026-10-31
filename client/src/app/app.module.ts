@@ -8,6 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ChooseComponent } from './choose/choose.component';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
+import {MatIconModule} from '@angular/material/icon';
 import { TeamCardComponent } from './shared/play-ui/team-card/team-card.component';
 import { QuestionPaneComponent } from './shared/play-ui/question-pane/question-pane.component';
 import {MatGridListModule} from '@angular/material/grid-list';
@@ -29,6 +30,7 @@ import { provideHttpClient, withInterceptorsFromDi } from "@angular/common/http"
         AppRoutingModule,
         MasterRoutingModule,
         MatButtonModule,
+        MatIconModule,
         // MatCardModule,
         // MatGridListModule,
         MatBottomSheetModule,

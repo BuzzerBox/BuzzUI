@@ -45,11 +45,15 @@ import {
     IStorageAccessPacket,
     IMasterTakenOverPacket,
     IAutosaveInfoPacket,
+    IAvailableBuzzersPacket,
+    IUsbBuzzersPacket,
+    IAdoptUsbBuzzerPacket,
     ITeam,
     ITeamSetPointsPacket,
     IUpdateInfoPacket,
     IUpdateMediaStatePacket,
     IUpdateTeamsPacket,
+    BuzzerHelper,
     PacketHelper
 } from "../../shared/shared";
 import config from '../../config.json';
@@ -58,6 +62,8 @@ import {LoggerService} from './logger.service';
 import {MicroControllerSerialAdapter} from '../objects/adapters/MicroControllerSerialAdapter';
 import {Buffer} from 'buffer';
 import {SerialPortService} from './serial-port.service';
+import {IUdpBuzzerState, UdpBuzzerService} from './udp-buzzer.service';
+import {BuzzerProvisioningService} from './buzzer-provisioning.service';
 import {ConfigService} from './config.service';
 import {toInteger} from 'lodash';
 import {ObjectHelper} from '../../shared/helper/object.helper';
@@ -94,6 +100,8 @@ export class GameService {
     private keyOrByteCodesInUse: string[] = [];
     // the buzzers the box has turned off, by their IDs in the firmware, see syncDisabledBuzzers()
     private disabledBuzzerIds = new Set<number>();
+    // the UDP buzzers of the teams the rules don't let buzz now, by their buzzer IDs; they show it as locked
+    private lockedOutUdpBuzzerIds = new Set<string>();
     private configInvalidReason: string;
 
     private constructor() {
@@ -114,6 +122,32 @@ export class GameService {
         if (ConfigService.get().serial.enabled) {
             setInterval(() => this.resendDisabledBuzzers(), ConfigService.get().serial.heartbeatIntervalInMS);
         }
+        UdpBuzzerService.get().setStateProvider(this.getUdpBuzzerState.bind(this));
+        UdpBuzzerService.get().addOnPressCallback(this.onUdpBuzzerPress.bind(this));
+        UdpBuzzerService.get().addOnBuzzersChangedCallback(() => {
+            // a buzzer that got another color shows its team in it
+            if (this.applyBuzzerColors(this.teams)) {
+                const updateTeamsPacket: IUpdateTeamsPacket = {packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams};
+                this.sendToMaster<IUpdateTeamsPacket>(updateTeamsPacket);
+                this.sendToAllScreens<IUpdateTeamsPacket>(updateTeamsPacket);
+                if (this.isGameSetUp()) {
+                    AutosaveService.get().changed();
+                }
+            }
+            this.sendToMaster<IAvailableBuzzersPacket>({
+                packetType: EPacketTypes.AVAILABLE_BUZZERS,
+                availableBuzzers: this.getAvailableBuzzers()
+            });
+            // a buzzer plugged in over USB shows whether it is connected
+            this.sendToMaster<IUsbBuzzersPacket>({
+                packetType: EPacketTypes.USB_BUZZERS,
+                buzzers: BuzzerProvisioningService.get().getBuzzers()
+            });
+        });
+        BuzzerProvisioningService.get().addOnChangedCallback(buzzers => this.sendToMaster<IUsbBuzzersPacket>({
+            packetType: EPacketTypes.USB_BUZZERS,
+            buzzers
+        }));
         UpdateService.get().observeInfo().subscribe(info => this.sendToMaster<IUpdateInfoPacket>(info));
         AutosaveService.get().observeInfo().subscribe(info => this.sendToMaster<IAutosaveInfoPacket>(info));
     }
@@ -200,6 +234,9 @@ export class GameService {
             this.onUpdateTeamsPacket(packet as IUpdateTeamsPacket);
         } else if (packet.packetType === EPacketTypes.INSTALL_UPDATE) {
             this.onInstallUpdatePacket(packet as IInstallUpdatePacket);
+        } else if (packet.packetType === EPacketTypes.ADOPT_USB_BUZZER) {
+            const adoptPacket = packet as IAdoptUsbBuzzerPacket;
+            BuzzerProvisioningService.get().adopt(adoptPacket.path, adoptPacket.color);
         }
     }
 
@@ -249,6 +286,8 @@ export class GameService {
         this.currentStateInAutomaton = newState;
         // the master can only install updates while setting up
         UpdateService.get().setPolling(newState === EGameStates.WAITING_FOR_SETUP);
+        // they stay awake while a game is running
+        UdpBuzzerService.get().sendStateToAll();
     }
 
     private getBuzzerConfig(): IBuzzer[] {
@@ -270,7 +309,10 @@ export class GameService {
                     name: buzzConf.name,
                     id,
                     keyBind: buzzConf.key,
-                    byteBind: buzzConf.byte.toString(10)
+                    byteBind: buzzConf.byte.toString(10),
+                    type: 'serial',
+                    // optional in the config, so missing from its type
+                    color: BuzzerHelper.normalizeColor((buzzConf as {color?: string}).color)
                     // TODO remove EKeyBind
                 }
                 this.buzzerConfig.push(c);
@@ -281,6 +323,13 @@ export class GameService {
         return this.buzzerConfig;
     }
 
+    /**
+     * The buzzers of the box and the UDP buzzers found so far, which are only ever appended, so each keeps its index
+     */
+    private getAvailableBuzzers(): IBuzzer[] {
+        return [...this.getBuzzerConfig(), ...UdpBuzzerService.get().getBuzzers()];
+    }
+
     private onSetupGamePackage(packet: ISetupPacket): void {
         if (this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP) {
             return;
@@ -288,6 +337,10 @@ export class GameService {
         let packetOk = true;
         // check if at least two teams are defined
         if (packet.teams.length < 2) {
+            packetOk = false;
+        }
+        if (BuzzerHelper.isMixed(packet.teams.map(team => team.buzzerId))) {
+            LoggerService.warn('Ignoring a setup with teams on the buzzers of the box and on UDP buzzers');
             packetOk = false;
         }
         // the questions get IDs if they lack them, the same way as when a version is loaded
@@ -306,6 +359,7 @@ export class GameService {
         if (packetOk) {
             this.teams = packet.teams;
             this.rounds = rounds;
+            this.applyBuzzerColors(this.teams);
             // a new game is set up without a game state; a loaded save may lack fields added since it was made
             this.currentGameState = GameFormatHelper.migrateGameState({...this.makeInitialGameState(), ...packet.currentGameState}, this.rounds);
             // a savegame can't lock the buzzers, only a buzzer press can
@@ -319,6 +373,8 @@ export class GameService {
             }
             this.resumesRunningGame = false;
             this.gameFinished = false;
+            // a continued game may have a team marked
+            UdpBuzzerService.get().sendStateToAll();
             this.setNewState(EGameStates.WAITING_FOR_START);
             if (packet.storage != null) {
                 AutosaveService.get().begin(packet.storage, !!packet.isNewState, this.makeAutosaveSnapshot.bind(this));
@@ -338,7 +394,7 @@ export class GameService {
             if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_SETUP) {
                 this.sendToMaster<IPresetupAvailableInfoPacket>({
                     packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-                    availableBuzzers: this.getBuzzerConfig()
+                    availableBuzzers: this.getAvailableBuzzers()
                 });
             }
             return;
@@ -361,7 +417,7 @@ export class GameService {
                 this.setNewState(EGameStates.WAITING_FOR_SETUP);
                 this.sendToMaster<IPresetupAvailableInfoPacket>({
                     packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-                    availableBuzzers: this.getBuzzerConfig()
+                    availableBuzzers: this.getAvailableBuzzers()
                 })
             } else if (this.currentStateInAutomaton === EGameStates.LOST_MASTER) {
                 if (this.previousStateInAutomaton === EGameStates.WAITING_FOR_START || this.previousStateInAutomaton === EGameStates.PLAYING) {
@@ -376,7 +432,7 @@ export class GameService {
                         teams: this.teams,
                         rounds: this.rounds,
                         currentGameState: this.currentGameState,
-                        availableBuzzers: this.getBuzzerConfig()
+                        availableBuzzers: this.getAvailableBuzzers()
                     })
                 }
             }
@@ -390,6 +446,10 @@ export class GameService {
             this.webSocketConnectionMaster.addOnCloseCallback(() => sub.unsubscribe());
             this.sendToMaster<IUpdateInfoPacket>(UpdateService.get().getInfo());
             this.sendToMaster<IAutosaveInfoPacket>(AutosaveService.get().getInfo());
+            this.sendToMaster<IUsbBuzzersPacket>({
+                packetType: EPacketTypes.USB_BUZZERS,
+                buzzers: BuzzerProvisioningService.get().getBuzzers()
+            });
         } else {
             con.send<IResponsePacket>({
                 ...PacketHelper.makeResponsePacket(packet.packetType, false, 'Another master is connected'),
@@ -518,7 +578,7 @@ export class GameService {
         if (this.currentStateInAutomaton !== EGameStates.WAITING_FOR_START && this.currentStateInAutomaton !== EGameStates.PLAYING) {
             return;
         }
-        const buzzers = this.getBuzzerConfig();
+        const buzzers = this.getAvailableBuzzers();
         const requestedTeams = Array.isArray(packet.teams) ? packet.teams : [];
         const newTeams: ITeam[] = [];
         for (const requested of requestedTeams) {
@@ -537,14 +597,15 @@ export class GameService {
                 points: existingTeam?.points ?? 0
             });
         }
-        // like in the setup, a game needs at least two teams
-        if (newTeams.length < 2) {
+        // like in the setup, a game needs at least two teams, all on the same kind of buzzers
+        if (newTeams.length < 2 || BuzzerHelper.isMixed(newTeams.map(team => team.buzzerId))) {
             LoggerService.warn('Ignoring invalid teams', packet.teams);
             // let the master show the teams that are still in place
             this.sendToMaster<IUpdateTeamsPacket>({packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams});
             return;
         }
         this.teams = newTeams;
+        this.applyBuzzerColors(this.teams);
         const isRemoved = (teamId: string) => !newTeams.some(team => team.teamId === teamId);
         if ((this.currentGameState.markedTeamIds ?? []).some(isRemoved)) {
             this.unmarkAllTeams();
@@ -554,6 +615,27 @@ export class GameService {
         const updateTeamsPacket: IUpdateTeamsPacket = {packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams};
         this.sendToMaster<IUpdateTeamsPacket>(updateTeamsPacket);
         this.sendToAllScreens<IUpdateTeamsPacket>(updateTeamsPacket);
+    }
+
+    /**
+     * Gives each team the color of its buzzer, so that the screens show it without knowing the buzzers
+     * @return whether a team's color changed
+     */
+    private applyBuzzerColors(teams: ITeam[]): boolean {
+        const buzzers = this.getAvailableBuzzers();
+        let changed = false;
+        for (const team of teams) {
+            const color = buzzers.find(buzzer => buzzer.id === team.buzzerId)?.color;
+            if (team.color !== color) {
+                if (color == null) {
+                    delete team.color;
+                } else {
+                    team.color = color;
+                }
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     // TODO move to some shared resource
@@ -734,9 +816,12 @@ export class GameService {
         this.setNewState(EGameStates.WAITING_FOR_SETUP);
         this.sendToMaster<IPresetupAvailableInfoPacket>({
             packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-            availableBuzzers: this.getBuzzerConfig()
+            availableBuzzers: this.getAvailableBuzzers()
         });
         this.sendToAllScreens(packet);
+        if (packet.discardState) {
+            AutosaveService.get().discard();
+        }
         this.resetServerData();
     }
 
@@ -747,13 +832,24 @@ export class GameService {
      */
     private syncDisabledBuzzers(): void {
         const wanted = new Set<number>();
+        const lockedOutUdp = new Set<string>();
         if (this.isGameRunning()) {
             for (const team of this.teams) {
+                if (this.mayBuzz(team)) {
+                    continue;
+                }
                 const buzzerId = this.getFirmwareBuzzerId(team.buzzerId);
-                if (buzzerId != null && !this.mayBuzz(team)) {
+                if (buzzerId != null) {
                     wanted.add(buzzerId);
+                } else if (BuzzerHelper.isUdpBuzzerId(team.buzzerId)) {
+                    lockedOutUdp.add(team.buzzerId);
                 }
             }
+        }
+        // this runs after every packet, so the UDP buzzers only get a state when theirs changed
+        if (lockedOutUdp.size !== this.lockedOutUdpBuzzerIds.size || [...lockedOutUdp].some(id => !this.lockedOutUdpBuzzerIds.has(id))) {
+            this.lockedOutUdpBuzzerIds = lockedOutUdp;
+            UdpBuzzerService.get().sendStateToAll();
         }
         // the box can only turn single buzzers off, and all on again
         if ([...this.disabledBuzzerIds].some(id => !wanted.has(id))) {
@@ -793,6 +889,7 @@ export class GameService {
         this.currentGameState = this.makeInitialGameState();
         // no game: every buzzer counts again
         this.syncDisabledBuzzers();
+        UdpBuzzerService.get().sendStateToAll();
     }
 
     private makeInitialGameState(): IGameState {
@@ -841,6 +938,7 @@ export class GameService {
     private setKeypressLocked(locked: boolean): void {
         this.keypressLocked = locked;
         this.currentGameState.setBuzzerLock = locked;
+        UdpBuzzerService.get().sendStateToAll();
     }
 
     private unmarkAllTeams(): void {
@@ -848,6 +946,7 @@ export class GameService {
         GameStateHelper.applyMarkTeam(this.currentGameState, unmarkTeamsPacket);
         this.sendToMaster<IMarkTeamPacket>(unmarkTeamsPacket);
         this.sendToAllScreens<IMarkTeamPacket>(unmarkTeamsPacket);
+        UdpBuzzerService.get().sendStateToAll();
     }
 
     /**
@@ -959,6 +1058,7 @@ export class GameService {
         GameStateHelper.applyMarkTeam(this.currentGameState, packet);
         this.sendToMaster<IMarkTeamPacket>(packet);
         this.sendToAllScreens<IMarkTeamPacket>(packet);
+        UdpBuzzerService.get().sendStateToAll();
     }
 
     private validateConfig(): boolean {
@@ -1094,6 +1194,8 @@ export class GameService {
         this.setKeypressLocked(true);
         const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(team.teamId, true);
         GameStateHelper.applyMarkTeam(this.currentGameState, markTeamPacket);
+        // the team's buzzer lights up
+        UdpBuzzerService.get().sendStateToAll();
         this.sendToMaster<IMarkTeamPacket>(markTeamPacket);
         const buzzerLockPacket = PacketHelper.makeBuzzerLockPacket(true);
         this.sendToMaster<ISetBuzzerLockPacket>(buzzerLockPacket)
@@ -1117,5 +1219,39 @@ export class GameService {
     private onSerialError(err): void {
         // TODO
         console.log('Serial Error', err);
+    }
+
+    /**
+     * The earliest press that counts wins: buzzers without a team, or of a team the rules don't let buzz now, don't block
+     * the others
+     */
+    private onUdpBuzzerPress(buzzerIds: string[]): void {
+        if (this.isKeypressLocked()) {
+            return;
+        }
+        for (const buzzerId of buzzerIds) {
+            const team = this.teams.find(t => t.buzzerId === buzzerId);
+            if (team != null && this.mayBuzz(team)) {
+                this.lockOnTeam(team);
+                if (this.isGameSetUp()) {
+                    AutosaveService.get().changed();
+                }
+                return;
+            }
+        }
+        LoggerService.log(`no team found for UDP buzzers ${buzzerIds.join(', ')}`);
+    }
+
+    /**
+     * What a UDP buzzer shows: whether its team buzzed and is marked, and whether presses count. While a game with UDP
+     * buzzers is running (also while its master is away), they stay awake.
+     */
+    private getUdpBuzzerState(buzzerId: string): IUdpBuzzerState {
+        const team = this.teams.find(t => t.buzzerId === buzzerId);
+        return {
+            selected: team != null && (this.currentGameState.markedTeamIds ?? []).includes(team.teamId),
+            locked: this.keypressLocked || this.lockedOutUdpBuzzerIds.has(buzzerId),
+            game: this.isGameRunning() && this.teams.some(t => BuzzerHelper.isUdpBuzzerId(t.buzzerId))
+        };
     }
 }

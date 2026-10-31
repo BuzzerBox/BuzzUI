@@ -5,6 +5,7 @@ import {IPresetupAvailableInfoPacket} from './interfaces/IPresetupAvailableInfoP
 import {ITeam} from './interfaces/ITeam';
 import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
+import {ICaseColor} from './interfaces/ICaseColor';
 import {IQuestion} from './interfaces/IQuestion';
 import {IMediaDetails} from './interfaces/IMediaDetails';
 import {IMediaQuestionState, IMediaQuestionDefaults, TMediaKind} from './interfaces/IMediaQuestionState';
@@ -39,6 +40,10 @@ import {IGameDefinition, IGameInstanceState, IGameBundle, CURRENT_GAME_FORMAT_VE
 import {IGameInfo, IGameVersionInfo, IGameStateInfo, IGameStorageRef, IGameImportResult, IGameCopyResult} from './interfaces/IGameInfo';
 import {IAutosaveInfoPacket} from './interfaces/IAutosaveInfoPacket';
 import {IMasterTakenOverPacket} from './interfaces/IMasterTakenOverPacket';
+import {IAvailableBuzzersPacket} from './interfaces/IAvailableBuzzersPacket';
+import {IUsbBuzzer, TUsbBuzzerState, TUsbBuzzerError} from './interfaces/IUsbBuzzer';
+import {IUsbBuzzersPacket} from './interfaces/IUsbBuzzersPacket';
+import {IAdoptUsbBuzzerPacket} from './interfaces/IAdoptUsbBuzzerPacket';
 import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
 import {IRound, IClassicRound, IJeopardyRound, IJeopardyCategory, IFinalRound, IRoundProgress, IClassicRoundProgress, IJeopardyRoundProgress, IFinalRoundProgress, IGameProgress, IPlayOptions, TRoundMode} from './interfaces/IRound';
 import {ISetWagerPacket} from './interfaces/ISetWagerPacket';
@@ -100,6 +105,13 @@ export {
 	IGameImportResult,
 	IAutosaveInfoPacket,
 	IMasterTakenOverPacket,
+	IAvailableBuzzersPacket,
+	IUsbBuzzer,
+	TUsbBuzzerState,
+	TUsbBuzzerError,
+	IUsbBuzzersPacket,
+	IAdoptUsbBuzzerPacket,
+	ICaseColor,
 	IStorageEntry,
 	IStorageFolder,
 	IRound,

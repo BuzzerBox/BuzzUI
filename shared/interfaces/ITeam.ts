@@ -8,4 +8,9 @@ export interface ITeam {
      * use this to put each team back on its buzzer.
      */
     buzzerIndex?: number;
+    /**
+     * The color of the team's buzzer (IBuzzer.color), which the server sets, so that the screens show the team in it.
+     * Missing if the buzzer has none; then the team gets one by its buzzerIndex, see the client's TeamColorHelper.
+     */
+    color?: string;
 }

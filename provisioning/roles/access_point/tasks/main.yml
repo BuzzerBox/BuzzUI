@@ -1,4 +1,5 @@
-# The box's own WiFi network: an access point of NetworkManager with DHCP and DNS for the BuzzerBox hostnames.
+# The box's own WiFi network: an access point of NetworkManager with DHCP and DNS for the BuzzerBox hostnames. The
+# same goes for its Ethernet, for a notebook on a cable.
 # Its values are per box (buzzerbox.txt on the boot partition), so a script applies them on every boot.
 
 - name: Install the settings script
@@ -22,6 +23,16 @@
     dest: /boot/firmware/buzzerbox.txt
     force: false
   notify: Apply the settings
+
+# The wired interfaces get "BuzzerBox Ethernet" (buzzerbox-apply-settings), not a DHCP client: there is no router on
+# the cable, the box is the one handing out addresses
+- name: Don't create a default connection for wired interfaces
+  ansible.builtin.copy:
+    dest: /etc/NetworkManager/conf.d/buzzerbox-no-auto-default.conf
+    content: |
+      [main]
+      no-auto-default=*
+    mode: "0644"
 
 - name: Install the settings service
   ansible.builtin.copy:

@@ -1,4 +1,4 @@
-<app-toolbar-master></app-toolbar-master>
+<app-toolbar-master [showResetServer]="true"></app-toolbar-master>
 <div class="home">
   <h1>Willkommen bei {{getGameName()}}!</h1>
   <div class="actions">
@@ -18,6 +18,7 @@
       <span class="action-text">Spiele erstellen und bearbeiten, ihre Spielstände und Medien verwalten, importieren und herunterladen</span>
     </a>
   </div>
+  <app-wireless-buzzers></app-wireless-buzzers>
   <app-update-card></app-update-card>
 </div>
 <span class="version">Version {{getVersion()}}</span>

@@ -16,6 +16,7 @@ export type {IJeopardyTile} from './rules/jeopardy-round-rules';
 export {RoundRulesHelper} from './rules/round-rules.helper';
 export {VersionHelper} from './helper/version.helper';
 export {StorageApiHelper} from './helper/storage-api.helper';
+export {BuzzerHelper} from './helper/buzzer.helper';
 
 export {
     PacketHelper

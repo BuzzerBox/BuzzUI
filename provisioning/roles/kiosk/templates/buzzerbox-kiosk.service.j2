@@ -34,6 +34,8 @@ ExecStart=/usr/bin/cage -d -- /usr/bin/chromium \
   --autoplay-policy=no-user-gesture-required \
   --disable-restore-session-state --disk-cache-dir=/tmp/buzzerbox-kiosk-cache --disk-cache-size=67108864 \
   http://localhost/screen/
+# the HDMI sound only works once cage has switched the output on, see files/buzzerbox-hdmi-audio ("+": as root)
+ExecStartPost=-+/usr/bin/systemctl --no-block start buzzerbox-hdmi-audio.service
 Restart=always
 RestartSec=2
 
