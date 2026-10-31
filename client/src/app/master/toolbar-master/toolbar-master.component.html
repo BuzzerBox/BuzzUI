@@ -54,7 +54,7 @@
     <mat-icon>restart_alt</mat-icon>
   </button>
 }
-@if (!showGameMenu) {
+@if (!showGameMenu && canLogout) {
   <button mat-icon-button (click)="logout()" title="Abmelden">
     <mat-icon>logout</mat-icon>
   </button>

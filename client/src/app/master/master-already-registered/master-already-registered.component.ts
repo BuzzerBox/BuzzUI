@@ -3,6 +3,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {GameService, IMasterRejection} from '../../services/game.service';
 import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
 import {baseUrlScreen} from '../../screen/paths-screen';
+import {KioskHelper} from '../../helper/kiosk.helper';
 
 /**
  * Shown when another device is the master: explains why, keeps trying to get in and lets this device take over
@@ -14,6 +15,8 @@ import {baseUrlScreen} from '../../screen/paths-screen';
     standalone: false
 })
 export class MasterAlreadyRegisteredComponent {
+  // the box's touch display stays the master, it can only take the control back
+  public readonly canUseAsScreen = !KioskHelper.isActive();
 
   constructor(private game: GameService, private dialog: MatDialog) { }
 

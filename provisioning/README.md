@@ -111,8 +111,9 @@ antenna, the display is set in `config.txt`, so the box restarts once by itself 
 small as on a desktop monitor. `auto` aims at about 150 pixels of the page per inch (1.5 on the 5" and 10" display, 1.25
 on the 7" one); a number from 1 to 3 (e.g. `1.75`) sets it by hand.
 
-On the display, a long press opens no context menu and selects no text (`client/src/app/helper/kiosk.helper.ts`, for
-the master opened with `?touchDisplay=1`). Chromium's policies (`/etc/chromium/policies/managed/buzzerbox-kiosk.json`)
+The display always stays the master (`client/src/app/helper/kiosk.helper.ts`, for the master opened with
+`?touchDisplay=1`): it has no logout and no "Als Anzeige verwenden", it is sent back from the pages for choosing a role,
+the screen and the dev board, links open no new window, and a long press opens no context menu and selects no text. Chromium's policies (`/etc/chromium/policies/managed/buzzerbox-kiosk.json`)
 also turn off the developer tools, file and print dialogs, other profiles and Chromium's own pages in both kiosk
 browsers.
 
