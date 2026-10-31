@@ -1,13 +1,20 @@
-import {IGameState, IMediaQuestionDefaults, IQuestion, ITeam} from '../shared';
+import {IGameState, IMediaQuestionDefaults, ITeam} from '../shared';
+import {IRound} from './IRound';
 
 /**
  * The format of game, state and bundle files; the savegames from before (CURRENT_SAVEGAME_VERSION) had teams,
  * questions and progress in one file
+ *
+ * 4 -> 5:
+ *  replaced questions with rounds, each with a mode; the questions got IDs
+ *  replaced currentQuestionNumber in the game state with currentRoundId and roundProgress
+ *  (versions and states from before are migrated when they are loaded or imported, see GameFormatHelper; the files are
+ *  never rewritten)
  */
-export const CURRENT_GAME_FORMAT_VERSION = 4;
+export const CURRENT_GAME_FORMAT_VERSION = 5;
 
 /**
- * One version of a game: its questions. Versions are never changed, saving a game in the editor adds a new one, so a
+ * One version of a game: its rounds and their questions. Versions are never changed, saving a game in the editor adds a new one, so a
  * state always plays the questions it was started with.
  */
 export interface IGameDefinition {
@@ -22,10 +29,10 @@ export interface IGameDefinition {
      */
     savedAt: string;
     /**
-     * The media of the questions (mediaDetails.fileSrc and slides) are paths relative to the game's media folder, with
-     * "/" between folders
+     * Played one after the other. The media of their questions (mediaDetails.fileSrc and slides) are paths relative to
+     * the game's media folder, with "/" between folders.
      */
-    questions: IQuestion[];
+    rounds: IRound[];
     /**
      * How media questions start, for each kind of media, unless a question has its own initialConfig. Versions saved
      * before it existed have an initialConfig in every media question.

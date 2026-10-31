@@ -183,7 +183,7 @@
                         }
                       </span>
                       <span matListItemLine>
-                        {{version.questionCount}} Fragen · gespeichert {{formatDate(version.savedAt)}}
+                        {{getContents(version)}} · gespeichert {{formatDate(version.savedAt)}}
                         · {{version.stateCount === 1 ? '1 Spielstand' : version.stateCount + ' Spielstände'}}
                       </span>
                       @if (location.writable) {

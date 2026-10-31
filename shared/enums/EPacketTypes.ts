@@ -52,4 +52,20 @@ export enum EPacketTypes {
      * Sent from the master to give a wireless buzzer plugged in over USB the box's WiFi, see IAdoptUsbBuzzerPacket
      */
     ADOPT_USB_BUZZER,
+    /**
+     * Sent from the master to play another round of the game, see ISetRoundPacket
+     */
+    SET_ROUND,
+    /**
+     * Sent from the master to open or close a tile of a Jeopardy board, see ISelectQuestionPacket
+     */
+    SELECT_QUESTION,
+    /**
+     * Sent from the master to choose the team that picks the next tile, see ISetPickingTeamPacket
+     */
+    SET_PICKING_TEAM,
+    /**
+     * Sent from the master with what a team wagers on a Daily Double or the final, see ISetWagerPacket
+     */
+    SET_WAGER,
 }

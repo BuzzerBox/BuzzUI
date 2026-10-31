@@ -1,6 +1,7 @@
 import {
   CURRENT_GAME_FORMAT_VERSION,
   CURRENT_SAVEGAME_VERSION,
+  GameFormatHelper,
   IGameBundle,
   IGameDefinition,
   IGameInstanceState,
@@ -28,14 +29,22 @@ export class GameFileHelper {
   }
 
   /**
-   * Makes a bundle out of a file from a device: a bundle as it is, or an old savegame converted. Old savegames that
-   * were never played (downloaded from the setup) become a game without state.
+   * Makes a bundle out of a file from a device: a bundle in the current format (see GameFormatHelper), or an old
+   * savegame converted. Old savegames that were never played (downloaded from the setup) become a game without state.
    * @throws Error if it is neither
    */
   public static toBundle(json: unknown, fileName: string): IGameBundle {
     const file = json as Partial<IGameBundle & ILegacySaveGame>;
-    if (file?.kind === 'bundle' && Array.isArray(file.game?.questions)) {
-      return file as IGameBundle;
+    if (file?.kind === 'bundle') {
+      const game = GameFormatHelper.migrateDefinition(file.game);
+      if (game == null) {
+        throw new Error('Das Spiel ist kaputt oder mit einer neueren Version der BuzzerBox gemacht.');
+      }
+      const bundle: IGameBundle = {...file as IGameBundle, formatVersion: CURRENT_GAME_FORMAT_VERSION, game};
+      if (bundle.state != null) {
+        bundle.state = GameFormatHelper.migrateState(bundle.state, game);
+      }
+      return bundle;
     }
     if ((file?.version === CURRENT_SAVEGAME_VERSION || file?.version === 2) && Array.isArray(file.question)) {
       return this.convertLegacySaveGame(file as ILegacySaveGame, fileName);
@@ -45,7 +54,8 @@ export class GameFileHelper {
 
   private static convertLegacySaveGame(saveGame: ILegacySaveGame, fileName: string): IGameBundle {
     const now = new Date().toISOString();
-    const game: IGameDefinition = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'game', version: 1, savedAt: now, questions: saveGame.question};
+    // the questions of a savegame are one round, as in versions from before rounds
+    const game: IGameDefinition = GameFormatHelper.migrateDefinition({kind: 'game', version: 1, savedAt: now, questions: saveGame.question});
     const bundle: IGameBundle = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'bundle', gameName: this.getBaseName(fileName), game};
     let gameState = saveGame.gameState;
     if (gameState != null) {
@@ -64,7 +74,7 @@ export class GameFileHelper {
         updatedAt: now,
         finished: false,
         teams: saveGame.teams ?? [],
-        gameState
+        gameState: GameFormatHelper.migrateGameState(gameState, game.rounds)
       };
       bundle.stateName = 'Importiert';
     }

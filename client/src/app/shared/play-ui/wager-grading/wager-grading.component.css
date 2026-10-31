@@ -1,0 +1,40 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 16px 8px;
+}
+
+.grading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-name {
+  font-weight: 700;
+}
+
+.wager {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* the colors of the grade dialog */
+button.correct {
+  background-color: forestgreen !important;
+  color: white !important;
+}
+
+button.wrong {
+  background-color: orangered !important;
+  color: white !important;
+}
+
+.result {
+  font-weight: 500;
+}

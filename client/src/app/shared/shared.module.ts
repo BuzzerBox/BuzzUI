@@ -25,6 +25,9 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatSliderModule} from '@angular/material/slider';
 import {FitTextDirective} from './fit-text.directive';
 import {LoadingSpinnerComponent} from './loading-spinner/loading-spinner.component';
+import {JeopardyBoardComponent} from './play-ui/jeopardy-board/jeopardy-board.component';
+import {WagerPanelComponent} from './play-ui/wager-panel/wager-panel.component';
+import {WagerGradingComponent} from './play-ui/wager-grading/wager-grading.component';
 
 @NgModule({
     declarations: [
@@ -39,7 +42,10 @@ import {LoadingSpinnerComponent} from './loading-spinner/loading-spinner.compone
         MediaQuestionComponent,
         MediaRemoteComponent,
         FitTextDirective,
-        LoadingSpinnerComponent
+        LoadingSpinnerComponent,
+        JeopardyBoardComponent,
+        WagerPanelComponent,
+        WagerGradingComponent
     ],
     imports: [
         CommonModule,

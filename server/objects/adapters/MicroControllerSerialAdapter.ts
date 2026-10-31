@@ -36,4 +36,17 @@ export class MicroControllerSerialAdapter {
   public static sendSerialCommandSetBuzzer(buzzerNumber: number): void {
     this.sendCommand(ConfigService.get().serial.commands.setBuzzer, buzzerNumber);
   }
+
+  /**
+   * The buzzer neither locks the box nor lights up until all are enabled again, also across releases. Firmware from
+   * before the command ignores it.
+   * @param buzzerNumber its ID in the firmware, 0-9
+   */
+  public static sendSerialCommandDisableBuzzer(buzzerNumber: number): void {
+    this.sendCommand(ConfigService.get().serial.commands.disableBuzzer, buzzerNumber);
+  }
+
+  public static sendSerialCommandEnableAllBuzzers(): void {
+    this.sendCommand(ConfigService.get().serial.commands.enableAllBuzzers);
+  }
 }

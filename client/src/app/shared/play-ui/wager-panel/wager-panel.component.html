@@ -1,0 +1,49 @@
+<div class="title" [class.reveal]="isScreen">
+  {{isFinal() ? 'Finale' : 'Daily Double!'}}
+</div>
+<div class="category">
+  {{getCategory()}}
+  @if (!isFinal() && getTileValue() !== undefined) {
+    <span class="value"> · {{getTileValue()}}</span>
+  }
+</div>
+
+@if (!isFinal() && !getPickingTeam()) {
+  @if (isMaster) {
+    <p class="hint">Welches Team hat die Kachel gewählt?</p>
+    <div class="teams-choice">
+      @for (team of getAllTeams(); track team.teamId) {
+        <button mat-stroked-button type="button" [style.--team-color]="getTeamColor(team)" (click)="choosePickingTeam(team)">{{team.name}}</button>
+      }
+    </div>
+  }
+} @else {
+  <div class="wagers">
+    @for (team of getTeams(); track team.teamId) {
+      <div class="wager" [style.--team-color]="getTeamColor(team)" [class.done]="hasWagered(team)">
+        <span class="team-name">{{team.name}}</span>
+        @if (isMaster) {
+          <span class="team-points">{{formatPoints(team.points ?? 0)}}</span>
+          <label class="wager-input">
+            <span>Einsatz (0 bis {{getMaxWager(team)}})</span>
+            <input #wagerInput type="number" min="0" [max]="getMaxWager(team)" step="1" [value]="getWager(team) ?? ''"
+                   (change)="isFinal() && setWager(team, wagerInput.value)" (keydown.enter)="setWager(team, wagerInput.value)">
+          </label>
+          @if (!isFinal()) {
+            <button mat-raised-button color="primary" type="button" (click)="setWager(team, wagerInput.value)">Einsatz festlegen</button>
+          } @else if (hasWagered(team)) {
+            <mat-icon class="done-icon" title="Einsatz steht">check_circle</mat-icon>
+          }
+        } @else {
+          <span class="wager-state">{{hasWagered(team) ? 'hat gesetzt' : 'setzt …'}}</span>
+        }
+      </div>
+    }
+  </div>
+  @if (isMaster && isFinal()) {
+    <div class="final-actions">
+      <button mat-raised-button color="primary" type="button" [disabled]="!haveAllWagered()" (click)="showQuestion()"
+              [title]="haveAllWagered() ? 'Zeige die Frage auf der Anzeige' : 'Erst wenn alle Teams gesetzt haben'">Frage zeigen</button>
+    </div>
+  }
+}

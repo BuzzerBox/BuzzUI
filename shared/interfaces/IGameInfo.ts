@@ -1,7 +1,13 @@
+import {IGameProgress} from './IRound';
+
 export interface IGameVersionInfo {
     version: number;
     savedAt: string;
+    /**
+     * Of all rounds
+     */
     questionCount: number;
+    roundCount: number;
     /**
      * How many states play this version; a version with states can't be deleted
      */
@@ -22,7 +28,10 @@ export interface IGameStateInfo {
     createdAt: string;
     updatedAt: string;
     finished: boolean;
-    currentQuestionNumber: number;
+    /**
+     * Where it is; null if its version can't be read
+     */
+    progress: IGameProgress | null;
     teams: {name: string, points: number}[];
 }
 

@@ -6,6 +6,8 @@ import {
     EGameStates,
     EGradeResults,
     GameStateHelper,
+    GameFormatHelper,
+    RoundRulesHelper,
     EMediaStates,
     MediaHelper,
     EPacketTypes,
@@ -24,6 +26,7 @@ import {
     INewMasterAccepted,
     IPresetupAvailableInfoPacket,
     IQuestion,
+    IRound,
     IRegisterMasterPacket,
     IRegisterScreenPacket,
     IResetServerPacket,
@@ -31,6 +34,12 @@ import {
     ISetBuzzerLockPacket,
     ISetMediaVolumePacket,
     ISetQuestionPacket,
+    ISetRoundPacket,
+    ISelectQuestionPacket,
+    ISetPickingTeamPacket,
+    ISetWagerPacket,
+    IFinalRoundProgress,
+    IJeopardyRoundProgress,
     ISetupPacket,
     IStartGamePacket,
     IStorageAccessPacket,
@@ -81,7 +90,7 @@ export class GameService {
     private previousStateInAutomaton: EGameStates;
     private buzzerConfig: IBuzzer[];
     private teams: ITeam[] = [];
-    private questions: IQuestion[] = [];
+    private rounds: IRound[] = [];
     private currentGameState: IGameState;
     private keypressLocked = false;
     // whether the master that rejoined left a game that was already running, so starting it again continues it
@@ -89,9 +98,10 @@ export class GameService {
     // whether the game was ended, for its saved state
     private gameFinished = false;
     private keyOrByteCodesInUse: string[] = [];
-    private ignoredKeypresses: string[] = [];
-    // TODO: maybe rename it to lastBuzzerPressed to reflect an upcoming change in behavior for this field
-    private lastKeyPressed: string;
+    // the buzzers the box has turned off, by their IDs in the firmware, see syncDisabledBuzzers()
+    private disabledBuzzerIds = new Set<number>();
+    // the UDP buzzers of the teams the rules don't let buzz now, by their buzzer IDs; they show it as locked
+    private lockedOutUdpBuzzerIds = new Set<string>();
     private configInvalidReason: string;
 
     private constructor() {
@@ -108,6 +118,10 @@ export class GameService {
         this.getBuzzerConfig();
         SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
         SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
+        // the box turns all buzzers on again after a reset, so it gets the disabled ones with every heartbeat
+        if (ConfigService.get().serial.enabled) {
+            setInterval(() => this.resendDisabledBuzzers(), ConfigService.get().serial.heartbeatIntervalInMS);
+        }
         UdpBuzzerService.get().setStateProvider(this.getUdpBuzzerState.bind(this));
         UdpBuzzerService.get().addOnPressCallback(this.onUdpBuzzerPress.bind(this));
         UdpBuzzerService.get().addOnBuzzersChangedCallback(() => {
@@ -158,6 +172,7 @@ export class GameService {
             // a broken packet must not take the server and the running game down
             try {
                 this.onPacket(con, sub, packet);
+                this.syncDisabledBuzzers();
                 // most packets change the game; the autosave only writes once things calm down
                 if (this.isGameSetUp()) {
                     AutosaveService.get().changed();
@@ -191,6 +206,14 @@ export class GameService {
             this.onAnswerSetStatePacket(packet as IAnswerSetStatePacket);
         } else if (packet.packetType === EPacketTypes.SET_QUESTION) {
             this.onSetQuestionPacket(packet as ISetQuestionPacket);
+        } else if (packet.packetType === EPacketTypes.SET_ROUND) {
+            this.onSetRoundPacket(packet as ISetRoundPacket);
+        } else if (packet.packetType === EPacketTypes.SELECT_QUESTION) {
+            this.onSelectQuestionPacket(packet as ISelectQuestionPacket);
+        } else if (packet.packetType === EPacketTypes.SET_PICKING_TEAM) {
+            this.onSetPickingTeamPacket(packet as ISetPickingTeamPacket);
+        } else if (packet.packetType === EPacketTypes.SET_WAGER) {
+            this.onSetWagerPacket(packet as ISetWagerPacket);
         } else if (packet.packetType === EPacketTypes.END_GAME) {
             this.onEndGamePacket(packet as IEndGamePacket);
         } else if (packet.packetType === EPacketTypes.RESET_SERVER) {
@@ -320,6 +343,12 @@ export class GameService {
             LoggerService.warn('Ignoring a setup with teams on the buzzers of the box and on UDP buzzers');
             packetOk = false;
         }
+        // the questions get IDs if they lack them, the same way as when a version is loaded
+        const rounds = GameFormatHelper.checkRounds(packet.rounds);
+        if (rounds == null) {
+            LoggerService.warn('Ignoring a game with rounds this version can\'t play');
+            packetOk = false;
+        }
 
         const responsePacket: IResponsePacket = {
             packetType: EPacketTypes.RESPONSE_PACKET,
@@ -329,15 +358,18 @@ export class GameService {
 
         if (packetOk) {
             this.teams = packet.teams;
+            this.rounds = rounds;
             this.applyBuzzerColors(this.teams);
-            this.questions = packet.questions;
             // a new game is set up without a game state; a loaded save may lack fields added since it was made
-            this.currentGameState = {...this.makeInitialGameState(), ...packet.currentGameState};
+            this.currentGameState = GameFormatHelper.migrateGameState({...this.makeInitialGameState(), ...packet.currentGameState}, this.rounds);
             // a savegame can't lock the buzzers, only a buzzer press can
             this.currentGameState.setBuzzerLock = this.keypressLocked;
             // chosen for this game; it is saved with the state, so a continued game keeps it
             if (packet.themeId) {
                 this.currentGameState.themeId = packet.themeId;
+            }
+            if (packet.playOptions) {
+                this.currentGameState.playOptions = packet.playOptions;
             }
             this.resumesRunningGame = false;
             this.gameFinished = false;
@@ -398,7 +430,7 @@ export class GameService {
                         packetType: EPacketTypes.NEW_MASTER_ACCEPTED,
                         serverState: EGameStates.WAITING_FOR_START,
                         teams: this.teams,
-                        questions: this.questions,
+                        rounds: this.rounds,
                         currentGameState: this.currentGameState,
                         availableBuzzers: this.getAvailableBuzzers()
                     })
@@ -484,19 +516,28 @@ export class GameService {
     }
 
     /**
-     * Awards the team that buzzed the points of the question, twice them for a double answer, and takes them away for a
-     * wrong one. A correct answer solves the question: it reveals the correct answer options and keeps the buzzers
-     * locked. A wrong one releases the buzzers for the other teams.
+     * Awards the team that buzzed the points the rules of the round give, e.g. in a classic round the points of the
+     * question, twice them for a double answer, and takes them away for a wrong one. A correct answer solves the
+     * question: it reveals the correct answer options and keeps the buzzers locked. A wrong one releases the buzzers for
+     * the other teams.
      */
     private onGradeAnswerPacket(packet: IGradeAnswerPacket): void {
         const team: ITeam = this.findTeam(packet.teamId);
-        if (team == null) {
+        const round = this.getCurrentRound();
+        if (team == null || round == null) {
             LoggerService.warn(`Can't grade the answer of unknown team ${packet.teamId}`);
             return;
         }
+        const rules = RoundRulesHelper.get(round);
+        if (!rules.mayGrade(round, this.getCurrentProgress(), team.teamId, this.currentGameState.playOptions ?? {})) {
+            LoggerService.warn(`The rules of the round don't let the answer of ${team.name} be graded now`);
+            return;
+        }
         const question = this.getCurrentQuestion();
-        const factor = packet.result === EGradeResults.DOUBLE ? 2 : packet.result === EGradeResults.CORRECT ? 1 : -1;
-        team.points = (team.points ?? 0) + factor * (question?.points ?? 1);
+        const isCorrect = packet.result !== EGradeResults.WRONG;
+        team.points = (team.points ?? 0) + rules.getGradePoints(round, this.getCurrentProgress(), packet.result, team.teamId);
+        // e.g. a correct answer closes a Jeopardy tile; the master and the screens do the same with the packet
+        this.currentGameState.roundProgress[round.id] = rules.afterGrade(round, this.getCurrentProgress(), team.teamId, packet.result);
         const pointsPacket: ITeamSetPointsPacket = {packetType: EPacketTypes.TEAM_SET_POINTS, teamId: team.teamId, points: team.points};
         this.sendToMaster<ITeamSetPointsPacket>(pointsPacket);
         this.sendToAllScreens<ITeamSetPointsPacket>(pointsPacket);
@@ -504,12 +545,14 @@ export class GameService {
         const givenAnswer = packet.answer ? question?.answers?.find(a => GameStateHelper.isSameAnswer(a, packet.answer)) : undefined;
         if (givenAnswer) {
             this.activateAnswer(givenAnswer);
-        } else if (factor > 0 && packet.revealCorrectAnswers) {
+        } else if (isCorrect && packet.revealCorrectAnswers) {
             (question?.answers ?? []).filter(a => a.isCorrect).forEach(a => this.activateAnswer(a));
         }
-        if (factor < 0) {
+        if (!isCorrect) {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
+            // a team that is out for the tile is turned off before the others may buzz again
+            this.syncDisabledBuzzers();
             this.releaseHardwareBuzzerLock(true);
         }
         // the screens and the master flash the answers for a wrong one
@@ -611,52 +654,117 @@ export class GameService {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
             this.releaseHardwareBuzzerLock(true);
-            if (this.lastKeyPressed != null) {
-                // if the answer is wrong an there is a last key press, then ignore it for this round
-                // TODO: shall be configurable, will be done somewhat later
-                // this.ignoredKeypresses.push(this.lastKeyPressed);
-            }
         }
         this.sendToAllScreens(packet);
     }
 
     private onSetQuestionPacket(packet: ISetQuestionPacket): void {
-        const value: number = packet.set;
-        if (value >= 0 && value <= this.questions.length - 1) {
-            this.currentGameState.currentQuestionNumber = value;
+        const round = this.getCurrentRound();
+        const progress = round ? RoundRulesHelper.get(round).selectQuestion(round, this.getCurrentProgress(), packet.set) : null;
+        if (progress != null) {
+            this.currentGameState.roundProgress[round.id] = progress;
         }
+        this.sendToAllScreens(packet);
+        this.showCurrentQuestion();
+    }
+
+    /**
+     * Goes on with another round, where it was left
+     */
+    private onSetRoundPacket(packet: ISetRoundPacket): void {
+        if (GameFormatHelper.getRound(this.rounds, packet.roundId) == null) {
+            LoggerService.warn(`Ignoring unknown round ${packet.roundId}`);
+            return;
+        }
+        this.currentGameState.currentRoundId = packet.roundId;
+        this.sendToAllScreens(packet);
+        this.showCurrentQuestion();
+    }
+
+    /**
+     * Opens a tile of the Jeopardy board, or goes back to the board; shows the question of the final
+     */
+    private onSelectQuestionPacket(packet: ISelectQuestionPacket): void {
+        const round = this.getCurrentRound();
+        let progress: IJeopardyRoundProgress | IFinalRoundProgress | null = null;
+        if (round?.mode === 'jeopardy') {
+            progress = RoundRulesHelper.jeopardy.applySelectQuestion(round, this.getCurrentProgress() as IJeopardyRoundProgress, packet);
+        } else if (round?.mode === 'final') {
+            progress = RoundRulesHelper.final.applySelectQuestion(round, this.getCurrentProgress() as IFinalRoundProgress, packet);
+        }
+        if (progress == null) {
+            LoggerService.warn(`Ignoring the selection of question ${packet.questionId}, which isn't on the board or is played`);
+            return;
+        }
+        this.currentGameState.roundProgress[round.id] = progress;
+        this.sendToAllScreens(packet);
+        this.showCurrentQuestion();
+    }
+
+    /**
+     * What a team wagers on a Daily Double or in the final, kept within what it may wager
+     */
+    private onSetWagerPacket(packet: ISetWagerPacket): void {
+        const round = this.getCurrentRound();
+        const team = this.findTeam(packet.teamId);
+        let progress: IJeopardyRoundProgress | IFinalRoundProgress | null = null;
+        if (team != null && round?.mode === 'jeopardy') {
+            progress = RoundRulesHelper.jeopardy.applySetWager(round, this.getCurrentProgress() as IJeopardyRoundProgress, team.teamId, packet.wager, team.points ?? 0);
+        } else if (team != null && round?.mode === 'final') {
+            progress = RoundRulesHelper.final.applySetWager(round, this.getCurrentProgress() as IFinalRoundProgress, team.teamId, packet.wager, team.points ?? 0);
+        }
+        if (progress == null) {
+            LoggerService.warn(`Ignoring the wager ${packet.wager} of team ${packet.teamId}`);
+            return;
+        }
+        this.currentGameState.roundProgress[round.id] = progress;
+        // the master and the screens take what was kept, which may be less than was asked for
+        const wagerPacket = PacketHelper.makeSetWagerPacket(team.teamId, progress.wagers[team.teamId]);
+        this.sendToMaster<ISetWagerPacket>(wagerPacket);
+        this.sendToAllScreens<ISetWagerPacket>(wagerPacket);
+    }
+
+    private onSetPickingTeamPacket(packet: ISetPickingTeamPacket): void {
+        const round = this.getCurrentRound();
+        if (round?.mode !== 'jeopardy' || (packet.teamId != null && this.findTeam(packet.teamId) == null)) {
+            LoggerService.warn(`Ignoring the picking team ${packet.teamId}`);
+            return;
+        }
+        this.currentGameState.roundProgress[round.id] = RoundRulesHelper.jeopardy.applySetPickingTeam(this.getCurrentProgress() as IJeopardyRoundProgress, packet.teamId);
+        this.sendToAllScreens(packet);
+    }
+
+    /**
+     * Starts the question that is current now: from no progress, with the buzzers released and its media as it starts
+     */
+    private showCurrentQuestion(): void {
         GameStateHelper.resetQuestionProgress(this.currentGameState);
-        // this.setKeypressLocked(false);
         const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
         this.onSetBuzzerLockPacket(null, lockPacket);
-        this.ignoredKeypresses = [];
-        this.sendToAllScreens(packet);
-        let questionConfig = PacketHelper.getDefaultMediaState();
-        if (this.getCurrentQuestion().initialConfig) {
-            questionConfig = this.getCurrentQuestion().initialConfig;
-        }
+        const questionConfig = this.getCurrentQuestion()?.initialConfig ?? PacketHelper.getDefaultMediaState();
         this.currentGameState.mediaQuestionState = questionConfig;
         const mediaPacket: IUpdateMediaStatePacket = PacketHelper.makeMediaStatePacket(questionConfig.mediaState, questionConfig.questionState, questionConfig.answerState);
         this.onUpdateMediaStatePacket(mediaPacket);
     }
 
-    // TODO move it to some shared class/helper since it is used in the frontend as well
-    private hasPreviousQuestion(): boolean {
-        return this.getCurrentQuestionNumber() > 0;
+    private getCurrentRound(): IRound | undefined {
+        return GameFormatHelper.getCurrentRound(this.rounds, this.currentGameState);
     }
 
-    // TODO move it to some shared class/helper since it is used in the frontend as well
-    private hasNextQuestion(): boolean {
-        return this.getCurrentQuestionNumber() < this.questions.length - 1;
+    private getCurrentProgress() {
+        return GameFormatHelper.getCurrentProgress(this.currentGameState);
     }
 
-    // TODO move it to some shared class/helper since it is used in the frontend as well
-    private getCurrentQuestionNumber(): number {
-        return this.currentGameState.currentQuestionNumber;
+    private getCurrentQuestion(): IQuestion | undefined {
+        return GameFormatHelper.getCurrentQuestion(this.rounds, this.currentGameState);
     }
 
-    private getCurrentQuestion(): IQuestion {
-        return this.questions[this.getCurrentQuestionNumber()];
+    /**
+     * Whether the rules of the round let the team buzz now
+     */
+    private mayBuzz(team: ITeam): boolean {
+        const round = this.getCurrentRound();
+        return round != null && RoundRulesHelper.get(round).mayBuzz(round, this.getCurrentProgress(), team.teamId, this.currentGameState.playOptions ?? {});
     }
 
     private getIdOfAnswer(answer: IAnswer): number {
@@ -699,7 +807,7 @@ export class GameService {
             packetType: EPacketTypes.DATA_FOR_SCREEN,
             teams: this.teams,
             // the notes are for the game master only
-            questions: this.questions.map(({notes, ...question}) => question),
+            rounds: GameFormatHelper.mapQuestions(this.rounds, ({notes, ...question}) => question),
             gameState: this.currentGameState
         }
     }
@@ -717,17 +825,70 @@ export class GameService {
         this.resetServerData();
     }
 
+    /**
+     * Turns off the buzzers of the teams that the rules of the round don't let buzz now, e.g. a team that answered the
+     * open tile wrong, so pressing them neither locks the box nor lights them up. Firmware from before the commands
+     * ignores them; the server then releases the box right away when such a team buzzes, see mayBuzz().
+     */
+    private syncDisabledBuzzers(): void {
+        const wanted = new Set<number>();
+        const lockedOutUdp = new Set<string>();
+        if (this.isGameRunning()) {
+            for (const team of this.teams) {
+                if (this.mayBuzz(team)) {
+                    continue;
+                }
+                const buzzerId = this.getFirmwareBuzzerId(team.buzzerId);
+                if (buzzerId != null) {
+                    wanted.add(buzzerId);
+                } else if (BuzzerHelper.isUdpBuzzerId(team.buzzerId)) {
+                    lockedOutUdp.add(team.buzzerId);
+                }
+            }
+        }
+        // this runs after every packet, so the UDP buzzers only get a state when theirs changed
+        if (lockedOutUdp.size !== this.lockedOutUdpBuzzerIds.size || [...lockedOutUdp].some(id => !this.lockedOutUdpBuzzerIds.has(id))) {
+            this.lockedOutUdpBuzzerIds = lockedOutUdp;
+            UdpBuzzerService.get().sendStateToAll();
+        }
+        // the box can only turn single buzzers off, and all on again
+        if ([...this.disabledBuzzerIds].some(id => !wanted.has(id))) {
+            MicroControllerSerialAdapter.sendSerialCommandEnableAllBuzzers();
+            this.disabledBuzzerIds.clear();
+        }
+        for (const id of wanted) {
+            if (!this.disabledBuzzerIds.has(id)) {
+                MicroControllerSerialAdapter.sendSerialCommandDisableBuzzer(id);
+                this.disabledBuzzerIds.add(id);
+            }
+        }
+    }
+
+    private resendDisabledBuzzers(): void {
+        this.disabledBuzzerIds.forEach(id => MicroControllerSerialAdapter.sendSerialCommandDisableBuzzer(id));
+    }
+
+    /**
+     * The firmware numbers the buzzers 0-9 and sends the number as an ASCII digit, which the config has as its byte
+     * (e.g. 31 for "1"); null for a buzzer that isn't one of those
+     */
+    private getFirmwareBuzzerId(buzzerId: string): number | null {
+        const buzzer = this.getBuzzerConfig().find(b => b.id === buzzerId);
+        const id = buzzer ? parseInt(buzzer.byteBind, 16) - 0x30 : NaN;
+        return Number.isInteger(id) && id >= 0 && id <= 9 ? id : null;
+    }
+
     private resetServerData(): void {
         // saves the game as it was, before it is cleared
         AutosaveService.get().end();
         this.teams = [];
-        this.questions = [];
+        this.rounds = [];
         this.setKeypressLocked(false)
         this.releaseHardwareBuzzerLock(true);
-        this.ignoredKeypresses = [];
-        this.lastKeyPressed = null;
         this.resumesRunningGame = false;
         this.currentGameState = this.makeInitialGameState();
+        // no game: every buzzer counts again
+        this.syncDisabledBuzzers();
         UdpBuzzerService.get().sendStateToAll();
     }
 
@@ -739,7 +900,8 @@ export class GameService {
                 answerState: EQuestionAnswerStates.WAIT_FOR_MEDIA
             },
             mediaVolume: PacketHelper.getDefaultMediaVolume(),
-            currentQuestionNumber: 0,
+            currentRoundId: '',
+            roundProgress: {},
             markedTeamIds: [],
             loggedAnswers: [],
             activatedAnswers: [],
@@ -755,13 +917,15 @@ export class GameService {
         if (packet.keyCode === ConfigService.get().softReleaseKey) {
             this.releaseHardwareBuzzerLock(true);
             this.unmarkAllTeams();
-        } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
+        } else if (!this.isKeypressLocked()) {
             const team: ITeam = this.getTeamForKeyPressCode(packet.keyCode);
             if (team == null) {
                 LoggerService.log("no team found for keycode " + packet.keyCode)
                 return;
             }
-            this.lastKeyPressed = packet.keyCode;
+            if (!this.mayBuzz(team)) {
+                return;
+            }
             this.lockOnTeam(team);
         }
     }
@@ -989,6 +1153,7 @@ export class GameService {
             // like a broken packet, a failing buzzer press must not take the server down
             try {
                 this.onSerialByteIn(byte);
+                this.syncDisabledBuzzers();
                 if (this.isGameSetUp()) {
                     AutosaveService.get().changed();
                 }
@@ -1008,10 +1173,15 @@ export class GameService {
             this.releaseHardwareBuzzerLock(false);
         } else {
             const inputAsString = input.toString(10);
-            if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(inputAsString)) {
+            if (!this.isKeypressLocked()) {
                 const team: ITeam = this.getTeamForByteCode(inputAsString);
                 if (team == null) {
                     LoggerService.error("no team found for byte code " + inputAsString)
+                    return;
+                }
+                if (!this.mayBuzz(team)) {
+                    // the box locked on the team anyway
+                    this.releaseHardwareBuzzerLock(true);
                     return;
                 }
                 this.lockOnTeam(team);
@@ -1052,7 +1222,8 @@ export class GameService {
     }
 
     /**
-     * The earliest press that counts wins: buzzers without a team, or ignored ones, don't block the others
+     * The earliest press that counts wins: buzzers without a team, or of a team the rules don't let buzz now, don't block
+     * the others
      */
     private onUdpBuzzerPress(buzzerIds: string[]): void {
         if (this.isKeypressLocked()) {
@@ -1060,8 +1231,7 @@ export class GameService {
         }
         for (const buzzerId of buzzerIds) {
             const team = this.teams.find(t => t.buzzerId === buzzerId);
-            if (team != null && !this.ignoredKeypresses.includes(buzzerId)) {
-                this.lastKeyPressed = buzzerId;
+            if (team != null && this.mayBuzz(team)) {
                 this.lockOnTeam(team);
                 if (this.isGameSetUp()) {
                     AutosaveService.get().changed();
@@ -1080,7 +1250,7 @@ export class GameService {
         const team = this.teams.find(t => t.buzzerId === buzzerId);
         return {
             selected: team != null && (this.currentGameState.markedTeamIds ?? []).includes(team.teamId),
-            locked: this.keypressLocked,
+            locked: this.keypressLocked || this.lockedOutUdpBuzzerIds.has(buzzerId),
             game: this.isGameRunning() && this.teams.some(t => BuzzerHelper.isUdpBuzzerId(t.buzzerId))
         };
     }

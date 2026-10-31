@@ -21,7 +21,7 @@
  *                                                                      move deletes the original; within the same
  *                                                                      location move renames it; → IGameInfo of the copy
  * - GET    {BASE_PATH}/locations/:id/games/:game/versions/:version   → IGameDefinition; :version can be "latest"
- * - POST   {BASE_PATH}/locations/:id/games/:game/versions            ← {questions, mediaDefaults?}; → IGameVersionInfo of the new
+ * - POST   {BASE_PATH}/locations/:id/games/:game/versions            ← {rounds, mediaDefaults?}; → IGameVersionInfo of the new
  *                                                                      version, or of the latest if nothing changed
  * - DELETE {BASE_PATH}/locations/:id/games/:game/versions/:version   only versions without states
  * - GET    {BASE_PATH}/locations/:id/games/:game/states/:state       → IGameInstanceState

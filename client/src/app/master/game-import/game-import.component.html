@@ -31,10 +31,7 @@
   @if (bundle) {
     <div class="details">
       <p>
-        {{bundle.game.questions.length}} Fragen
-        @if (bundle.state) {
-          und ein Spielstand ({{bundle.state.teams.length}} Teams, bei Frage {{bundle.state.gameState.currentQuestionNumber + 1}})
-        }
+        {{getBundleSummary()}}
       </p>
       <form class="name" (ngSubmit)="import()">
         <mat-form-field>

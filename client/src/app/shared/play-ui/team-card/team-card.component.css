@@ -178,3 +178,16 @@ mat-card-content p {
   75% { opacity: 1; transform: translateY(-50%); }
   100% { opacity: 0; transform: translateY(-90%); }
 }
+
+/* a team that answered the open tile wrong can't buzz on it again */
+:host(.locked-out) .team-card {
+  opacity: 0.45;
+}
+
+.locked-out-label {
+  margin: 0;
+}
+
+:host(.screen) .locked-out-label {
+  font-size: calc(var(--u) * 2.4);
+}
