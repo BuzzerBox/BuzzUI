@@ -65,6 +65,8 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
   // the buzzers of the box ('serial') or the wireless ones ('udp'): a game is played with one kind only, see
   // BuzzerHelper.isMixed
   public buzzerType: IBuzzer['type'] = 'serial';
+  // set once the kind of buzzers no longer follows which ones are online: chosen by hand, or by a continued game
+  private buzzerTypeFixed = false;
   public stateName = new UntypedFormControl(GameFileHelper.makeStateName(), Validators.required);
   public error: string = null;
   public starting = false;
@@ -146,6 +148,7 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
     const savedTeam = this.state?.teams?.[0];
     if (savedTeam != null) {
       this.buzzerType = BuzzerHelper.getType(savedTeam.buzzerId);
+      this.buzzerTypeFixed = true;
     }
     this.updateTeams(this.game.getAvailableBuzzers());
     this.buzzersSubscription = this.game.observeAvailableBuzzers().subscribe(buzzers => this.updateTeams(buzzers));
@@ -159,6 +162,7 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
   }
 
   public chooseBuzzerType(type: IBuzzer['type']): void {
+    this.buzzerTypeFixed = true;
     if (type === this.buzzerType) {
       return;
     }
@@ -185,6 +189,12 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
    * row, and in a continued game its team. The rows that are there keep what was entered.
    */
   private updateTeams(buzzers: IBuzzer[]): void {
+    // a new game is played with the wireless buzzers once one of them is online, unless the teams were changed already
+    if (!this.buzzerTypeFixed && !this.teamsFormGroup.dirty && this.buzzerType === 'serial'
+      && buzzers.some(buzzer => BuzzerHelper.isUdpBuzzerId(buzzer.id) && buzzer.online !== false)) {
+      this.buzzerType = 'udp';
+      this.clearRows();
+    }
     const mapped = this.game.mapTeamsToBuzzers(this.state?.teams ?? [], this.state?.gameState);
     this.mappedGameState = mapped.gameState;
     // a restarted server has new IDs for the buzzers of the box, and may have found the UDP buzzers in another order
@@ -247,6 +257,7 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
 
   public setActive(row: ITeamRow, active: boolean): void {
     const control = this.teamsFormGroup.get(row.controlName);
+    control.markAsDirty();
     if (active) {
       control.enable();
     } else {
