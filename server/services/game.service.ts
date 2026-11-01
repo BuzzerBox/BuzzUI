@@ -336,19 +336,8 @@ export class GameService {
             this.currentGameState = {...this.makeInitialGameState(), ...packet.currentGameState};
             // a savegame can't lock the buzzers, only a buzzer press can
             this.currentGameState.setBuzzerLock = this.keypressLocked;
-            // chosen for this game; it is saved with the state, so a continued game keeps it
-            if (packet.themeId) {
-                this.currentGameState.themeId = packet.themeId;
-            }
-            // from the game's version; a continued game plays the version its state was started with
-            this.currentGameState.scoring = ScoringHelper.complete(packet.scoring ?? this.currentGameState.scoring);
-            // a new play starts with the welcome screen; a continued one where it was
-            if (packet.isNewState && packet.currentGameState == null) {
-                this.currentGameState.welcome = true;
-            }
-            if (packet.storage?.gameName) {
-                this.currentGameState.gameName = packet.storage.gameName;
-            }
+            // theme, scoring, welcome screen and name; saved with the state, so a continued game keeps them
+            GameStateHelper.applySetup(this.currentGameState, packet);
             this.resumesRunningGame = false;
             this.gameFinished = false;
             // a continued game may have a team marked

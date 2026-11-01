@@ -34,6 +34,12 @@ describe('ScoringHelper', () => {
     expect(ScoringHelper.isAllowed(EGradeResults.WRONG, {doubleAnswer: 'none'})).toBeTrue();
   });
 
+  it('compares the scoring, also with missing settings', () => {
+    expect(ScoringHelper.isSame(undefined, {doubleAnswer: 'double', wrongAnswer: 'questionPoints'})).toBeTrue();
+    expect(ScoringHelper.isSame({doubleAnswer: 'none'}, {doubleAnswer: 'none', wrongAnswer: 'questionPoints'})).toBeTrue();
+    expect(ScoringHelper.isSame(undefined, ScoringHelper.NEW_GAME_SCORING)).toBeFalse();
+  });
+
   it('accepts only known settings', () => {
     expect(ScoringHelper.isValid({doubleAnswer: 'plusOne', wrongAnswer: 'one'})).toBeTrue();
     expect(ScoringHelper.isValid({})).toBeTrue();

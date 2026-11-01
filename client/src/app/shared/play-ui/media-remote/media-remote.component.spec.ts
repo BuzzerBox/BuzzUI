@@ -59,6 +59,23 @@ describe('MediaRemoteComponent volume', () => {
     expect(lastVolume()).toEqual({volume: 0.6, muted: true});
   });
 
+  it('keeps the volume from before dragging the slider down to 0', () => {
+    component.mediaVolume = {volume: 0.6, muted: false};
+    component.onVolumeDragStart();
+    // the slider sets the steps on the way down
+    for (const percent of [40, 20, 5]) {
+      component.setVolume(percent);
+      component.mediaVolume = lastVolume();
+    }
+    component.setVolume(0);
+    component.mediaVolume = lastVolume();
+    component.onVolumeDragEnd();
+    expect(lastVolume()).toEqual({volume: 0.6, muted: true});
+    // the slider's change event after the drag
+    component.setVolume(0);
+    expect(lastVolume()).toEqual({volume: 0.6, muted: true});
+  });
+
   it('turns the sound on when the slider leaves 0', () => {
     component.mediaVolume = {volume: 0.6, muted: true};
     component.setVolume(30);

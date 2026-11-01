@@ -55,10 +55,10 @@ export class SetupComponent implements OnInit {
   public mediaDefaults: IMediaQuestionDefaults = MediaHelper.completeMediaDefaults(undefined);
   // how the answers of this game are scored
   public scoring: IScoring = {...ScoringHelper.NEW_GAME_SCORING};
-  // what the loaded version had, which is saved again as it was (also nothing) unless the scoring is changed
+  // what the loaded version had, which is saved again as it was (also nothing) while the scoring is the same
   private versionScoring: Partial<IScoring> | undefined;
-  // a new game saves its scoring, see ScoringHelper.NEW_GAME_SCORING
-  private scoringChanged = true;
+  // a new game has no version and saves its scoring, see ScoringHelper.NEW_GAME_SCORING
+  private isVersionLoaded = false;
   public readonly mediaKinds = MediaHelper.MEDIA_KINDS;
   public readonly mediaKindLabels: Record<TMediaKind, string> = {image: 'Bild', playable: 'Video & Audio', slideshow: 'Diashow'};
   public readonly mediaKindIcons: Record<TMediaKind, string> = {image: 'image', playable: 'movie', slideshow: 'burst_mode'};
@@ -110,7 +110,7 @@ export class SetupComponent implements OnInit {
         this.initMediaDefaults(definition.questions, definition.mediaDefaults);
         this.scoring = ScoringHelper.complete(definition.scoring);
         this.versionScoring = definition.scoring;
-        this.scoringChanged = false;
+        this.isVersionLoaded = true;
         this.initQuestionsFormControls(definition.questions);
       }
       this.ref = ref;
@@ -512,16 +512,18 @@ export class SetupComponent implements OnInit {
 
   changeScoring(scoring: Partial<IScoring>): void {
     this.scoring = {...this.scoring, ...scoring};
-    this.scoringChanged = true;
     this.onQuestionsChanged();
   }
 
   /**
-   * The loaded version's own scoring until it is changed, so saving an older game unchanged adds no version and keeps
-   * its scoring from before
+   * The loaded version's own scoring while it scores the same (also after changing it and back), so saving an older
+   * game unchanged adds no version and keeps its scoring from before
    */
   private getScoringToSave(): Partial<IScoring> | undefined {
-    return this.scoringChanged ? this.scoring : this.versionScoring;
+    if (this.isVersionLoaded && ScoringHelper.isSame(this.scoring, this.versionScoring)) {
+      return this.versionScoring;
+    }
+    return this.scoring;
   }
 
   changeMediaDefault(kind: TMediaKind, config: IMediaQuestionState): void {

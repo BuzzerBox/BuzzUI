@@ -5,7 +5,6 @@ import {
   EGradeResults,
   EMediaStates,
   EQuestionAnswerStates,
-  FileExtensionsService,
   GameStateHelper,
   MediaHelper,
   IAnswer,
@@ -35,6 +34,7 @@ import {
   RELEASE_WITHOUT_GRADE,
   TGradeDialogResult
 } from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
+import {MediaKindHelper} from '../../../helper/media-kind.helper';
 
 @Component({
     selector: 'app-question-pane',
@@ -220,7 +220,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       if (MediaHelper.isSlideshow(media)) {
         return 'verborgen – erscheint nach der Bildserie';
       }
-      return 'verborgen – erscheint nach dem ' + (FileExtensionsService.isAudio(media.fileSrc) ? 'Audio' : 'Video');
+      return 'verborgen – erscheint nach dem ' + MediaKindHelper.getName(media);
     }
     return 'verborgen';
   }
@@ -229,27 +229,11 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
    * Of the media that have a visibility toggle
    */
   public getMediaName(): string {
-    const media = this.question?.mediaDetails;
-    if (MediaHelper.isSlideshow(media)) {
-      return 'Bildserie';
-    }
-    return MediaHelper.isVideo(media) ? 'Video' : 'Bild';
+    return MediaKindHelper.getName(this.question?.mediaDetails);
   }
 
   public getMediaIcon(): string {
-    const media = this.question?.mediaDetails;
-    if (MediaHelper.isSlideshow(media)) {
-      return 'burst_mode';
-    }
-    if (MediaHelper.isVideo(media)) {
-      return 'movie';
-    }
-    return FileExtensionsService.isAudio(media?.fileSrc) ? 'audiotrack' : 'image';
-  }
-
-  private isMediaAudio(): boolean {
-    const media = this.question?.mediaDetails;
-    return !MediaHelper.isSlideshow(media) && FileExtensionsService.isAudio(media?.fileSrc);
+    return MediaKindHelper.getIcon(this.question?.mediaDetails);
   }
 
   /**
@@ -257,7 +241,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
    * media controls
    */
   public hasMediaVisibility(): boolean {
-    return !!this.question?.mediaDetails && !this.isMediaAudio();
+    return !!this.question?.mediaDetails && !MediaKindHelper.isAudio(this.question.mediaDetails);
   }
 
   public getMediaVisibilityLabel(): string {

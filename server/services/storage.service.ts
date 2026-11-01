@@ -1139,6 +1139,10 @@ export class StorageService {
         if (bundle?.kind !== 'bundle' || !Array.isArray(bundle.game?.questions)) {
             throw new StorageError(400, 'This is not a game');
         }
+        // as when a version is saved, see saveVersion()
+        if (bundle.game.scoring != null && !ScoringHelper.isValid(bundle.game.scoring)) {
+            throw new StorageError(400, 'The scoring of the game has unknown settings');
+        }
         const resolved = await this.getWritableLocation(locationId);
         const dirs = this.getGameDirectories(resolved, gameName);
         if (await this.exists(dirs.root)) {

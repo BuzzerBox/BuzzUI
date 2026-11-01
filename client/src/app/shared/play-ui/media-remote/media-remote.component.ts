@@ -20,6 +20,8 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
   private mediaUpdateSubscription: Subscription;
   public mediaVolume: IMediaVolume;
   private mediaVolumeSubscription: Subscription;
+  // what the volume was when the slider was grabbed: dragging it down to 0 sets the steps in between too
+  private volumeBeforeDrag: number | null = null;
 
   constructor(private game: GameService) { }
 
@@ -65,12 +67,21 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
    */
   setVolume(percent: number): void {
     if (percent === 0) {
-      // the same as muting: the volume is kept for turning the sound on again
-      this.game.setMediaVolume({...this.mediaVolume, muted: true});
+      // the same as muting: the volume from before is kept for turning the sound on again
+      const volume = !this.mediaVolume.muted && this.volumeBeforeDrag != null ? this.volumeBeforeDrag : this.mediaVolume.volume;
+      this.game.setMediaVolume({volume, muted: true});
       return;
     }
     // moving the slider up is meant to be heard, so it also unmutes
     this.game.setMediaVolume({volume: percent / 100, muted: false});
+  }
+
+  onVolumeDragStart(): void {
+    this.volumeBeforeDrag = this.mediaVolume.muted ? null : this.mediaVolume.volume;
+  }
+
+  onVolumeDragEnd(): void {
+    this.volumeBeforeDrag = null;
   }
 
   /**

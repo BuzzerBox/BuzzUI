@@ -442,36 +442,24 @@ export class GameService implements OnDestroy {
 
   public setupGame(teams: ITeam[], questions: IQuestion[], currentGameState?: IGameState, sendPacket: boolean = true,
                    storage?: IGameStorageRef, isNewState?: boolean, themeId?: string, scoring?: Partial<IScoring>): Promise<void> {
-    const promise: Promise<void> = this.setGameData(teams, questions, currentGameState, true);
-    // the master shows parts of the theme too, e.g. the answers' letters
-    if (themeId) {
-      this.currentGameState.themeId = themeId;
-    }
-    // the master's grade dialog only offers what the scoring allows; the server keeps it in the game state too
-    const completeScoring = ScoringHelper.complete(scoring ?? currentGameState?.scoring);
-    this.currentGameState.scoring = completeScoring;
-    // a new play starts with the welcome screen, as the server does it
-    if (isNewState && currentGameState == null) {
-      this.currentGameState.welcome = true;
-    }
-    if (storage?.gameName) {
-      this.currentGameState.gameName = storage.gameName;
-    }
-    // console.log("current 2", currentGameState);
-    // if (currentGameState == null) {
-    //   throw new Error("grrrr");
-    // }
+    // a copy, so the state the caller passed (e.g. a loaded savegame) stays as it was
+    const promise: Promise<void> = this.setGameData(teams, questions, currentGameState ? {...currentGameState} : undefined, true);
+    const setup: ISetupPacket = {
+      packetType: EPacketTypes.SETUP_GAME,
+      teams,
+      questions,
+      currentGameState,
+      storage,
+      isNewState,
+      themeId,
+      // the version's, else what a continued state has
+      scoring: ScoringHelper.complete(scoring ?? currentGameState?.scoring)
+    };
+    // as the server does it: the master shows parts of the theme (e.g. the answers' letters), its grade dialog only
+    // offers what the scoring allows, and it starts the game from the welcome screen
+    GameStateHelper.applySetup(this.currentGameState, setup);
     if (sendPacket) {
-      this.webSocketService.send<ISetupPacket>({
-        packetType: EPacketTypes.SETUP_GAME,
-        teams,
-        questions,
-        currentGameState,
-        storage,
-        isNewState,
-        themeId,
-        scoring: completeScoring
-      });
+      this.webSocketService.send<ISetupPacket>(setup);
     }
     return promise;
   }

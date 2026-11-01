@@ -28,7 +28,8 @@
           <mat-icon>{{ mediaVolume.muted ? 'volume_off' : 'volume_up' }}</mat-icon>
         </button>
         <mat-slider min="0" max="100" step="5" discrete title="Lautstärke auf allen Anzeigegeräten">
-          <input matSliderThumb [value]="getVolumePercent()" (valueChange)="setVolume($event)">
+          <input matSliderThumb [value]="getVolumePercent()" (valueChange)="setVolume($event)"
+            (dragStart)="onVolumeDragStart()" (dragEnd)="onVolumeDragEnd()">
         </mat-slider>
       </span>
     }

@@ -36,6 +36,15 @@ export class ScoringHelper {
             && (wrongAnswer === undefined || this.WRONG_ANSWER_SCORINGS.includes(wrongAnswer as TWrongAnswerScoring));
     }
 
+    /**
+     * Whether both score the same, filling in missing settings as complete() does
+     */
+    public static isSame(a: Partial<IScoring> | undefined, b: Partial<IScoring> | undefined): boolean {
+        const completeA = this.complete(a);
+        const completeB = this.complete(b);
+        return completeA.doubleAnswer === completeB.doubleAnswer && completeA.wrongAnswer === completeB.wrongAnswer;
+    }
+
     public static isAllowed(result: EGradeResults, scoring: Partial<IScoring> | undefined): boolean {
         return result !== EGradeResults.DOUBLE || this.complete(scoring).doubleAnswer !== 'none';
     }

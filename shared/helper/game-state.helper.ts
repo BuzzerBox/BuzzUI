@@ -1,5 +1,6 @@
-import {IAnswer, IAnswerSetStatePacket, IGameState, IMarkTeamPacket, IQuestion} from "../interfaces";
+import {IAnswer, IAnswerSetStatePacket, IGameState, IMarkTeamPacket, IQuestion, ISetupPacket} from "../interfaces";
 import {EAnswerStates} from "../enums/EAnswerStates";
+import {ScoringHelper} from "./scoring.helper";
 
 /**
  * Keeps the progress within the current question (marked teams, logged in and activated answers) in the game state, so
@@ -15,6 +16,25 @@ export class GameStateHelper {
      */
     public static isSameAnswer(a: IAnswer, b: IAnswer): boolean {
         return a.text === b.text && a.isCorrect === b.isCorrect;
+    }
+
+    /**
+     * What a game's setup adds to its state, the same on the server and the master: the theme, the scoring of the
+     * game's version (a continued state keeps its own if the setup has none), the welcome screen of a new play (a
+     * continued one is where it was) and the game's name
+     */
+    public static applySetup(gameState: IGameState,
+                             setup: Pick<ISetupPacket, 'currentGameState' | 'isNewState' | 'storage' | 'themeId' | 'scoring'>): void {
+        if (setup.themeId) {
+            gameState.themeId = setup.themeId;
+        }
+        gameState.scoring = ScoringHelper.complete(setup.scoring ?? gameState.scoring);
+        if (setup.isNewState && setup.currentGameState == null) {
+            gameState.welcome = true;
+        }
+        if (setup.storage?.gameName) {
+            gameState.gameName = setup.storage.gameName;
+        }
     }
 
     public static applyMarkTeam(gameState: IGameState, packet: IMarkTeamPacket): void {
