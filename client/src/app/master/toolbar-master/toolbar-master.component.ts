@@ -4,7 +4,7 @@ import {GameService} from '../../services/game.service';
 import {MatDialog} from '@angular/material/dialog';
 import {IAutosaveInfoPacket} from '../../../../../shared/shared';
 import {DialogTeamsComponent} from '../dialog-teams/dialog-teams.component';
-import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
+import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {DialogConfirmEndingGameComponent} from '../../shared/play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {FormatHelper} from '../../helper/format.helper';
 import {baseUrlMaster, pathsMaster} from '../paths-master';

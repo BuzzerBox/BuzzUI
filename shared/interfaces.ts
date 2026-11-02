@@ -37,6 +37,7 @@ import {IInstallUpdatePacket} from './interfaces/IInstallUpdatePacket';
 import {IStorageAccessPacket} from './interfaces/IStorageAccessPacket';
 import {IStorageLocation, TStorageLocationType} from './interfaces/IStorageLocation';
 import {IGameDefinition, IGameInstanceState, IGameBundle, CURRENT_GAME_FORMAT_VERSION} from './interfaces/IGameDefinition';
+import {IScoring, TDoubleAnswerScoring, TWrongAnswerScoring} from './interfaces/IScoring';
 import {IGameInfo, IGameVersionInfo, IGameStateInfo, IGameStorageRef, IGameImportResult, IGameCopyResult} from './interfaces/IGameInfo';
 import {IAutosaveInfoPacket} from './interfaces/IAutosaveInfoPacket';
 import {IMasterTakenOverPacket} from './interfaces/IMasterTakenOverPacket';
@@ -89,6 +90,9 @@ export {
 	IStorageLocation,
 	TStorageLocationType,
 	IGameDefinition,
+	IScoring,
+	TDoubleAnswerScoring,
+	TWrongAnswerScoring,
 	IGameInstanceState,
 	IGameBundle,
 	CURRENT_GAME_FORMAT_VERSION,

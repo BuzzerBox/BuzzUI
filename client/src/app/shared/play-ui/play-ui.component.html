@@ -17,8 +17,15 @@
       }
       <div class="parent">
         <mat-card class="question">
-          <app-question-pane [question]="currentQuestion" [isMaster]="isMaster"></app-question-pane>
-          @if (isMaster) {
+          <app-question-pane [question]="currentQuestion" [isMaster]="isMaster" [welcome]="isWelcome()"></app-question-pane>
+          @if (isMaster && isWelcome()) {
+            <!-- the buzzers stay locked until the game begins -->
+            <mat-card-actions class="master-actions welcome-actions">
+              <button mat-flat-button color="primary" class="begin-game" (click)="beginGame()" title="Die erste Frage zeigen und die Buzzer freigeben">
+                <mat-icon>play_arrow</mat-icon> Spiel starten
+              </button>
+            </mat-card-actions>
+          } @else if (isMaster) {
             <mat-card-actions class="master-actions">
               <button mat-button class="large-controls" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage">Vorherige Frage</button>
               <span class="spacer"></span>

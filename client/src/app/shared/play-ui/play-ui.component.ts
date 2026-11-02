@@ -104,6 +104,14 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     this.currentQuestion = this.game.getNextQuestion();
   }
 
+  public isWelcome(): boolean {
+    return this.game.isWelcome();
+  }
+
+  public beginGame(): void {
+    this.currentQuestion = this.game.beginGame();
+  }
+
   public hasPreviousQuestion(): boolean {
     return this.game.hasPreviousQuestion();
   }

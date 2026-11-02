@@ -6,7 +6,7 @@ import {IGameInfo, IGameStateInfo, IGameVersionInfo, IStorageLocation, StorageAp
 import {IGameRef, StorageService} from '../../services/storage.service';
 import {FormatHelper} from '../../helper/format.helper';
 import {GameFileHelper} from '../../helper/game-file.helper';
-import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
+import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {DialogEditGameComponent, IDialogEditGameData, IDialogEditGameResult} from '../dialog-edit-game/dialog-edit-game.component';
 import {DialogEditStateComponent, IDialogEditStateData, IDialogEditStateResult} from '../dialog-edit-state/dialog-edit-state.component';
 import {IEditorNavigationState, IPrepareNavigationState} from '../game-navigation';

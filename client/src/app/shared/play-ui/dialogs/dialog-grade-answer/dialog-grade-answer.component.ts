@@ -1,6 +1,7 @@
 import {Component, Inject} from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {EGradeResults, IAnswer} from '../../../../../../../shared/shared';
+import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {EGradeResults, IAnswer, IScoring, ScoringHelper} from '../../../../../../../shared/shared';
+import {openReleaseConfirmation} from '../release-confirmation';
 
 export interface IDialogGradeAnswerOption {
   answer: IAnswer;
@@ -18,6 +19,8 @@ export interface IDialogGradeAnswerData {
   answers: IDialogGradeAnswerOption[];
   // the screens don't show the answers yet, e.g. until the media ended
   answersHiddenOnScreens: boolean;
+  // what a double and a wrong answer are worth in this game
+  scoring: IScoring;
 }
 
 /**
@@ -32,7 +35,8 @@ export interface IGradeDialogGrade {
 }
 
 /**
- * Closing it without a result (also with "Später bewerten") leaves the team marked and the buzzers locked
+ * Closing it without a result (with the X or "Später bewerten"; clicking outside doesn't close it) leaves the team
+ * marked and the buzzers locked
  */
 export type TGradeDialogResult = IGradeDialogGrade | typeof RELEASE_WITHOUT_GRADE;
 
@@ -47,13 +51,40 @@ export type TGradeDialogResult = IGradeDialogGrade | typeof RELEASE_WITHOUT_GRAD
 })
 export class DialogGradeAnswerComponent {
   public readonly EGradeResults = EGradeResults;
-  public readonly RELEASE_WITHOUT_GRADE = RELEASE_WITHOUT_GRADE;
   public selectedAnswer: IAnswer | null = null;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: IDialogGradeAnswerData) { }
+  constructor(@Inject(MAT_DIALOG_DATA) public data: IDialogGradeAnswerData,
+              private dialogRef: MatDialogRef<DialogGradeAnswerComponent, TGradeDialogResult>,
+              private dialog: MatDialog) { }
+
+  /**
+   * Only once confirmed; cancelling goes back to grading, with the picked answer still picked
+   */
+  public releaseWithoutGrade(): void {
+    const confirmRef = openReleaseConfirmation(this.dialog, this.data.teamName);
+    // this closes when the team is no longer marked, e.g. after a release from the box; the question is moot then
+    const closedSubscription = this.dialogRef.beforeClosed().subscribe(() => confirmRef.close(false));
+    confirmRef.afterClosed().subscribe(confirmed => {
+      closedSubscription.unsubscribe();
+      if (confirmed) {
+        this.dialogRef.close(RELEASE_WITHOUT_GRADE);
+      }
+    });
+  }
 
   public formatPoints(points: number): string {
     return points === 1 ? '1 Punkt' : `${points} Punkte`;
+  }
+
+  /**
+   * What the grade does to the team's points, e.g. " (+2 Punkte)"; nothing when it doesn't change them
+   */
+  public formatChange(result: EGradeResults): string {
+    const change = ScoringHelper.getPointsChange(result, this.data.points, this.data.scoring);
+    if (change === 0) {
+      return '';
+    }
+    return ` (${change > 0 ? '+' : '−'}${this.formatPoints(Math.abs(change))})`;
   }
 
   /**

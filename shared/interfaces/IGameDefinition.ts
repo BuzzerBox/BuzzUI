@@ -1,4 +1,4 @@
-import {IGameState, IMediaQuestionDefaults, IQuestion, ITeam} from '../shared';
+import {IGameState, IMediaQuestionDefaults, IQuestion, IScoring, ITeam} from '../shared';
 
 /**
  * The format of game, state and bundle files; the savegames from before (CURRENT_SAVEGAME_VERSION) had teams,
@@ -31,6 +31,10 @@ export interface IGameDefinition {
      * before it existed have an initialConfig in every media question.
      */
     mediaDefaults?: Partial<IMediaQuestionDefaults>;
+    /**
+     * How answers are scored; missing settings are on, see ScoringHelper
+     */
+    scoring?: Partial<IScoring>;
 }
 
 /**

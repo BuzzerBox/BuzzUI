@@ -53,6 +53,22 @@ mat-card.question {
   flex: 1 1 auto;
 }
 
+/* before the first question, starting the game is all there is to do */
+.welcome-actions {
+  justify-content: center;
+}
+
+button.begin-game {
+  min-width: 260px;
+  min-height: 56px;
+  border-radius: 28px;
+  font-size: 1.2em;
+}
+
+button.begin-game mat-icon {
+  margin-right: 8px;
+}
+
 /* the buzzer button sits in the middle, between the question navigation */
 .master-actions {
   align-items: center;

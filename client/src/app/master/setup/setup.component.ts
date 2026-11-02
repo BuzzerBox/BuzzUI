@@ -4,7 +4,7 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {GameService} from '../../services/game.service';
 import {MatStepper} from '@angular/material/stepper';
-import {IQuestion, IAnswer, IMediaQuestionDefaults, IMediaQuestionState, IStorageLocation, MediaHelper, StorageApiHelper, TMediaKind} from '../../../../../shared/shared';
+import {IQuestion, IAnswer, IMediaQuestionDefaults, IMediaQuestionState, IScoring, IStorageLocation, MediaHelper, ScoringHelper, StorageApiHelper, TDoubleAnswerScoring, TMediaKind, TWrongAnswerScoring} from '../../../../../shared/shared';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IMediaSelection} from '../interfaces/IMediaSelection';
 import {IGameRef, StorageService} from '../../services/storage.service';
@@ -53,6 +53,12 @@ export class SetupComponent implements OnInit {
   public questionInitialConfig: IMediaQuestionState[];
   // how the media questions of the game start, for each kind of media
   public mediaDefaults: IMediaQuestionDefaults = MediaHelper.completeMediaDefaults(undefined);
+  // how the answers of this game are scored
+  public scoring: IScoring = {...ScoringHelper.NEW_GAME_SCORING};
+  // what the loaded version had, which is saved again as it was (also nothing) while the scoring is the same
+  private versionScoring: Partial<IScoring> | undefined;
+  // a new game has no version and saves its scoring, see ScoringHelper.NEW_GAME_SCORING
+  private isVersionLoaded = false;
   public readonly mediaKinds = MediaHelper.MEDIA_KINDS;
   public readonly mediaKindLabels: Record<TMediaKind, string> = {image: 'Bild', playable: 'Video & Audio', slideshow: 'Diashow'};
   public readonly mediaKindIcons: Record<TMediaKind, string> = {image: 'image', playable: 'movie', slideshow: 'burst_mode'};
@@ -102,6 +108,9 @@ export class SetupComponent implements OnInit {
         this.loadedVersion = definition.version;
         this.latestVersion = info.latestVersion;
         this.initMediaDefaults(definition.questions, definition.mediaDefaults);
+        this.scoring = ScoringHelper.complete(definition.scoring);
+        this.versionScoring = definition.scoring;
+        this.isVersionLoaded = true;
         this.initQuestionsFormControls(definition.questions);
       }
       this.ref = ref;
@@ -390,7 +399,7 @@ export class SetupComponent implements OnInit {
     this.saving = true;
     this.saveError = null;
     try {
-      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults);
+      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults, this.getScoringToSave());
       this.savedVersion = result.version;
       this.loadedVersion = result.version;
       this.snackBar.open(result.unchanged ? `Nichts geändert, es bleibt bei Version ${result.version}.` : `Version ${result.version} wurde gespeichert.`,
@@ -488,6 +497,33 @@ export class SetupComponent implements OnInit {
   changeQuestionConfig(event: { config: IMediaQuestionState; question: number }): void {
     this.questionInitialConfig[event.question] = event.config;
     this.onQuestionsChanged();
+  }
+
+  public readonly doubleAnswerOptions: {key: TDoubleAnswerScoring, label: string}[] = [
+    {key: 'none', label: 'Nicht möglich'},
+    {key: 'plusOne', label: 'Punkte der Frage + 1'},
+    {key: 'double', label: 'Doppelte Punkte'}
+  ];
+  public readonly wrongAnswerOptions: {key: TWrongAnswerScoring, label: string}[] = [
+    {key: 'questionPoints', label: 'Punkte der Frage abziehen'},
+    {key: 'one', label: '1 Punkt abziehen'},
+    {key: 'none', label: 'Kein Abzug'}
+  ];
+
+  changeScoring(scoring: Partial<IScoring>): void {
+    this.scoring = {...this.scoring, ...scoring};
+    this.onQuestionsChanged();
+  }
+
+  /**
+   * The loaded version's own scoring while it scores the same (also after changing it and back), so saving an older
+   * game unchanged adds no version and keeps its scoring from before
+   */
+  private getScoringToSave(): Partial<IScoring> | undefined {
+    if (this.isVersionLoaded && ScoringHelper.isSame(this.scoring, this.versionScoring)) {
+      return this.versionScoring;
+    }
+    return this.scoring;
   }
 
   changeMediaDefault(kind: TMediaKind, config: IMediaQuestionState): void {

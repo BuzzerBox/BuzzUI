@@ -1,4 +1,18 @@
-@if (isQuestionExisting()) {
+@if (welcome) {
+  <!-- a new game greets the teams first; the master starts it below -->
+  <mat-card-content class="welcome">
+    @if (getGameName(); as gameName) {
+      <div class="welcome-text">Willkommen bei</div>
+      <div class="welcome-title">{{gameName}}</div>
+    } @else {
+      <div class="welcome-title">Willkommen!</div>
+    }
+    <div class="welcome-text">Gleich geht's los: {{getTotalQuestionNumber()}} {{getTotalQuestionNumber() === 1 ? 'Frage' : 'Fragen'}}</div>
+    @if (isMaster) {
+      <p class="welcome-hint">Die Anzeige zeigt diese Begrüßung, die Buzzer sind gesperrt. „Spiel starten“ zeigt die erste Frage und gibt die Buzzer frei.</p>
+    }
+  </mat-card-content>
+} @else if (isQuestionExisting()) {
   <mat-card-header>
     <mat-card-title>
       Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}
@@ -15,33 +29,19 @@
   }
   <mat-card-content>
     @if (isMaster) {
-      <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showQuestion"
-        [disabled]="!canToggleQuestion()" (click)="toggleQuestionVisibility()"
-        [title]="canToggleQuestion() ? (showQuestion ? 'Frage auf der Anzeige verbergen' : 'Frage auf der Anzeige zeigen') : ''">
-        <mat-icon>{{ showQuestion ? 'visibility' : 'visibility_off' }}</mat-icon>
-        <span>Frage: {{getQuestionVisibilityLabel()}}</span>
-        @if (canToggleQuestion()) {
-          <span class="visibility-action">{{ showQuestion ? 'Verbergen' : 'Zeigen' }}</span>
-        }
-      </button>
-    }
-    @if (showQuestion || isMaster) {
-      <div class="question-text" [class.without-answers]="!question.show" [class.hidden-on-screen-content]="!showQuestion"
-        [appFitText]="!isMaster">{{getQuestionText()}}</div>
-    } @else {
-      <div class="question-text">???</div>
-    }
-    @if (isMaster && question.mediaDetails) {
-      <app-media-remote [question]="question"></app-media-remote>
-    }
-    <div class="videooptions" [class.below-media]="isMediaShown()">
-      @if (question.mediaDetails && !isMaster) {
-        <div class="bottom">
-          <app-media-question [media]="question.mediaDetails"></app-media-question>
-        </div>
-      }
-      <div class="top">
-        @if (isMaster && question.show) {
+      <!-- what the screens show of the question, in one place; clicking a part shows or hides it -->
+      <div class="control-box visibility" role="group" aria-label="Auf der Anzeige">
+        <span class="control-box-tab"><mat-icon>tv</mat-icon> Auf der Anzeige</span>
+        <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showQuestion"
+          [disabled]="!canToggleQuestion()" (click)="toggleQuestionVisibility()"
+          [title]="canToggleQuestion() ? (showQuestion ? 'Frage auf der Anzeige verbergen' : 'Frage auf der Anzeige zeigen') : ''">
+          <mat-icon>{{ showQuestion ? 'visibility' : 'visibility_off' }}</mat-icon>
+          <span>Frage: {{getQuestionVisibilityLabel()}}</span>
+          @if (canToggleQuestion()) {
+            <span class="visibility-action">{{ showQuestion ? 'Verbergen' : 'Zeigen' }}</span>
+          }
+        </button>
+        @if (question.show) {
           <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showAnswers"
             [disabled]="!canToggleAnswers()" (click)="toggleAnswersVisibility()"
             [title]="canToggleAnswers() ? (showAnswers ? 'Antworten auf der Anzeige verbergen' : 'Antworten auf der Anzeige zeigen') : ''">
@@ -52,42 +52,89 @@
             }
           </button>
         }
+        @if (hasMediaVisibility()) {
+          <button type="button" class="screen-visibility" [class.hidden-on-screen]="!isMediaShown()"
+            (click)="toggleMedia()" [title]="getMediaToggleTitle()">
+            <mat-icon>{{ isMediaShown() ? 'visibility' : 'visibility_off' }}</mat-icon>
+            <span>{{getMediaName()}}: {{getMediaVisibilityLabel()}}</span>
+            <span class="visibility-action">{{getMediaToggleAction()}}</span>
+          </button>
+        }
+      </div>
+      @if (question.mediaDetails) {
+        <div class="control-box media" role="group" aria-label="Mediensteuerung">
+          <span class="control-box-tab"><mat-icon>{{getMediaIcon()}}</mat-icon> Mediensteuerung</span>
+          <app-media-remote [question]="question"></app-media-remote>
+        </div>
+      }
+    }
+    @if (isMaster) {
+      <div class="control-box content" role="group" aria-label="Frage">
+        <span class="control-box-tab"><mat-icon>help_outline</mat-icon> Frage</span>
+        <div class="question-text" [class.hidden-on-screen-content]="!showQuestion">{{getQuestionText()}}</div>
+      </div>
+    } @else if (showQuestion) {
+      <div class="question-text" [class.without-answers]="!question.show" [appFitText]="true">{{getQuestionText()}}</div>
+    } @else {
+      <div class="question-text">???</div>
+    }
+    <!-- with media, the screens keep the answers in a band at the bottom, also while the media is hidden -->
+    <div class="videooptions" [class.below-media]="!!question.mediaDetails">
+      @if (question.mediaDetails && !isMaster) {
+        <div class="bottom">
+          <app-media-question [media]="question.mediaDetails"></app-media-question>
+        </div>
+      }
+      <div class="top">
         <!-- questions without answer options (unchecked in setup) may still hold placeholder answers from old games -->
-        @if (question.show && (showAnswers || isMaster)) {
-          <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong">
-            @for (answer of getAnswers(); track answer; let i = $index) {
-              <div class="answer-cell">
-                <button id="button{{i}}" mat-raised-button
-                  [class.logged-in]="isLoggedIn(answer)"
-                  [class.correct]="isActivated(answer) && answer.isCorrect"
-                  [class.wrong]="isActivated(answer) && !answer.isCorrect"
-                  [class.correct-hint]="isMaster && answer.isCorrect && !isActivated(answer)"
-                  [disabled]="!showAnswers" [appFitText]="!isMaster"
-                  (click)="onClickAnswer(answer, $event.currentTarget)">
-                  {{answer.text}}
-                  @if (isShowTheme() && isActivated(answer)) {
-                    <span class="answer-mark">{{answer.isCorrect ? '✓' : '✗'}}</span>
-                  }
-                </button>
-                <!-- over the button's corner, outside of it, so the button's text can't move it -->
-                @if (isShowTheme()) {
-                  <span class="answer-letter" aria-hidden="true">{{getAnswerLetter(i)}}</span>
-                }
-                <!-- only the master knows which answers are correct before they are revealed -->
-                @if (isMaster && answer.isCorrect && !isActivated(answer)) {
-                  <span class="correct-badge" title="Richtige Antwort"><mat-icon>check</mat-icon></span>
-                }
-              </div>
-            }
+        @if (question.show && isMaster) {
+          <div class="control-box content" role="group" aria-label="Antworten">
+            <span class="control-box-tab"><mat-icon>format_list_bulleted</mat-icon> Antworten</span>
+            <ng-container [ngTemplateOutlet]="answerGrid"></ng-container>
           </div>
+        } @else if (question.show && showAnswers) {
+          <ng-container [ngTemplateOutlet]="answerGrid"></ng-container>
+        } @else if (question.show) {
+          <!-- the screens keep the answers' space while they are hidden, so nothing moves when they appear -->
+          <div class="answer-grid" aria-hidden="true"></div>
         }
       </div>
     </div>
     @if (isMaster && question.notes) {
-      <div class="notes">
-        <div class="notes-title"><mat-icon>sticky_note_2</mat-icon> Notizen</div>
+      <div class="control-box content" role="group" aria-label="Notizen">
+        <span class="control-box-tab"><mat-icon>sticky_note_2</mat-icon> Notizen</span>
         <div class="notes-text">{{question.notes}}</div>
       </div>
     }
   </mat-card-content>
 }
+
+<!-- the answer options, in the master's "Antworten" box or on their own on the screens -->
+<ng-template #answerGrid>
+  <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong">
+    @for (answer of getAnswers(); track answer; let i = $index) {
+      <div class="answer-cell">
+        <button id="button{{i}}" mat-raised-button
+          [class.logged-in]="isLoggedIn(answer)"
+          [class.correct]="isActivated(answer) && answer.isCorrect"
+          [class.wrong]="isActivated(answer) && !answer.isCorrect"
+          [class.correct-hint]="isMaster && answer.isCorrect && !isActivated(answer)"
+          [disabled]="!showAnswers" [appFitText]="!isMaster"
+          (click)="onClickAnswer(answer, $event.currentTarget)">
+          {{answer.text}}
+          @if (isShowTheme() && isActivated(answer)) {
+            <span class="answer-mark">{{answer.isCorrect ? '✓' : '✗'}}</span>
+          }
+        </button>
+        <!-- over the button's corner, outside of it, so the button's text can't move it -->
+        @if (isShowTheme()) {
+          <span class="answer-letter" aria-hidden="true">{{getAnswerLetter(i)}}</span>
+        }
+        <!-- only the master knows which answers are correct before they are revealed -->
+        @if (isMaster && answer.isCorrect && !isActivated(answer)) {
+          <span class="correct-badge" title="Richtige Antwort"><mat-icon>check</mat-icon></span>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

@@ -20,12 +20,14 @@ import {
     IGameStorageRef,
     IGameVersionInfo,
     IMediaQuestionDefaults,
+    IScoring,
     IQuestion,
     IStorageEntry,
     IStorageFolder,
     IStorageLocation,
     MediaHelper,
-    StorageApiHelper
+    StorageApiHelper,
+    ScoringHelper
 } from '../../shared/shared';
 import {ConfigService} from './config.service';
 import {LoggerService} from './logger.service';
@@ -692,15 +694,19 @@ export class StorageService {
      * Stores the questions as a new version of the game, which is created if it doesn't exist yet. If they are the same
      * as in the latest version, no version is added.
      */
-    public async saveVersion(locationId: string, gameName: string, body: {questions?: unknown, mediaDefaults?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
+    public async saveVersion(locationId: string, gameName: string, body: {questions?: unknown, mediaDefaults?: unknown, scoring?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
         if (!Array.isArray(body?.questions)) {
             throw new StorageError(400, 'A game version needs its questions');
         }
         if (body.mediaDefaults != null && (typeof body.mediaDefaults !== 'object' || Array.isArray(body.mediaDefaults))) {
             throw new StorageError(400, 'The media defaults of a game version must be an object');
         }
+        if (body.scoring != null && !ScoringHelper.isValid(body.scoring)) {
+            throw new StorageError(400, 'The scoring of a game version has unknown settings');
+        }
         const questions = body.questions as IQuestion[];
         const mediaDefaults = body.mediaDefaults as Partial<IMediaQuestionDefaults> | undefined;
+        const scoring = body.scoring as Partial<IScoring> | undefined;
         const resolved = await this.getWritableLocation(locationId);
         const dirs = this.getGameDirectories(resolved, gameName);
         await fs.mkdir(dirs.versions, {recursive: true}).catch(e => { throw this.toWriteError(e); });
@@ -710,7 +716,7 @@ export class StorageService {
         if (latest != null) {
             const latestDefinition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, latest));
             if (latestDefinition != null && isEqual(latestDefinition.questions, questions)
-                && isEqual(latestDefinition.mediaDefaults, mediaDefaults)) {
+                && isEqual(latestDefinition.mediaDefaults, mediaDefaults) && isEqual(latestDefinition.scoring, scoring)) {
                 return {...await this.getVersionInfo(resolved, gameName, latest), unchanged: true};
             }
         }
@@ -724,6 +730,9 @@ export class StorageService {
         };
         if (mediaDefaults != null) {
             definition.mediaDefaults = mediaDefaults;
+        }
+        if (scoring != null) {
+            definition.scoring = scoring;
         }
         await this.writeJsonAtomically(this.getVersionFile(dirs, version), definition, false);
         LoggerService.log(`Saved version ${version} of ${gameName} on ${resolved.location.name}`);
@@ -1130,6 +1139,10 @@ export class StorageService {
         if (bundle?.kind !== 'bundle' || !Array.isArray(bundle.game?.questions)) {
             throw new StorageError(400, 'This is not a game');
         }
+        // as when a version is saved, see saveVersion()
+        if (bundle.game.scoring != null && !ScoringHelper.isValid(bundle.game.scoring)) {
+            throw new StorageError(400, 'The scoring of the game has unknown settings');
+        }
         const resolved = await this.getWritableLocation(locationId);
         const dirs = this.getGameDirectories(resolved, gameName);
         if (await this.exists(dirs.root)) {
@@ -1147,6 +1160,9 @@ export class StorageService {
         const definition: IGameDefinition = {formatVersion: CURRENT_GAME_FORMAT_VERSION, kind: 'game', version: 1, savedAt: now, questions};
         if (bundle.game.mediaDefaults != null) {
             definition.mediaDefaults = bundle.game.mediaDefaults;
+        }
+        if (bundle.game.scoring != null) {
+            definition.scoring = bundle.game.scoring;
         }
         await this.writeJsonAtomically(this.getVersionFile(dirs, 1), definition, false);
         const result: IGameImportResult = {gameName, missingMedia};

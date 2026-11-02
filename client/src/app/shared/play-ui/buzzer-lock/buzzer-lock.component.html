@@ -10,7 +10,7 @@
 </button>
 @if (isLocked() && getBuzzedTeamName()) {
   <!-- after the grade dialog was closed with "Später bewerten" -->
-  <button mat-stroked-button class="grade" (click)="grade()" title="Die Antwort des Teams, das gebuzzert hat, bewerten">
+  <button mat-flat-button class="grade" (click)="grade()" title="Die Antwort des Teams, das gebuzzert hat, bewerten">
     <mat-icon>rule</mat-icon>
     Bewerten
   </button>

@@ -1,6 +1,7 @@
 import {IGamePacket, EPacketTypes, IAnswer} from '../shared';
 import {IMediaQuestionState} from "./IMediaQuestionState";
 import {IMediaVolume} from "./IMediaVolume";
+import {IScoring} from "./IScoring";
 
 /**
  * ALYWAYS UPDATE THIS NUMBER IF SOMETHING CHANGED AND KEEP TRACK OF CHANGES
@@ -30,4 +31,18 @@ export interface IGameState {
      * before themes existed, and an unknown one (e.g. from a newer version), means the default theme.
      */
     themeId?: string;
+    /**
+     * How answers are scored, from the game's version (IGameDefinition.scoring); set when the game is set up. Missing in
+     * states from before it existed, which means the scoring from before, see ScoringHelper.
+     */
+    scoring?: IScoring;
+    /**
+     * A new game starts with a welcome screen instead of its first question, with the buzzers locked; the master's
+     * "Spiel starten" goes to the first question, which ends it. Missing in states from before it existed.
+     */
+    welcome?: boolean;
+    /**
+     * The name of the stored game that is played, for the welcome screen; set when the game is set up
+     */
+    gameName?: string;
 }

@@ -52,7 +52,6 @@ import {DialogEditGameComponent} from './dialog-edit-game/dialog-edit-game.compo
 import {DialogEditStateComponent} from './dialog-edit-state/dialog-edit-state.component';
 import {DialogEditMediaComponent} from './dialog-edit-media/dialog-edit-media.component';
 import {MediaBrowserComponent} from './media-browser/media-browser.component';
-import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component';
 
 @NgModule({
   declarations: [
@@ -80,7 +79,6 @@ import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component'
     DialogEditStateComponent,
     DialogEditMediaComponent,
     MediaBrowserComponent,
-    DialogConfirmComponent,
   ],
   imports: [
     CommonModule,

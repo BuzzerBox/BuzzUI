@@ -21,7 +21,7 @@ import {IGameRef, StorageService} from '../../services/storage.service';
 import {GameFileHelper} from '../../helper/game-file.helper';
 import {IPrepareNavigationState} from '../game-navigation';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
-import {DialogConfirmComponent, IDialogConfirmData} from '../dialog-confirm/dialog-confirm.component';
+import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {IScreenTheme, SCREEN_THEMES} from '../../themes/screen-themes';
 import {ScreenThemeHelper} from '../../themes/screen-theme.helper';
 
@@ -349,7 +349,7 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
       gameName: this.ref.gameName,
       gameVersion: this.definition.version,
       stateName: this.isContinuing() ? this.navigation.stateName : this.getStateName()
-    }, !this.isContinuing(), this.themeId);
+    }, !this.isContinuing(), this.themeId, this.definition.scoring);
     ScreenThemeHelper.rememberChosen(this.themeId);
     // the server's answer takes the master to the start of the game
   }

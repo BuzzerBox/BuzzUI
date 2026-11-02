@@ -1,4 +1,4 @@
-import {IGamePacket, EPacketTypes, ITeam, IQuestion, IGameState, IGameStorageRef} from '../shared';
+import {IGamePacket, EPacketTypes, ITeam, IQuestion, IGameState, IGameStorageRef, IScoring} from '../shared';
 
 export interface ISetupPacket extends IGamePacket {
     packetType: EPacketTypes.SETUP_GAME;
@@ -20,4 +20,8 @@ export interface ISetupPacket extends IGamePacket {
      * How the screens look in this game, see IGameState.themeId
      */
     themeId?: string;
+    /**
+     * How answers are scored in this game, see IGameState.scoring
+     */
+    scoring?: IScoring;
 }

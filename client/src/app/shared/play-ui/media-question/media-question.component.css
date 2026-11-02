@@ -21,6 +21,9 @@ video, img {
   height: 100%;
   object-fit: contain;
 }
+.hidden-video {
+  visibility: hidden;
+}
 .fullscreen {
   position: fixed;
   inset: 0;
@@ -48,6 +51,28 @@ video, img {
   background: rgba(0, 0, 0, 0.75);
   color: white;
   cursor: pointer;
+}
+
+/* the place of hidden media, in the text color of whichever screen theme, so it's clear something will appear */
+.hidden-media {
+  position: absolute;
+  inset: 4%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1vh;
+  border: 0.4vh dashed currentColor;
+  border-radius: 2vh;
+  opacity: 0.45;
+  font-size: 5vh;
+  font-weight: 500;
+}
+
+.hidden-media mat-icon {
+  width: 14vh;
+  height: 14vh;
+  font-size: 14vh;
 }
 
 /* audio has no picture of its own: show a music note while it is shown/playing */

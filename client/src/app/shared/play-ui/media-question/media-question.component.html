@@ -6,8 +6,10 @@
         </vg-controls>
       }
       <!-- disableRemotePlayback: without it, Chromium puts a cast button on the video -->
+      <!-- hidden rather than removed, so it keeps its place and stays loaded -->
       <video #myMedia
         [vgMedia]="myMedia"
+        [class.hidden-video]="videoHidden"
         id="my-video"
         preload="auto"
         disableRemotePlayback
@@ -19,11 +21,10 @@
   <!-- a separate player per media type, so switching between them gets a fresh player and onPlayerReady -->
   @if (isAudio()) {
     <vg-player (onPlayerReady)="onPlayerReady($event)" class="player">
-      @if (mediaVisible) {
-        <div class="audio-visual">
-          <mat-icon>music_note</mat-icon>
-        </div>
-      }
+      <!-- there is nothing to hide of audio, so its note shows also before and after it plays -->
+      <div class="audio-visual">
+        <mat-icon>music_note</mat-icon>
+      </div>
       <audio #myAudio
         [vgMedia]="myAudio"
         id="my-audio"
@@ -49,6 +50,14 @@
   @if (isImage() && mediaVisible) {
     <div class="player">
       <img [src]="media.fileSrc" alt="The image for this question">
+    </div>
+  }
+
+  <!-- what will appear here, while the master keeps it hidden -->
+  @if (isHidden()) {
+    <div class="hidden-media">
+      <mat-icon>{{getHiddenIcon()}}</mat-icon>
+      <span>{{getHiddenLabel()}}</span>
     </div>
   }
 </div>

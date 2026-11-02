@@ -4,6 +4,7 @@ import {EMediaStates, IMediaDetails, IMediaVolume, FileExtensionsService, MediaH
 import {Subscription} from 'rxjs';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {GameService} from '../../../services/game.service';
+import {MediaKindHelper} from '../../../helper/media-kind.helper';
 
 @Component({
     selector: 'app-media-question',
@@ -19,6 +20,8 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
   private mediaVolumeSubscription: Subscription;
   private mediaVolume: IMediaVolume = PacketHelper.getDefaultMediaVolume();
   public mediaVisible = false;
+  // a video shows its picture also while it doesn't play (e.g. its first frame), unless the master hid it
+  public videoHidden = false;
   public fullscreen = false;
   // set when the browser refused to play with sound because nobody has interacted with the page yet
   public soundBlocked = false;
@@ -35,14 +38,20 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
         this.fullscreen = !!packet.mediaQuestionState.fullscreen;
         this.slideIndex = packet.mediaQuestionState.slideIndex ?? 0;
         this.preloadNextSlide();
-        switch (packet.mediaQuestionState.mediaState) {
+        const mediaState = packet.mediaQuestionState.mediaState;
+        this.videoHidden = mediaState === EMediaStates.HIDDEN || mediaState === EMediaStates.NO_MEDIA;
+        switch (mediaState) {
           // this component is reused when the next question also has media, so hide whatever was shown before
           // PAUSED hides the media too (the master's button hides an image with it, and questions may start with it); a
           // paused video keeps showing its picture though
           case EMediaStates.NO_MEDIA:
-          case EMediaStates.HIDDEN:
           case EMediaStates.PAUSED:
             this.pausePlayback();
+            break;
+          case EMediaStates.HIDDEN:
+            // hiding stops it: shown again, it shows its first frame and plays from the start
+            this.pausePlayback();
+            this.rewind();
             break;
           case EMediaStates.PLAYING:
             this.startPlayback();
@@ -57,9 +66,7 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
               break;
             }
             this.pausePlayback();
-            if (this.api && this.api.getDefaultMedia()) {
-              this.api.getDefaultMedia().currentTime = 0;
-            }
+            this.rewind();
             break;
         }
       }
@@ -165,6 +172,30 @@ export class MediaQuestionComponent implements OnInit, OnDestroy {
     }
     this.mediaVisible = true;
 
+  }
+
+  private rewind(): void {
+    if (this.api && this.api.getDefaultMedia()) {
+      this.api.getDefaultMedia().currentTime = 0;
+    }
+  }
+
+  /**
+   * Whether the screens hold the place of media the master hasn't shown yet (or hid again); audio always shows its note
+   */
+  public isHidden(): boolean {
+    if (this.isVideo()) {
+      return this.videoHidden;
+    }
+    return (this.isImage() || this.isSlideshow()) && !this.mediaVisible;
+  }
+
+  public getHiddenIcon(): string {
+    return MediaKindHelper.getIcon(this.media);
+  }
+
+  public getHiddenLabel(): string {
+    return MediaKindHelper.getName(this.media);
   }
 
   public getExtension(path: string): string {
