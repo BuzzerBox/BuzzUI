@@ -52,4 +52,13 @@ export enum EPacketTypes {
      * Sent from the master to give a wireless buzzer plugged in over USB the box's WiFi, see IAdoptUsbBuzzerPacket
      */
     ADOPT_USB_BUZZER,
+    /**
+     * Sent to the server by any device, e.g. the start page, which isn't the master or a screen; the server answers
+     * with GAME_INFO
+     */
+    REQUEST_GAME_INFO,
+    /**
+     * Sent from the server in answer to REQUEST_GAME_INFO, see IGameInfoPacket
+     */
+    GAME_INFO,
 }

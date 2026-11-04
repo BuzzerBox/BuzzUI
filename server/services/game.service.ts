@@ -35,6 +35,7 @@ import {
     IStartGamePacket,
     IStorageAccessPacket,
     IMasterTakenOverPacket,
+    IGameInfoPacket,
     IAutosaveInfoPacket,
     IAvailableBuzzersPacket,
     IUsbBuzzersPacket,
@@ -160,7 +161,7 @@ export class GameService {
             try {
                 this.onPacket(con, sub, packet);
                 // most packets change the game; the autosave only writes once things calm down
-                if (this.isGameSetUp()) {
+                if (this.isGameSetUp() && packet.packetType !== EPacketTypes.REQUEST_GAME_INFO) {
                     AutosaveService.get().changed();
                 }
             } catch (e) {
@@ -177,6 +178,9 @@ export class GameService {
             this.onRegisterScreenPacket(con, sub, packet as IRegisterScreenPacket);
         } else  if (packet.packetType === EPacketTypes.KEYPRESS_ON_SCREEN) {
             this.onKeypressOnScreenPacket(packet as IKeypressOnScreenPacket);
+        } else if (packet.packetType === EPacketTypes.REQUEST_GAME_INFO) {
+            // anyone may ask, e.g. the start page before it is the master or a screen
+            con.send<IGameInfoPacket>({packetType: EPacketTypes.GAME_INFO, isGameRunning: this.isGameRunning()});
         } else if (packet.packetType === EPacketTypes.UPDATE_MEDIA_STATE) {
             // screens send this as well, when the media they play has ended
             this.onUpdateMediaStatePacket(packet as IUpdateMediaStatePacket);

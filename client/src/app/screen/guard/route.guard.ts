@@ -16,7 +16,15 @@ export class RouteGuard  {
     const currentPath = path[path.length - 1].path;
     switch (currentPath) {
       case pathsScreen.main:
-        return this.handleMainRoute();
+        // the screen shows the game from now on, also when it loads again
+        this.game.useAsGameScreen();
+        return this.handleGameRoute();
+      case pathsScreen.team:
+        // the points of a team from now on, see TeamComponent
+        if (!this.game.isTeamScreen()) {
+          this.game.useAsTeamScreen(null);
+        }
+        return this.handleGameRoute();
       case pathsScreen.connect:
         return this.handleConnectRoute();
       default:
@@ -28,11 +36,14 @@ export class RouteGuard  {
     if (!this.game.dataAvailable()) {
       return true;
     } else {
-      return this.redirect(pathsScreen.main);
+      return this.router.createUrlTree([this.game.getScreenStartPath()]);
     }
   }
 
-  private handleMainRoute(): boolean | UrlTree {
+  /**
+   * The pages of the game need it, so they wait for it on the connect page; the game takes the screen back to them
+   */
+  private handleGameRoute(): boolean | UrlTree {
     if (this.game.dataAvailable()) {
       return true;
     } else {

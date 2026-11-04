@@ -1,0 +1,110 @@
+/* everything scales with the screen, as on the screens of the game: --u is 1% of its height, or less if it is narrow */
+.team-screen {
+  --u: min(1vh, 0.75vw);
+  position: relative;
+  height: 100vh;
+  box-sizing: border-box;
+  /* room for the card to grow a little while its team holds the buzzer lock */
+  padding: calc(var(--u) * 3);
+  overflow: hidden;
+}
+
+/* the "show" themes (see screen-themes.ts): their background, as on the screens of the game */
+.team-screen.show {
+  background: var(--bb-bg);
+  color: var(--bb-text);
+}
+
+/* the card fills the screen; it scales its text with its own size */
+.card {
+  height: 100%;
+}
+
+/* out of the way, until someone moves the mouse over the screen or taps it */
+.change-team {
+  position: absolute;
+  top: calc(var(--u) * 2);
+  left: calc(var(--u) * 2);
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.team-screen:hover .change-team,
+.change-team:focus-visible {
+  opacity: 0.7;
+}
+
+.show .change-team {
+  color: var(--bb-text-muted);
+}
+
+/* the choice of the team */
+.choose {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 4);
+  height: 100%;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: max(20px, calc(var(--u) * 5));
+  font-weight: 400;
+}
+
+.show .title {
+  font-family: var(--bb-display-font);
+  font-weight: 500;
+}
+
+.hint {
+  margin: 0;
+  font-size: max(14px, calc(var(--u) * 2.6));
+  opacity: 0.75;
+}
+
+.teams {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 2);
+  max-width: calc(var(--u) * 160);
+}
+
+/* in the team's color, as on the screens of the game */
+.team {
+  min-width: max(120px, calc(var(--u) * 28));
+  padding: calc(var(--u) * 2.4) calc(var(--u) * 4);
+  border: none;
+  border-radius: calc(var(--u) * 2);
+  background: var(--team-color);
+  color: var(--team-on-color);
+  font: inherit;
+  font-size: max(16px, calc(var(--u) * 4));
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  box-shadow: 0 calc(var(--u) * 0.4) calc(var(--u) * 1.6) rgba(0, 0, 0, 0.25);
+  transition: transform 150ms ease-out;
+}
+
+.team:hover,
+.team:focus-visible {
+  transform: scale(1.05);
+}
+
+.show .team {
+  font-family: var(--bb-display-font);
+}
+
+.game-screen {
+  font-size: max(14px, calc(var(--u) * 2.2));
+}
+
+.show .game-screen {
+  color: var(--bb-text-muted);
+}

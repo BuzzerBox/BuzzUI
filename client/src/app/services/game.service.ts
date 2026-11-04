@@ -44,6 +44,7 @@ import {
   IUsbBuzzer,
   IUsbBuzzersPacket,
   IAdoptUsbBuzzerPacket,
+  IGameInfoPacket,
   BuzzerHelper,
   PacketHelper,
   IScoring,
@@ -77,6 +78,18 @@ const MASTER_RETRY_DELAY_MS = 3000;
 const MASTER_RETRY_MAX_DELAY_MS = 15000;
 // where the browser keeps the ID that tells the server it is the same device, see IRegisterMasterPacket.masterId
 const MASTER_ID_STORAGE_KEY = 'buzzerbox-master-id';
+// where a screen keeps whether it shows the points of one team, see setScreenTeam(); per window, as a device may show
+// several screens
+const SCREEN_TEAM_STORAGE_KEY = 'buzzerbox-screen-team';
+
+/**
+ * The team a points screen shows. Buzzer IDs (and so team IDs) are new after a restart of the server, so the name finds
+ * the team again then.
+ */
+export interface IScreenTeam {
+  teamId: string;
+  name: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -114,6 +127,7 @@ export class GameService implements OnDestroy {
   private availableBuzzersSubject = new Subject<IBuzzer[]>();
   // the wireless buzzers plugged into the box over USB
   private usbBuzzersSubject = new BehaviorSubject<IUsbBuzzer[]>([]);
+  private gameInfoSubject = new Subject<IGameInfoPacket>();
   private masterRejection: IMasterRejection | null = null;
   private masterRetryTimer: ReturnType<typeof setTimeout> | null = null;
   // refusals since the last time the user asked to try again, which the wait before the next try depends on
@@ -329,6 +343,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.AVAILABLE_BUZZERS:
         this.setAvailableBuzzers((message as IAvailableBuzzersPacket).availableBuzzers);
+        break;
+      case EPacketTypes.GAME_INFO:
+        this.gameInfoSubject.next(message as IGameInfoPacket);
         break;
       case EPacketTypes.USB_BUZZERS:
         this.usbBuzzersSubject.next((message as IUsbBuzzersPacket).buzzers ?? []);
@@ -745,7 +762,7 @@ export class GameService implements OnDestroy {
       }
       this.mediaVolumeSubject.next(packet.gameState?.mediaVolume ?? PacketHelper.getDefaultMediaVolume());
       this.isScreenDataAvailable = true;
-      this.redirect(baseUrlScreen + pathsScreen.main);
+      this.redirect(this.getScreenStartPath());
     }
   }
 
@@ -760,6 +777,84 @@ export class GameService implements OnDestroy {
       packetType: EPacketTypes.RESET_SERVER,
       discardState: discardState || undefined
     });
+  }
+
+  /**
+   * Asks the server whether a game runs, without becoming the master or a screen; see observeGameInfo()
+   */
+  public requestGameInfo(): void {
+    this.webSocketService.send<IGamePacket>({packetType: EPacketTypes.REQUEST_GAME_INFO});
+  }
+
+  public observeGameInfo(): Observable<IGameInfoPacket> {
+    return this.gameInfoSubject.asObservable();
+  }
+
+  /**
+   * Whether this screen shows the points of one team instead of the game; remembered for when it loads again, which it
+   * does after a lost connection or a reset of the game
+   */
+  public isTeamScreen(): boolean {
+    return this.readScreenTeamStorage() != null;
+  }
+
+  /**
+   * The team this screen shows, null while the user hasn't chosen one yet
+   */
+  public getScreenTeam(): IScreenTeam | null {
+    return this.readScreenTeamStorage()?.team ?? null;
+  }
+
+  /**
+   * Shows the points of a team on this screen, or the choice of one if it is null
+   */
+  public useAsTeamScreen(team: IScreenTeam | null): void {
+    this.writeScreenTeamStorage({team});
+  }
+
+  /**
+   * Shows the game on this screen, not the points of one team
+   */
+  public useAsGameScreen(): void {
+    this.writeScreenTeamStorage(null);
+  }
+
+  private readScreenTeamStorage(): {team: IScreenTeam | null} | null {
+    try {
+      return JSON.parse(sessionStorage.getItem(SCREEN_TEAM_STORAGE_KEY) ?? 'null');
+    } catch {
+      return null;
+    }
+  }
+
+  private writeScreenTeamStorage(value: {team: IScreenTeam | null} | null): void {
+    try {
+      if (value == null) {
+        sessionStorage.removeItem(SCREEN_TEAM_STORAGE_KEY);
+      } else {
+        sessionStorage.setItem(SCREEN_TEAM_STORAGE_KEY, JSON.stringify(value));
+      }
+    } catch {
+      // the browser may not allow storage (e.g. in a private window); the screen then forgets it when it loads again
+    }
+  }
+
+  /**
+   * The team of the screen in the game: by ID, or by name after a restart of the server
+   */
+  public findScreenTeam(): ITeam | null {
+    const screenTeam = this.getScreenTeam();
+    if (screenTeam == null) {
+      return null;
+    }
+    return this.findTeam(screenTeam.teamId) ?? this.teams.find(team => team.name === screenTeam.name) ?? null;
+  }
+
+  /**
+   * Where a screen goes once it has the game
+   */
+  public getScreenStartPath(): string {
+    return baseUrlScreen + (this.isTeamScreen() ? pathsScreen.team : pathsScreen.main);
   }
 
   private isUsedAsScreen(): boolean {

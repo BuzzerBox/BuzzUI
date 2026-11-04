@@ -26,6 +26,18 @@
         </span>
       </span>
     </a>
+    @if (isGameRunning) {
+      <a mat-raised-button class="role" routerLink="/screen/team">
+        <span class="role-body">
+          <mat-icon class="role-icon">scoreboard</mat-icon>
+          <span class="role-title">Teamanzeige</span>
+          <span class="role-text">
+            Für einen Bildschirm vor einem Team, bei größeren Quizshows: zeigt nur den Namen und die Punkte eines Teams
+            und leuchtet auf, wenn es gebuzzert hat. Gibt es nur, während ein Spiel läuft.
+          </span>
+        </span>
+      </a>
+    }
     @if (isDevBoardAvailable) {
       <a mat-raised-button class="role" routerLink="/dev-board">
         <span class="role-body">
@@ -60,6 +72,13 @@
               <strong>Mehrere Fenster, ein Gerät:</strong> Ein Notebook kann gleichzeitig Spielleitung und Anzeige sein.
               Öffne dazu ein zweites Browserfenster, wähle dort „Anzeige“ und schiebe es auf den Beamer oder Fernseher
               (am besten im Vollbild mit F11). So bekommst du auch mehrere Anzeigen an einem Gerät, eine pro Fenster.
+            </span>
+          </p>
+          <p class="tip">
+            <mat-icon>scoreboard</mat-icon>
+            <span>
+              <strong>Eine Anzeige pro Team:</strong> Bei größeren Quizshows kann jedes Team einen eigenen Bildschirm mit
+              seinem Punktestand bekommen. Sobald das Spiel läuft, wählst du dort „Teamanzeige“ und dann das Team.
             </span>
           </p>
         </div>

@@ -4,11 +4,13 @@ import {pathsScreen} from './paths-screen';
 import {MainComponent} from './main/main.component';
 import {ConnectComponent} from './connect/connect.component';
 import {RouteGuard} from './guard/route.guard';
+import {TeamComponent} from './team/team.component';
 
 const routes: Routes = [
   { path: pathsScreen.root, redirectTo: pathsScreen.main, pathMatch: 'full'},
   { path: pathsScreen.main, component: MainComponent, canActivate: [RouteGuard]},
-  { path: pathsScreen.connect, component: ConnectComponent, canActivate: [RouteGuard]}
+  { path: pathsScreen.connect, component: ConnectComponent, canActivate: [RouteGuard]},
+  { path: pathsScreen.team, component: TeamComponent, canActivate: [RouteGuard]}
 ];
 
 @NgModule({

@@ -1,0 +1,28 @@
+<div class="team-screen" [class.show]="isShowStyle">
+  @if (team) {
+    <!-- a new card for another team, so it starts from that team's points and marking -->
+    @for (t of [team]; track t.teamId) {
+      <app-team-card class="card" [team]="t"></app-team-card>
+    }
+    <button mat-icon-button class="change-team" (click)="changeTeam()" title="Anderes Team wählen"
+            aria-label="Anderes Team wählen">
+      <mat-icon>swap_horiz</mat-icon>
+    </button>
+  } @else {
+    <div class="choose">
+      <h1 class="title">Welches Team sitzt vor dieser Anzeige?</h1>
+      @if (missingTeamName) {
+        <p class="hint">„{{missingTeamName}}“ spielt nicht mehr mit.</p>
+      }
+      <div class="teams">
+        @for (t of getTeams(); track t.teamId) {
+          <button class="team" [style.--team-color]="getColor(t)" [style.--team-on-color]="getTextColor(t)"
+                  (click)="chooseTeam(t)">{{t.name}}</button>
+        }
+      </div>
+      <a mat-button class="game-screen" routerLink="/screen/main">
+        <mat-icon>tv</mat-icon> Stattdessen das ganze Spiel zeigen
+      </a>
+    </div>
+  }
+</div>

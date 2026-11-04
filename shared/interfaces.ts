@@ -45,6 +45,7 @@ import {IAvailableBuzzersPacket} from './interfaces/IAvailableBuzzersPacket';
 import {IUsbBuzzer, TUsbBuzzerState, TUsbBuzzerError} from './interfaces/IUsbBuzzer';
 import {IUsbBuzzersPacket} from './interfaces/IUsbBuzzersPacket';
 import {IAdoptUsbBuzzerPacket} from './interfaces/IAdoptUsbBuzzerPacket';
+import {IGameInfoPacket} from './interfaces/IGameInfoPacket';
 import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
 
 export {
@@ -110,6 +111,7 @@ export {
 	TUsbBuzzerError,
 	IUsbBuzzersPacket,
 	IAdoptUsbBuzzerPacket,
+	IGameInfoPacket,
 	ICaseColor,
 	IStorageEntry,
 	IStorageFolder
