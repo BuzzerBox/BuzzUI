@@ -1,4 +1,5 @@
 import { SerialPort } from 'serialport';
+import {BoxSettingsService} from './box-settings.service';
 import {ConfigService} from './config.service';
 import {LoggerService} from './logger.service';
 import {Buffer} from 'buffer';
@@ -21,6 +22,10 @@ export class SerialPortService {
         if (!ConfigService.get().serial.enabled) {
             // e.g. in the test environment, where buzzers come from browser keypresses only
             LoggerService.warn('Serial port is disabled in the config');
+            return;
+        }
+        if (!BoxSettingsService.get().hasAnalogBuzzers()) {
+            // there is no microcontroller for them on the port
             return;
         }
         this.serialPortConnection = new SerialPort({

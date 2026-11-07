@@ -9,11 +9,16 @@ describe('PrepareGameComponent', () => {
   let buzzers: IBuzzer[];
   let buzzersSubject: Subject<IBuzzer[]>;
   let component: PrepareGameComponent;
+  // ANALOG_BUZZERS of the box
+  let analogBuzzers: boolean;
+
+  beforeEach(() => analogBuzzers = true);
 
   const create = (state: IGameInstanceState = null) => {
     buzzersSubject = new Subject<IBuzzer[]>();
     const game = {
       useAsMaster: () => undefined,
+      hasAnalogBuzzers: () => analogBuzzers,
       getAvailableBuzzers: () => buzzers,
       observeAvailableBuzzers: () => buzzersSubject.asObservable(),
       // the teams' buzzers are found by ID here, which is enough for these tests
@@ -152,6 +157,26 @@ describe('PrepareGameComponent', () => {
     component.teamsFormGroup.get(component.rows[2].controlName).setValue('Die Füchse');
     changeBuzzers([box('b0'), {...udp('01'), color: '#fb8c00'}, {...udp('02'), color: '#fdd835'}, {...udp('03'), color: '#fdd835'}]);
     expect(names()).toEqual(['Orange', 'Gelb', 'Die Füchse']);
+  });
+
+  it('offers only the wireless buzzers on a box without analog ones, also before one is online', () => {
+    analogBuzzers = false;
+    buzzers = [];
+    create();
+    expect(component.canChooseBuzzerType()).toBeFalse();
+    expect(component.buzzerType).toBe('udp');
+    expect(rowIds()).toEqual([]);
+    changeBuzzers([udp('01'), udp('02')]);
+    expect(component.canChooseBuzzerType()).toBeFalse();
+    expect(rowIds()).toEqual(['udp:01', 'udp:02']);
+  });
+
+  it('drops the teams of a game played with analog buzzers on a box without them', () => {
+    analogBuzzers = false;
+    buzzers = [udp('01')];
+    create({teams: [{name: 'A', buzzerId: 'b0', teamId: 'b0', buzzerIndex: 0, points: 3}]} as IGameInstanceState);
+    expect(component.buzzerType).toBe('udp');
+    expect(component.dropsSavedTeams()).toBeTrue();
   });
 
   it('keeps the names of a continued game', () => {

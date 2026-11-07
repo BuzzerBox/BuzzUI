@@ -63,6 +63,7 @@ import {UpdateService} from './update.service';
 import {StorageService} from './storage.service';
 import {AutosaveService} from './autosave.service';
 import {ClockService} from './clock.service';
+import {BoxSettingsService} from './box-settings.service';
 
 enum LOOKUP_TEAM_CODE {
     BY_KEYPRESS,
@@ -269,6 +270,10 @@ export class GameService {
     }
 
     private getBuzzerConfig(): IBuzzer[] {
+        if (this.buzzerConfig == null && !BoxSettingsService.get().hasAnalogBuzzers()) {
+            // only the wireless buzzers, see BoxSettingsService
+            this.buzzerConfig = [];
+        }
         if (this.buzzerConfig == null) {
             this.buzzerConfig = [];
             // check if no key was used more than once
@@ -306,6 +311,14 @@ export class GameService {
      */
     private getAvailableBuzzers(): IBuzzer[] {
         return [...this.getBuzzerConfig(), ...UdpBuzzerService.get().getBuzzers()];
+    }
+
+    private sendPresetupAvailableInfo(): void {
+        this.sendToMaster<IPresetupAvailableInfoPacket>({
+            packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
+            availableBuzzers: this.getAvailableBuzzers(),
+            analogBuzzers: BoxSettingsService.get().hasAnalogBuzzers()
+        });
     }
 
     private onSetupGamePackage(packet: ISetupPacket): void {
@@ -359,10 +372,7 @@ export class GameService {
             // the master sent this twice, e.g. once more after a reconnect; refusing would close its own connection
             this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
             if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_SETUP) {
-                this.sendToMaster<IPresetupAvailableInfoPacket>({
-                    packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-                    availableBuzzers: this.getAvailableBuzzers()
-                });
+                this.sendPresetupAvailableInfo();
             }
             return;
         }
@@ -382,10 +392,7 @@ export class GameService {
             if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_MASTER) {
                 this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, true));
                 this.setNewState(EGameStates.WAITING_FOR_SETUP);
-                this.sendToMaster<IPresetupAvailableInfoPacket>({
-                    packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-                    availableBuzzers: this.getAvailableBuzzers()
-                })
+                this.sendPresetupAvailableInfo();
             } else if (this.currentStateInAutomaton === EGameStates.LOST_MASTER) {
                 if (this.previousStateInAutomaton === EGameStates.WAITING_FOR_START || this.previousStateInAutomaton === EGameStates.PLAYING) {
                     // a master leaving again before restarting keeps resuming the running game
@@ -720,10 +727,7 @@ export class GameService {
 
     private onResetServerPacket(packet: IResetServerPacket): void {
         this.setNewState(EGameStates.WAITING_FOR_SETUP);
-        this.sendToMaster<IPresetupAvailableInfoPacket>({
-            packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
-            availableBuzzers: this.getAvailableBuzzers()
-        });
+        this.sendPresetupAvailableInfo();
         this.sendToAllScreens(packet);
         if (packet.discardState) {
             AutosaveService.get().discard();

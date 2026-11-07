@@ -86,6 +86,7 @@
       "setBuzzer": "2"
     }
   },
+  "boxSettingsFile": "/etc/buzzerbox/box.conf",
   "serial": {
     "baudRate": 115200,
     "enabled": true,

@@ -146,7 +146,11 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
   private initTeams(): void {
     // a continued game is played with the buzzers it was played with, also when they haven't turned up yet
     const savedTeam = this.state?.teams?.[0];
-    if (savedTeam != null) {
+    if (!this.game.hasAnalogBuzzers()) {
+      // a box without analog buzzers has the wireless ones only; a game played with analog ones loses its teams
+      this.buzzerType = 'udp';
+      this.buzzerTypeFixed = true;
+    } else if (savedTeam != null) {
       this.buzzerType = BuzzerHelper.getType(savedTeam.buzzerId);
       this.buzzerTypeFixed = true;
     }
@@ -155,9 +159,13 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Whether the master can choose the wireless buzzers: once one was found, or for a game that was played with them
+   * Whether the master can choose the wireless buzzers: once one was found, or for a game that was played with them;
+   * never on a box without analog buzzers, which has nothing else to choose
    */
   public canChooseBuzzerType(): boolean {
+    if (!this.game.hasAnalogBuzzers()) {
+      return false;
+    }
     return this.buzzerType === 'udp' || this.game.getAvailableBuzzers().some(buzzer => BuzzerHelper.isUdpBuzzerId(buzzer.id));
   }
 

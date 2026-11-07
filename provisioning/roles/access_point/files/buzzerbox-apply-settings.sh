@@ -1,7 +1,7 @@
 #!/bin/bash
 # Applies the per-box settings from buzzerbox.txt on the boot partition: the WiFi access point of NetworkManager, its
 # counterpart on Ethernet (for a notebook on a cable, without a router), the names the box answers to in both, the WiFi
-# country, the WiFi antenna and the WiFi the wireless buzzers are given.
+# country, the WiFi antenna, the WiFi the wireless buzzers are given and whether the box has analog buzzers.
 # buzzerbox-settings.service runs it on every boot, before NetworkManager starts, with --boot: only then does it restart
 # the box for a changed antenna. Values that are missing or invalid fall back to the defaults in
 # /etc/buzzerbox/settings.defaults, which the setup wrote (provisioning/group_vars/all.yml). Files are only written when
@@ -24,6 +24,8 @@ DNSMASQ_FILE="/etc/NetworkManager/dnsmasq-shared.d/buzzerbox.conf"
 # not in dnsmasq-shared.d, where every file is read as configuration
 HOSTS_FILE="/etc/buzzerbox/hosts"
 WIRELESS_BUZZERS_FILE="/etc/buzzerbox/wireless-buzzers.conf"
+# boxSettingsFile in config.json
+BOX_SETTINGS_FILE="/etc/buzzerbox/box.conf"
 # fixed, so that the connection files stay the same as long as the settings do
 CONNECTION_UUID="6f1d6a52-8c3b-4a51-9a2e-1b8e0c5d2b77"
 ETHERNET_CONNECTION_UUID="0b6c3f0e-5d7a-4e21-8f4b-3c9a2d1e7f58"
@@ -85,6 +87,7 @@ isValid() {
     WIFI_COUNTRY_CODE) [[ "${value}" =~ ^[A-Za-z]{2}$ ]] ;;
     WIFI_CHANNEL) [[ "${value}" =~ ^([1-9]|1[0-3])$ ]] ;;
     WIFI_ANTENNA) [[ "${value,,}" =~ ^(internal|external)$ ]] ;;
+    ANALOG_BUZZERS) [[ "${value,,}" =~ ^(yes|no)$ ]] ;;
     SERVER_IP_ADDRESS|ETHERNET_IP_ADDRESS)
       [[ "${value}" =~ ^${octet}\.${octet}\.${octet}\.${octet}$ ]] || return 1
       local last="${value##*.}"
@@ -188,6 +191,11 @@ printf 'addn-hosts=%s\nlocalise-queries\n' "${HOSTS_FILE}" | writeIfChanged "${D
 printf 'WIFI_SSID=%s\nWIFI_PASSPHRASE=%s\nSERVER_IP_ADDRESS=%s\n' "${settings[WIFI_SSID]}" "${settings[WIFI_PASSPHRASE]}" "${IP}" \
   | writeIfChanged "${WIRELESS_BUZZERS_FILE}" 640 || true
 chgrp dialout "${WIRELESS_BUZZERS_FILE}"
+
+# The game server's settings of this box (BoxSettingsService), which it reads when it starts. Defaults from before
+# ANALOG_BUZZERS don't have it: such a box has its analog buzzers, as before.
+ANALOG_BUZZERS="${settings[ANALOG_BUZZERS]:-yes}"
+printf 'ANALOG_BUZZERS=%s\n' "${ANALOG_BUZZERS,,}" | writeIfChanged "${BOX_SETTINGS_FILE}" 644 || true
 
 # The box itself needs the hostnames too: the master stores media as full URLs on the host it was opened under (e.g.
 # http://buzzer.box:4202/media/...), and the kiosk loads them. The box doesn't ask that dnsmasq, so they go into
