@@ -14,6 +14,14 @@ log() {
   echo "buzzerbox-kiosk: $*" >&2
 }
 
+# Whether the sway of this session still runs. Stopping or restarting buzzerbox-kiosk.service ends sway, but not this
+# script: logind keeps the session's processes in its own scope, outside the service. Without this check, the loops
+# below would start their programs into the next session's sway, where they can't be placed (SWAYSOCK still names the
+# old sway's socket), so a stray screen covered the master on the touch display.
+isSwayRunning() {
+  swaymsg -t get_version > /dev/null 2>&1
+}
+
 # written by buzzerbox-apply-settings from buzzerbox.txt, which anyone can edit, so it is read rather than sourced
 if [ -f "${KIOSK_FILE}" ]; then
   while IFS='=' read -r key value; do
@@ -62,8 +70,12 @@ runBrowser() {
     pid=$!
     swaymsg "assign [pid=${pid}] workspace ${name}" > /dev/null
     wait "${pid}"
-    log "The browser of the ${name} exited, starting it again"
     sleep 2
+    if ! isSwayRunning; then
+      log "The browser of the ${name} exited, and sway is gone: not starting it again"
+      return 0
+    fi
+    log "The browser of the ${name} exited, starting it again"
   done
 }
 
@@ -86,8 +98,12 @@ if [ -n "${TOUCH_OUTPUT}" ]; then
   # display, and the master's window gets smaller, so that the field stays visible.
   while true; do
     squeekboard
-    log "The on-screen keyboard exited, starting it again"
     sleep 2
+    if ! isSwayRunning; then
+      log "The on-screen keyboard exited, and sway is gone: not starting it again"
+      break
+    fi
+    log "The on-screen keyboard exited, starting it again"
   done &
 
   # Under the hostname, not localhost: the master stores media as full URLs on the host it was opened under, which
