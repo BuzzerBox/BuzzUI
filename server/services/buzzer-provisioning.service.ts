@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import {execFile} from 'child_process';
 import {ReadlineParser, SerialPort} from 'serialport';
 import {BuzzerHelper, IUsbBuzzer, TUsbBuzzerError} from '../../shared/shared';
+import {BoxSettingsService} from './box-settings.service';
 import {ConfigService} from './config.service';
 import {LoggerService} from './logger.service';
 import {UdpBuzzerService} from './udp-buzzer.service';
@@ -334,13 +335,7 @@ export class BuzzerProvisioningService {
             }
             return null;
         }
-        const settings = new Map<string, string>();
-        for (const line of content.split(/\r?\n/)) {
-            const index = line.indexOf('=');
-            if (index > 0 && !line.trim().startsWith('#')) {
-                settings.set(line.slice(0, index).trim(), line.slice(index + 1).trim());
-            }
-        }
+        const settings = BoxSettingsService.parse(content);
         const wifi: IWifiSettings = {
             ssid: settings.get('WIFI_SSID'),
             passphrase: settings.get('WIFI_PASSPHRASE'),

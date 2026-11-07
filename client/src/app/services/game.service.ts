@@ -91,6 +91,8 @@ export class GameService implements OnDestroy {
   private questions: IQuestion[];
   private currentGameState: IGameState;
   private presetupData: IPresetupAvailableInfoPacket;
+  // see hasAnalogBuzzers()
+  private analogBuzzers = true;
   private initedAsMaster = false;
   private initedAsScreen = false;
   private screenId: string = null;
@@ -347,6 +349,8 @@ export class GameService implements OnDestroy {
 
   private handlePresetupAvailableInfo(packet: IPresetupAvailableInfoPacket): void {
     // only accept this packet when the master was just accepted, hence no game is really started yet
+    // older servers don't say, and always had them
+    this.analogBuzzers = packet.analogBuzzers !== false;
     if (this.currentGameStateInAutomaton === EGameStatesMaster.MASTER_ACCEPTED) {
       this.setNewGameState(EGameStatesMaster.RECEIVED_PRESETUP_DATA);
       this.setAvailableBuzzers(packet.availableBuzzers);
@@ -797,6 +801,14 @@ export class GameService implements OnDestroy {
    */
   public getAvailableBuzzers(): IBuzzer[] {
     return this.presetupData?.availableBuzzers ?? [];
+  }
+
+  /**
+   * Whether the box has analog buzzers; one without them (ANALOG_BUZZERS=no in its buzzerbox.txt) only has the wireless
+   * ones, and the master doesn't offer the others
+   */
+  public hasAnalogBuzzers(): boolean {
+    return this.analogBuzzers;
   }
 
   /**

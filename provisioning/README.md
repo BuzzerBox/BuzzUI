@@ -79,6 +79,7 @@ WIFI_PASSPHRASE=12TheBuzzerBox_IncredibleNetwork34
 WIFI_COUNTRY_CODE=DE
 WIFI_CHANNEL=8
 WIFI_ANTENNA=internal
+ANALOG_BUZZERS=yes
 SERVER_IP_ADDRESS=10.0.0.5
 ETHERNET_IP_ADDRESS=10.0.1.5
 SERVER_HOSTNAMES=buzzer.box buzzerbox.local
@@ -97,6 +98,11 @@ box would hand out addresses in it.
 `WIFI_ANTENNA=external` switches a CM4 to the antenna on its U.FL connector (`dtparam=ant2` in `config.txt`). The
 firmware only reads `config.txt` at boot, so when the setting changes, the box restarts once by itself. A Raspberry Pi 4
 has no antenna connector and ignores the setting.
+
+`ANALOG_BUZZERS=no` is for a box without buzzer ports, like the compact one with a touch display. The game server then
+lists none of the box's buzzers and leaves the serial port alone, and the master offers only the wireless buzzers. The
+script writes the setting to `/etc/buzzerbox/box.conf` (`boxSettingsFile` in `config.json`), which the server reads when
+it starts. A box whose settings defaults are older than the setting ignores it and keeps its analog buzzers.
 
 ### SSH access
 
