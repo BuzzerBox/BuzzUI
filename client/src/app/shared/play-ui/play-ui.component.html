@@ -1,12 +1,12 @@
-<div class="play-container" [class.below-toolbar]="isMaster">
+<div class="play-container" [class.below-toolbar]="isMaster" [class.one-team-column]="hasOneTeamColumn()">
   @if (!isGameOver) {
-    <div class="teams-left-pane">
-      @for (team of getTeams(); track team; let even = $even) {
-        @if (even) {
+    @if (!hasOneTeamColumn()) {
+      <div class="teams-left-pane">
+        @for (team of getLeftTeams(); track team) {
           <app-team-card [team]="team" [isMaster]="isMaster"></app-team-card>
         }
-      }
-    </div>
+      </div>
+    }
     <div class="questions-pane">
       @if (buzzBanner; as banner) {
         <!-- one element per buzz, so its animation starts again -->
@@ -43,10 +43,8 @@
       </div>
     </div>
     <div class="teams-right-pane">
-      @for (team of getTeams(); track team; let odd = $odd) {
-        @if (odd) {
-          <app-team-card [team]="team" [isMaster]="isMaster"></app-team-card>
-        }
+      @for (team of getRightTeams(); track team) {
+        <app-team-card [team]="team" [isMaster]="isMaster"></app-team-card>
       }
     </div>
   }

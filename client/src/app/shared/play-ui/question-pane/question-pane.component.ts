@@ -11,6 +11,7 @@ import {
   IAnswerSetStatePacket,
   IGradeAnswerPacket,
   IMarkTeamPacket,
+  IMediaDetails,
   IMediaQuestionState,
   IQuestion,
   PacketHelper
@@ -166,11 +167,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
    * What the question is worth, e.g. "3 Punkte"; only shown if some question in the game is not worth the default 1
    */
   public getPointsLabel(): string | null {
-    if (!this.game.hasCustomQuestionPoints()) {
-      return null;
-    }
-    const points = GameService.getQuestionPoints(this.question);
-    return points === 1 ? '1 Punkt' : `${points} Punkte`;
+    return this.game.getQuestionPointsLabel(this.question);
   }
 
   public getQuestionText(): string {
@@ -202,27 +199,55 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.game.changeMediaState({answerState: this.showAnswers ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
   }
 
-  public getQuestionVisibilityLabel(): string {
-    return this.getVisibilityLabel(this.showQuestion, this.questionState);
+  public getQuestionVisibilityNote(): string {
+    return QuestionPaneComponent.getVisibilityNote(this.showQuestion, this.questionState, this.question?.mediaDetails, this.canToggleQuestion());
   }
 
-  public getAnswersVisibilityLabel(): string {
-    return this.getVisibilityLabel(this.showAnswers, this.answerState);
+  public getAnswersVisibilityNote(): string {
+    return QuestionPaneComponent.getVisibilityNote(this.showAnswers, this.answerState, this.question?.mediaDetails, this.canToggleAnswers());
   }
 
-  // the pane's title says that it is about the screens
-  private getVisibilityLabel(visible: boolean, state: EQuestionAnswerStates): string {
-    if (visible) {
-      return 'sichtbar';
+  public getQuestionVisibilityTitle(): string {
+    return QuestionPaneComponent.getVisibilityTitle('Frage', this.showQuestion, this.questionState, this.question?.mediaDetails);
+  }
+
+  public getAnswersVisibilityTitle(): string {
+    return QuestionPaneComponent.getVisibilityTitle('Antworten', this.showAnswers, this.answerState, this.question?.mediaDetails);
+  }
+
+  /**
+   * What a visibility button says after the part's name, kept short so the buttons fit in one row on small displays.
+   * The icon, its color and the action ("Zeigen"/"Verbergen") already tell whether the part is on the screens, so a
+   * button that toggles only adds when a hidden part appears by itself, e.g. " · nach Video". One that can't toggle
+   * (questions without media) has no action, so it says its state. The pane's title says that it is about the screens.
+   */
+  public static getVisibilityNote(visible: boolean, state: EQuestionAnswerStates, media: IMediaDetails | undefined,
+                                  canToggle: boolean): string {
+    if (!canToggle) {
+      return visible ? ': sichtbar' : ': verborgen';
     }
-    const media = this.question?.mediaDetails;
-    if (state === EQuestionAnswerStates.WAIT_FOR_MEDIA && MediaHelper.hasEnd(media)) {
-      if (MediaHelper.isSlideshow(media)) {
-        return 'verborgen – erscheint nach der Bildserie';
-      }
-      return 'verborgen – erscheint nach dem ' + MediaKindHelper.getName(media);
+    if (QuestionPaneComponent.isWaitingForMedia(visible, state, media)) {
+      return ' · nach ' + MediaKindHelper.getName(media);
     }
-    return 'verborgen';
+    return '';
+  }
+
+  /**
+   * The button's tooltip, with the full sentence that the label leaves out
+   */
+  public static getVisibilityTitle(part: string, visible: boolean, state: EQuestionAnswerStates,
+                                   media: IMediaDetails | undefined): string {
+    const action = `${part} auf der Anzeige ${visible ? 'verbergen' : 'zeigen'}`;
+    if (QuestionPaneComponent.isWaitingForMedia(visible, state, media)) {
+      const article = MediaHelper.isSlideshow(media) ? 'der' : 'dem';
+      const appears = part === 'Antworten' ? 'erscheinen sie' : 'erscheint sie';
+      return `${action}; sonst ${appears} nach ${article} ${MediaKindHelper.getName(media)}`;
+    }
+    return action;
+  }
+
+  private static isWaitingForMedia(visible: boolean, state: EQuestionAnswerStates, media: IMediaDetails | undefined): boolean {
+    return !visible && state === EQuestionAnswerStates.WAIT_FOR_MEDIA && MediaHelper.hasEnd(media);
   }
 
   /**
@@ -242,10 +267,6 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
    */
   public hasMediaVisibility(): boolean {
     return !!this.question?.mediaDetails && !MediaKindHelper.isAudio(this.question.mediaDetails);
-  }
-
-  public getMediaVisibilityLabel(): string {
-    return this.isMediaShown() ? 'sichtbar' : 'verborgen';
   }
 
   public getMediaToggleAction(): string {

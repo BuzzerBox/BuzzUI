@@ -26,6 +26,17 @@
   flex-direction: column;
 }
 
+/* master with up to 4 teams: they are all on the right, and the question takes the rest of the width */
+.one-team-column .questions-pane {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* not right at the edge of the page, where the left teams would be */
+.one-team-column mat-card.question {
+  margin-left: 8px;
+}
+
 /* the question card fills the middle column, so media can use all of its height */
 mat-card.question {
   flex: 1;

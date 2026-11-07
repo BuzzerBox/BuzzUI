@@ -8,6 +8,8 @@
   position: absolute;
   top: 8px;
   right: 8px;
+  /* above the title: Material positions it too, and as it comes later, it would cover the X and take its clicks */
+  z-index: 1;
 }
 
 /* the team's name doesn't run under the X */

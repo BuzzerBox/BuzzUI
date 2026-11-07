@@ -26,6 +26,8 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   @Input() showHomeIcon = false;
   // only on the start page, where no game is set up
   @Input() showResetServer = false;
+  // on the play page: the current question's number and points, see QuestionPaneComponent
+  @Input() showQuestionProgress = false;
   public readonly homeUrl = '/' + baseUrlMaster + pathsMaster.home;
   public autosave: IAutosaveInfoPacket = null;
   private subscription: Subscription;
@@ -83,6 +85,25 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
 
   public isGameOver(): boolean {
     return this.game.getGameState() === EGameStatesMaster.END;
+  }
+
+  /**
+   * While a question is shown, i.e. not before the first one (the welcome) and not after the game
+   */
+  public hasQuestionProgress(): boolean {
+    return !this.isGameOver() && !this.game.isWelcome() && !!this.game.getCurrentQuestion();
+  }
+
+  public getCurrentQuestionNumber(): number {
+    return this.game.getCurrentQuestionNumber() + 1;
+  }
+
+  public getTotalQuestionNumber(): number {
+    return this.game.getQuestions().length;
+  }
+
+  public getPointsLabel(): string | null {
+    return this.game.getQuestionPointsLabel(this.game.getCurrentQuestion());
   }
 
   public endGame(): void {

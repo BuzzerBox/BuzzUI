@@ -31,6 +31,18 @@ mat-card-content {
 }
 
 /*
+ * Master: its boxes keep their height, and the pane scrolls when they don't fit, e.g. on the box's touch display.
+ * Squeezed to the pane's height, they spilled out of it, over the buttons below (play UI), which stay in place.
+ */
+:host(:not(.screen)) {
+  overflow-y: auto;
+}
+
+:host(:not(.screen)) mat-card-content {
+  flex: 1 0 auto;
+}
+
+/*
  * Two columns of answers with 2:1 tiles while there is room. On small screens the grid shrinks to the height that is
  * left, and the answer text scales with it (cqh: 1% of the grid's height). Below its minimum height the question
  * card scrolls instead.

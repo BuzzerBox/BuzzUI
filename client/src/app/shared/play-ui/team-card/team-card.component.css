@@ -6,6 +6,24 @@
   background-color: aqua;
 }
 
+/*
+ * Master: the teams' colors as on the screens (show themes), so the master finds a team at a glance: a stripe on top,
+ * and the team that buzzed filled with its color rather than the classic screens' aqua
+ */
+:host(:not(.screen)) .team-card {
+  border-top: 6px solid var(--team-color);
+}
+
+:host(:not(.screen)) .team-card.marked {
+  background-color: var(--team-color);
+  color: var(--team-on-color);
+}
+
+:host(:not(.screen)) .team-card.marked mat-card-title,
+:host(:not(.screen)) .team-card.marked mat-card-actions button {
+  color: inherit;
+}
+
 /* the name and the points in the middle of the card */
 mat-card-header {
   justify-content: center;
