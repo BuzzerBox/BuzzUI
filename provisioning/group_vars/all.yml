@@ -15,7 +15,8 @@ buzzerbox_update_public_key: "{{ playbook_dir }}/../install/.assets/update-publi
 node_version: "24.21.0"
 node_sha256: "6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2"
 
-# HDMI output that is forced on even without a screen at boot, see roles/base
+# HDMI output that is forced on even without a screen at boot, see roles/base; also the default of SCREEN_MODE in
+# buzzerbox.txt, the mode the game screen gets (roles/access_point/templates/buzzerbox.txt.j2)
 display_mode: "1920x1080@60"
 # hides the kernel messages and the console cursor during boot, so the splash screen stays clean
 quiet_boot: true

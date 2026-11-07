@@ -98,6 +98,7 @@ isValid() {
     SERVER_HOSTNAMES) [[ "${value}" =~ ^[A-Za-z0-9.-]+([[:space:]]+[A-Za-z0-9.-]+)*$ ]] ;;
     TOUCH_DISPLAY) [[ "${value,,}" =~ ^(none|5inch|7inch|10inch)$ ]] ;;
     TOUCH_DISPLAY_ROTATION) [[ "${value}" =~ ^(0|90|180|270)$ ]] ;;
+    SCREEN_MODE) [[ "${value,,}" == auto ]] || [[ "${value}" =~ ^[1-9][0-9]{2,3}x[1-9][0-9]{2,3}(@[1-9][0-9]{1,2}(\.[0-9]{1,3})?)?$ ]] ;;
     TOUCH_DISPLAY_SCALE) [[ "${value,,}" == auto ]] || [[ "${value}" =~ ^(1(\.[0-9]{1,2})?|2(\.[0-9]{1,2})?|3(\.0{1,2})?)$ ]] ;;
     *) return 1 ;;
   esac
@@ -255,8 +256,11 @@ if [ "${SCALE}" = "auto" ]; then
     *) SCALE=1 ;;
   esac
 fi
-printf 'MASTER_URL=http://%s/master/?touchDisplay=1\nTOUCH_DISPLAY_ROTATION=%s\nTOUCH_DISPLAY_SCALE=%s\n' \
-  "${HOSTNAMES[0]}" "${settings[TOUCH_DISPLAY_ROTATION]}" "${SCALE}" \
+# The game screen gets SCREEN_MODE on whichever HDMI port has the TV (buzzerbox-kiosk-session). Defaults from before
+# the setting don't have it, so the kiosk's own default applies then.
+SCREEN_MODE="${settings[SCREEN_MODE]:-}"
+printf 'MASTER_URL=http://%s/master/?touchDisplay=1\nTOUCH_DISPLAY_ROTATION=%s\nTOUCH_DISPLAY_SCALE=%s\nSCREEN_MODE=%s\n' \
+  "${HOSTNAMES[0]}" "${settings[TOUCH_DISPLAY_ROTATION]}" "${SCALE}" "${SCREEN_MODE,,}" \
   | writeIfChanged "${KIOSK_FILE}" 644 || true
 
 # Puts a block of lines into config.txt between markers, where the block was before (so that the file stays the same

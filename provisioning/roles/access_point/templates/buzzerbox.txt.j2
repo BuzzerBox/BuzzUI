@@ -24,6 +24,10 @@ SERVER_IP_ADDRESS={{ server_ip_address }}
 ETHERNET_IP_ADDRESS={{ ethernet_ip_address }}
 # Names that devices on the WiFi or the cable can open the box under, separated by spaces
 SERVER_HOSTNAMES={{ server_hostnames | join(' ') }}
+# Resolution of the game screen on the TV (either HDMI port), as WIDTHxHEIGHT@HZ, e.g. 1920x1080@60 or 3840x2160@30, or
+# auto for the TV's own choice (often 4K, which a Raspberry Pi 4 doesn't draw smoothly). Without @HZ, the rate closest to
+# 60 is taken. A mode the TV doesn't offer gives way to the TV's own choice. The touch display keeps its resolution.
+SCREEN_MODE={{ display_mode }}
 # Raspberry Pi Touch Display 2 on the DSI connector DISP1: none, 5inch, 7inch or 10inch. With one, the box shows the
 # master on it and the screen on HDMI. When this changes, the box restarts once by itself.
 TOUCH_DISPLAY={{ touch_display }}

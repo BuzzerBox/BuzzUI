@@ -3,9 +3,9 @@
 
 - name: Install Chromium and the audio stack
   ansible.builtin.apt:
-    # PipeWire plays the media's audio over HDMI; wlr-randr switches sway's HDMI output off and on for the HDMI sound,
-    # see files/buzzerbox-hdmi-audio
-    name: [chromium, pipewire, pipewire-pulse, wireplumber, wlr-randr, fonts-noto-color-emoji]
+    # PipeWire plays the media's audio over HDMI. sway's swaymsg switches its HDMI output off and on for the HDMI sound
+    # (files/buzzerbox-hdmi-audio) and puts the screen on the port with the TV (files/buzzerbox-kiosk-session.sh).
+    name: [chromium, pipewire, pipewire-pulse, wireplumber, fonts-noto-color-emoji]
     update_cache: true
     cache_valid_time: 3600
 

@@ -84,6 +84,7 @@ ANALOG_BUZZERS=yes
 SERVER_IP_ADDRESS=10.0.0.5
 ETHERNET_IP_ADDRESS=10.0.1.5
 SERVER_HOSTNAMES=buzzer.box buzzerbox.local
+SCREEN_MODE=1920x1080@60
 TOUCH_DISPLAY=none
 TOUCH_DISPLAY_ROTATION=270
 TOUCH_DISPLAY_SCALE=auto
@@ -102,6 +103,15 @@ box would hand out addresses in it.
 `WIFI_ANTENNA=external` switches a CM4 to the antenna on its U.FL connector (`dtparam=ant2` in `config.txt`). The
 firmware only reads `config.txt` at boot, so when the setting changes, the box restarts once by itself. A Raspberry Pi 4
 has no antenna connector and ignores the setting.
+
+The TV may be on either HDMI port: the kiosk puts the game screen on the one with a TV (HDMI0 if both have one),
+switches the other one off and follows the TV when it is plugged into the other port. `SCREEN_MODE` is the screen's
+resolution there (`WIDTHxHEIGHT@HZ`, by default `display_mode` of `group_vars/all.yml`), or `auto` for the TV's own
+choice. That is often 4K, which a Raspberry Pi 4 doesn't draw smoothly. Without `@HZ`, the rate closest to 60 is taken
+(TVs often list 120 Hz first). The kiosk only sets modes that the TV offers: sway would take any mode, and a TV that
+can't show it drops the input, which leaves the screen black. Otherwise it takes the TV's own choice and says so in
+`journalctl -b | grep buzzerbox-kiosk`. The setting is read when the kiosk starts, so a change counts after the next
+restart of the box. It doesn't affect the touch display, which always runs at its own resolution.
 
 `TOUCH_DISPLAY` (`5inch`, `7inch` or `10inch`) is for a Raspberry Pi Touch Display 2 on the DSI connector `DISP1`; the
 10" one needs that connector's four lanes. The box then shows the master on the display and the screen on HDMI. Another
