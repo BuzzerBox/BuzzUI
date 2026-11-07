@@ -13,14 +13,17 @@
     }
   </mat-card-content>
 } @else if (isQuestionExisting()) {
-  <mat-card-header>
-    <mat-card-title>
-      Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}
-      @if (getPointsLabel(); as pointsLabel) {
-        <span class="question-points">{{pointsLabel}}</span>
-      }
-    </mat-card-title>
-  </mat-card-header>
+  <!-- the master has the question's number and points in its toolbar, which leaves more room for the question -->
+  @if (!isMaster) {
+    <mat-card-header>
+      <mat-card-title>
+        Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}
+        @if (getPointsLabel(); as pointsLabel) {
+          <span class="question-points">{{pointsLabel}}</span>
+        }
+      </mat-card-title>
+    </mat-card-header>
+  }
   @if (!isMaster && isShowTheme()) {
     <!-- how far the game is -->
     <div class="progress" role="progressbar" [attr.aria-valuenow]="getCurrentQuestionNumber()" aria-valuemin="1" [attr.aria-valuemax]="getTotalQuestionNumber()">
@@ -34,9 +37,9 @@
         <span class="control-box-tab"><mat-icon>tv</mat-icon> Auf der Anzeige</span>
         <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showQuestion"
           [disabled]="!canToggleQuestion()" (click)="toggleQuestionVisibility()"
-          [title]="canToggleQuestion() ? (showQuestion ? 'Frage auf der Anzeige verbergen' : 'Frage auf der Anzeige zeigen') : ''">
+          [title]="canToggleQuestion() ? getQuestionVisibilityTitle() : ''">
           <mat-icon>{{ showQuestion ? 'visibility' : 'visibility_off' }}</mat-icon>
-          <span>Frage: {{getQuestionVisibilityLabel()}}</span>
+          <span>Frage{{getQuestionVisibilityNote()}}</span>
           @if (canToggleQuestion()) {
             <span class="visibility-action">{{ showQuestion ? 'Verbergen' : 'Zeigen' }}</span>
           }
@@ -44,9 +47,9 @@
         @if (question.show) {
           <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showAnswers"
             [disabled]="!canToggleAnswers()" (click)="toggleAnswersVisibility()"
-            [title]="canToggleAnswers() ? (showAnswers ? 'Antworten auf der Anzeige verbergen' : 'Antworten auf der Anzeige zeigen') : ''">
+            [title]="canToggleAnswers() ? getAnswersVisibilityTitle() : ''">
             <mat-icon>{{ showAnswers ? 'visibility' : 'visibility_off' }}</mat-icon>
-            <span>Antworten: {{getAnswersVisibilityLabel()}}</span>
+            <span>Antworten{{getAnswersVisibilityNote()}}</span>
             @if (canToggleAnswers()) {
               <span class="visibility-action">{{ showAnswers ? 'Verbergen' : 'Zeigen' }}</span>
             }
@@ -56,7 +59,7 @@
           <button type="button" class="screen-visibility" [class.hidden-on-screen]="!isMediaShown()"
             (click)="toggleMedia()" [title]="getMediaToggleTitle()">
             <mat-icon>{{ isMediaShown() ? 'visibility' : 'visibility_off' }}</mat-icon>
-            <span>{{getMediaName()}}: {{getMediaVisibilityLabel()}}</span>
+            <span>{{getMediaName()}}</span>
             <span class="visibility-action">{{getMediaToggleAction()}}</span>
           </button>
         }

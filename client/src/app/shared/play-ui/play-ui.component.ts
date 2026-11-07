@@ -50,6 +50,7 @@ export class PlayUiComponent implements OnInit, OnDestroy {
   public buzzBanner: {id: number, name: string, color: string} | null = null;
   private buzzBannerTimeout: ReturnType<typeof setTimeout> | null = null;
   private static readonly BUZZ_BANNER_DURATION_IN_MS = 1500;
+  private static readonly MAX_TEAMS_IN_ONE_COLUMN = 4;
   // kept to remove the very same listener again
   private readonly keydownListener = (event: KeyboardEvent) => this.handleKeyboardEvent(event);
 
@@ -86,6 +87,22 @@ export class PlayUiComponent implements OnInit, OnDestroy {
 
   public getTeams(): ITeam[] {
     return this.game.getTeams();
+  }
+
+  /**
+   * The master puts up to 4 teams in one column on the right, which leaves the question more width; more teams, and
+   * the screens' teams, are split between both sides
+   */
+  public hasOneTeamColumn(): boolean {
+    return this.isMaster && (this.getTeams()?.length ?? 0) <= PlayUiComponent.MAX_TEAMS_IN_ONE_COLUMN;
+  }
+
+  public getLeftTeams(): ITeam[] {
+    return this.hasOneTeamColumn() ? [] : (this.getTeams() ?? []).filter((_, i) => i % 2 === 0);
+  }
+
+  public getRightTeams(): ITeam[] {
+    return this.hasOneTeamColumn() ? this.getTeams() ?? [] : (this.getTeams() ?? []).filter((_, i) => i % 2 === 1);
   }
 
   public getQuestions(): IQuestion[] {

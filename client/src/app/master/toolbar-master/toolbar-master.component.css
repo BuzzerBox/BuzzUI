@@ -27,6 +27,29 @@
   background-color: rgba(255, 255, 255, 0.5);
 }
 
+/* a long name gives way to the question's number */
+.game-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.question-progress {
+  white-space: nowrap;
+}
+
+/* like the points on the screens (question pane) */
+.question-points {
+  margin-left: 12px;
+  padding: 2px 10px;
+  border-radius: 1em;
+  background-color: #ffc107;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 0.8em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
 .example-spacer {
   flex: 1 1 auto;
 }

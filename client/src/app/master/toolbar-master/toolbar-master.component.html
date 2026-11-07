@@ -12,7 +12,15 @@
   <ng-container *ngTemplateOutlet="brand"></ng-container>
 }
 <span class="divider"></span>
-<span>{{getName()}}</span>
+<span class="game-name">{{getName()}}</span>
+@if (showQuestionProgress && hasQuestionProgress()) {
+  <!-- on the play page, instead of a row above the question, which the touch display has no room for -->
+  <span class="divider"></span>
+  <span class="question-progress">Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}</span>
+  @if (getPointsLabel(); as pointsLabel) {
+    <span class="question-points">{{pointsLabel}}</span>
+  }
+}
 <span class="example-spacer"></span>
 @if (showHomeIcon) {
   <a mat-icon-button [routerLink]="homeUrl" title="Zur Startseite">

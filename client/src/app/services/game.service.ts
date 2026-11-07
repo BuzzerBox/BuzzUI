@@ -600,6 +600,17 @@ export class GameService implements OnDestroy {
     return (this.questions ?? []).some(question => GameService.getQuestionPoints(question) !== 1);
   }
 
+  /**
+   * What a question is worth, e.g. "3 Punkte"; null unless some question in the game is not worth the default 1
+   */
+  public getQuestionPointsLabel(question: IQuestion | null | undefined): string | null {
+    if (!this.hasCustomQuestionPoints()) {
+      return null;
+    }
+    const points = GameService.getQuestionPoints(question);
+    return points === 1 ? '1 Punkt' : `${points} Punkte`;
+  }
+
   public removePoint(team: ITeam): void {
     team.points -= 1;
     this.sendSetTeamsSetPointsPacket(team);

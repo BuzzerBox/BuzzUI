@@ -57,6 +57,15 @@ describe('DialogGradeAnswerComponent', () => {
     expect(closed).toHaveBeenCalledOnceWith(undefined);
   });
 
+  // click() above skips hit testing; a tap or click goes to whatever is on top at that point
+  it('has nothing on top of the X', async () => {
+    const {element} = await open();
+    const close = element.querySelector('button.close') as HTMLButtonElement;
+    const box = close.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    expect(close.contains(hit)).withContext(`hit ${hit?.tagName}.${hit?.className}`).toBeTrue();
+  });
+
   it('closes without a grade with "Später bewerten"', async () => {
     const {closed, element} = await open();
     findButton(element, 'Später bewerten').click();
