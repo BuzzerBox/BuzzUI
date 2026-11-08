@@ -125,5 +125,32 @@
     ],
     "statusFile": "/var/lib/buzzerbox/update-status.json",
     "publicKeyFile": "/etc/buzzerbox/update-public-key.pem"
+  },
+  "boxSettings": {
+    "enabled": true,
+    "file": "/boot/firmware/buzzerbox.txt",
+    "defaultsFile": "/etc/buzzerbox/settings.defaults",
+    "useHelper": true,
+    "writeCommand": [
+      "sudo",
+      "-n",
+      "/usr/local/sbin/buzzerbox-settings",
+      "write"
+    ],
+    "restartCommand": [
+      "sudo",
+      "-n",
+      "/usr/local/sbin/buzzerbox-settings",
+      "restart"
+    ],
+    "sshKeysFile": "/boot/firmware/buzzerbox-ssh-keys.txt",
+    "activeSshKeysFile": "/etc/buzzerbox/ssh_authorized_keys",
+    "sshUser": "admin",
+    "writeSshKeysCommand": [
+      "sudo",
+      "-n",
+      "/usr/local/sbin/buzzerbox-settings",
+      "write-ssh-keys"
+    ]
   }
 }

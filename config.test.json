@@ -13,5 +13,8 @@
   },
   "storage": {
     "boxPath": "/srv/storage"
+  },
+  "boxSettings": {
+    "enabled": false
   }
 }

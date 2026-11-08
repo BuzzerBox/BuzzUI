@@ -76,6 +76,8 @@ readSettings() {
   done < "${file}"
 }
 
+# The same rules are in install/.assets/scripts/buzzerbox-settings.sh and shared/helper/box-settings.helper.ts, which
+# change the settings for the master; change them together.
 # key::string
 # value::string
 # -> 0 if the value is valid for the key
@@ -100,6 +102,8 @@ isValid() {
     TOUCH_DISPLAY_ROTATION) [[ "${value}" =~ ^(0|90|180|270)$ ]] ;;
     SCREEN_MODE) [[ "${value,,}" == auto ]] || [[ "${value}" =~ ^[1-9][0-9]{2,3}x[1-9][0-9]{2,3}(@[1-9][0-9]{1,2}(\.[0-9]{1,3})?)?$ ]] ;;
     TOUCH_DISPLAY_SCALE) [[ "${value,,}" == auto ]] || [[ "${value}" =~ ^(1(\.[0-9]{1,2})?|2(\.[0-9]{1,2})?|3(\.0{1,2})?)$ ]] ;;
+    # only read by the server, which lets the master change the settings (buzzerbox-settings)
+    EDIT_IN_MASTER) [[ "${value,,}" =~ ^(true|false)$ ]] ;;
     *) return 1 ;;
   esac
 }
