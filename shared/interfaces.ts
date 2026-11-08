@@ -46,6 +46,7 @@ import {IUsbBuzzer, TUsbBuzzerState, TUsbBuzzerError} from './interfaces/IUsbBuz
 import {IUsbBuzzersPacket} from './interfaces/IUsbBuzzersPacket';
 import {IAdoptUsbBuzzerPacket} from './interfaces/IAdoptUsbBuzzerPacket';
 import {IStorageEntry, IStorageFolder} from './interfaces/IStorageEntry';
+import {IBoxSetting, IBoxSettingsPacket, ISaveBoxSettingsPacket, IBoxSshKey, IAddSshKeyPacket, IRemoveSshKeyPacket, IBoxHardware} from './interfaces/IBoxSettingsPacket';
 
 export {
 	IDirectoryTree,
@@ -112,5 +113,12 @@ export {
 	IAdoptUsbBuzzerPacket,
 	ICaseColor,
 	IStorageEntry,
-	IStorageFolder
+	IStorageFolder,
+	IBoxSetting,
+	IBoxSettingsPacket,
+	ISaveBoxSettingsPacket,
+	IBoxSshKey,
+	IAddSshKeyPacket,
+	IRemoveSshKeyPacket,
+	IBoxHardware
 }

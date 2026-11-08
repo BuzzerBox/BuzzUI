@@ -88,6 +88,7 @@ SCREEN_MODE=1920x1080@60
 TOUCH_DISPLAY=none
 TOUCH_DISPLAY_ROTATION=270
 TOUCH_DISPLAY_SCALE=auto
+EDIT_IN_MASTER=false
 ```
 
 Edit it after flashing, or later by putting the card back into a computer (for the eMMC, use `rpiboot` again). The box
@@ -99,6 +100,11 @@ A notebook can also be connected to the box by an Ethernet cable, without a rout
 address in the network of `ETHERNET_IP_ADDRESS`, and the hostnames work there too. Any wired interface counts, so a USB
 Ethernet adapter works as well as the built-in port. Don't connect the box to a network that has a router, since the
 box would hand out addresses in it.
+
+The master shows these settings behind the gear icon on its start page. With `EDIT_IN_MASTER=true` it can change them
+there as well, and restart the box for them (`install/.assets/scripts/buzzerbox-settings.sh`, which the server runs
+through sudo); `EDIT_IN_MASTER` itself can only be changed in the file. Boxes from before this setting don't have the
+line: add it by hand to allow it. `box_settings_edit_in_master` in `group_vars/all.yml` sets it for new images.
 
 `WIFI_ANTENNA=external` switches a CM4 to the antenna on its U.FL connector (`dtparam=ant2` in `config.txt`). The
 firmware only reads `config.txt` at boot, so when the setting changes, the box restarts once by itself. A Raspberry Pi 4
