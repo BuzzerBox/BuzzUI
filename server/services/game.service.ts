@@ -39,6 +39,10 @@ import {
     IAvailableBuzzersPacket,
     IUsbBuzzersPacket,
     IAdoptUsbBuzzerPacket,
+    IBoxSettingsPacket,
+    ISaveBoxSettingsPacket,
+    IAddSshKeyPacket,
+    IRemoveSshKeyPacket,
     ITeam,
     ITeamSetPointsPacket,
     IUpdateInfoPacket,
@@ -56,6 +60,7 @@ import {Buffer} from 'buffer';
 import {SerialPortService} from './serial-port.service';
 import {IUdpBuzzerState, UdpBuzzerService} from './udp-buzzer.service';
 import {BuzzerProvisioningService} from './buzzer-provisioning.service';
+import {BoxSettingsService} from './box-settings.service';
 import {ConfigService} from './config.service';
 import {toInteger} from 'lodash';
 import {ObjectHelper} from '../../shared/helper/object.helper';
@@ -63,7 +68,6 @@ import {UpdateService} from './update.service';
 import {StorageService} from './storage.service';
 import {AutosaveService} from './autosave.service';
 import {ClockService} from './clock.service';
-import {BoxSettingsService} from './box-settings.service';
 
 enum LOOKUP_TEAM_CODE {
     BY_KEYPRESS,
@@ -216,6 +220,16 @@ export class GameService {
         } else if (packet.packetType === EPacketTypes.ADOPT_USB_BUZZER) {
             const adoptPacket = packet as IAdoptUsbBuzzerPacket;
             BuzzerProvisioningService.get().adopt(adoptPacket.path, adoptPacket.color);
+        } else if (packet.packetType === EPacketTypes.REQUEST_BOX_SETTINGS) {
+            this.sendBoxSettings();
+        } else if (packet.packetType === EPacketTypes.SAVE_BOX_SETTINGS) {
+            this.onSaveBoxSettingsPacket(packet as ISaveBoxSettingsPacket);
+        } else if (packet.packetType === EPacketTypes.RESTART_BOX) {
+            this.onRestartBoxPacket(packet);
+        } else if (packet.packetType === EPacketTypes.ADD_SSH_KEY) {
+            this.onChangeSshKeysPacket(packet, BoxSettingsService.get().addSshKey((packet as IAddSshKeyPacket).key));
+        } else if (packet.packetType === EPacketTypes.REMOVE_SSH_KEY) {
+            this.onChangeSshKeysPacket(packet, BoxSettingsService.get().removeSshKey((packet as IRemoveSshKeyPacket).fingerprint));
         }
     }
 
@@ -449,6 +463,44 @@ export class GameService {
     /**
      * Installing an update restarts the server, so it is only allowed while no game is set up
      */
+    private async sendBoxSettings(): Promise<void> {
+        this.sendToMaster<IBoxSettingsPacket>(await BoxSettingsService.get().read());
+    }
+
+    private async onSaveBoxSettingsPacket(packet: ISaveBoxSettingsPacket): Promise<void> {
+        // the settings belong to the start page, where no game is set up
+        const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
+            ? 'Die Einstellungen lassen sich nur ändern, solange kein Spiel eingerichtet ist.'
+            : await BoxSettingsService.get().save(packet.values);
+        if (reason != null) {
+            LoggerService.warn(`Not saving the box's settings: ${reason}`);
+        }
+        this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, reason == null, reason ?? undefined));
+        await this.sendBoxSettings();
+    }
+
+    /**
+     * Unlike the settings, the keys may change during a game: they don't touch it
+     */
+    private async onChangeSshKeysPacket(packet: IGamePacket, result: Promise<string | null>): Promise<void> {
+        const reason = await result;
+        if (reason != null) {
+            LoggerService.warn(`Not changing the box's SSH keys: ${reason}`);
+        }
+        this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, reason == null, reason ?? undefined));
+        await this.sendBoxSettings();
+    }
+
+    private async onRestartBoxPacket(packet: IGamePacket): Promise<void> {
+        const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
+            ? 'Die BuzzerBox lässt sich nur neu starten, solange kein Spiel eingerichtet ist.'
+            : await BoxSettingsService.get().restart();
+        if (reason != null) {
+            LoggerService.warn(`Not restarting the box: ${reason}`);
+        }
+        this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, reason == null, reason ?? undefined));
+    }
+
     private async onInstallUpdatePacket(packet: IInstallUpdatePacket): Promise<void> {
         const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
             ? 'Updates can only be installed while no game is set up'

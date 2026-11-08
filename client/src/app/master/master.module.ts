@@ -37,6 +37,7 @@ import {BuzzerColorComponent} from './buzzer-color/buzzer-color.component';
 import {FormsModule} from '@angular/forms';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatRadioModule} from '@angular/material/radio';
+import {MatSelectModule} from '@angular/material/select';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
@@ -52,6 +53,7 @@ import {DialogEditGameComponent} from './dialog-edit-game/dialog-edit-game.compo
 import {DialogEditStateComponent} from './dialog-edit-state/dialog-edit-state.component';
 import {DialogEditMediaComponent} from './dialog-edit-media/dialog-edit-media.component';
 import {MediaBrowserComponent} from './media-browser/media-browser.component';
+import {DialogBoxSettingsComponent} from './dialog-box-settings/dialog-box-settings.component';
 
 @NgModule({
   declarations: [
@@ -79,6 +81,7 @@ import {MediaBrowserComponent} from './media-browser/media-browser.component';
     DialogEditStateComponent,
     DialogEditMediaComponent,
     MediaBrowserComponent,
+    DialogBoxSettingsComponent,
   ],
   imports: [
     CommonModule,
@@ -92,6 +95,7 @@ import {MediaBrowserComponent} from './media-browser/media-browser.component';
     FormsModule,
     MatTabsModule,
     MatRadioModule,
+    MatSelectModule,
     MatProgressBarModule,
     MatMenuModule,
     MatSlideToggleModule,

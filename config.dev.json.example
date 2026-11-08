@@ -14,5 +14,12 @@
   },
   "storage": {
     "boxPath": "box-storage"
+  },
+  "boxSettings": {
+    "file": "box-storage/buzzerbox.txt",
+    "defaultsFile": "",
+    "useHelper": false,
+    "sshKeysFile": "box-storage/buzzerbox-ssh-keys.txt",
+    "activeSshKeysFile": ""
   }
 }

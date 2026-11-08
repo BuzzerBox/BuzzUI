@@ -1,0 +1,238 @@
+<h1 mat-dialog-title>Einstellungen der BuzzerBox</h1>
+<div mat-dialog-content>
+  @if (info === null) {
+    <div class="status"><mat-spinner diameter="24"></mat-spinner><span>Die Einstellungen werden geladen …</span></div>
+  } @else if (!info.available) {
+    <ng-container *ngTemplateOutlet="hardwareSection"></ng-container>
+    <p class="status"><mat-icon>info</mat-icon>
+      <span>{{info.error ?? 'Auf diesem Server gibt es keine Einstellungen der BuzzerBox.'}}</span>
+    </p>
+  } @else {
+    @if (!isEditing) {
+      <ng-container *ngTemplateOutlet="hardwareSection"></ng-container>
+    }
+    <p class="intro">
+      Aus der Datei <code>buzzerbox.txt</code> auf der Boot-Partition der Speicherkarte. Die Box übernimmt sie bei jedem
+      Start.
+    </p>
+
+    @if (isRestarting) {
+      <div class="status">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>
+          Die BuzzerBox startet neu, das dauert etwa eine Minute.
+          @if (newConnection) {
+            Verbinde dich danach mit dem WLAN „{{newConnection.ssid}}“ und öffne <strong>{{newConnection.address}}</strong>.
+          } @else {
+            Diese Seite verbindet sich danach von selbst wieder.
+          }
+        </span>
+      </div>
+    } @else if (isSaved && !isEditing) {
+      <div class="saved">
+        <p class="status success">
+          <mat-icon>check_circle</mat-icon>
+          <span>Gespeichert. Die Änderungen gelten ab dem nächsten Start der BuzzerBox.</span>
+        </p>
+        @if (newConnection) {
+          <p class="status warning">
+            <mat-icon>warning</mat-icon>
+            <span>
+              Nach dem Neustart sind alle Geräte getrennt. Verbinde sie mit dem WLAN „{{newConnection.ssid}}“ und öffne
+              <strong>{{newConnection.address}}</strong>.
+              @if (isBuzzerWifiChanged) {
+                Funkbuzzer müssen dafür einmal per USB neu übernommen werden.
+              }
+            </span>
+          </p>
+        }
+        @if (info.canRestart) {
+          @if (!isConfirmingRestart) {
+            <button mat-flat-button color="primary" [disabled]="isRunning" (click)="isConfirmingRestart = true">
+              <mat-icon>restart_alt</mat-icon> Jetzt neu starten
+            </button>
+          } @else {
+            <p>Die BuzzerBox jetzt neu starten? Alle Geräte verlieren kurz die Verbindung.</p>
+            <button mat-button [disabled]="isRunning" (click)="isConfirmingRestart = false">Doch nicht</button>
+            <button mat-flat-button color="warn" [disabled]="isRunning" (click)="restart()">Neu starten</button>
+          }
+        }
+      </div>
+    }
+
+    @for (group of groups; track group.title) {
+      <section class="group">
+        <h2><mat-icon>{{group.icon}}</mat-icon>{{group.title}}</h2>
+        @for (field of getVisibleFields(group); track field.key) {
+          @if (!isEditing) {
+            <div class="row">
+              <span class="label">{{field.label}}</span>
+              <span class="value">
+                <span [class.secret]="field.isSecret && !isSecretShown">{{getDisplayValue(field)}}</span>
+                @if (field.isSecret) {
+                  <button mat-icon-button class="reveal" (click)="isSecretShown = !isSecretShown"
+                          [title]="isSecretShown ? 'Passwort verbergen' : 'Passwort anzeigen'">
+                    <mat-icon>{{isSecretShown ? 'visibility_off' : 'visibility'}}</mat-icon>
+                  </button>
+                }
+                @if (getSetting(field.key)?.isDefault) {
+                  <span class="badge" title="Die Datei setzt diesen Wert nicht selbst">Standard</span>
+                }
+              </span>
+              @if (getSetting(field.key)?.invalidValue !== undefined) {
+                <span class="invalid">„{{getSetting(field.key).invalidValue}}“ in der Datei ist ungültig, deshalb gilt der Standard.</span>
+              }
+            </div>
+          } @else if (field.isSelect) {
+            <mat-form-field class="field">
+              <mat-label>{{field.label}}</mat-label>
+              <mat-select [(ngModel)]="draft[field.key]" [disabled]="isRunning">
+                @for (option of getOptions(field); track option.value) {
+                  <mat-option [value]="option.value">{{option.label}}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>{{field.hint}}</mat-hint>
+            </mat-form-field>
+          } @else if (field.options) {
+            <div class="row edit">
+              <span class="label">{{field.label}}</span>
+              <mat-button-toggle-group [(ngModel)]="draft[field.key]" [disabled]="isRunning" [attr.aria-label]="field.label">
+                @for (option of getOptions(field); track option.value) {
+                  <mat-button-toggle [value]="option.value">{{option.label}}</mat-button-toggle>
+                }
+              </mat-button-toggle-group>
+              <span class="hint">{{field.hint}}</span>
+            </div>
+          } @else {
+            <mat-form-field class="field">
+              <mat-label>{{field.label}}</mat-label>
+              <input matInput [(ngModel)]="draft[field.key]" [disabled]="isRunning"
+                     [type]="field.isSecret && !isSecretShown ? 'password' : 'text'" autocomplete="off" spellcheck="false">
+              @if (field.isSecret) {
+                <button mat-icon-button matSuffix type="button" (click)="isSecretShown = !isSecretShown"
+                        [title]="isSecretShown ? 'Passwort verbergen' : 'Passwort anzeigen'">
+                  <mat-icon>{{isSecretShown ? 'visibility_off' : 'visibility'}}</mat-icon>
+                </button>
+              }
+              @if (!isValid(field.key)) {
+                <mat-hint class="invalid">Ungültig. {{field.hint}}</mat-hint>
+              } @else if (field.key === 'ETHERNET_IP_ADDRESS' && isEthernetInWifiNetwork()) {
+                <mat-hint class="invalid">Muss in einem anderen Netz liegen als die Adresse im WLAN.</mat-hint>
+              } @else {
+                <mat-hint>{{field.hint}}</mat-hint>
+              }
+            </mat-form-field>
+          }
+        }
+      </section>
+    }
+
+    @if (info.sshAvailable) {
+      <!-- outside the settings form: keys count right away, "Speichern" and "Abbrechen" don't touch them -->
+      <section class="group ssh-group">
+        <h2><mat-icon>key</mat-icon>SSH-Zugang</h2>
+        @if (isEditing) {
+          <p class="status note-box">
+            <mat-icon>info</mat-icon>
+            <span>Schlüssel gelten sofort beim Hinzufügen oder Entfernen. „Speichern“ und „Abbrechen“ betreffen sie nicht.</span>
+          </p>
+        }
+        <p class="intro">
+          Aus <code>buzzerbox-ssh-keys.txt</code> auf der Boot-Partition. Mit einem dieser Schlüssel kann man sich als
+          <code>{{info.sshUser}}</code> anmelden und die Box mit <code>sudo</code> verwalten:
+          <code>ssh {{info.sshUser}}&#64;{{getSshAddress()}}</code>.
+          @if (info.sshKeys.length === 0) {
+            Ohne Schlüssel ist SSH aus.
+          }
+        </p>
+        @for (key of info.sshKeys; track key.fingerprint) {
+          <div class="ssh-key">
+            <mat-icon class="ssh-key-icon">vpn_key</mat-icon>
+            <div class="ssh-key-text">
+              <span class="ssh-key-name">{{key.comment || 'Schlüssel ohne Namen'}}</span>
+              <span class="ssh-key-details">{{key.type}} · <code>{{key.fingerprint}}</code></span>
+              @if (key.isActive === false) {
+                <span class="ssh-key-details warning-text">Gilt ab dem nächsten Start der Box.</span>
+              }
+            </div>
+            @if (info.editable) {
+              @if (confirmingRemoval !== key.fingerprint) {
+                <button mat-icon-button [disabled]="isRunning" (click)="confirmingRemoval = key.fingerprint" title="Schlüssel entfernen">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              } @else {
+                <span class="ssh-key-confirm">
+                  <button mat-button [disabled]="isRunning" (click)="confirmingRemoval = null">Doch nicht</button>
+                  <button mat-flat-button color="warn" [disabled]="isRunning" (click)="removeSshKey(key)">Entfernen</button>
+                </span>
+              }
+            }
+          </div>
+        }
+        @if (info.editable) {
+          <mat-form-field class="field ssh-new">
+            <mat-label>Öffentlichen Schlüssel hinzufügen</mat-label>
+            <textarea matInput [(ngModel)]="newSshKey" [disabled]="isRunning" rows="2" spellcheck="false" autocomplete="off"
+                      placeholder="ssh-ed25519 AAAA… name@computer"></textarea>
+            @if (isNewSshKeyPrivate()) {
+              <mat-hint class="invalid">Das ist ein privater Schlüssel, der gehört nie auf die Box. Nimm den Inhalt der Datei mit .pub.</mat-hint>
+            } @else if (newSshKey.trim() && !isNewSshKeyValid()) {
+              <mat-hint class="invalid">Kein öffentlicher SSH-Schlüssel. Er beginnt z. B. mit ssh-ed25519 oder ssh-rsa.</mat-hint>
+            } @else {
+              <mat-hint>Der Inhalt einer .pub-Datei, z. B. ~/.ssh/id_ed25519.pub. Gilt sofort.</mat-hint>
+            }
+          </mat-form-field>
+          <div class="ssh-add">
+            <button mat-stroked-button [disabled]="isRunning || !isNewSshKeyValid()" (click)="addSshKey()">
+              <mat-icon>add</mat-icon> Hinzufügen
+            </button>
+          </div>
+        }
+        @if (sshError) {
+          <p class="status error"><mat-icon>error</mat-icon><span>{{sshError}}</span></p>
+        }
+      </section>
+    }
+
+    @if (error) {
+      <p class="status error"><mat-icon>error</mat-icon><span>{{error}}</span></p>
+    }
+    @if (isEditing) {
+      <p class="status warning">
+        <mat-icon>warning</mat-icon>
+        <span>Ändern sich WLAN oder Adresse, sind nach dem Neustart alle Geräte getrennt und müssen sich neu verbinden.</span>
+      </p>
+    } @else if (!info.editable) {
+      <p class="note">
+        Zum Ändern die Speicherkarte in einen Computer stecken und <code>buzzerbox.txt</code> bearbeiten. Mit
+        <code>{{editKey}}=true</code> in der Datei lassen sich die Einstellungen auch hier ändern.
+      </p>
+    }
+  }
+</div>
+<ng-template #hardwareSection>
+  <section class="group">
+    <h2><mat-icon>memory</mat-icon>Hardware</h2>
+    @for (row of getHardwareRows(); track row.label) {
+      <div class="row">
+        <span class="label">{{row.label}}</span>
+        <span class="value">{{row.value}}</span>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<div mat-dialog-actions align="end">
+  @if (isRunning) {
+    <mat-spinner diameter="24"></mat-spinner>
+  }
+  @if (isEditing) {
+    <button mat-button [disabled]="isRunning" (click)="cancelEditing()">Abbrechen</button>
+    <button mat-flat-button color="primary" [disabled]="!canSave()" (click)="save()">Speichern</button>
+  } @else {
+    @if (info?.editable && !isRestarting) {
+      <button mat-stroked-button [disabled]="isRunning" (click)="startEditing()"><mat-icon>edit</mat-icon> Bearbeiten</button>
+    }
+    <button mat-flat-button color="primary" mat-dialog-close [disabled]="isRunning">Schließen</button>
+  }
+</div>

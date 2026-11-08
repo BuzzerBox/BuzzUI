@@ -37,9 +37,11 @@ WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "${WORK_DIR}"' EXIT
 mkdir -p "${WORK_DIR}/payload/hooks"
 cp -R "${COMPILATIONS_DIR}/frontend" "${COMPILATIONS_DIR}/backend" "${WORK_DIR}/payload/"
-# the hook brings the update helper and the service of this version onto the box
+# the hook brings the update and settings helpers and the service of this version onto the box
 cp "${ROOT_DIR}/install/.assets/update-hooks/post-install.sh" "${ROOT_DIR}/install/.assets/scripts/buzzerbox-update.sh" \
+  "${ROOT_DIR}/install/.assets/scripts/buzzerbox-settings.sh" \
   "${ROOT_DIR}/install/.assets/configs/systemd/buzzerbox-server.service" "${WORK_DIR}/payload/hooks/"
+cp "${ROOT_DIR}/install/.assets/configs/sudoers/buzzerbox-settings" "${WORK_DIR}/payload/hooks/buzzerbox-settings.sudoers"
 chmod 755 "${WORK_DIR}/payload/hooks/"*.sh
 
 # keep macOS metadata (._ files, extended attributes) out of the archives
