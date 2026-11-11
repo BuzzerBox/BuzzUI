@@ -3,6 +3,9 @@
 </button>
 <h1 mat-dialog-title>{{data.teamName}} hat gebuzzert</h1>
 <div mat-dialog-content>
+  @if (data.questionText) {
+    <p class="question" aria-label="Frage">{{data.questionText}}</p>
+  }
   @if (data.answers.length) {
     <p>Tippe die Antwort an, die das Team gegeben hat <span class="optional">(optional)</span>:</p>
     <div class="answer-options" role="group" aria-label="Gegebene Antwort">

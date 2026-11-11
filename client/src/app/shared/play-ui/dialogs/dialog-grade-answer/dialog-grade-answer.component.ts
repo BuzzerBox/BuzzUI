@@ -13,6 +13,8 @@ export interface IDialogGradeAnswerOption {
 
 export interface IDialogGradeAnswerData {
   teamName: string;
+  // the question, repeated here because on a small (touch) screen the dialog covers it
+  questionText?: string;
   // what the current question is worth
   points: number;
   // the answer options, to pick the one the team gave; empty for a question without answer options

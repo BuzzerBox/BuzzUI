@@ -40,6 +40,20 @@ h1[mat-dialog-title] {
   margin-left: 0;
 }
 
+/* the question, which the dialog covers on a small screen */
+.question {
+  margin: 0 0 1em;
+  padding: 0.5em 0.75em;
+  border-left: 4px solid rgba(0, 0, 0, 0.24);
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 1.1em;
+  font-weight: 500;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
 .release-actions {
   justify-content: center;
 }

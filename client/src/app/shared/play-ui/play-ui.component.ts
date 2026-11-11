@@ -97,12 +97,18 @@ export class PlayUiComponent implements OnInit, OnDestroy {
     return this.isMaster && (this.getTeams()?.length ?? 0) <= PlayUiComponent.MAX_TEAMS_IN_ONE_COLUMN;
   }
 
-  public getLeftTeams(): ITeam[] {
-    return this.hasOneTeamColumn() ? [] : (this.getTeams() ?? []).filter((_, i) => i % 2 === 0);
+  /**
+   * The teams on the screens' left (on a portrait screen: above the question): every other one, from the first
+   */
+  public getScreenLeftTeams(): ITeam[] {
+    return (this.getTeams() ?? []).filter((_, i) => i % 2 === 0);
   }
 
-  public getRightTeams(): ITeam[] {
-    return this.hasOneTeamColumn() ? this.getTeams() ?? [] : (this.getTeams() ?? []).filter((_, i) => i % 2 === 1);
+  /**
+   * The teams on the screens' right (on a portrait screen: below the question)
+   */
+  public getScreenRightTeams(): ITeam[] {
+    return (this.getTeams() ?? []).filter((_, i) => i % 2 === 1);
   }
 
   public getQuestions(): IQuestion[] {

@@ -31,10 +31,14 @@ describe('DialogGradeAnswerComponent', () => {
   // the answer options the dialog shows; none unless a test sets them
   let answers: IDialogGradeAnswerData['answers'] = [];
 
+  // the question the dialog repeats; none unless a test sets it
+  let questionText: string | undefined;
+  beforeEach(() => questionText = undefined);
+
   async function open(): Promise<{closed: jasmine.Spy, element: HTMLElement, close: (result?: TGradeDialogResult) => void}> {
     const dialogRef = dialog.open<DialogGradeAnswerComponent, IDialogGradeAnswerData, TGradeDialogResult>(DialogGradeAnswerComponent, {
       disableClose: true,
-      data: {teamName: 'Team A', points: 1, answers, answersHiddenOnScreens: false, scoring}
+      data: {teamName: 'Team A', questionText, points: 1, answers, answersHiddenOnScreens: false, scoring}
     });
     const closed = jasmine.createSpy('closed');
     dialogRef.afterClosed().subscribe(closed);
@@ -47,6 +51,17 @@ describe('DialogGradeAnswerComponent', () => {
   function findButton(element: HTMLElement, text: string): HTMLButtonElement {
     return Array.from(element.querySelectorAll('button')).find(b => b.textContent.trim() === text) as HTMLButtonElement;
   }
+
+  it('repeats the question, which it may cover on a small screen', async () => {
+    questionText = 'Wie hoch ist die Zugspitze?';
+    const {element} = await open();
+    expect(element.querySelector('.question').textContent.trim()).toBe('Wie hoch ist die Zugspitze?');
+  });
+
+  it('shows no question box without a question text', async () => {
+    const {element} = await open();
+    expect(element.querySelector('.question')).toBeNull();
+  });
 
   it('closes without a grade with the X', async () => {
     const {closed, element} = await open();

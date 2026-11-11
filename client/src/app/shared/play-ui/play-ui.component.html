@@ -2,7 +2,7 @@
   @if (!isGameOver) {
     @if (!hasOneTeamColumn()) {
       <div class="teams-left-pane">
-        @for (team of getLeftTeams(); track team) {
+        @for (team of getScreenLeftTeams(); track team) {
           <app-team-card [team]="team" [isMaster]="isMaster"></app-team-card>
         }
       </div>
@@ -27,15 +27,15 @@
             </mat-card-actions>
           } @else if (isMaster) {
             <mat-card-actions class="master-actions">
-              <button mat-button class="large-controls" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage">Vorherige Frage</button>
+              <button mat-flat-button class="nav-button" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage"><mat-icon>chevron_left</mat-icon>Vorherige Frage</button>
               <span class="spacer"></span>
               <app-buzzer-lock></app-buzzer-lock>
               <span class="spacer"></span>
               @if (hasNextQuestion()) {
-                <button mat-button class="large-controls" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage</button>
+                <button mat-flat-button class="nav-button" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage<mat-icon iconPositionEnd>chevron_right</mat-icon></button>
               } @else {
                 <!-- after the last question, the game ends here instead -->
-                <button mat-button class="large-controls" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden</button>
+                <button mat-flat-button class="nav-button" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden<mat-icon iconPositionEnd>flag</mat-icon></button>
               }
             </mat-card-actions>
           }
@@ -43,7 +43,17 @@
       </div>
     </div>
     <div class="teams-right-pane">
-      @for (team of getRightTeams(); track team) {
+      @if (hasOneTeamColumn()) {
+        <!-- the master's one column in the screens' order: their left teams, a divider, then their right ones -->
+        @for (team of getScreenLeftTeams(); track team) {
+          <app-team-card [team]="team" [isMaster]="isMaster"></app-team-card>
+        }
+        @if (getScreenRightTeams().length) {
+          <div class="screen-side-divider" role="separator"
+               title="Darüber die Teams links (hochkant: oben) auf der Anzeige, darunter die rechts (unten)"></div>
+        }
+      }
+      @for (team of getScreenRightTeams(); track team) {
         <app-team-card [team]="team" [isMaster]="isMaster"></app-team-card>
       }
     </div>

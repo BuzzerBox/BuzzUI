@@ -37,6 +37,13 @@
   margin-left: 8px;
 }
 
+/* in the master's one column: between the teams on the screens' left and those on their right */
+.screen-side-divider {
+  height: 0;
+  margin: 8px 12px;
+  border-top: 2px dashed rgba(0, 0, 0, 0.3);
+}
+
 /* the question card fills the middle column, so media can use all of its height */
 mat-card.question {
   flex: 1;
@@ -83,6 +90,42 @@ button.begin-game mat-icon {
 /* the buzzer button sits in the middle, between the question navigation */
 .master-actions {
   align-items: center;
+}
+
+/*
+ * The question navigation: tinted pills like the team cards' point buttons, in a neutral slate so they don't read as
+ * points, with an arrow pointing where they go; big enough for the touch display, and a press sinks them a little
+ */
+button.nav-button.mat-mdc-button-base {
+  --mat-button-filled-container-shape: 999px;
+  --mat-button-filled-container-color: #e3e8ef;
+  --mat-button-filled-label-text-color: #263445;
+  --mat-button-filled-container-height: 56px;
+  --mat-button-filled-label-text-size: 18px;
+  --mat-button-filled-label-text-weight: 600;
+  --mat-button-filled-horizontal-padding: 22px;
+  --mat-button-filled-icon-spacing: 4px;
+  --mat-button-filled-icon-offset: -6px;
+  border: 1px solid rgba(38, 52, 69, 0.25);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+}
+
+button.nav-button mat-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 28px;
+}
+
+button.nav-button.mat-mdc-button-base:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+/* at the first question there is nowhere to go back to */
+button.nav-button.mat-mdc-button-base:disabled {
+  border-color: transparent;
+  box-shadow: none;
 }
 
 

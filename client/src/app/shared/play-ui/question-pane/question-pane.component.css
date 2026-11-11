@@ -328,6 +328,23 @@ button.screen-visibility:disabled {
   outline-offset: 4px;
 }
 
+/*
+ * Master: a part hidden on the screens, which a tap anywhere in its dashed outline asks to reveal. A layer over the
+ * whole outline (it sits 4px outside the box, see .hidden-on-screen-content) takes the tap, also over the disabled
+ * answer buttons, which wouldn't pass it on.
+ */
+.can-reveal {
+  position: relative;
+  cursor: pointer;
+}
+
+.can-reveal::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  z-index: 2;
+}
+
 /* master only: the question's notes, like presenter notes */
 .notes-text {
   font-size: large;
