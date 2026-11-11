@@ -74,7 +74,14 @@
     @if (isMaster) {
       <div class="control-box content" role="group" aria-label="Frage">
         <span class="control-box-tab"><mat-icon>help_outline</mat-icon> Frage</span>
-        <div class="question-text" [class.hidden-on-screen-content]="!showQuestion">{{getQuestionText()}}</div>
+        @if (!showQuestion && canToggleQuestion()) {
+          <!-- hidden on the screens: a tap asks to reveal it -->
+          <div class="question-text hidden-on-screen-content can-reveal" role="button" tabindex="0"
+               title="Antippen, um die Frage auf der Anzeige zu zeigen"
+               (click)="askToRevealQuestion()" (keydown.enter)="askToRevealQuestion()" (keydown.space)="$event.preventDefault(); askToRevealQuestion()">{{getQuestionText()}}</div>
+        } @else {
+          <div class="question-text" [class.hidden-on-screen-content]="!showQuestion">{{getQuestionText()}}</div>
+        }
       </div>
     } @else if (showQuestion) {
       <div class="question-text" [class.without-answers]="!question.show" [appFitText]="true">{{getQuestionText()}}</div>
@@ -114,7 +121,13 @@
 
 <!-- the answer options, in the master's "Antworten" box or on their own on the screens -->
 <ng-template #answerGrid>
-  <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong">
+  <!-- the master's answers, while hidden on the screens: a tap anywhere in their outline asks to reveal them -->
+  <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong"
+       [class.can-reveal]="canRevealAnswers()" [attr.role]="canRevealAnswers() ? 'button' : null"
+       [attr.tabindex]="canRevealAnswers() ? 0 : null"
+       [attr.title]="canRevealAnswers() ? 'Antippen, um die Antworten auf der Anzeige zu zeigen' : null"
+       (click)="askToRevealAnswers()" (keydown.enter)="askToRevealAnswers()"
+       (keydown.space)="canRevealAnswers() && $event.preventDefault(); askToRevealAnswers()">
     @for (answer of getAnswers(); track answer; let i = $index) {
       <div class="answer-cell">
         <button id="button{{i}}" mat-raised-button

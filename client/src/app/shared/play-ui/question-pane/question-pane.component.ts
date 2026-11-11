@@ -36,6 +36,7 @@ import {
   TGradeDialogResult
 } from '../dialogs/dialog-grade-answer/dialog-grade-answer.component';
 import {MediaKindHelper} from '../../../helper/media-kind.helper';
+import {openRevealConfirmation} from '../dialogs/reveal-confirmation';
 
 @Component({
     selector: 'app-question-pane',
@@ -72,6 +73,8 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   // whether the question and the answers are visible on the screens; the master always sees both
   public showAnswers = true;
   public showQuestion = true;
+  // the question whether to reveal the question or the answers, while it is open
+  private revealConfirmationRef: MatDialogRef<unknown, boolean> | null = null;
   // the states these were derived from, to tell the master why something is hidden
   private questionState: EQuestionAnswerStates;
   private answerState: EQuestionAnswerStates;
@@ -199,6 +202,51 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.game.changeMediaState({answerState: this.showAnswers ? EQuestionAnswerStates.HIDDEN : EQuestionAnswerStates.SHOWN});
   }
 
+  /**
+   * The master taps the question or the answers where they are shown hidden: once confirmed, they appear on the screens
+   */
+  public askToRevealQuestion(): void {
+    if (this.showQuestion || !this.canToggleQuestion()) {
+      return;
+    }
+    this.askToReveal('question', this.questionState, () => this.toggleQuestionVisibility());
+  }
+
+  public canRevealAnswers(): boolean {
+    return !this.showAnswers && this.canToggleAnswers();
+  }
+
+  public askToRevealAnswers(): void {
+    if (!this.canRevealAnswers()) {
+      return;
+    }
+    this.askToReveal('answers', this.answerState, () => this.toggleAnswersVisibility());
+  }
+
+  private askToReveal(part: 'question' | 'answers', state: EQuestionAnswerStates, reveal: () => void): void {
+    // one question at a time, e.g. after a double tap
+    if (this.revealConfirmationRef != null) {
+      return;
+    }
+    const media = this.question?.mediaDetails;
+    let waitingNote: string | null = null;
+    if (QuestionPaneComponent.isWaitingForMedia(false, state, media)) {
+      const article = MediaHelper.isSlideshow(media) ? 'der' : 'dem';
+      waitingNote = `Sonst ${part === 'question' ? 'erscheint sie' : 'erscheinen sie'} nach ${article} ${MediaKindHelper.getName(media)}.`;
+    }
+    const question = this.question;
+    this.revealConfirmationRef = openRevealConfirmation(this.dialog, part, waitingNote);
+    this.revealConfirmationRef.afterClosed().subscribe(confirmed => {
+      this.revealConfirmationRef = null;
+      // not if the question changed meanwhile, or the part appeared by itself
+      if (confirmed && this.question === question) {
+        if (part === 'question' ? !this.showQuestion : !this.showAnswers) {
+          reveal();
+        }
+      }
+    });
+  }
+
   public getQuestionVisibilityNote(): string {
     return QuestionPaneComponent.getVisibilityNote(this.showQuestion, this.questionState, this.question?.mediaDetails, this.canToggleQuestion());
   }
@@ -318,7 +366,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   public onClickAnswer(answer, button: HTMLButtonElement): void {
-    // answers hidden on the screens can be seen but not used by the master
+    // answers hidden on the screens can be seen but not used by the master (a tap on their outline asks to reveal them)
     if (!this.isMaster || !this.showAnswers || this.activatedAnswers.includes(answer) || this.correctAnswersThatAreLeft === 0) {
       return;
     }
@@ -481,6 +529,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       disableClose: true,
       data: {
         teamName: team.name,
+        questionText: this.getQuestionText(),
         points: GameService.getQuestionPoints(this.question),
         answers: this.getGradeAnswerOptions(),
         answersHiddenOnScreens: !this.showAnswers,
@@ -547,6 +596,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
       this.markTeamSubscription, this.gradeAnswerSubscription, this.gradingRequestSubscription);
     clearTimeout(this.flashWrongTimeout);
     this.closeGradeDialog();
+    this.revealConfirmationRef?.close(false);
     this.dismissAllCorrectAnswersFoundSnackBar();
   }
 
