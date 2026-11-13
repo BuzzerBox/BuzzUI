@@ -15,7 +15,8 @@ buzzerbox_update_public_key: "{{ playbook_dir }}/../install/.assets/update-publi
 node_version: "24.21.0"
 node_sha256: "6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2"
 
-# HDMI output that is forced on even without a screen at boot, see roles/base
+# HDMI output that is forced on even without a screen at boot, see roles/base; also the default of SCREEN_MODE in
+# buzzerbox.txt, the mode the game screen gets (roles/access_point/templates/buzzerbox.txt.j2)
 display_mode: "1920x1080@60"
 # hides the kernel messages and the console cursor during boot, so the splash screen stays clean
 quiet_boot: true
@@ -37,6 +38,11 @@ ethernet_ip_address: 10.0.1.5
 server_hostnames:
   - buzzer.box
   - buzzerbox.local
+# none, 5inch, 7inch or 10inch, its rotation and how large the master is on it, see
+# roles/access_point/templates/buzzerbox.txt.j2
+touch_display: none
+touch_display_rotation: 270
+touch_display_scale: auto
 
 # SSH is off unless there are keys: given here, they are built into the image; on a box, they can also be put into
 # buzzerbox-ssh-keys.txt on the boot partition (roles/ssh). They are for buzzerbox_admin_user, who may use sudo; the

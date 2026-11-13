@@ -51,3 +51,19 @@ body {
     font-size: 36px;
   }
 }
+
+// The master on the box's own touch display (KioskHelper): a long press neither selects text nor drags images and
+// links, and the context menu is suppressed
+html.bb-touch-display {
+  user-select: none;
+  -webkit-user-select: none;
+
+  img, a {
+    -webkit-user-drag: none;
+  }
+
+  input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+}
