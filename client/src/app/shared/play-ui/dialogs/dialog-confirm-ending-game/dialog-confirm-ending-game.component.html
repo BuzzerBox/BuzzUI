@@ -1,8 +1,8 @@
-<h1 mat-dialog-title>Spiel beenden</h1>
+<h1 mat-dialog-title>{{'common.endGame' | transloco}}</h1>
 <div mat-dialog-content>
-  <p>Möchtest du wirklich das Spiel beenden</p>
+  <p>{{'play.confirmEnd.message' | transloco}}</p>
 </div>
 <div mat-dialog-actions>
-  <button mat-button [mat-dialog-close]="false" cdkFocusInitial >Nein, doch nicht</button>
-  <button mat-button [mat-dialog-close]="true">Ja, ich will</button>
+  <button mat-button [mat-dialog-close]="false" cdkFocusInitial >{{'play.confirmEnd.no' | transloco}}</button>
+  <button mat-button [mat-dialog-close]="true">{{'play.confirmEnd.yes' | transloco}}</button>
 </div>

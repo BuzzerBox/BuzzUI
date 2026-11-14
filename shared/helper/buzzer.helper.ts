@@ -12,14 +12,14 @@ export class BuzzerHelper {
      * green are left out, since they stand for wrong and right answers on the screens.
      */
     public static readonly CASE_COLORS: ICaseColor[] = [
-        {color: '#fb8c00', name: 'Orange', adjective: 'Oranger'},
-        {color: '#fdd835', name: 'Gelb', adjective: 'Gelber'},
-        {color: '#00acc1', name: 'Türkis', adjective: 'Türkiser'},
-        {color: '#1e88e5', name: 'Blau', adjective: 'Blauer'},
-        {color: '#8e24aa', name: 'Lila', adjective: 'Lila'},
-        {color: '#ec407a', name: 'Pink', adjective: 'Pinker'},
-        {color: '#ffffff', name: 'Weiß', adjective: 'Weißer'},
-        {color: '#000000', name: 'Schwarz', adjective: 'Schwarzer'}
+        {color: '#fb8c00', key: 'orange'},
+        {color: '#fdd835', key: 'yellow'},
+        {color: '#00acc1', key: 'turquoise'},
+        {color: '#1e88e5', key: 'blue'},
+        {color: '#8e24aa', key: 'purple'},
+        {color: '#ec407a', key: 'pink'},
+        {color: '#ffffff', key: 'white'},
+        {color: '#000000', key: 'black'}
     ];
 
     private constructor() {
@@ -35,18 +35,11 @@ export class BuzzerHelper {
     }
 
     /**
-     * The name the master sees: after the color of its case, e.g. "Blauer Wireless Buzzer", or else the end of the MAC
-     * address, which tells the buzzers apart
-     * @param withMacAddress also for a buzzer with a color, when another one has the same
+     * The end of a UDP buzzer's MAC address, which tells buzzers of the same color (or without one) apart in their
+     * names, e.g. "8F:DC". The client names the buzzers, in the master's language.
      */
-    public static makeUdpBuzzerName(macAddress: string, color?: string, withMacAddress = false): string {
-        const macEnd = macAddress.toUpperCase().slice(-5);
-        const caseColor = BuzzerHelper.getCaseColor(color);
-        if (caseColor == null) {
-            return 'Funkbuzzer ' + macEnd;
-        }
-        const name = caseColor.adjective + ' Wireless Buzzer';
-        return withMacAddress ? `${name} (${macEnd})` : name;
+    public static getMacEnd(buzzerIdOrMacAddress: string): string {
+        return buzzerIdOrMacAddress.toUpperCase().slice(-5);
     }
 
     /**
@@ -56,14 +49,7 @@ export class BuzzerHelper {
         return typeof color === 'string' && BuzzerHelper.COLOR.test(color) ? color.toLowerCase() : undefined;
     }
 
-    /**
-     * The name of one of the CASE_COLORS, or undefined for another color
-     */
-    public static getCaseColorName(color: string): string | undefined {
-        return BuzzerHelper.getCaseColor(color)?.name;
-    }
-
-    public static getCaseColor(color: string): ICaseColor | undefined {
+    public static getCaseColor(color: string | undefined): ICaseColor | undefined {
         const normalized = BuzzerHelper.normalizeColor(color);
         return BuzzerHelper.CASE_COLORS.find(caseColor => caseColor.color === normalized);
     }

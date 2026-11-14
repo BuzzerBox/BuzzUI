@@ -1,3 +1,8 @@
+import {getActiveLanguage} from '../i18n/i18n';
+
+// how each language writes dates
+const LOCALES = {de: 'de-DE', en: 'en-GB'};
+
 export class FormatHelper {
   private constructor() {
     // making it private to avoid this class being instantiated
@@ -18,11 +23,11 @@ export class FormatHelper {
   }
 
   /**
-   * An ISO date as day and time, like "15.10.2026, 20:30"
+   * An ISO date as day and time, like "15.10.2026, 20:30" or "15 Oct 2026, 20:30"
    */
   public static formatDateTime(isoDate: string): string {
     const date = new Date(isoDate);
-    return isNaN(date.getTime()) ? '' : date.toLocaleString('de-DE', {dateStyle: 'medium', timeStyle: 'short'});
+    return isNaN(date.getTime()) ? '' : date.toLocaleString(LOCALES[getActiveLanguage()], {dateStyle: 'medium', timeStyle: 'short'});
   }
 
   /**

@@ -52,6 +52,8 @@ import {DialogCopyMediaComponent} from './dialog-copy-media/dialog-copy-media.co
 import {DialogEditGameComponent} from './dialog-edit-game/dialog-edit-game.component';
 import {DialogEditStateComponent} from './dialog-edit-state/dialog-edit-state.component';
 import {DialogEditMediaComponent} from './dialog-edit-media/dialog-edit-media.component';
+import {TranslocoModule} from '@jsverse/transloco';
+import {LanguageSwitchComponent} from '../i18n/language-switch.component';
 import {MediaBrowserComponent} from './media-browser/media-browser.component';
 import {BoxSettingsComponent} from './box-settings/box-settings.component';
 
@@ -115,6 +117,8 @@ import {BoxSettingsComponent} from './box-settings/box-settings.component';
     MatButtonToggleModule,
     MatDialogModule,
     MediaQuestionDisplayOrderConfigurationComponent,
+    TranslocoModule,
+    LanguageSwitchComponent,
   ],
   exports: [
     StartComponent

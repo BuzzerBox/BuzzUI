@@ -1,3 +1,4 @@
+import {t} from '../../i18n/i18n';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {isEqual} from 'lodash-es';
@@ -44,7 +45,7 @@ export class UpdateCardComponent implements OnInit, OnDestroy {
     this.subscriptions.push(this.game.observeInstallUpdateResponses().subscribe(response => {
       if (!response.wasSuccessful) {
         this.isStarting = false;
-        this.startError = response.reason ?? 'Das Update konnte nicht gestartet werden.';
+        this.startError = response.reason ?? t('update.couldNotStart');
       }
     }));
   }
@@ -68,9 +69,9 @@ export class UpdateCardComponent implements OnInit, OnDestroy {
 
   public getBundleLabel(bundle: IUpdateBundle): string {
     if (bundle.isNewer) {
-      return 'neuer';
+      return t('update.bundle.newer');
     }
-    return this.isInstalled(bundle) ? 'installiert' : 'älter';
+    return t(this.isInstalled(bundle) ? 'update.bundle.installed' : 'update.bundle.older');
   }
 
   /**
@@ -87,11 +88,11 @@ export class UpdateCardComponent implements OnInit, OnDestroy {
   public getSignatureProblem(bundle: IUpdateBundle): string {
     switch (bundle.signature) {
       case EUpdateSignatures.MISSING:
-        return 'nicht signiert';
+        return t('update.signature.missing');
       case EUpdateSignatures.NO_PUBLIC_KEY:
-        return 'Signatur nicht prüfbar, die BuzzerBox hat keinen Schlüssel';
+        return t('update.signature.noPublicKey');
       default:
-        return 'ungültige Signatur';
+        return t('update.signature.invalid');
     }
   }
 

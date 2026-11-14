@@ -162,16 +162,13 @@ export class UdpBuzzerService {
     }
 
     /**
-     * All buzzers found since the server started, in the order they were found. They are named after the color of their
-     * case, so a name changes with it; buzzers of the same color also get the end of their MAC address.
+     * All buzzers found since the server started, in the order they were found. The client names them after the color
+     * of their case.
      */
     public getBuzzers(): IBuzzer[] {
         const buzzers = [...this.buzzers.values()];
-        const hasSameColor = (buzzer: IUdpBuzzer) =>
-            buzzer.color != null && buzzers.some(other => other !== buzzer && other.color === buzzer.color);
         return buzzers.map(buzzer => ({
             id: buzzer.id,
-            name: BuzzerHelper.makeUdpBuzzerName(buzzer.macAddress, buzzer.color, hasSameColor(buzzer)),
             keyBind: '',
             byteBind: '',
             type: 'udp',

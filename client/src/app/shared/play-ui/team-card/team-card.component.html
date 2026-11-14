@@ -1,7 +1,7 @@
 <mat-card class="team-card" [class.marked]="isMarked" [class.dimmed]="isShowStyle && isDimmed()"
           [class.grade-correct]="grade === 'correct'" [class.grade-wrong]="grade === 'wrong'">
   @if (isShowStyle && isLeader()) {
-    <mat-icon class="crown" aria-label="Führt">emoji_events</mat-icon>
+    <mat-icon class="crown" [attr.aria-label]="'play.team.leads' | transloco">emoji_events</mat-icon>
   }
   <mat-card-header>
     <mat-card-title>{{getName()}}</mat-card-title>
@@ -18,10 +18,10 @@
   </mat-card-content>
   @if (isMaster) {
     <mat-card-actions>
-      <button mat-flat-button class="points-button add" (click)="addPoint()" aria-label="1 Punkt hinzufügen">+1</button>
-      <button mat-flat-button class="points-button remove" (click)="removePoint()" aria-label="1 Punkt abziehen">−1</button>
+      <button mat-flat-button class="points-button add" (click)="addPoint()" [attr.aria-label]="'play.team.addPoint' | transloco">+1</button>
+      <button mat-flat-button class="points-button remove" (click)="removePoint()" [attr.aria-label]="'play.team.removePoint' | transloco">−1</button>
       @if (getQuestionPoints() !== 1) {
-        <button mat-flat-button class="points-button question" (click)="addQuestionPoints()" title="Punkte der aktuellen Frage vergeben">+{{getQuestionPoints()}}</button>
+        <button mat-flat-button class="points-button question" (click)="addQuestionPoints()" [title]="'play.team.addQuestionPoints' | transloco">+{{getQuestionPoints()}}</button>
       }
       <!--    TODO: take care of this later-->
       <!--    <button mat-button (click)="markTeamInvert()">{{isMarked ? "Unm" : "M"}}arkiere Team</button>-->

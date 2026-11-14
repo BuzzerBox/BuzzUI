@@ -1,3 +1,4 @@
+import {t} from '../../../i18n/i18n';
 import {Component, HostBinding, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {GameService} from '../../../services/game.service';
 import {
@@ -231,8 +232,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     const media = this.question?.mediaDetails;
     let waitingNote: string | null = null;
     if (QuestionPaneComponent.isWaitingForMedia(false, state, media)) {
-      const article = MediaHelper.isSlideshow(media) ? 'der' : 'dem';
-      waitingNote = `Sonst ${part === 'question' ? 'erscheint sie' : 'erscheinen sie'} nach ${article} ${MediaKindHelper.getName(media)}.`;
+      waitingNote = t(`play.reveal.${part}.waiting`, {after: t('media.after.' + MediaKindHelper.getKind(media))});
     }
     const question = this.question;
     this.revealConfirmationRef = openRevealConfirmation(this.dialog, part, waitingNote);
@@ -256,11 +256,11 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   public getQuestionVisibilityTitle(): string {
-    return QuestionPaneComponent.getVisibilityTitle('Frage', this.showQuestion, this.questionState, this.question?.mediaDetails);
+    return QuestionPaneComponent.getVisibilityTitle('question', this.showQuestion, this.questionState, this.question?.mediaDetails);
   }
 
   public getAnswersVisibilityTitle(): string {
-    return QuestionPaneComponent.getVisibilityTitle('Antworten', this.showAnswers, this.answerState, this.question?.mediaDetails);
+    return QuestionPaneComponent.getVisibilityTitle('answers', this.showAnswers, this.answerState, this.question?.mediaDetails);
   }
 
   /**
@@ -272,10 +272,10 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   public static getVisibilityNote(visible: boolean, state: EQuestionAnswerStates, media: IMediaDetails | undefined,
                                   canToggle: boolean): string {
     if (!canToggle) {
-      return visible ? ': sichtbar' : ': verborgen';
+      return t(visible ? 'play.visibility.visible' : 'play.visibility.hidden');
     }
     if (QuestionPaneComponent.isWaitingForMedia(visible, state, media)) {
-      return ' · nach ' + MediaKindHelper.getName(media);
+      return ' · ' + t('media.afterShort.' + MediaKindHelper.getKind(media));
     }
     return '';
   }
@@ -283,15 +283,12 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   /**
    * The button's tooltip, with the full sentence that the label leaves out
    */
-  public static getVisibilityTitle(part: string, visible: boolean, state: EQuestionAnswerStates,
+  public static getVisibilityTitle(part: 'question' | 'answers', visible: boolean, state: EQuestionAnswerStates,
                                    media: IMediaDetails | undefined): string {
-    const action = `${part} auf der Anzeige ${visible ? 'verbergen' : 'zeigen'}`;
     if (QuestionPaneComponent.isWaitingForMedia(visible, state, media)) {
-      const article = MediaHelper.isSlideshow(media) ? 'der' : 'dem';
-      const appears = part === 'Antworten' ? 'erscheinen sie' : 'erscheint sie';
-      return `${action}; sonst ${appears} nach ${article} ${MediaKindHelper.getName(media)}`;
+      return t(`play.visibility.title.${part}.waiting`, {after: t('media.after.' + MediaKindHelper.getKind(media))});
     }
-    return action;
+    return t(`play.visibility.title.${part}.${visible ? 'hide' : 'show'}`);
   }
 
   private static isWaitingForMedia(visible: boolean, state: EQuestionAnswerStates, media: IMediaDetails | undefined): boolean {
@@ -318,11 +315,11 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   public getMediaToggleAction(): string {
-    return this.isMediaShown() ? 'Verbergen' : 'Zeigen';
+    return t(this.isMediaShown() ? 'common.hide' : 'common.show');
   }
 
   public getMediaToggleTitle(): string {
-    return `${this.getMediaName()} auf der Anzeige ${this.getMediaToggleAction().toLowerCase()}`;
+    return t(this.isMediaShown() ? 'play.media.hideTitle' : 'play.media.showTitle', {media: this.getMediaName()});
   }
 
   /**
@@ -444,7 +441,7 @@ export class QuestionPaneComponent implements OnInit, OnChanges, OnDestroy {
     if (answer.isCorrect) {
       this.correctAnswersThatAreLeft--;
       if (this.correctAnswersThatAreLeft === 0 && this.isMaster) {
-        const snackBarRef = this.snackBar.open('Alle richtigen Antworten wurden aufgedeckt.', 'Okay');
+        const snackBarRef = this.snackBar.open(t('play.allCorrectRevealed'), t('play.okay'));
         this.allCorrectAnswersFoundSnackBar = snackBarRef;
         // closed with "Okay", or replaced by another snack bar
         snackBarRef.afterDismissed().subscribe(() => {

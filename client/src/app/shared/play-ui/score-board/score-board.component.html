@@ -1,26 +1,26 @@
 @if (!isShowStyle) {
   <mat-card class="scores">
     <mat-card-header>
-      <mat-card-title>Punkteliste</mat-card-title>
+      <mat-card-title>{{'play.scores.title' | transloco}}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
       <div class="score">
         @for (team of sortedTeams; track team; let i = $index) {
           <div>
-            <span class="score-entry placed{{(i + 1) <= 3 ? '-' + (i + 1) : ''}}">{{i + 1}}. {{team.name}}: {{team.points}} Pkt.</span>
+            <span class="score-entry placed{{(i + 1) <= 3 ? '-' + (i + 1) : ''}}">{{'play.scores.entry' | transloco: {place: i + 1, team: team.name, points: team.points} }}</span>
           </div>
         }
       </div>
     </mat-card-content>
     @if (isMaster) {
       <mat-card-actions>
-        <button mat-button (click)="resetServer()" title="Zurück zur Startseite, um ein neues Spiel zu beginnen oder eines fortzusetzen">Zur Startseite</button>
+        <button mat-button (click)="resetServer()" [title]="'play.scores.toHomeHint' | transloco">{{'common.toHome' | transloco}}</button>
       </mat-card-actions>
     }
   </mat-card>
 } @else {
   <div class="final">
-    <div class="title">Endstand</div>
+    <div class="title">{{'play.scores.final' | transloco}}</div>
     <div class="podium">
       @for (entry of podium; track entry.team.teamId) {
         <div class="podium-place place-{{entry.place}}" [style.--team-color]="entry.color" [style.--order]="entry.order"

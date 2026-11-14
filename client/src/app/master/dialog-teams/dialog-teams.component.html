@@ -1,43 +1,43 @@
-<h1 mat-dialog-title>Teams</h1>
+<h1 mat-dialog-title>{{'teams.title' | transloco}}</h1>
 <div mat-dialog-content>
   @if (rows.length === 0) {
-    <p>Die Buzzer sind nicht bekannt. Lade die Seite neu, um die Teams zu ändern.</p>
+    <p>{{'teams.buzzersUnknown' | transloco}}</p>
   }
   <form [formGroup]="teamsFormGroup">
     @for (row of rows; track row.controlName) {
       <div class="team-row" [class.inactive]="!isActive(row)">
         <mat-checkbox [checked]="isActive(row)" (change)="setActive(row, $event.checked)">
           <app-buzzer-color [color]="getColor(row)" [isCaseColor]="hasCaseColor(row)"></app-buzzer-color>
-          {{row.buzzer.name}}
+          {{getBuzzerName(row.buzzer)}}
           @if (row.buzzer.online === false) {
-            <mat-icon class="buzzer-status" title="Dieser Funkbuzzer ist gerade nicht verbunden">wifi_off</mat-icon>
+            <mat-icon class="buzzer-status" [title]="'buzzer.offline' | transloco">wifi_off</mat-icon>
           }
           @if (row.buzzer.batteryLow) {
-            <mat-icon class="buzzer-status" title="Der Akku dieses Funkbuzzers ist fast leer">battery_alert</mat-icon>
+            <mat-icon class="buzzer-status" [title]="'buzzer.batteryLow' | transloco">battery_alert</mat-icon>
           }
         </mat-checkbox>
         <mat-form-field class="team-name">
-          <mat-label>Teamname</mat-label>
+          <mat-label>{{'common.teamName' | transloco}}</mat-label>
           <input matInput [formControlName]="row.controlName">
         </mat-form-field>
         <span class="team-points">
           @if (row.team) {
             {{formatPoints(row.team.points ?? 0)}}
           } @else if (isActive(row)) {
-            neu
+            {{'teams.new' | transloco}}
           }
         </span>
       </div>
       @if (losesPoints(row)) {
-        <div class="warning">{{row.team.name}} wird entfernt und verliert {{formatPoints(row.team.points)}}.</div>
+        <div class="warning">{{'teams.losesPoints' | transloco: {team: row.team.name, points: formatPoints(row.team.points)} }}</div>
       }
     }
   </form>
   @if (getActiveCount() < MIN_TEAMS) {
-    <p class="warning">Es müssen mindestens {{MIN_TEAMS}} Teams spielen.</p>
+    <p class="warning">{{'common.minTeams' | transloco: {count: MIN_TEAMS} }}</p>
   }
 </div>
 <div mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close>Abbrechen</button>
-  <button mat-raised-button color="primary" [disabled]="!canSave()" (click)="save()">Übernehmen</button>
+  <button mat-button mat-dialog-close>{{'common.cancel' | transloco}}</button>
+  <button mat-raised-button color="primary" [disabled]="!canSave()" (click)="save()">{{'teams.apply' | transloco}}</button>
 </div>

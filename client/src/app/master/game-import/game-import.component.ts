@@ -1,3 +1,4 @@
+import {t} from '../../i18n/i18n';
 import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {IGameBundle, IGameImportResult, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
@@ -51,7 +52,7 @@ export class GameImportComponent implements OnDestroy {
       this.bundle = GameFileHelper.toBundle(JSON.parse(await file.text()), file.name);
       this.gameName = StorageApiHelper.sanitizeName(this.bundle.gameName) || GameFileHelper.getBaseName(file.name);
     } catch (e) {
-      this.error = e instanceof SyntaxError ? 'Die Datei ist kein Spiel und kein Spielstand.' : (e as Error).message;
+      this.error = e instanceof SyntaxError ? t('import.notAGame') : (e as Error).message;
     }
   }
 
@@ -84,7 +85,7 @@ export class GameImportComponent implements OnDestroy {
       this.imported.emit(this.result);
     } catch (e) {
       this.error = StorageService.isConflict(e)
-        ? `Es gibt schon ein Spiel „${name}“. Wähle einen anderen Namen.`
+        ? t('import.exists', {name})
         : StorageService.getErrorMessage(e);
     } finally {
       this.importing = false;
@@ -106,7 +107,7 @@ export class GameImportComponent implements OnDestroy {
       },
       error: e => {
         this.error = StorageService.isConflict(e)
-          ? `Es gibt schon ein Spiel „${name}“. Wähle einen anderen Namen.`
+          ? t('import.exists', {name})
           : StorageService.getErrorMessage(e);
         this.importing = false;
         this.uploadProgress = null;

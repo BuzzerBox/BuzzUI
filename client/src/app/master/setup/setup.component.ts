@@ -1,3 +1,4 @@
+import {t, tn} from '../../i18n/i18n';
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {Router} from '@angular/router';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -60,7 +61,8 @@ export class SetupComponent implements OnInit {
   // a new game has no version and saves its scoring, see ScoringHelper.NEW_GAME_SCORING
   private isVersionLoaded = false;
   public readonly mediaKinds = MediaHelper.MEDIA_KINDS;
-  public readonly mediaKindLabels: Record<TMediaKind, string> = {image: 'Bild', playable: 'Video & Audio', slideshow: 'Diashow'};
+  // keys of texts
+  public readonly mediaKindLabels: Record<TMediaKind, string> = {image: 'mediaKinds.image', playable: 'mediaKinds.playable', slideshow: 'mediaKinds.slideshow'};
   public readonly mediaKindIcons: Record<TMediaKind, string> = {image: 'image', playable: 'movie', slideshow: 'burst_mode'};
   public readonly answerIndexes = [0, 1, 2, 3];
 
@@ -92,17 +94,17 @@ export class SetupComponent implements OnInit {
     try {
       const location = await this.storage.getLocation(navigation.locationId);
       if (location == null) {
-        throw new Error('Der Speicherort ist nicht mehr da. Wurde der USB-Stick abgezogen?');
+        throw new Error(t('storage.error.locationGone'));
       }
       const ref: IGameRef = {location, gameName: navigation.gameName};
       const info = await this.storage.getGame(ref);
       if (info == null) {
-        throw new Error(`Das Spiel ${navigation.gameName} gibt es nicht mehr.`);
+        throw new Error(t('setup.error.gameGone', {game: navigation.gameName}));
       }
       const baseVersion = navigation.baseVersion ?? info.latestVersion;
       if (baseVersion != null) {
         if (!info.versions.some(version => version.version === baseVersion)) {
-          throw new Error(`Version ${baseVersion} von ${navigation.gameName} gibt es nicht mehr.`);
+          throw new Error(t('setup.error.versionGone', {version: baseVersion, game: navigation.gameName}));
         }
         const definition = await this.storage.getVersion(ref, baseVersion);
         this.loadedVersion = definition.version;
@@ -145,7 +147,7 @@ export class SetupComponent implements OnInit {
       setTimeout(() => this.stepper?.next());
     } catch (e) {
       this.createError = StorageService.isConflict(e)
-        ? `Auf ${this.getLocationText(this.newGameLocation)} gibt es schon ein Spiel „${name}“. Wähle einen anderen Namen oder bearbeite es in der Spielverwaltung.`
+        ? t('setup.error.exists', {location: this.getLocationText(this.newGameLocation), name})
         : StorageService.getErrorMessage(e);
     } finally {
       this.creating = false;
@@ -153,7 +155,7 @@ export class SetupComponent implements OnInit {
   }
 
   public getLocationText(location: IStorageLocation): string {
-    return location.type === 'box' ? 'der BuzzerBox' : 'dem USB-Stick ' + location.name;
+    return StorageService.getLocationText(location);
   }
 
   /**
@@ -233,7 +235,7 @@ export class SetupComponent implements OnInit {
       this.step = Math.max(0, this.questionFormGroupNames.length - 1);
     }
 
-    const snackBarRef = this.snackBar.open(`Frage ${index + 1} gelöscht`, 'Rückgängig', { duration: 5000 });
+    const snackBarRef = this.snackBar.open(t('setup.question.deleted', {number: index + 1}), t('setup.question.undo'), { duration: 5000 });
     snackBarRef.onAction().subscribe(() => {
       const restoredNames: string[] = [];
       const restoredGroup = new UntypedFormGroup({});
@@ -402,8 +404,8 @@ export class SetupComponent implements OnInit {
       const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults, this.getScoringToSave());
       this.savedVersion = result.version;
       this.loadedVersion = result.version;
-      this.snackBar.open(result.unchanged ? `Nichts geändert, es bleibt bei Version ${result.version}.` : `Version ${result.version} wurde gespeichert.`,
-        'OK', {duration: 4000});
+      this.snackBar.open(t(result.unchanged ? 'setup.save.unchanged' : 'setup.save.saved', {version: result.version}),
+        t('common.ok'), {duration: 4000});
     } catch (e) {
       this.saveError = StorageService.getErrorMessage(e);
     } finally {
@@ -468,7 +470,7 @@ export class SetupComponent implements OnInit {
     if (!Number.isFinite(points)) {
       return '';
     }
-    return points === 1 ? '1 Punkt' : `${points} Punkte`;
+    return tn('common.points', points);
   }
 
   /**
@@ -499,15 +501,16 @@ export class SetupComponent implements OnInit {
     this.onQuestionsChanged();
   }
 
+  // the labels are keys of texts
   public readonly doubleAnswerOptions: {key: TDoubleAnswerScoring, label: string}[] = [
-    {key: 'none', label: 'Nicht möglich'},
-    {key: 'plusOne', label: 'Punkte der Frage + 1'},
-    {key: 'double', label: 'Doppelte Punkte'}
+    {key: 'none', label: 'setup.scoring.double.none'},
+    {key: 'plusOne', label: 'setup.scoring.double.plusOne'},
+    {key: 'double', label: 'setup.scoring.double.double'}
   ];
   public readonly wrongAnswerOptions: {key: TWrongAnswerScoring, label: string}[] = [
-    {key: 'questionPoints', label: 'Punkte der Frage abziehen'},
-    {key: 'one', label: '1 Punkt abziehen'},
-    {key: 'none', label: 'Kein Abzug'}
+    {key: 'questionPoints', label: 'setup.scoring.wrong.questionPoints'},
+    {key: 'one', label: 'setup.scoring.wrong.onePoint'},
+    {key: 'none', label: 'setup.scoring.wrong.none'}
   ];
 
   changeScoring(scoring: Partial<IScoring>): void {

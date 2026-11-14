@@ -1,3 +1,5 @@
+import {BuzzerNameHelper} from '../../helper/buzzer-name.helper';
+import {t} from '../../i18n/i18n';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {combineLatest, defer, Subscription} from 'rxjs';
 import {startWith} from 'rxjs/operators';
@@ -76,23 +78,20 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * As the server names it among the other buzzers, or else by its color
+   * After the color of its case, as among the other buzzers, see BuzzerNameHelper
    */
   public getName(row: IWirelessBuzzerRow): string {
+    const buzzers = this.game.getAvailableBuzzers();
     const usb = row.usb;
     if (usb == null) {
-      return row.wifi.name;
+      return BuzzerNameHelper.getName(row.wifi, buzzers);
     }
     if (!usb.macAddress) {
-      return 'Funkbuzzer';
+      return t('wirelessBuzzers.unknown');
     }
+    // over USB the buzzer tells its color right away, while its heartbeats may lag behind one that was just given
     const id = BuzzerHelper.makeUdpBuzzerId(usb.macAddress);
-    const known = row.wifi ?? this.game.getAvailableBuzzers().find(available => available.id === id);
-    // the server's name follows the heartbeats, which may lag behind a color that was just given
-    if (known?.name && known.color === usb.color) {
-      return known.name;
-    }
-    return BuzzerHelper.makeUdpBuzzerName(usb.macAddress, usb.color);
+    return BuzzerNameHelper.getName({id, type: 'udp', color: usb.color, keyBind: '', byteBind: ''}, buzzers);
   }
 
   /**
@@ -227,14 +226,14 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
   public getErrorMessage(error: TUsbBuzzerError): string {
     switch (error) {
       case 'no-wifi-settings':
-        return 'Die BuzzerBox kennt die Einstellungen ihres WLANs nicht (/etc/buzzerbox/wireless-buzzers.conf fehlt).';
+        return t('wirelessBuzzers.error.noWifiSettings');
       case 'no-answer':
-        return 'Der Buzzer hat nicht geantwortet. Stecke ihn ab und wieder an und versuche es erneut.';
+        return t('wirelessBuzzers.error.noAnswer');
       case 'rejected':
-        return 'Der Buzzer hat die WLAN-Einstellungen abgelehnt.';
+        return t('wirelessBuzzers.error.rejected');
       case 'port-error':
       default:
-        return 'Die Verbindung über USB ist abgebrochen. Ist der Buzzer noch angesteckt?';
+        return t('wirelessBuzzers.error.portError');
     }
   }
 

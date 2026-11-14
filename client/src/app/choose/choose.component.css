@@ -1,7 +1,15 @@
 .choose {
+  position: relative;
   max-width: 1000px;
   margin: 0 auto;
   padding: 24px 16px 48px;
+}
+
+/* in the corner, out of the way of the title */
+.language {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 .header {

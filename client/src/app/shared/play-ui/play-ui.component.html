@@ -12,7 +12,7 @@
         <!-- one element per buzz, so its animation starts again -->
         @for (b of [banner]; track b.id) {
           <div class="buzz-banner" [style.--team-color]="b.color"
-               [style.--team-on-color]="getTextColor(b.color)">{{b.name}}!</div>
+               [style.--team-on-color]="getTextColor(b.color)">{{'play.buzzed' | transloco: {team: b.name} }}</div>
         }
       }
       <div class="parent">
@@ -21,21 +21,21 @@
           @if (isMaster && isWelcome()) {
             <!-- the buzzers stay locked until the game begins -->
             <mat-card-actions class="master-actions welcome-actions">
-              <button mat-flat-button color="primary" class="begin-game" (click)="beginGame()" title="Die erste Frage zeigen und die Buzzer freigeben">
-                <mat-icon>play_arrow</mat-icon> Spiel starten
+              <button mat-flat-button color="primary" class="begin-game" (click)="beginGame()" [title]="'play.beginGameHint' | transloco">
+                <mat-icon>play_arrow</mat-icon> {{'common.startGame' | transloco}}
               </button>
             </mat-card-actions>
           } @else if (isMaster) {
             <mat-card-actions class="master-actions">
-              <button mat-flat-button class="nav-button" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" title="Springe zur vorherigen Frage"><mat-icon>chevron_left</mat-icon>Vorherige Frage</button>
+              <button mat-flat-button class="nav-button" [disabled]="!hasPreviousQuestion()" (click)="getPreviousQuestion()" [title]="'play.previousQuestionHint' | transloco"><mat-icon>chevron_left</mat-icon>{{'play.previousQuestion' | transloco}}</button>
               <span class="spacer"></span>
               <app-buzzer-lock></app-buzzer-lock>
               <span class="spacer"></span>
               @if (hasNextQuestion()) {
-                <button mat-flat-button class="nav-button" (click)="getNextQuestion()" title="Springe zur nächsten Frage">Nächste Frage<mat-icon iconPositionEnd>chevron_right</mat-icon></button>
+                <button mat-flat-button class="nav-button" (click)="getNextQuestion()" [title]="'play.nextQuestionHint' | transloco">{{'play.nextQuestion' | transloco}}<mat-icon iconPositionEnd>chevron_right</mat-icon></button>
               } @else {
                 <!-- after the last question, the game ends here instead -->
-                <button mat-flat-button class="nav-button" (click)="endGame()" title="Beende das Spiel und zeige das gewinnende Team an">Spiel beenden<mat-icon iconPositionEnd>flag</mat-icon></button>
+                <button mat-flat-button class="nav-button" (click)="endGame()" [title]="'play.endGameHint' | transloco">{{'common.endGame' | transloco}}<mat-icon iconPositionEnd>flag</mat-icon></button>
               }
             </mat-card-actions>
           }
@@ -50,7 +50,7 @@
         }
         @if (getScreenRightTeams().length) {
           <div class="screen-side-divider" role="separator"
-               title="Darüber die Teams links (hochkant: oben) auf der Anzeige, darunter die rechts (unten)"></div>
+               [title]="'play.screenSides' | transloco"></div>
         }
       }
       @for (team of getScreenRightTeams(); track team) {

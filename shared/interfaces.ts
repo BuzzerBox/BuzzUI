@@ -6,6 +6,7 @@ import {ITeam} from './interfaces/ITeam';
 import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {ICaseColor} from './interfaces/ICaseColor';
+import {ISetLanguagePacket} from './interfaces/ISetLanguagePacket';
 import {IQuestion} from './interfaces/IQuestion';
 import {IMediaDetails} from './interfaces/IMediaDetails';
 import {IMediaQuestionState, IMediaQuestionDefaults, TMediaKind} from './interfaces/IMediaQuestionState';
@@ -112,6 +113,7 @@ export {
 	IUsbBuzzersPacket,
 	IAdoptUsbBuzzerPacket,
 	ICaseColor,
+	ISetLanguagePacket,
 	IStorageEntry,
 	IStorageFolder,
 	IBoxSetting,

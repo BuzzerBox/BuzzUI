@@ -1,3 +1,4 @@
+import {t, tn} from '../../i18n/i18n';
 import {Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {IGameInfo, IStorageLocation, StorageApiHelper} from '../../../../../shared/shared';
@@ -24,17 +25,17 @@ export interface IDialogEditGameResult {
 @Component({
     selector: 'app-dialog-edit-game',
     template: `
-      <h1 mat-dialog-title>„{{data.game.name}}“ bearbeiten</h1>
+      <h1 mat-dialog-title>{{'editGame.title' | transloco: {name: data.game.name} }}</h1>
       <div mat-dialog-content>
         <mat-form-field class="name">
-          <mat-label>Name</mat-label>
+          <mat-label>{{'common.name' | transloco}}</mat-label>
           <input matInput [(ngModel)]="name" [disabled]="running">
           @if (!isValidName()) {
-            <mat-hint class="invalid">Der Name darf nicht leer sein und keines dieser Zeichen enthalten: \\ / : * ? " &lt; &gt; | # %</mat-hint>
+            <mat-hint class="invalid">{{'common.invalidName' | transloco}}</mat-hint>
           }
         </mat-form-field>
 
-        <h3>Ort</h3>
+        <h3>{{'editGame.location' | transloco}}</h3>
         @if (locations === null) {
           <mat-spinner diameter="24"></mat-spinner>
         } @else {
@@ -42,15 +43,15 @@ export interface IDialogEditGameResult {
             @for (location of locations; track location.id) {
               <mat-radio-button [value]="location.id" [disabled]="!location.writable">
                 {{getLabel(location)}}
-                <span class="detail">{{location.id === data.location.id ? 'jetziger Ort' : getSpace(location)}}</span>
+                <span class="detail">{{location.id === data.location.id ? ('editGame.currentLocation' | transloco) : getSpace(location)}}</span>
               </mat-radio-button>
             }
           </mat-radio-group>
         }
 
-        <mat-button-toggle-group [(ngModel)]="move" [disabled]="running" aria-label="Verschieben oder kopieren">
-          <mat-button-toggle [value]="true" [disabled]="!data.location.writable">{{isSameLocation() ? 'Umbenennen' : 'Verschieben'}}</mat-button-toggle>
-          <mat-button-toggle [value]="false">Kopieren</mat-button-toggle>
+        <mat-button-toggle-group [(ngModel)]="move" [disabled]="running" [attr.aria-label]="'editGame.moveOrCopy' | transloco">
+          <mat-button-toggle [value]="true" [disabled]="!data.location.writable">{{(isSameLocation() ? 'common.rename' : 'common.move') | transloco}}</mat-button-toggle>
+          <mat-button-toggle [value]="false">{{'common.copy' | transloco}}</mat-button-toggle>
         </mat-button-toggle-group>
         <p class="hint">{{getExplanation()}}</p>
 
@@ -62,15 +63,15 @@ export interface IDialogEditGameResult {
           <div class="danger">
             @if (!confirmingDelete) {
               <button mat-stroked-button color="warn" [disabled]="running" (click)="confirmingDelete = true">
-                <mat-icon>delete</mat-icon> Spiel löschen
+                <mat-icon>delete</mat-icon> {{'editGame.deleteGame' | transloco}}
               </button>
             } @else {
               <p>
-                Möchtest du „{{data.game.name}}“ mit {{getVersionCount()}}, {{getStateCount()}} und allen Medien löschen?
-                Das lässt sich nicht rückgängig machen.
+                {{'editGame.confirmDelete' | transloco: {name: data.game.name, versions: getVersionCount(), states: getStateCount()} }}
+                {{'common.cannotUndo' | transloco}}
               </p>
-              <button mat-button [disabled]="running" (click)="confirmingDelete = false">Doch nicht</button>
-              <button mat-flat-button color="warn" [disabled]="running" (click)="delete()">Endgültig löschen</button>
+              <button mat-button [disabled]="running" (click)="confirmingDelete = false">{{'common.keep' | transloco}}</button>
+              <button mat-flat-button color="warn" [disabled]="running" (click)="delete()">{{'common.deleteForever' | transloco}}</button>
             }
           </div>
         }
@@ -79,7 +80,7 @@ export interface IDialogEditGameResult {
         @if (running) {
           <mat-spinner diameter="24"></mat-spinner>
         }
-        <button mat-button mat-dialog-close [disabled]="running">Abbrechen</button>
+        <button mat-button mat-dialog-close [disabled]="running">{{'common.cancel' | transloco}}</button>
         <button mat-flat-button color="primary" [disabled]="!canStart()" (click)="start()">{{getActionText()}}</button>
       </div>
     `,
@@ -128,9 +129,9 @@ export class DialogEditGameComponent implements OnInit {
 
   public getSpace(location: IStorageLocation): string {
     if (!location.writable) {
-      return 'schreibgeschützt';
+      return t('storage.locations.writeProtected');
     }
-    return location.freeBytes != null ? FormatHelper.formatBytes(location.freeBytes) + ' frei' : '';
+    return location.freeBytes != null ? t('storage.locations.free', {size: FormatHelper.formatBytes(location.freeBytes)}) : '';
   }
 
   public isSameLocation(): boolean {
@@ -145,19 +146,19 @@ export class DialogEditGameComponent implements OnInit {
     const here = StorageService.getLocationText(this.data.location);
     if (this.isSameLocation()) {
       return this.move
-        ? 'Das Spiel bekommt einen neuen Namen und bleibt mit allen Versionen, Spielständen und Medien, wo es ist.'
-        : `Auf ${here} entsteht eine Kopie mit allen Versionen, Spielständen und Medien unter dem neuen Namen.`;
+        ? t('editGame.explain.rename')
+        : t('editGame.explain.copyHere', {location: here});
     }
     return this.move
-      ? `Das Spiel kommt mit allen Versionen, Spielständen und Medien an den neuen Ort und wird von ${here} gelöscht.`
-      : `Das Spiel bleibt auf ${here}, und eine Kopie mit allen Versionen, Spielständen und Medien kommt an den neuen Ort.`;
+      ? t('editGame.explain.move', {location: here})
+      : t('editGame.explain.copy', {location: here});
   }
 
   public getActionText(): string {
     if (this.isSameLocation()) {
-      return this.move ? 'Umbenennen' : 'Kopie anlegen';
+      return t(this.move ? 'common.rename' : 'editGame.makeCopy');
     }
-    return this.move ? 'Verschieben' : 'Kopieren';
+    return t(this.move ? 'common.move' : 'common.copy');
   }
 
   public canStart(): boolean {
@@ -166,11 +167,11 @@ export class DialogEditGameComponent implements OnInit {
   }
 
   public getVersionCount(): string {
-    return this.data.game.versions.length === 1 ? 'einer Version' : `${this.data.game.versions.length} Versionen`;
+    return tn('editGame.versions', this.data.game.versions.length);
   }
 
   public getStateCount(): string {
-    return this.data.game.states.length === 1 ? 'einem Spielstand' : `${this.data.game.states.length} Spielständen`;
+    return tn('editGame.states', this.data.game.states.length);
   }
 
   public async start(): Promise<void> {
@@ -182,14 +183,14 @@ export class DialogEditGameComponent implements OnInit {
     await this.run(async () => {
       const copy = await this.storage.copyGame({location: this.data.location, gameName: this.data.game.name}, to, this.name, this.move);
       this.dialogRef.close({action: copy.originalKept ? 'copied' : action, name: this.name, to, originalKept: copy.originalKept});
-    }, `Auf ${StorageService.getLocationText(to)} gibt es schon ein Spiel „${this.name}“, oder das Spiel wird gerade gespielt. Wähle einen anderen Namen.`);
+    }, t('editGame.conflict', {location: StorageService.getLocationText(to), name: this.name}));
   }
 
   public async delete(): Promise<void> {
     await this.run(async () => {
       await this.storage.deleteGame({location: this.data.location, gameName: this.data.game.name});
       this.dialogRef.close({action: 'deleted', name: this.data.game.name, to: this.data.location});
-    }, 'Das Spiel wird gerade gespielt und lässt sich deshalb nicht löschen.');
+    }, t('editGame.conflictDelete'));
   }
 
   private async run(action: () => Promise<void>, conflictMessage: string): Promise<void> {

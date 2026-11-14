@@ -1,3 +1,4 @@
+import {t, tn} from '../../i18n/i18n';
 import {Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {IStorageEntry, StorageApiHelper} from '../../../../../shared/shared';
@@ -28,20 +29,19 @@ interface IFolderOption {
 @Component({
     selector: 'app-dialog-edit-media',
     template: `
-      <h1 mat-dialog-title>{{isFolder() ? 'Ordner' : 'Datei'}} „{{data.entry.name}}“ bearbeiten</h1>
+      <h1 mat-dialog-title>{{(isFolder() ? 'editMedia.titleFolder' : 'editMedia.titleFile') | transloco: {name: data.entry.name} }}</h1>
       <div mat-dialog-content>
         @if (isShown()) {
           <p class="shown">
             <mat-icon>lock</mat-icon>
             <span>
-              {{getShownText()}} Solange es Versionen gibt, die {{isFolder() ? 'ihn' : 'sie'}} zeigen, lässt
-              {{isFolder() ? 'er' : 'sie'}} sich nicht umbenennen, verschieben oder löschen.
+              {{getShownText()}} {{(isFolder() ? 'editMedia.lockedFolder' : 'editMedia.lockedFile') | transloco}}
             </span>
           </p>
         }
 
         <mat-form-field class="name">
-          <mat-label>Name</mat-label>
+          <mat-label>{{'common.name' | transloco}}</mat-label>
           <input matInput [(ngModel)]="name" [disabled]="running || isShown()">
           @if (extension) {
             <!-- the format stays, only the name in front of it changes -->
@@ -52,7 +52,7 @@ interface IFolderOption {
           }
         </mat-form-field>
 
-        <h3>Ordner</h3>
+        <h3>{{'editMedia.folder' | transloco}}</h3>
         @if (folders === null) {
           <mat-spinner diameter="24"></mat-spinner>
         } @else {
@@ -72,15 +72,15 @@ interface IFolderOption {
         <div class="danger">
           @if (!confirmingDelete) {
             <button mat-stroked-button color="warn" [disabled]="running || isShown()" (click)="confirmingDelete = true">
-              <mat-icon>delete</mat-icon> {{isFolder() ? 'Ordner' : 'Datei'}} löschen
+              <mat-icon>delete</mat-icon> {{(isFolder() ? 'editMedia.deleteFolder' : 'editMedia.deleteFile') | transloco}}
             </button>
           } @else {
             <p>
-              {{isFolder() ? 'Möchtest du den Ordner „' + data.entry.name + '“ mit allen Medien darin löschen?' : 'Möchtest du „' + data.entry.name + '“ löschen?'}}
-              Das lässt sich nicht rückgängig machen.
+              {{(isFolder() ? 'editMedia.confirmDeleteFolder' : 'editMedia.confirmDeleteFile') | transloco: {name: data.entry.name} }}
+              {{'common.cannotUndo' | transloco}}
             </p>
-            <button mat-button [disabled]="running" (click)="confirmingDelete = false">Doch nicht</button>
-            <button mat-flat-button color="warn" [disabled]="running" (click)="delete()">Endgültig löschen</button>
+            <button mat-button [disabled]="running" (click)="confirmingDelete = false">{{'common.keep' | transloco}}</button>
+            <button mat-flat-button color="warn" [disabled]="running" (click)="delete()">{{'common.deleteForever' | transloco}}</button>
           }
         </div>
       </div>
@@ -88,7 +88,7 @@ interface IFolderOption {
         @if (running) {
           <mat-spinner diameter="24"></mat-spinner>
         }
-        <button mat-button mat-dialog-close [disabled]="running">Abbrechen</button>
+        <button mat-button mat-dialog-close [disabled]="running">{{'common.cancel' | transloco}}</button>
         <button mat-flat-button color="primary" [disabled]="!canMove()" (click)="move()">{{getActionText()}}</button>
       </div>
     `,
@@ -124,7 +124,7 @@ export class DialogEditMediaComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     // folder by folder, since the media tree leaves out empty folders, which are targets too
-    const options: IFolderOption[] = [{path: '', name: 'Medien von ' + this.data.game.gameName, depth: 0}];
+    const options: IFolderOption[] = [{path: '', name: t('media.of', {game: this.data.game.gameName}), depth: 0}];
     const collect = async (folderPath: string, depth: number) => {
       for (const entry of (await this.storage.listGameMedia(this.data.game, folderPath)).entries) {
         const entryPath = StorageApiHelper.joinPath(folderPath, entry.name);
@@ -153,9 +153,7 @@ export class DialogEditMediaComponent implements OnInit {
 
   public getShownText(): string {
     const versions = this.data.entry.usedByVersions;
-    const which = versions.length === 1 ? `Version ${versions[0]}` : `Die Versionen ${versions.join(', ')}`;
-    return this.isFolder() ? `${which} ${versions.length === 1 ? 'zeigt' : 'zeigen'} Medien aus diesem Ordner.`
-      : `${which} ${versions.length === 1 ? 'zeigt' : 'zeigen'} diese Datei.`;
+    return tn(this.isFolder() ? 'editMedia.shownFolder' : 'editMedia.shownFile', versions.length, {versions: versions.join(', ')});
   }
 
   private getPath(): string {
@@ -164,7 +162,7 @@ export class DialogEditMediaComponent implements OnInit {
 
   public getNameProblem(): string | null {
     if (!this.name || !StorageApiHelper.isValidName(this.getNewName())) {
-      return 'Der Name darf nicht leer sein, nicht mit „.“ beginnen und keines dieser Zeichen enthalten: \\ / : * ? " < > | # %';
+      return t('editMedia.invalidName');
     }
     return null;
   }
@@ -180,7 +178,7 @@ export class DialogEditMediaComponent implements OnInit {
   public getActionText(): string {
     const isRenamed = this.getNewName() !== this.data.entry.name;
     const isMoved = this.targetFolder !== this.data.folderPath;
-    return isMoved && isRenamed ? 'Verschieben und umbenennen' : isMoved ? 'Verschieben' : 'Umbenennen';
+    return t(isMoved && isRenamed ? 'editMedia.moveAndRename' : isMoved ? 'common.move' : 'common.rename');
   }
 
   public canMove(): boolean {
@@ -194,14 +192,14 @@ export class DialogEditMediaComponent implements OnInit {
     await this.run(async () => {
       await this.storage.moveGameMedia(this.data.game, this.getPath(), this.getTargetPath());
       this.dialogRef.close({action: 'moved', name: this.getNewName()});
-    }, `Dort gibt es schon „${this.getNewName()}“, oder eine Version zeigt es inzwischen.`);
+    }, t('editMedia.conflictMove', {name: this.getNewName()}));
   }
 
   public async delete(): Promise<void> {
     await this.run(async () => {
       await this.storage.deleteGameMedia(this.data.game, this.getPath());
       this.dialogRef.close({action: 'deleted', name: this.data.entry.name});
-    }, 'Eine Version des Spiels zeigt es inzwischen.');
+    }, t('editMedia.conflictDelete'));
   }
 
   private async run(action: () => Promise<void>, conflictMessage: string): Promise<void> {

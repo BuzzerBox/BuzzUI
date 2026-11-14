@@ -1,11 +1,11 @@
 <app-toolbar-master [showHomeIcon]="true"></app-toolbar-master>
 <div class="page">
   @if (mode === 'continue') {
-    <h1>Spiel fortsetzen</h1>
-    <p class="hint">Wähle einen Spielstand und spiele dort weiter, wo aufgehört wurde.</p>
+    <h1>{{'common.continueGame' | transloco}}</h1>
+    <p class="hint">{{'loadGame.continueHint' | transloco}}</p>
   } @else {
-    <h1>Neues Spiel</h1>
-    <p class="hint">Wähle ein gespeichertes Spiel und beginne es von vorne.</p>
+    <h1>{{'common.newGame' | transloco}}</h1>
+    <p class="hint">{{'loadGame.newHint' | transloco}}</p>
   }
   <app-storage-locations (selectedChange)="location = $event"></app-storage-locations>
   @if (location) {

@@ -1,3 +1,4 @@
+import {t} from '../i18n/i18n';
 import {
   CURRENT_GAME_FORMAT_VERSION,
   CURRENT_SAVEGAME_VERSION,
@@ -40,7 +41,7 @@ export class GameFileHelper {
     if ((file?.version === CURRENT_SAVEGAME_VERSION || file?.version === 2) && Array.isArray(file.question)) {
       return this.convertLegacySaveGame(file as ILegacySaveGame, fileName);
     }
-    throw new Error('Die Datei ist kein Spiel und kein Spielstand.');
+    throw new Error(t('import.notAGame'));
   }
 
   private static convertLegacySaveGame(saveGame: ILegacySaveGame, fileName: string): IGameBundle {
@@ -66,7 +67,7 @@ export class GameFileHelper {
         teams: saveGame.teams ?? [],
         gameState
       };
-      bundle.stateName = 'Importiert';
+      bundle.stateName = t('import.stateName');
     }
     return bundle;
   }
@@ -79,7 +80,7 @@ export class GameFileHelper {
    * A file name without its extension, as a valid name
    */
   public static getBaseName(fileName: string): string {
-    return StorageApiHelper.sanitizeName(fileName.replace(/(\.buzzerbox)?\.(tar\.gz|tgz)$|\.json$/i, '')) || 'Importiertes Spiel';
+    return StorageApiHelper.sanitizeName(fileName.replace(/(\.buzzerbox)?\.(tar\.gz|tgz)$|\.json$/i, '')) || t('import.gameName');
   }
 
   /**
@@ -93,7 +94,7 @@ export class GameFileHelper {
    * The name a new state gets: when it was started
    */
   public static makeStateName(): string {
-    return FormatHelper.makeTimestampedName('Spiel');
+    return FormatHelper.makeTimestampedName(t('game.stateNamePrefix'));
   }
 
   /**

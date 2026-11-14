@@ -1,3 +1,4 @@
+import {t} from '../../i18n/i18n';
 import {ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChange, SimpleChanges} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -71,14 +72,14 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
     this.uploading = true;
     for (const file of Array.from(files ?? [])) {
       if (!FileExtensionsService.isSupportedExtension(FileExtensionsService.getExtension(file.name)) || !StorageApiHelper.isValidName(file.name)) {
-        this.snackBar.open(`${file.name} wird übersprungen: Nur Bilder, Videos und Audiodateien mit gültigem Namen können hochgeladen werden.`, 'OK', {duration: 6000});
+        this.snackBar.open(t('media.select.skipped', {file: file.name}), t('common.ok'), {duration: 6000});
         continue;
       }
       try {
         await this.storage.uploadGameMedia(this.game, '', file).toPromise();
       } catch (e) {
-        const reason = StorageService.isConflict(e) ? 'Es gibt schon eine Datei mit diesem Namen.' : StorageService.getErrorMessage(e);
-        this.snackBar.open(`${file.name} wurde nicht hochgeladen: ${reason}`, 'OK', {duration: 6000});
+        const reason = StorageService.isConflict(e) ? t('media.select.exists') : StorageService.getErrorMessage(e);
+        this.snackBar.open(t('media.select.notUploaded', {file: file.name, reason}), t('common.ok'), {duration: 6000});
       }
     }
     this.uploading = false;
@@ -209,9 +210,9 @@ export class SelectMediaComponent implements OnInit, OnChanges, OnDestroy {
    */
   public getKindText(node: IDirectoryTree): string {
     if (node.type === 'directory') {
-      return `Diashow · ${this.getSlideImages(node).length} Bilder`;
+      return t('media.select.kind.slideshow', {count: this.getSlideImages(node).length});
     }
-    return this.isVideo(node) ? 'Video' : this.isAudio(node) ? 'Audio' : 'Bild';
+    return t(this.isVideo(node) ? 'media.kind.video' : this.isAudio(node) ? 'media.kind.audio' : 'media.kind.image');
   }
 
   public isImage(node: IDirectoryTree): boolean {

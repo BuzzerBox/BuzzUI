@@ -1,3 +1,4 @@
+import {t} from '../../../i18n/i18n';
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {GameService} from '../../../services/game.service';
 import {
@@ -155,16 +156,16 @@ export class MediaRemoteComponent implements OnInit, OnDestroy {
    */
   public getNextSlideLabel(): string {
     if (!this.isPlaying()) {
-      return 'Bild zeigen';
+      return t('play.media.showSlide');
     }
-    return this.getSlideIndex() < this.getSlideCount() - 1 ? 'Nächstes Bild' : 'Abschließen';
+    return t(this.getSlideIndex() < this.getSlideCount() - 1 ? 'play.media.nextSlide' : 'play.media.finish');
   }
 
   public getNextSlideTitle(): string {
     if (!this.isPlaying()) {
-      return 'Aktuelles Bild auf der Anzeige zeigen';
+      return t('play.media.showSlideHint');
     }
-    return this.getSlideIndex() < this.getSlideCount() - 1 ? 'Nächstes Bild' : 'Bildserie abschließen';
+    return t(this.getSlideIndex() < this.getSlideCount() - 1 ? 'play.media.nextSlide' : 'play.media.finishHint');
   }
 
   isPlaying(): boolean {

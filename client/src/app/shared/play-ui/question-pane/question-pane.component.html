@@ -2,14 +2,14 @@
   <!-- a new game greets the teams first; the master starts it below -->
   <mat-card-content class="welcome">
     @if (getGameName(); as gameName) {
-      <div class="welcome-text">Willkommen bei</div>
+      <div class="welcome-text">{{'play.welcome.to' | transloco}}</div>
       <div class="welcome-title">{{gameName}}</div>
     } @else {
-      <div class="welcome-title">Willkommen!</div>
+      <div class="welcome-title">{{'play.welcome.title' | transloco}}</div>
     }
-    <div class="welcome-text">Gleich geht's los: {{getTotalQuestionNumber()}} {{getTotalQuestionNumber() === 1 ? 'Frage' : 'Fragen'}}</div>
+    <div class="welcome-text">{{(getTotalQuestionNumber() === 1 ? 'play.welcome.soon.one' : 'play.welcome.soon.other') | transloco: {count: getTotalQuestionNumber()} }}</div>
     @if (isMaster) {
-      <p class="welcome-hint">Die Anzeige zeigt diese Begrüßung, die Buzzer sind gesperrt. „Spiel starten“ zeigt die erste Frage und gibt die Buzzer frei.</p>
+      <p class="welcome-hint">{{'play.welcome.masterHint' | transloco}}</p>
     }
   </mat-card-content>
 } @else if (isQuestionExisting()) {
@@ -17,7 +17,7 @@
   @if (!isMaster) {
     <mat-card-header>
       <mat-card-title>
-        Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}
+        {{'common.questionProgress' | transloco: {current: getCurrentQuestionNumber(), total: getTotalQuestionNumber()} }}
         @if (getPointsLabel(); as pointsLabel) {
           <span class="question-points">{{pointsLabel}}</span>
         }
@@ -33,15 +33,15 @@
   <mat-card-content>
     @if (isMaster) {
       <!-- what the screens show of the question, in one place; clicking a part shows or hides it -->
-      <div class="control-box visibility" role="group" aria-label="Auf der Anzeige">
-        <span class="control-box-tab"><mat-icon>tv</mat-icon> Auf der Anzeige</span>
+      <div class="control-box visibility" role="group" [attr.aria-label]="'play.onScreen' | transloco">
+        <span class="control-box-tab"><mat-icon>tv</mat-icon> {{'play.onScreen' | transloco}}</span>
         <button type="button" class="screen-visibility" [class.hidden-on-screen]="!showQuestion"
           [disabled]="!canToggleQuestion()" (click)="toggleQuestionVisibility()"
           [title]="canToggleQuestion() ? getQuestionVisibilityTitle() : ''">
           <mat-icon>{{ showQuestion ? 'visibility' : 'visibility_off' }}</mat-icon>
-          <span>Frage{{getQuestionVisibilityNote()}}</span>
+          <span>{{'common.question' | transloco}}{{getQuestionVisibilityNote()}}</span>
           @if (canToggleQuestion()) {
-            <span class="visibility-action">{{ showQuestion ? 'Verbergen' : 'Zeigen' }}</span>
+            <span class="visibility-action">{{ (showQuestion ? 'common.hide' : 'common.show') | transloco }}</span>
           }
         </button>
         @if (question.show) {
@@ -49,9 +49,9 @@
             [disabled]="!canToggleAnswers()" (click)="toggleAnswersVisibility()"
             [title]="canToggleAnswers() ? getAnswersVisibilityTitle() : ''">
             <mat-icon>{{ showAnswers ? 'visibility' : 'visibility_off' }}</mat-icon>
-            <span>Antworten{{getAnswersVisibilityNote()}}</span>
+            <span>{{'common.answers' | transloco}}{{getAnswersVisibilityNote()}}</span>
             @if (canToggleAnswers()) {
-              <span class="visibility-action">{{ showAnswers ? 'Verbergen' : 'Zeigen' }}</span>
+              <span class="visibility-action">{{ (showAnswers ? 'common.hide' : 'common.show') | transloco }}</span>
             }
           </button>
         }
@@ -65,19 +65,19 @@
         }
       </div>
       @if (question.mediaDetails) {
-        <div class="control-box media" role="group" aria-label="Mediensteuerung">
-          <span class="control-box-tab"><mat-icon>{{getMediaIcon()}}</mat-icon> Mediensteuerung</span>
+        <div class="control-box media" role="group" [attr.aria-label]="'play.media.controls' | transloco">
+          <span class="control-box-tab"><mat-icon>{{getMediaIcon()}}</mat-icon> {{'play.media.controls' | transloco}}</span>
           <app-media-remote [question]="question"></app-media-remote>
         </div>
       }
     }
     @if (isMaster) {
-      <div class="control-box content" role="group" aria-label="Frage">
-        <span class="control-box-tab"><mat-icon>help_outline</mat-icon> Frage</span>
+      <div class="control-box content" role="group" [attr.aria-label]="'common.question' | transloco">
+        <span class="control-box-tab"><mat-icon>help_outline</mat-icon> {{'common.question' | transloco}}</span>
         @if (!showQuestion && canToggleQuestion()) {
           <!-- hidden on the screens: a tap asks to reveal it -->
           <div class="question-text hidden-on-screen-content can-reveal" role="button" tabindex="0"
-               title="Antippen, um die Frage auf der Anzeige zu zeigen"
+               [title]="'play.revealQuestionHint' | transloco"
                (click)="askToRevealQuestion()" (keydown.enter)="askToRevealQuestion()" (keydown.space)="$event.preventDefault(); askToRevealQuestion()">{{getQuestionText()}}</div>
         } @else {
           <div class="question-text" [class.hidden-on-screen-content]="!showQuestion">{{getQuestionText()}}</div>
@@ -98,8 +98,8 @@
       <div class="top">
         <!-- questions without answer options (unchecked in setup) may still hold placeholder answers from old games -->
         @if (question.show && isMaster) {
-          <div class="control-box content" role="group" aria-label="Antworten">
-            <span class="control-box-tab"><mat-icon>format_list_bulleted</mat-icon> Antworten</span>
+          <div class="control-box content" role="group" [attr.aria-label]="'common.answers' | transloco">
+            <span class="control-box-tab"><mat-icon>format_list_bulleted</mat-icon> {{'common.answers' | transloco}}</span>
             <ng-container [ngTemplateOutlet]="answerGrid"></ng-container>
           </div>
         } @else if (question.show && showAnswers) {
@@ -111,8 +111,8 @@
       </div>
     </div>
     @if (isMaster && question.notes) {
-      <div class="control-box content" role="group" aria-label="Notizen">
-        <span class="control-box-tab"><mat-icon>sticky_note_2</mat-icon> Notizen</span>
+      <div class="control-box content" role="group" [attr.aria-label]="'play.notes' | transloco">
+        <span class="control-box-tab"><mat-icon>sticky_note_2</mat-icon> {{'play.notes' | transloco}}</span>
         <div class="notes-text">{{question.notes}}</div>
       </div>
     }
@@ -125,7 +125,7 @@
   <div class="answer-grid" [class.hidden-on-screen-content]="!showAnswers" [class.flash-wrong]="flashWrong"
        [class.can-reveal]="canRevealAnswers()" [attr.role]="canRevealAnswers() ? 'button' : null"
        [attr.tabindex]="canRevealAnswers() ? 0 : null"
-       [attr.title]="canRevealAnswers() ? 'Antippen, um die Antworten auf der Anzeige zu zeigen' : null"
+       [attr.title]="canRevealAnswers() ? ('play.revealAnswersHint' | transloco) : null"
        (click)="askToRevealAnswers()" (keydown.enter)="askToRevealAnswers()"
        (keydown.space)="canRevealAnswers() && $event.preventDefault(); askToRevealAnswers()">
     @for (answer of getAnswers(); track answer; let i = $index) {
@@ -148,7 +148,7 @@
         }
         <!-- only the master knows which answers are correct before they are revealed -->
         @if (isMaster && answer.isCorrect && !isActivated(answer)) {
-          <span class="correct-badge" title="Richtige Antwort"><mat-icon>check</mat-icon></span>
+          <span class="correct-badge" [title]="'play.correctAnswer' | transloco"><mat-icon>check</mat-icon></span>
         }
       </div>
     }

@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import {TranslocoModule} from '@jsverse/transloco';
 import { CommonModule } from '@angular/common';
 import { MainComponent } from './main/main.component';
 import {ScreenRoutingModule} from './screen.routing.module';
@@ -21,7 +22,8 @@ import {MatCardModule} from '@angular/material/card';
     SharedModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatCardModule
+    MatCardModule,
+    TranslocoModule
   ]
 })
 export class ScreenModule { }

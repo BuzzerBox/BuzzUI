@@ -2,6 +2,7 @@ import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angula
 import {IStorageLocation} from '../../../../../shared/shared';
 import {StorageService} from '../../services/storage.service';
 import {FormatHelper} from '../../helper/format.helper';
+import {t} from '../../i18n/i18n';
 
 /**
  * Lets the master choose between the box and the USB sticks. Sticks can be plugged in or pulled out any time, so the
@@ -47,7 +48,7 @@ export class StorageLocationsComponent implements OnInit, OnDestroy {
 
   public async refresh(): Promise<void> {
     if (!this.storage.isAvailable()) {
-      this.error = 'Nur die Spielleitung kann auf den Speicher zugreifen.';
+      this.error = t('storage.error.masterOnly');
       return;
     }
     try {
@@ -75,10 +76,14 @@ export class StorageLocationsComponent implements OnInit, OnDestroy {
     this.select(this.locations.find(location => location.id === id) ?? null);
   }
 
+  public getLabel(location: IStorageLocation): string {
+    return StorageService.getLocationLabel(location);
+  }
+
   public getSpace(location: IStorageLocation): string {
     if (location.freeBytes == null) {
       return '';
     }
-    return FormatHelper.formatBytes(location.freeBytes) + ' frei';
+    return t('storage.locations.free', {size: FormatHelper.formatBytes(location.freeBytes)});
   }
 }

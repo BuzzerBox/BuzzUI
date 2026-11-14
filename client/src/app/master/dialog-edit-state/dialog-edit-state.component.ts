@@ -1,3 +1,4 @@
+import {t} from '../../i18n/i18n';
 import {Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {IGameStateInfo, StorageApiHelper} from '../../../../../shared/shared';
@@ -19,14 +20,14 @@ export interface IDialogEditStateResult {
 @Component({
     selector: 'app-dialog-edit-state',
     template: `
-      <h1 mat-dialog-title>Spielstand „{{data.state.name}}“ bearbeiten</h1>
+      <h1 mat-dialog-title>{{'editState.title' | transloco: {name: data.state.name} }}</h1>
       <div mat-dialog-content>
         <form (ngSubmit)="rename()">
           <mat-form-field class="name">
-            <mat-label>Name</mat-label>
+            <mat-label>{{'common.name' | transloco}}</mat-label>
             <input matInput name="stateName" [(ngModel)]="name" [disabled]="running">
             @if (!isValidName()) {
-              <mat-hint class="invalid">Der Name darf nicht leer sein und keines dieser Zeichen enthalten: \\ / : * ? " &lt; &gt; | # %</mat-hint>
+              <mat-hint class="invalid">{{'common.invalidName' | transloco}}</mat-hint>
             }
           </mat-form-field>
         </form>
@@ -38,12 +39,12 @@ export interface IDialogEditStateResult {
         <div class="danger">
           @if (!confirmingDelete) {
             <button mat-stroked-button color="warn" [disabled]="running" (click)="confirmingDelete = true">
-              <mat-icon>delete</mat-icon> Spielstand löschen
+              <mat-icon>delete</mat-icon> {{'editState.delete' | transloco}}
             </button>
           } @else {
-            <p>Möchtest du den Spielstand „{{data.state.name}}“ löschen? Das lässt sich nicht rückgängig machen.</p>
-            <button mat-button [disabled]="running" (click)="confirmingDelete = false">Doch nicht</button>
-            <button mat-flat-button color="warn" [disabled]="running" (click)="delete()">Endgültig löschen</button>
+            <p>{{'editState.confirmDelete' | transloco: {name: data.state.name} }} {{'common.cannotUndo' | transloco}}</p>
+            <button mat-button [disabled]="running" (click)="confirmingDelete = false">{{'common.keep' | transloco}}</button>
+            <button mat-flat-button color="warn" [disabled]="running" (click)="delete()">{{'common.deleteForever' | transloco}}</button>
           }
         </div>
       </div>
@@ -51,8 +52,8 @@ export interface IDialogEditStateResult {
         @if (running) {
           <mat-spinner diameter="24"></mat-spinner>
         }
-        <button mat-button mat-dialog-close [disabled]="running">Abbrechen</button>
-        <button mat-flat-button color="primary" [disabled]="!canRename()" (click)="rename()">Umbenennen</button>
+        <button mat-button mat-dialog-close [disabled]="running">{{'common.cancel' | transloco}}</button>
+        <button mat-flat-button color="primary" [disabled]="!canRename()" (click)="rename()">{{'common.rename' | transloco}}</button>
       </div>
     `,
     styles: [`
@@ -88,14 +89,14 @@ export class DialogEditStateComponent {
     await this.run(async () => {
       await this.storage.renameState(this.data.game, this.data.state.name, this.name);
       this.dialogRef.close({action: 'renamed', name: this.name});
-    }, `Es gibt schon einen Spielstand „${this.name}“, oder dieser wird gerade gespielt.`);
+    }, t('editState.conflict', {name: this.name}));
   }
 
   public async delete(): Promise<void> {
     await this.run(async () => {
       await this.storage.deleteState(this.data.game, this.data.state.name);
       this.dialogRef.close({action: 'deleted', name: this.data.state.name});
-    }, 'Der Spielstand wird gerade gespielt und lässt sich deshalb nicht löschen.');
+    }, t('editState.conflictDelete'));
   }
 
   private async run(action: () => Promise<void>, conflictMessage: string): Promise<void> {

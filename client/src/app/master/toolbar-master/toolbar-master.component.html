@@ -7,7 +7,7 @@
   <span class="brand"><span class="brand-bold">Buzzer</span>Box</span>
 </ng-template>
 @if (canGoHome()) {
-  <a class="home-link" [routerLink]="homeUrl" title="Zur Startseite"><ng-container *ngTemplateOutlet="brand"></ng-container></a>
+  <a class="home-link" [routerLink]="homeUrl" [title]="'toolbar.home' | transloco"><ng-container *ngTemplateOutlet="brand"></ng-container></a>
 } @else {
   <ng-container *ngTemplateOutlet="brand"></ng-container>
 }
@@ -16,14 +16,14 @@
 @if (showQuestionProgress && hasQuestionProgress()) {
   <!-- on the play page, instead of a row above the question, which the touch display has no room for -->
   <span class="divider"></span>
-  <span class="question-progress">Frage {{getCurrentQuestionNumber()}}/{{getTotalQuestionNumber()}}</span>
+  <span class="question-progress">{{'common.questionProgress' | transloco: {current: getCurrentQuestionNumber(), total: getTotalQuestionNumber()} }}</span>
   @if (getPointsLabel(); as pointsLabel) {
     <span class="question-points">{{pointsLabel}}</span>
   }
 }
 <span class="example-spacer"></span>
 @if (showHomeIcon) {
-  <a mat-icon-button [routerLink]="homeUrl" title="Zur Startseite">
+  <a mat-icon-button [routerLink]="homeUrl" [title]="'toolbar.home' | transloco">
     <mat-icon>home</mat-icon>
   </a>
 }
@@ -33,43 +33,53 @@
   </mat-icon>
 }
 @if (showGameMenu) {
-  <button mat-icon-button [matMenuTriggerFor]="gameMenu" title="Mehr">
+  <button mat-icon-button [matMenuTriggerFor]="gameMenu" [title]="'toolbar.more' | transloco">
     <mat-icon>more_vert</mat-icon>
   </button>
   <mat-menu #gameMenu="matMenu" xPosition="before">
     <button mat-menu-item (click)="openTeamsDialog()">
       <mat-icon>people</mat-icon>
-      <span>Teams bearbeiten</span>
+      <span>{{'toolbar.editTeams' | transloco}}</span>
     </button>
     @if (!isGameOver()) {
-      <button mat-menu-item (click)="endGame()" title="Beendet das Spiel und zeigt das gewinnende Team an">
+      <button mat-menu-item (click)="endGame()" [title]="'toolbar.endGameHint' | transloco">
         <mat-icon>flag</mat-icon>
-        <span>Spiel beenden</span>
+        <span>{{'common.endGame' | transloco}}</span>
       </button>
-      <button mat-menu-item (click)="pauseGame()" title="Speichert das Spiel, um es später unter „Spiel fortsetzen“ weiterzuspielen">
+      <button mat-menu-item (click)="pauseGame()" [title]="'toolbar.pauseGameHint' | transloco">
         <mat-icon>pause</mat-icon>
-        <span>Spiel pausieren</span>
+        <span>{{'toolbar.pauseGame' | transloco}}</span>
       </button>
-      <button mat-menu-item (click)="discardGame()" title="Beendet das Spiel und löscht seinen Spielstand">
+      <button mat-menu-item (click)="discardGame()" [title]="'toolbar.discardGameHint' | transloco">
         <mat-icon>delete</mat-icon>
-        <span>Spiel verwerfen</span>
+        <span>{{'toolbar.discardGame' | transloco}}</span>
+      </button>
+    }
+    <!-- the toolbar of the play page has no room for the language switch of the other pages -->
+    @for (language of otherLanguages(); track language) {
+      <button mat-menu-item [attr.lang]="language" (click)="setLanguage(language)">
+        <mat-icon>language</mat-icon>
+        <span>{{languageNames[language]}}</span>
       </button>
     }
   </mat-menu>
 }
 @if (showSettings) {
-  <a mat-icon-button [routerLink]="settingsUrl" title="Einstellungen der BuzzerBox">
+  <a mat-icon-button [routerLink]="settingsUrl" [title]="'toolbar.boxSettings' | transloco">
     <mat-icon>settings</mat-icon>
   </a>
 }
 @if (showResetServer) {
-  <button mat-icon-button (click)="resetServer()" title="Server zurücksetzen">
+  <button mat-icon-button (click)="resetServer()" [title]="'toolbar.resetServer' | transloco">
     <mat-icon>restart_alt</mat-icon>
   </button>
 }
-@if (!showGameMenu && canLogout) {
-  <button mat-icon-button (click)="logout()" title="Abmelden">
-    <mat-icon>logout</mat-icon>
-  </button>
+@if (!showGameMenu) {
+  <app-language-switch></app-language-switch>
+  @if (canLogout) {
+    <button mat-icon-button (click)="logout()" [title]="'toolbar.logout' | transloco">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
 }
 </mat-toolbar>
