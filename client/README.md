@@ -1,27 +1,30 @@
 # Client
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.2.12.
+The Angular app of the BuzzerBox: both the **game master** (`/master`, the host's phone, tablet or laptop) and the
+**screen** (`/screen`, the TV; the box's Chromium opens `/screen/`). `/choose` lets a device pick its role.
 
-## Development server
+```sh
+cp ../config.dev.json.example ../config.dev.json   # once; the build imports it
+npm install
+npm start            # ng serve on http://localhost:4200, with the game server from ../server in dev mode
+npm test             # Karma/Jasmine in Chrome; --watch=false --browsers=ChromeHeadless for one run
+npm run lint         # angular-eslint
+npm run build        # production build to dist/client
+```
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Some older specs and about 200 lint errors fail on `main` already; compare with `main`, see the
+[development setup](../docs/development.md#tests-and-lint).
 
-## Code scaffolding
+## Where things are
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+| Path | What |
+|---|---|
+| `src/app/master/` | The host's pages: home, load and prepare a game, the editor (`setup`), the storage manager, the play page |
+| `src/app/screen/` | The display |
+| `src/app/shared/play-ui/` | The play page's parts: question, media controls, teams, the buzzer button, the grading dialog |
+| `src/app/services/game.service.ts` | The state and packet handling of both roles |
+| `src/app/themes/` | The screen themes |
+| `src/i18n/` | The texts, German and English |
 
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+The [architecture](../docs/architecture.md) explains how the client talks to the server, and how themes and languages
+work.
