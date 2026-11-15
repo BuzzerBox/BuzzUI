@@ -17,8 +17,12 @@ with the box's wired buzzers, not with both.
 A new buzzer doesn't know the box's WiFi yet; it blinks magenta. It gets it over USB:
 
 1. Open the game master's **home page**. The list **Wireless buzzers** shows the connected buzzers.
-2. Plug the buzzer into a USB port of the BuzzerBox with a USB cable. It appears in the list with *Plugged in over USB*.
-   If it was asleep and doesn't appear, press its button.
+2. Plug the buzzer into a USB port of the BuzzerBox with a USB cable. It appears in the list with a **USB** badge.
+   If it was asleep and doesn't appear, press its button. A buzzer that was set up for another box says which WiFi it
+   has.
+
+   ![A buzzer plugged in over USB, ready to be adopted](images/adopt-usb.png)
+
 3. Choose the **color of its case**, if it has a colored case (firmware 1.2.0 or later). The buzzer keeps it, and the
    screens show its team in that color.
 4. Tap **Adopt** (*Übernehmen*). The buzzer's light flashes green three times, and the list says *Adopted and

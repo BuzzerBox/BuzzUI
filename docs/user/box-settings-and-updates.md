@@ -53,6 +53,9 @@ looks after your box.
    or end it first.
 3. The card **Software update** shows the installed version and the updates on the stick. Tap **Install**
    (*Installieren*) next to the newer one.
+
+   ![The card Software update with two updates on the stick](images/update-card.png)
+
 4. Wait. The box installs it and restarts its software, which takes about a minute. Don't pull out the stick and don't
    switch the box off meanwhile. The screens reload by themselves, and the game master offers to **Reload**.
 
