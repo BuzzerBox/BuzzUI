@@ -245,7 +245,7 @@ The look of the screens is chosen per game when it is prepared, and travels as `
 
 ## Languages
 
-The UI is in German (the default) and English.
+The UI is in English (the default, until the master chooses a language) and German.
 
 - The texts are in `client/src/i18n/de.json` and `en.json`: nested keys, `{{parameters}}`, and `.one`/`.other` pairs for
   texts with a number. `i18n.spec.ts` checks that both have the same keys and parameters. They are bundled, not
