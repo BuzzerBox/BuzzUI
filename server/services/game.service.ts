@@ -226,15 +226,16 @@ export class GameService {
             const adoptPacket = packet as IAdoptUsbBuzzerPacket;
             BuzzerProvisioningService.get().adopt(adoptPacket.path, adoptPacket.color);
         } else if (packet.packetType === EPacketTypes.REQUEST_BOX_SETTINGS) {
-            this.sendBoxSettings();
+            this.sendBoxSettings().catch(e => LoggerService.error('Could not send the box\'s settings', e));
         } else if (packet.packetType === EPacketTypes.SAVE_BOX_SETTINGS) {
-            this.onSaveBoxSettingsPacket(packet as ISaveBoxSettingsPacket);
+            this.answerFailure(packet, this.onSaveBoxSettingsPacket(packet as ISaveBoxSettingsPacket));
         } else if (packet.packetType === EPacketTypes.RESTART_BOX) {
-            this.onRestartBoxPacket(packet);
+            this.answerFailure(packet, this.onRestartBoxPacket(packet));
         } else if (packet.packetType === EPacketTypes.ADD_SSH_KEY) {
-            this.onChangeSshKeysPacket(packet, BoxSettingsService.get().addSshKey((packet as IAddSshKeyPacket).key));
+            this.answerFailure(packet, this.onChangeSshKeysPacket(packet, BoxSettingsService.get().addSshKey((packet as IAddSshKeyPacket).key)));
         } else if (packet.packetType === EPacketTypes.REMOVE_SSH_KEY) {
-            this.onChangeSshKeysPacket(packet, BoxSettingsService.get().removeSshKey((packet as IRemoveSshKeyPacket).fingerprint));
+            this.answerFailure(packet, this.onChangeSshKeysPacket(packet,
+                BoxSettingsService.get().removeSshKey((packet as IRemoveSshKeyPacket).fingerprint)));
         } else if (packet.packetType === EPacketTypes.SET_LANGUAGE) {
             this.onSetLanguagePacket(packet as ISetLanguagePacket);
         }
@@ -483,6 +484,17 @@ export class GameService {
     /**
      * Installing an update restarts the server, so it is only allowed while no game is set up
      */
+    /**
+     * An async handler that fails unexpectedly would end the server with an unhandled rejection; this logs it instead
+     * and tells the master, which is waiting for the answer
+     */
+    private answerFailure(packet: IGamePacket, handling: Promise<void>): void {
+        handling.catch(e => {
+            LoggerService.error(`Could not handle packet ${packet.packetType}`, e);
+            this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, false, `${e?.message ?? e}`));
+        });
+    }
+
     private async sendBoxSettings(): Promise<void> {
         this.sendToMaster<IBoxSettingsPacket>(await BoxSettingsService.get().read());
     }

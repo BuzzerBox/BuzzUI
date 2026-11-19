@@ -206,7 +206,13 @@ export class BoxSettingsService {
         } catch (e) {
             if (e?.code === 'ENOENT' && ConfigService.isDevMode()) {
                 content = '# SSH access to this BuzzerBox (dev)\n';
-                await this.writeFile(this.config.sshKeysFile, content);
+                try {
+                    await this.writeFile(this.config.sshKeysFile, content);
+                } catch (writeError) {
+                    // e.g. a config.dev.json from before the SSH keys, which leaves the box's path on the boot partition
+                    LoggerService.warn(`Could not create the dev SSH keys in ${this.config.sshKeysFile}, so SSH is shown as off`, writeError);
+                    return null;
+                }
             } else {
                 if (e?.code !== 'ENOENT') {
                     LoggerService.warn(`Could not read the SSH keys in ${this.config.sshKeysFile}`, e);
