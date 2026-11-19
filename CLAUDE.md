@@ -17,7 +17,7 @@ BuzzUI is the web app for the BuzzerBox, a quiz-show buzzer system that runs on 
 - **Technical docs:** `docs/` (architecture, configuration, development, game file format, box settings, operations), the READMEs and this file. New packets, config keys, `buzzerbox.txt` keys, services and pages go here.
 - **User guide for hosts:** `docs/user/`, for anything a host sees or does differently. It names the English UI texts, with the German ones in parentheses for the main buttons.
 
-Screenshots are in `docs/user/images/`. If a change alters a screen they show, either take them again or say in the PR that they're out of date.
+Screenshots are in `docs/user/images/`. If a change alters a screen they show, either take them again or say in the PR that they're out of date. Git keeps every old version, so retake only the screenshots a change affects, and compress new or retaken PNGs before committing: `pngquant --quality=70-90 --skip-if-larger --strip --force --ext .png <files>` (`brew install pngquant`; exit code 98 means a file was left as it was, since it couldn't reach that quality). Leave JPGs as they are.
 
 ## Commands
 
