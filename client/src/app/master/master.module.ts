@@ -53,7 +53,7 @@ import {DialogEditGameComponent} from './dialog-edit-game/dialog-edit-game.compo
 import {DialogEditStateComponent} from './dialog-edit-state/dialog-edit-state.component';
 import {DialogEditMediaComponent} from './dialog-edit-media/dialog-edit-media.component';
 import {MediaBrowserComponent} from './media-browser/media-browser.component';
-import {DialogBoxSettingsComponent} from './dialog-box-settings/dialog-box-settings.component';
+import {BoxSettingsComponent} from './box-settings/box-settings.component';
 
 @NgModule({
   declarations: [
@@ -81,7 +81,7 @@ import {DialogBoxSettingsComponent} from './dialog-box-settings/dialog-box-setti
     DialogEditStateComponent,
     DialogEditMediaComponent,
     MediaBrowserComponent,
-    DialogBoxSettingsComponent,
+    BoxSettingsComponent,
   ],
   imports: [
     CommonModule,

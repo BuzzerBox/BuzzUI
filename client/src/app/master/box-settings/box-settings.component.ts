@@ -1,6 +1,8 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {MatDialogRef} from '@angular/material/dialog';
-import {Subscription} from 'rxjs';
+import {Component, HostListener, OnDestroy, OnInit} from '@angular/core';
+import {MatDialog} from '@angular/material/dialog';
+import {Observable, Subscription} from 'rxjs';
+import {map} from 'rxjs/operators';
+import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {BoxSettingsHelper, IBoxSetting, IBoxSettingsPacket, IBoxSshKey, IResponsePacket, EPacketTypes} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 
@@ -31,14 +33,15 @@ interface IBoxSettingGroup {
 /**
  * Shows the box's settings from buzzerbox.txt on its boot partition, and changes them if the file allows it
  * (EDIT_IN_MASTER=true, see BoxSettingsHelper). They count from the box's next start, so it offers to restart it.
+ * A page of its own behind the gear icon of the home page's toolbar.
  */
 @Component({
-    selector: 'app-dialog-box-settings',
-    templateUrl: './dialog-box-settings.component.html',
-    styleUrls: ['./dialog-box-settings.component.css'],
+    selector: 'app-box-settings',
+    templateUrl: './box-settings.component.html',
+    styleUrls: ['./box-settings.component.css'],
     standalone: false
 })
-export class DialogBoxSettingsComponent implements OnInit, OnDestroy {
+export class BoxSettingsComponent implements OnInit, OnDestroy {
   public readonly editKey = BoxSettingsHelper.EDIT_KEY;
   public readonly groups: IBoxSettingGroup[] = [
     {
@@ -127,10 +130,12 @@ export class DialogBoxSettingsComponent implements OnInit, OnDestroy {
   public isEditing = false;
   // the values being edited, by key
   public draft: Record<string, string> = {};
+  // the draft as editing started, to tell whether anything was changed before leaving the page
+  private initialDraft: Record<string, string> = {};
   public isSecretShown = false;
   public isRunning = false;
   public error: string | null = null;
-  // saved since the dialog opened, so the box should restart
+  // saved since the page opened, so the box should restart
   public isSaved = false;
   // the WiFi and address to tell the user after saving, if they changed
   public newConnection: {ssid: string, address: string} | null = null;
@@ -145,7 +150,7 @@ export class DialogBoxSettingsComponent implements OnInit, OnDestroy {
   public isRestarting = false;
   private subscriptions: Subscription[] = [];
 
-  constructor(private game: GameService, private dialogRef: MatDialogRef<DialogBoxSettingsComponent>) { }
+  constructor(private game: GameService, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     this.subscriptions.push(
@@ -195,10 +200,44 @@ export class DialogBoxSettingsComponent implements OnInit, OnDestroy {
   public startEditing(): void {
     this.draft = {};
     for (const setting of this.info.settings) {
-      this.draft[setting.key] = DialogBoxSettingsComponent.LOWER_CASE_KEYS.includes(setting.key) ? setting.value.toLowerCase() : setting.value;
+      this.draft[setting.key] = BoxSettingsComponent.LOWER_CASE_KEYS.includes(setting.key) ? setting.value.toLowerCase() : setting.value;
     }
+    this.initialDraft = {...this.draft};
     this.error = null;
     this.isEditing = true;
+  }
+
+  /**
+   * Whether editing changed something that isn't saved yet
+   */
+  public hasUnsavedChanges(): boolean {
+    return this.isEditing && Object.keys(this.draft).some(key => this.draft[key] !== this.initialDraft[key]);
+  }
+
+  /**
+   * For the route's canDeactivate: leaving with unsaved changes asks first
+   */
+  public canLeave(): boolean | Observable<boolean> {
+    if (!this.hasUnsavedChanges()) {
+      return true;
+    }
+    return this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
+      data: {
+        title: 'Änderungen verwerfen?',
+        message: 'Die geänderten Einstellungen sind noch nicht gespeichert.',
+        confirmText: 'Verwerfen'
+      }
+    }).afterClosed().pipe(map(confirmed => confirmed === true));
+  }
+
+  /**
+   * Reloading or closing the page (also the toolbar's logout, which loads /choose) gets the browser's own question
+   */
+  @HostListener('window:beforeunload', ['$event'])
+  public onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+    }
   }
 
   public cancelEditing(): void {
@@ -263,13 +302,13 @@ export class DialogBoxSettingsComponent implements OnInit, OnDestroy {
       {
         label: 'Speicher', value: hardware.storage == null ? null : [
           storageKinds[hardware.storage.kind],
-          hardware.storage.sizeInBytes != null ? DialogBoxSettingsComponent.formatGigabytes(hardware.storage.sizeInBytes) : null,
-          hardware.storage.freeInBytes != null ? `${DialogBoxSettingsComponent.formatGigabytes(hardware.storage.freeInBytes)} frei` : null
+          hardware.storage.sizeInBytes != null ? BoxSettingsComponent.formatGigabytes(hardware.storage.sizeInBytes) : null,
+          hardware.storage.freeInBytes != null ? `${BoxSettingsComponent.formatGigabytes(hardware.storage.freeInBytes)} frei` : null
         ].filter(part => part != null).join(', ')
       },
       {label: 'Temperatur', value: hardware.temperatureInCelsius != null ? `${hardware.temperatureInCelsius.toLocaleString('de-DE')} °C` : null},
       {label: 'Betriebssystem', value: hardware.operatingSystem ?? null},
-      {label: 'Läuft seit', value: hardware.uptimeInSeconds != null ? DialogBoxSettingsComponent.formatDuration(hardware.uptimeInSeconds) : null},
+      {label: 'Läuft seit', value: hardware.uptimeInSeconds != null ? BoxSettingsComponent.formatDuration(hardware.uptimeInSeconds) : null},
       {label: 'Software', value: hardware.softwareVersion != null ? `Version ${hardware.softwareVersion}` : null}
     ];
     return rows.filter(row => row.value != null && row.value !== '') as {label: string, value: string}[];
@@ -332,12 +371,10 @@ export class DialogBoxSettingsComponent implements OnInit, OnDestroy {
   private run(): void {
     this.isRunning = true;
     this.error = null;
-    this.dialogRef.disableClose = true;
   }
 
   private onResponse(response: IResponsePacket): void {
     this.isRunning = false;
-    this.dialogRef.disableClose = false;
     const isSshResponse = [EPacketTypes.ADD_SSH_KEY, EPacketTypes.REMOVE_SSH_KEY].includes(response.responseTo);
     if (isSshResponse) {
       this.sshError = response.wasSuccessful ? null : response.reason ?? 'Das hat nicht geklappt.';

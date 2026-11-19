@@ -101,7 +101,7 @@ address in the network of `ETHERNET_IP_ADDRESS`, and the hostnames work there to
 Ethernet adapter works as well as the built-in port. Don't connect the box to a network that has a router, since the
 box would hand out addresses in it.
 
-The master shows these settings behind the gear icon on its start page. With `EDIT_IN_MASTER=true` it can change them
+The master shows these settings on their own page (`/master/settings`), behind the gear icon on its start page. With `EDIT_IN_MASTER=true` it can change them
 there as well, and restart the box for them (`install/.assets/scripts/buzzerbox-settings.sh`, which the server runs
 through sudo); `EDIT_IN_MASTER` itself can only be changed in the file. Boxes from before this setting don't have the
 line: add it by hand to allow it. `box_settings_edit_in_master` in `group_vars/all.yml` sets it for new images.

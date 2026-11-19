@@ -10,6 +10,7 @@ import {HomeComponent} from './home/home.component';
 import {LoadGameComponent} from './load-game/load-game.component';
 import {StorageManagerComponent} from './storage-manager/storage-manager.component';
 import {PrepareGameComponent} from './prepare-game/prepare-game.component';
+import {BoxSettingsComponent} from './box-settings/box-settings.component';
 
 const routes: Routes = [
   { path: pathsMaster.root, redirectTo: 'start', pathMatch: 'full'},
@@ -19,6 +20,8 @@ const routes: Routes = [
   { path: pathsMaster.loadGame, component: LoadGameComponent, canActivate: [RouteGuard]},
   { path: pathsMaster.storage, component: StorageManagerComponent, canActivate: [RouteGuard]},
   { path: pathsMaster.prepare, component: PrepareGameComponent, canActivate: [RouteGuard]},
+  { path: pathsMaster.settings, component: BoxSettingsComponent, canActivate: [RouteGuard],
+    canDeactivate: [(settings: BoxSettingsComponent) => settings.canLeave()]},
   { path: pathsMaster.masterAlreadyRegistered, component: MasterAlreadyRegisteredComponent, canActivate: [RouteGuard]},
   { path: pathsMaster.play, component: PlayComponent, canActivate: [RouteGuard]}
 ];

@@ -1,8 +1,9 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {provideZoneChangeDetection} from '@angular/core';
+import {NO_ERRORS_SCHEMA, provideZoneChangeDetection} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {firstValueFrom, isObservable, Observable, of} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -14,13 +15,14 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ReplaySubject, Subject} from 'rxjs';
 import {BoxSettingsHelper, EPacketTypes, IBoxSettingsPacket, IResponsePacket} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
-import {DialogBoxSettingsComponent} from './dialog-box-settings.component';
+import {BoxSettingsComponent} from './box-settings.component';
 
-describe('DialogBoxSettingsComponent', () => {
-  let fixture: ComponentFixture<DialogBoxSettingsComponent>;
+describe('BoxSettingsComponent', () => {
+  let fixture: ComponentFixture<BoxSettingsComponent>;
   let settings: ReplaySubject<IBoxSettingsPacket>;
   let responses: Subject<IResponsePacket>;
   let game: jasmine.SpyObj<GameService>;
+  let dialog: jasmine.SpyObj<MatDialog>;
 
   const makeInfo = (editable: boolean): IBoxSettingsPacket => ({
     packetType: EPacketTypes.BOX_SETTINGS,
@@ -50,17 +52,20 @@ describe('DialogBoxSettingsComponent', () => {
       'requestBoxSettings', 'saveBoxSettings', 'restartBox', 'addSshKey', 'removeSshKey']);
     game.observeBoxSettings.and.returnValue(settings);
     game.observeBoxSettingsResponses.and.returnValue(responses);
+    dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
     await TestBed.configureTestingModule({
-      declarations: [DialogBoxSettingsComponent],
-      imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatIconModule,
+      declarations: [BoxSettingsComponent],
+      // the toolbar isn't part of this test
+      schemas: [NO_ERRORS_SCHEMA],
+      imports: [CommonModule, FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatIconModule,
         MatInputModule, MatProgressSpinnerModule, MatSelectModule, NoopAnimationsModule],
       providers: [
         provideZoneChangeDetection(),
         {provide: GameService, useValue: game},
-        {provide: MatDialogRef, useValue: {disableClose: false}}
+        {provide: MatDialog, useValue: dialog}
       ]
     }).compileComponents();
-    fixture = TestBed.createComponent(DialogBoxSettingsComponent);
+    fixture = TestBed.createComponent(BoxSettingsComponent);
   });
 
   const text = () => (fixture.nativeElement as HTMLElement).textContent;
@@ -236,5 +241,25 @@ describe('DialogBoxSettingsComponent', () => {
     fixture.detectChanges();
     expect(component.canSave()).toBeFalse();
     expect(text()).toContain('anderen Netz');
+  });
+
+  it('asks before leaving with unsaved changes', async () => {
+    fixture.detectChanges();
+    settings.next(makeInfo(true));
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    expect(component.canLeave()).toBeTrue();
+    // the invalid channel in the file would be saved as the default, but that alone isn't a change to ask about
+    component.startEditing();
+    expect(component.canLeave()).toBeTrue();
+    component.draft['WIFI_SSID'] = 'Quiz Abend';
+    dialog.open.and.returnValue({afterClosed: () => of(false)} as MatDialogRef<unknown>);
+    const stay = component.canLeave();
+    expect(isObservable(stay)).toBeTrue();
+    expect(await firstValueFrom(stay as Observable<boolean>)).toBeFalse();
+    dialog.open.and.returnValue({afterClosed: () => of(true)} as MatDialogRef<unknown>);
+    expect(await firstValueFrom(component.canLeave() as Observable<boolean>)).toBeTrue();
+    component.cancelEditing();
+    expect(component.canLeave()).toBeTrue();
   });
 });

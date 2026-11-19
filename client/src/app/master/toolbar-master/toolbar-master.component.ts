@@ -5,7 +5,6 @@ import {MatDialog} from '@angular/material/dialog';
 import {IAutosaveInfoPacket} from '../../../../../shared/shared';
 import {DialogTeamsComponent} from '../dialog-teams/dialog-teams.component';
 import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
-import {DialogBoxSettingsComponent} from '../dialog-box-settings/dialog-box-settings.component';
 import {DialogConfirmEndingGameComponent} from '../../shared/play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {FormatHelper} from '../../helper/format.helper';
 import {baseUrlMaster, pathsMaster} from '../paths-master';
@@ -33,6 +32,7 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   // the box's settings (buzzerbox.txt), only on the start page as well
   @Input() showSettings = false;
   public readonly homeUrl = '/' + baseUrlMaster + pathsMaster.home;
+  public readonly settingsUrl = '/' + baseUrlMaster + pathsMaster.settings;
   // the box's touch display stays the master
   public readonly canLogout = !KioskHelper.isActive();
   public autosave: IAutosaveInfoPacket = null;
@@ -42,10 +42,6 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
 
   public openTeamsDialog(): void {
     this.dialog.open(DialogTeamsComponent);
-  }
-
-  public openSettings(): void {
-    this.dialog.open(DialogBoxSettingsComponent, {width: '800px', maxWidth: '95vw', autoFocus: false});
   }
 
   ngOnInit(): void {

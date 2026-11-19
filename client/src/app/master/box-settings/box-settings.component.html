@@ -1,5 +1,16 @@
-<h1 mat-dialog-title>Einstellungen der BuzzerBox</h1>
-<div mat-dialog-content>
+<app-toolbar-master [showHomeIcon]="true"></app-toolbar-master>
+<div class="page" [class.editing]="isEditing">
+  <div class="header">
+    <h1>Einstellungen der BuzzerBox</h1>
+    @if (!isEditing) {
+      @if (isRunning) {
+        <mat-spinner diameter="24"></mat-spinner>
+      }
+      @if (info?.editable && !isRestarting) {
+        <button mat-stroked-button [disabled]="isRunning" (click)="startEditing()"><mat-icon>edit</mat-icon> Bearbeiten</button>
+      }
+    }
+  </div>
   @if (info === null) {
     <div class="status"><mat-spinner diameter="24"></mat-spinner><span>Die Einstellungen werden geladen …</span></div>
   } @else if (!info.available) {
@@ -61,7 +72,7 @@
     }
 
     @for (group of groups; track group.title) {
-      <section class="group">
+      <section class="group card">
         <h2><mat-icon>{{group.icon}}</mat-icon>{{group.title}}</h2>
         @for (field of getVisibleFields(group); track field.key) {
           @if (!isEditing) {
@@ -129,7 +140,7 @@
 
     @if (info.sshAvailable) {
       <!-- outside the settings form: keys count right away, "Speichern" and "Abbrechen" don't touch them -->
-      <section class="group ssh-group">
+      <section class="group card">
         <h2><mat-icon>key</mat-icon>SSH-Zugang</h2>
         @if (isEditing) {
           <p class="status note-box">
@@ -211,7 +222,7 @@
   }
 </div>
 <ng-template #hardwareSection>
-  <section class="group">
+  <section class="group card">
     <h2><mat-icon>memory</mat-icon>Hardware</h2>
     @for (row of getHardwareRows(); track row.label) {
       <div class="row">
@@ -222,17 +233,15 @@
   </section>
 </ng-template>
 
-<div mat-dialog-actions align="end">
-  @if (isRunning) {
-    <mat-spinner diameter="24"></mat-spinner>
-  }
-  @if (isEditing) {
-    <button mat-button [disabled]="isRunning" (click)="cancelEditing()">Abbrechen</button>
-    <button mat-flat-button color="primary" [disabled]="!canSave()" (click)="save()">Speichern</button>
-  } @else {
-    @if (info?.editable && !isRestarting) {
-      <button mat-stroked-button [disabled]="isRunning" (click)="startEditing()"><mat-icon>edit</mat-icon> Bearbeiten</button>
-    }
-    <button mat-flat-button color="primary" mat-dialog-close [disabled]="isRunning">Schließen</button>
-  }
-</div>
+@if (isEditing) {
+  <!-- stays at the bottom of the window, so the long form can be saved from anywhere -->
+  <div class="actions">
+    <div class="actions-inner">
+      @if (isRunning) {
+        <mat-spinner diameter="24"></mat-spinner>
+      }
+      <button mat-button [disabled]="isRunning" (click)="cancelEditing()">Abbrechen</button>
+      <button mat-flat-button color="primary" [disabled]="!canSave()" (click)="save()">Speichern</button>
+    </div>
+  </div>
+}

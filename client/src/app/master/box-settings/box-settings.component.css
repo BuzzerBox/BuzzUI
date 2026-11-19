@@ -1,3 +1,55 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* room for the bar with "Speichern" at the bottom */
+.page.editing {
+  padding-bottom: 88px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header h1 {
+  flex: 1;
+  margin: 8px 0;
+  font-weight: 400;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background-color: #fff;
+}
+
+.actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: #fff;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.actions-inner {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+
 .intro, .note {
   color: rgba(0, 0, 0, 0.6);
 }
@@ -28,6 +80,11 @@
 .row.edit {
   margin-bottom: 12px;
   border-bottom: none;
+}
+
+/* as wide as its buttons, not the whole column */
+.row.edit mat-button-toggle-group {
+  justify-self: start;
 }
 
 .label {
@@ -92,15 +149,10 @@
 }
 
 .saved {
+  margin-top: 16px;
   padding: 8px 16px 16px;
   border-radius: 8px;
   background-color: rgba(0, 0, 0, 0.04);
-}
-
-.ssh-group {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .note-box {

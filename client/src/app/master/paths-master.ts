@@ -6,6 +6,8 @@ export const pathsMaster = {
   loadGame: 'load-game',
   prepare: 'prepare',
   storage: 'storage',
+  // the box's settings (buzzerbox.txt), its hardware and SSH keys
+  settings: 'settings',
   setup: 'setup',
   masterAlreadyRegistered: 'master-already-registered',
   root: '',
