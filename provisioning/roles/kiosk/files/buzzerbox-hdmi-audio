@@ -4,52 +4,77 @@
 # HDMI output is switched on again (error 524). The card then only has the profiles "off" and "pro-audio" and the media
 # play into the "Dummy Output". This waits until the HDMI output takes sound and lets WirePlumber probe the card again.
 # The TV (seen with an LG) then still stays silent until the output is switched on again while the sound is already
-# running, so it switches cage's output off and on, which keeps Chromium and its media running.
+# running, so it switches sway's HDMI output off and on, which keeps Chromium and its media running (sway moves the
+# screen's workspace back onto HDMI when the output is on again).
+# The TV may be on either HDMI port, like the screen (buzzerbox-kiosk-session): HDMI-A-1 (HDMI0) has the sound card
+# vc4hdmi0, HDMI-A-2 (HDMI1) has vc4hdmi1.
 user="${BUZZERBOX_USER:?}"
+uid="$(id -u "$user")"
 
 as_user() {
-    runuser -u "$user" -- env XDG_RUNTIME_DIR="/run/user/$(id -u "$user")" WAYLAND_DISPLAY=wayland-0 "$@"
+    runuser -u "$user" -- env XDG_RUNTIME_DIR="/run/user/$uid" "$@"
+}
+
+# sway's socket: its name has sway's process ID, and the Wayland display it runs on isn't always the same
+sway_socket() {
+    pid="$(pgrep -u "$user" -x sway | head -n 1)"
+    [ -n "$pid" ] && echo "/run/user/$uid/sway-ipc.$uid.$pid.sock"
 }
 
 has_hdmi_sink() {
     as_user wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q 'node.name = "alsa_output\.'
 }
 
-# HDMI-A-1, the output that roles/base forces on
-is_tv_connected() {
-    grep -qx connected /sys/class/drm/card*-HDMI-A-1/status
+# The HDMI output with a TV, HDMI-A-1 if both have one: its EDID can be read. Prints nothing without a TV.
+tv_output() {
+    for output in HDMI-A-1 HDMI-A-2; do
+        for edid in /sys/class/drm/card*-"$output"/edid; do
+            if [ -r "$edid" ] && [ "$(head -c 1 "$edid" | wc -c)" -gt 0 ]; then
+                echo "$output"
+                return
+            fi
+        done
+    done
 }
 
-# fails as long as cage isn't running yet; it switches the output on itself then
+# output::string -> its sound card, e.g. vc4hdmi1 for HDMI-A-2
+sound_card() {
+    echo "vc4hdmi$((${1#HDMI-A-} - 1))"
+}
+
+# fails as long as sway isn't running yet; it switches the output on itself then
 switch_output_off_and_on() {
-    as_user wlr-randr --output HDMI-A-1 --off 2>/dev/null || return 0
+    socket="$(sway_socket)"
+    [ -n "$socket" ] || return 0
+    as_user env SWAYSOCK="$socket" swaymsg "output $1 disable" > /dev/null 2>&1 || return 0
     sleep 1
-    as_user wlr-randr --output HDMI-A-1 --on
+    as_user env SWAYSOCK="$socket" swaymsg "output $1 enable" > /dev/null
 }
 
-# until WirePlumber and cage have reacted to the TV
+# until WirePlumber and sway have reacted to the TV
 sleep 3
 for second in $(seq 180); do
-    if has_hdmi_sink || ! is_tv_connected; then
+    output="$(tv_output)"
+    if has_hdmi_sink || [ -z "$output" ]; then
         exit 0
     fi
     # a tenth of a second of silence
-    if aplay -q -D hdmi:CARD=vc4hdmi0,DEV=0 -f S16_LE -r 48000 -c 2 -s 4800 /dev/zero 2>/dev/null; then
+    if aplay -q -D "hdmi:CARD=$(sound_card "$output"),DEV=0" -f S16_LE -r 48000 -c 2 -s 4800 /dev/zero 2>/dev/null; then
         as_user systemctl --user restart wireplumber.service
         for _ in $(seq 10); do
             has_hdmi_sink && break
             sleep 1
         done
-        switch_output_off_and_on
+        switch_output_off_and_on "$output"
         exit 0
     fi
     # A TV that is still starting up may not report its sound yet ("Unknown ELD version 0"), and the kernel only reads
     # that again when the TV reports in. So read it again now and then, and switch the output on again to use it.
     if [ $((second % 15)) -eq 0 ]; then
-        for status in /sys/class/drm/card*-HDMI-A-1/status; do
+        for status in /sys/class/drm/card*-"$output"/status; do
             echo detect > "$status"
         done
-        switch_output_off_and_on
+        switch_output_off_and_on "$output"
     fi
     sleep 1
 done

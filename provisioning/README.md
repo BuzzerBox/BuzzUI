@@ -19,7 +19,8 @@ own settings (such as the WiFi name and password) from a file on the boot partit
 |---|---|
 | Game server | `buzzerbox-server.service` (Node.js 24 from nodejs.org), in the release layout of the USB updates |
 | Client | nginx serves `current/frontend` |
-| Screen | `buzzerbox-kiosk.service`: Chromium in kiosk mode in the Wayland compositor `cage` on tty1, without a desktop |
+| Screen | `buzzerbox-kiosk.service`: Chromium in kiosk mode on HDMI, in the Wayland compositor `sway` on tty1, without a desktop |
+| Touch display | with `TOUCH_DISPLAY` set, the master in a second Chromium on the display, with the on-screen keyboard `squeekboard` (`buzzerbox-kiosk-session`) |
 | WiFi access point | a NetworkManager connection with DHCP (`.50`–`.150`) and DNS for the hostnames, written by `buzzerbox-settings.service` |
 | Ethernet | the same for a notebook on a cable (the built-in port or a USB adapter), in its own network `10.0.1.0/24` |
 | USB sticks | `udiskie` mounts them at `/media/pi/<label>`, as before |
@@ -83,6 +84,10 @@ ANALOG_BUZZERS=yes
 SERVER_IP_ADDRESS=10.0.0.5
 ETHERNET_IP_ADDRESS=10.0.1.5
 SERVER_HOSTNAMES=buzzer.box buzzerbox.local
+SCREEN_MODE=1920x1080@60
+TOUCH_DISPLAY=none
+TOUCH_DISPLAY_ROTATION=270
+TOUCH_DISPLAY_SCALE=auto
 ```
 
 Edit it after flashing, or later by putting the card back into a computer (for the eMMC, use `rpiboot` again). The box
@@ -98,6 +103,30 @@ box would hand out addresses in it.
 `WIFI_ANTENNA=external` switches a CM4 to the antenna on its U.FL connector (`dtparam=ant2` in `config.txt`). The
 firmware only reads `config.txt` at boot, so when the setting changes, the box restarts once by itself. A Raspberry Pi 4
 has no antenna connector and ignores the setting.
+
+The TV may be on either HDMI port: the kiosk puts the game screen on the one with a TV (HDMI0 if both have one),
+switches the other one off and follows the TV when it is plugged into the other port. `SCREEN_MODE` is the screen's
+resolution there (`WIDTHxHEIGHT@HZ`, by default `display_mode` of `group_vars/all.yml`), or `auto` for the TV's own
+choice. That is often 4K, which a Raspberry Pi 4 doesn't draw smoothly. Without `@HZ`, the rate closest to 60 is taken
+(TVs often list 120 Hz first). The kiosk only sets modes that the TV offers: sway would take any mode, and a TV that
+can't show it drops the input, which leaves the screen black. Otherwise it takes the TV's own choice and says so in
+`journalctl -b | grep buzzerbox-kiosk`. The setting is read when the kiosk starts, so a change counts after the next
+restart of the box. It doesn't affect the touch display, which always runs at its own resolution.
+
+`TOUCH_DISPLAY` (`5inch`, `7inch` or `10inch`) is for a Raspberry Pi Touch Display 2 on the DSI connector `DISP1`; the
+10" one needs that connector's four lanes. The box then shows the master on the display and the screen on HDMI. Another
+device can still take over the master, and the display can take it back on its page "Steuerung zurückholen". Like the
+antenna, the display is set in `config.txt`, so the box restarts once by itself when it changes.
+`TOUCH_DISPLAY_ROTATION` turns the picture clockwise (the touch input turns with it); the display is portrait by itself.
+`TOUCH_DISPLAY_SCALE` is how large the master is drawn there: the displays have so many pixels that at 1 it would be as
+small as on a desktop monitor. `auto` aims at about 150 pixels of the page per inch (1.5 on the 5" and 10" display, 1.25
+on the 7" one); a number from 1 to 3 (e.g. `1.75`) sets it by hand.
+
+The display always stays the master (`client/src/app/helper/kiosk.helper.ts`, for the master opened with
+`?touchDisplay=1`): it has no logout and no "Als Anzeige verwenden", it is sent back from the pages for choosing a role,
+the screen and the dev board, links open no new window, and a long press opens no context menu and selects no text. Chromium's policies (`/etc/chromium/policies/managed/buzzerbox-kiosk.json`)
+also turn off the developer tools, file and print dialogs, other profiles and Chromium's own pages in both kiosk
+browsers.
 
 `ANALOG_BUZZERS=no` is for a box without buzzer ports, like the compact one with a touch display. The game server then
 lists none of the box's buzzers and leaves the serial port alone, and the master offers only the wireless buzzers. The
@@ -136,7 +165,7 @@ the release it runs, and newer releases come as USB update bundles.
 
 ## Differences from the old Buster installation (`install/`)
 
-- The new Raspberry Pi OS has no LXDE desktop. Chromium runs in `cage` instead, so the old autostart, `unclutter`,
+- The new Raspberry Pi OS has no LXDE desktop. Chromium runs in `sway` instead, so the old autostart, `unclutter`,
   `xdotool` and the desktop tweaks are gone.
 - hostapd/dnsmasq/dhcpcd are replaced by NetworkManager's access point mode.
 - Node.js 24 instead of 14, and 64-bit instead of 32-bit.
