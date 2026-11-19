@@ -13,9 +13,9 @@ BuzzUI is the web app for the BuzzerBox, a quiz-show buzzer system that runs on 
 
 ## Documentation
 
-For every feature or change you develop, check the documentation and update it in the same branch:
-- **Technical docs:** `docs/` (architecture, configuration, development, game file format, box settings, operations), the READMEs and this file.
-- **User guide for hosts:** `docs/user/`. It names the English UI texts, with the German ones in parentheses for the main buttons.
+**Every new feature and every change must be added to the documentation**, in the same branch and PR as the code. A change isn't finished until the docs describe it: if nothing needed updating, say so in the PR.
+- **Technical docs:** `docs/` (architecture, configuration, development, game file format, box settings, operations), the READMEs and this file. New packets, config keys, `buzzerbox.txt` keys, services and pages go here.
+- **User guide for hosts:** `docs/user/`, for anything a host sees or does differently. It names the English UI texts, with the German ones in parentheses for the main buttons.
 
 Screenshots are in `docs/user/images/`. If a change alters a screen they show, either take them again or say in the PR that they're out of date.
 
