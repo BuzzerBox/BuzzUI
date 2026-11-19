@@ -63,7 +63,8 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
   // the state's progress with its teams on the buzzers that are there now
   private mappedGameState: IGameState;
   public rows: ITeamRow[] = [];
-  public teamsFormGroup = new UntypedFormGroup({});
+  public teamsFormGroup = new UntypedFormGroup({}, {validators: TeamHelper.distinctNamesValidator});
+  public readonly nameErrorStateMatcher = TeamHelper.nameErrorStateMatcher;
   // the buzzers of the box ('serial') or the wireless ones ('udp'): a game is played with one kind only, see
   // BuzzerHelper.isMixed
   public buzzerType: IBuzzer['type'] = 'serial';
@@ -191,7 +192,7 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
 
   private clearRows(): void {
     this.rows = [];
-    this.teamsFormGroup = new UntypedFormGroup({});
+    this.teamsFormGroup = new UntypedFormGroup({}, {validators: TeamHelper.distinctNamesValidator});
   }
 
   /**
@@ -245,10 +246,10 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
    * changed by hand
    */
   private updateDefaultNames(): void {
-    const taken: string[] = [];
+    // a new team's name is none of the names the teams that are there have, also the ones further down
+    const taken: string[] = this.rows.filter(row => row.team != null).map(row => row.team.name);
     this.rows.forEach((row, position) => {
       if (row.team != null) {
-        taken.push(row.team.name);
         return;
       }
       const name = TeamHelper.makeDefaultName(row.buzzer, position, taken);
@@ -259,6 +260,13 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
       }
       row.defaultName = name;
     });
+  }
+
+  /**
+   * Whether another team that plays has the same name, see TeamHelper.distinctNamesValidator
+   */
+  public hasDuplicateName(row: ITeamRow): boolean {
+    return TeamHelper.hasDuplicateName(this.teamsFormGroup.get(row.controlName));
   }
 
   public isActive(row: ITeamRow): boolean {

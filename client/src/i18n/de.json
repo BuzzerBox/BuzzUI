@@ -100,7 +100,8 @@
     "buzzersUnknown": "Die Buzzer sind nicht bekannt. Lade die Seite neu, um die Teams zu ändern.",
     "new": "neu",
     "losesPoints": "{{team}} wird entfernt und verliert {{points}}.",
-    "apply": "Übernehmen"
+    "apply": "Übernehmen",
+    "duplicateName": "Ein anderes Team hat schon diesen Namen."
   },
   "choose": {
     "lead": "Wofür soll dieses Gerät verwendet werden?",

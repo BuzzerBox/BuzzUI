@@ -34,7 +34,8 @@ export class DialogTeamsComponent implements OnDestroy {
   public readonly MIN_TEAMS = 2;
 
   public rows: ITeamRow[] = [];
-  public teamsFormGroup = new UntypedFormGroup({});
+  public teamsFormGroup = new UntypedFormGroup({}, {validators: TeamHelper.distinctNamesValidator});
+  public readonly nameErrorStateMatcher = TeamHelper.nameErrorStateMatcher;
   private buzzersSubscription: Subscription;
   private readonly buzzerType: IBuzzer['type'];
 
@@ -61,7 +62,7 @@ export class DialogTeamsComponent implements OnDestroy {
     // a restarted server has new IDs for the buzzers of the box, and may have found the UDP buzzers in another order
     if (this.rows.some(row => buzzers[row.buzzerIndex]?.id !== row.buzzer.id)) {
       this.rows = [];
-      this.teamsFormGroup = new UntypedFormGroup({});
+      this.teamsFormGroup = new UntypedFormGroup({}, {validators: TeamHelper.distinctNamesValidator});
     }
     buzzers.forEach((buzzer, buzzerIndex) => {
       if (BuzzerHelper.getType(buzzer.id) !== this.buzzerType) {
@@ -90,10 +91,10 @@ export class DialogTeamsComponent implements OnDestroy {
    * changed by hand
    */
   private updateDefaultNames(): void {
-    const taken: string[] = [];
+    // a new team's name is none of the names the teams that are there have, also the ones further down
+    const taken: string[] = this.rows.filter(row => row.team != null).map(row => row.team.name);
     this.rows.forEach((row, position) => {
       if (row.team != null) {
-        taken.push(row.team.name);
         return;
       }
       const name = TeamHelper.makeDefaultName(row.buzzer, position, taken);
@@ -104,6 +105,13 @@ export class DialogTeamsComponent implements OnDestroy {
       }
       row.defaultName = name;
     });
+  }
+
+  /**
+   * Whether another team that plays has the same name, see TeamHelper.distinctNamesValidator
+   */
+  public hasDuplicateName(row: ITeamRow): boolean {
+    return TeamHelper.hasDuplicateName(this.teamsFormGroup.get(row.controlName));
   }
 
   public isActive(row: ITeamRow): boolean {

@@ -100,7 +100,8 @@
     "buzzersUnknown": "The buzzers are unknown. Reload the page to change the teams.",
     "new": "new",
     "losesPoints": "{{team}} will be removed and loses {{points}}.",
-    "apply": "Apply"
+    "apply": "Apply",
+    "duplicateName": "Another team already has this name."
   },
   "choose": {
     "lead": "What is this device going to be used for?",
