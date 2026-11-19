@@ -14,7 +14,6 @@
   },
   "keywords": [],
   "author": "Patrick M. Aufdermauer",
-  "license": "CC-BY-SA-4.0",
   "engines": {
     "node": ">=18"
   },
