@@ -1,3 +1,4 @@
+import {t} from '../../i18n/i18n';
 import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -97,7 +98,7 @@ export class MediaBrowserComponent implements OnChanges {
    * The folders from the root to the open one, for the breadcrumbs
    */
   public getBreadcrumbs(): {name: string, path: string}[] {
-    const crumbs = [{name: this.game != null ? 'Medien von ' + this.game.gameName : 'USB-Stick ' + this.stick?.name, path: ''}];
+    const crumbs = [{name: this.game != null ? t('media.of', {game: this.game.gameName}) : t('location.label.usb', {name: this.stick?.name}), path: ''}];
     let path = '';
     for (const segment of (this.folder?.path ?? '').split('/').filter(s => s !== '')) {
       path = StorageApiHelper.joinPath(path, segment);
@@ -148,9 +149,9 @@ export class MediaBrowserComponent implements OnChanges {
     const newUploads: IUpload[] = [];
     for (const file of Array.from(files ?? [])) {
       if (!FileExtensionsService.isSupportedExtension(FileExtensionsService.getExtension(file.name))) {
-        this.snackBar.open(`${file.name} wird übersprungen: Nur Bilder, Videos und Audiodateien können hochgeladen werden.`, 'OK', {duration: 6000});
+        this.snackBar.open(t('media.browser.skippedKind', {file: file.name}), t('common.ok'), {duration: 6000});
       } else if (!StorageApiHelper.isValidName(file.name)) {
-        this.snackBar.open(`${file.name} wird übersprungen: Der Dateiname enthält Zeichen, die ein USB-Stick nicht erlaubt.`, 'OK', {duration: 6000});
+        this.snackBar.open(t('media.browser.skippedName', {file: file.name}), t('common.ok'), {duration: 6000});
       } else {
         newUploads.push({file, progress: 0});
       }
@@ -170,12 +171,12 @@ export class MediaBrowserComponent implements OnChanges {
         tap(progress => upload.progress = progress.progress)
       ).toPromise();
     } catch (e) {
-      if (StorageService.isConflict(e) && !overwrite && await this.confirm('Datei ersetzen',
-        `In diesem Ordner gibt es schon eine Datei „${upload.file.name}“. Möchtest du sie ersetzen? Alle Fragen, die sie zeigen, zeigen dann die neue.`, 'Ersetzen')) {
+      if (StorageService.isConflict(e) && !overwrite && await this.confirm(t('media.browser.replace.title'),
+        t('media.browser.replace.message', {file: upload.file.name}), t('media.browser.replace.confirm'))) {
         upload.progress = 0;
         return this.uploadOne(game, folderPath, upload, true);
       }
-      upload.error = StorageService.isConflict(e) ? 'nicht ersetzt' : StorageService.getErrorMessage(e);
+      upload.error = StorageService.isConflict(e) ? t('media.browser.notReplaced') : StorageService.getErrorMessage(e);
     }
   }
 
@@ -201,7 +202,7 @@ export class MediaBrowserComponent implements OnChanges {
       this.newFolderName = null;
       await this.open(StorageApiHelper.joinPath(this.folder.path, name));
     } catch (e) {
-      this.snackBar.open(StorageService.getErrorMessage(e), 'OK', {duration: 6000});
+      this.snackBar.open(StorageService.getErrorMessage(e), t('common.ok'), {duration: 6000});
     }
   }
 
@@ -214,7 +215,7 @@ export class MediaBrowserComponent implements OnChanges {
       width: '520px'
     }).afterClosed().toPromise();
     if (result) {
-      this.snackBar.open(result.action === 'moved' ? `„${result.name}“ wurde gespeichert.` : `„${result.name}“ wurde gelöscht.`, 'OK', {duration: 4000});
+      this.snackBar.open(t(result.action === 'moved' ? 'media.browser.saved' : 'media.browser.deleted', {name: result.name}), t('common.ok'), {duration: 4000});
       await this.open(this.folder.path);
     }
   }

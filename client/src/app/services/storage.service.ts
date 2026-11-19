@@ -2,6 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpRequest} from '@angular/common/http';
 import {Observable, Subject} from 'rxjs';
 import {filter, map} from 'rxjs/operators';
+import {t} from '../i18n/i18n';
 import {
   IDirectoryTree,
   IGameBundle,
@@ -62,20 +63,20 @@ export class StorageService {
   public static getErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 0) {
-        return 'Die BuzzerBox ist nicht erreichbar.';
+        return t('storage.error.unreachable');
       }
       if (error.status === 401) {
-        return 'Nur die Spielleitung kann auf den Speicher zugreifen.';
+        return t('storage.error.masterOnly');
       }
       if (error.status === 507) {
-        return 'Es ist nicht genug Speicherplatz frei.';
+        return t('storage.error.noSpace');
       }
       if (typeof error.error?.error === 'string') {
         return error.error.error;
       }
       if (error.status >= 200 && error.status < 300) {
         // the answer wasn't JSON, e.g. the web page itself, when a reverse proxy doesn't pass the storage API through
-        return 'Die BuzzerBox hat keine gültige Antwort geschickt.';
+        return t('storage.error.invalidAnswer');
       }
       return error.message;
     }
@@ -90,14 +91,14 @@ export class StorageService {
   }
 
   public static getLocationLabel(location: IStorageLocation): string {
-    return location.type === 'box' ? 'BuzzerBox' : 'USB-Stick ' + location.name;
+    return location.type === 'box' ? t('location.label.box') : t('location.label.usb', {name: location.name});
   }
 
   /**
-   * The location as it follows "auf", e.g. "auf der BuzzerBox"
+   * The location as it follows "auf" or "on", e.g. "auf der BuzzerBox"
    */
   public static getLocationText(location: IStorageLocation): string {
-    return location.type === 'box' ? 'der BuzzerBox' : 'dem USB-Stick ' + location.name;
+    return location.type === 'box' ? t('location.text.box') : t('location.text.usb', {name: location.name});
   }
 
   /**

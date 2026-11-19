@@ -1,3 +1,4 @@
+import {t} from '../../i18n/i18n';
 import {Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -15,9 +16,9 @@ export interface IDialogCopyMediaData {
 @Component({
     selector: 'app-dialog-copy-media',
     template: `
-      <h1 mat-dialog-title>Medien vom USB-Stick übernehmen</h1>
+      <h1 mat-dialog-title>{{'copyMedia.title' | transloco}}</h1>
       <div mat-dialog-content>
-        <p class="hint">Übernommene Dateien und Ordner werden in die Medien von „{{data.game.gameName}}“ kopiert.</p>
+        <p class="hint">{{'copyMedia.hint' | transloco: {game: data.game.gameName} }}</p>
         <app-storage-locations [usbOnly]="true" (selectedChange)="stick = $event"></app-storage-locations>
         @if (stick) {
           <app-media-browser [stick]="stick" (picked)="copy($event)"></app-media-browser>
@@ -27,7 +28,7 @@ export interface IDialogCopyMediaData {
         @if (copying) {
           <mat-spinner diameter="24"></mat-spinner>
         }
-        <button mat-flat-button color="primary" mat-dialog-close>Fertig</button>
+        <button mat-flat-button color="primary" mat-dialog-close>{{'copyMedia.done' | transloco}}</button>
       </div>
     `,
     styles: ['.hint { color: rgba(0, 0, 0, 0.6); }'],
@@ -46,9 +47,9 @@ export class DialogCopyMediaComponent {
     this.copying = true;
     try {
       const entry = await this.storage.copyIntoGame(this.data.game, '', picked.location, picked.path);
-      this.snackBar.open(`„${entry.name}“ wurde übernommen.`, 'OK', {duration: 4000});
+      this.snackBar.open(t('copyMedia.copied', {name: entry.name}), t('common.ok'), {duration: 4000});
     } catch (e) {
-      this.snackBar.open(`„${picked.entry.name}“ konnte nicht übernommen werden: ${StorageService.getErrorMessage(e)}`, 'OK', {duration: 6000});
+      this.snackBar.open(t('copyMedia.failed', {name: picked.entry.name, error: StorageService.getErrorMessage(e)}), t('common.ok'), {duration: 6000});
     } finally {
       this.copying = false;
     }

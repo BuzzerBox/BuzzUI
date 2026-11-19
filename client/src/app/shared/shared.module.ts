@@ -1,5 +1,6 @@
 import {CUSTOM_ELEMENTS_SCHEMA, NgModule} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {TranslocoModule} from '@jsverse/transloco';
 import {PlayUiComponent} from './play-ui/play-ui.component';
 import {TeamCardComponent} from './play-ui/team-card/team-card.component';
 import {QuestionPaneComponent} from './play-ui/question-pane/question-pane.component';
@@ -57,7 +58,8 @@ import {DialogConfirmComponent} from './dialog-confirm/dialog-confirm.component'
         VgBufferingModule,
         MatIconModule,
         MatSliderModule,
-        MatProgressSpinnerModule
+        MatProgressSpinnerModule,
+        TranslocoModule
     ],
     exports: [
         PlayUiComponent,

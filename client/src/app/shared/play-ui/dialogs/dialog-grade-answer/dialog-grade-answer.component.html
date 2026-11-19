@@ -1,19 +1,20 @@
-<button mat-icon-button class="close" [mat-dialog-close]="undefined" title="Schließen; die Antwort kann später über „Bewerten“ bewertet werden" aria-label="Schließen">
+<!-- aria-label is an input of mat-dialog-close, which would overwrite the attribute -->
+<button mat-icon-button class="close" [mat-dialog-close]="undefined" [title]="'play.grade.closeHint' | transloco" [aria-label]="'play.grade.close' | transloco">
   <mat-icon>close</mat-icon>
 </button>
-<h1 mat-dialog-title>{{data.teamName}} hat gebuzzert</h1>
+<h1 mat-dialog-title>{{'play.lock.buzzed' | transloco: {team: data.teamName} }}</h1>
 <div mat-dialog-content>
   @if (data.questionText) {
-    <p class="question" aria-label="Frage">{{data.questionText}}</p>
+    <p class="question" [attr.aria-label]="'common.question' | transloco">{{data.questionText}}</p>
   }
   @if (data.answers.length) {
-    <p>Tippe die Antwort an, die das Team gegeben hat <span class="optional">(optional)</span>:</p>
-    <div class="answer-options" role="group" aria-label="Gegebene Antwort">
+    <p>{{'play.grade.pickAnswer' | transloco}} <span class="optional">{{'play.grade.optional' | transloco}}</span>:</p>
+    <div class="answer-options" role="group" [attr.aria-label]="'play.grade.givenAnswer' | transloco">
       @for (option of data.answers; track option.letter) {
         <button type="button" mat-stroked-button class="answer-option"
           [class.selected]="selectedAnswer === option.answer" [class.is-correct]="option.answer.isCorrect"
           [attr.aria-pressed]="selectedAnswer === option.answer" [disabled]="option.isRevealed"
-          [title]="option.isRevealed ? 'Schon aufgedeckt' : ''"
+          [title]="option.isRevealed ? ('play.grade.alreadyRevealed' | transloco) : ''"
           (click)="toggleAnswer(option.answer)">
           <!-- Material puts the content in a label of its own, so this row lays it out across the whole button -->
           <span class="option-content">
@@ -22,7 +23,7 @@
             <span class="letter">{{option.letter}}</span>
             <span class="text">{{option.answer.text}}</span>
             @if (option.answer.isCorrect) {
-              <mat-icon class="correct-icon" title="Richtige Antwort">check</mat-icon>
+              <mat-icon class="correct-icon" [title]="'play.correctAnswer' | transloco">check</mat-icon>
             }
           </span>
         </button>
@@ -30,27 +31,27 @@
     </div>
     <p class="hint">
       @if (selectedAnswer && data.answersHiddenOnScreens) {
-        Die Antworten sind auf der Anzeige noch verborgen; diese leuchtet {{selectedAnswer.isCorrect ? 'grün' : 'rot'}} auf, sobald sie erscheinen.
+        {{(selectedAnswer.isCorrect ? 'play.grade.hint.hiddenGreen' : 'play.grade.hint.hiddenRed') | transloco}}
       } @else if (selectedAnswer) {
-        Diese Antwort leuchtet auf der Anzeige {{selectedAnswer.isCorrect ? 'grün' : 'rot'}} auf.
+        {{(selectedAnswer.isCorrect ? 'play.grade.hint.green' : 'play.grade.hint.red') | transloco}}
       } @else if (data.answersHiddenOnScreens) {
-        Die Antworten sind auf der Anzeige noch verborgen.
+        {{'play.grade.hint.hidden' | transloco}}
       } @else {
-        Ohne Auswahl leuchten bei „Richtig“ alle richtigen Antworten auf.
+        {{'play.grade.hint.none' | transloco}}
       }
     </p>
   }
-  <p>Wie war die Antwort?</p>
+  <p>{{'play.grade.how' | transloco}}</p>
 </div>
 <div mat-dialog-actions class="grade-actions">
-  <button mat-raised-button class="correct" [mat-dialog-close]="grade(EGradeResults.CORRECT)" [disabled]="!isAllowed(EGradeResults.CORRECT)">Richtig{{formatChange(EGradeResults.CORRECT)}}</button>
-  <button mat-raised-button class="wrong" [mat-dialog-close]="grade(EGradeResults.WRONG)" [disabled]="!isAllowed(EGradeResults.WRONG)">Falsch{{formatChange(EGradeResults.WRONG)}}</button>
+  <button mat-raised-button class="correct" [mat-dialog-close]="grade(EGradeResults.CORRECT)" [disabled]="!isAllowed(EGradeResults.CORRECT)">{{'play.grade.correct' | transloco}}{{formatChange(EGradeResults.CORRECT)}}</button>
+  <button mat-raised-button class="wrong" [mat-dialog-close]="grade(EGradeResults.WRONG)" [disabled]="!isAllowed(EGradeResults.WRONG)">{{'play.grade.wrong' | transloco}}{{formatChange(EGradeResults.WRONG)}}</button>
   <!-- only in games that have it, see IScoring -->
   @if (data.scoring.doubleAnswer !== 'none') {
-    <button mat-raised-button class="double" [mat-dialog-close]="grade(EGradeResults.DOUBLE)" [disabled]="!isAllowed(EGradeResults.DOUBLE)">{{data.scoring.doubleAnswer === 'plusOne' ? 'Bonus' : 'Doppelt'}}{{formatChange(EGradeResults.DOUBLE)}}</button>
+    <button mat-raised-button class="double" [mat-dialog-close]="grade(EGradeResults.DOUBLE)" [disabled]="!isAllowed(EGradeResults.DOUBLE)">{{(data.scoring.doubleAnswer === 'plusOne' ? 'play.grade.bonus' : 'play.grade.double') | transloco}}{{formatChange(EGradeResults.DOUBLE)}}</button>
   }
 </div>
 <div mat-dialog-actions class="release-actions">
-  <button mat-button [mat-dialog-close]="undefined" title="Schließt das Fenster; die Buzzer bleiben gesperrt und die Antwort kann später über „Bewerten“ bewertet werden">Später bewerten</button>
-  <button mat-button (click)="releaseWithoutGrade()" title="Gibt die Buzzer für alle Teams frei, ohne Punkte zu vergeben">Ohne Wertung freigeben</button>
+  <button mat-button [mat-dialog-close]="undefined" [title]="'play.grade.laterHint' | transloco">{{'play.grade.later' | transloco}}</button>
+  <button mat-button (click)="releaseWithoutGrade()" [title]="'play.grade.releaseHint' | transloco">{{'play.grade.release' | transloco}}</button>
 </div>

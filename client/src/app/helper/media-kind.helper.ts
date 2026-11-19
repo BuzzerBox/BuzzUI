@@ -1,3 +1,4 @@
+import {t} from '../i18n/i18n';
 import {FileExtensionsService, IMediaDetails, MediaHelper} from '../../../../shared/shared';
 
 /**
@@ -12,14 +13,21 @@ export class MediaKindHelper {
     return !!media && !MediaHelper.isSlideshow(media) && FileExtensionsService.isAudio(media.fileSrc);
   }
 
-  public static getName(media: IMediaDetails | undefined): string {
+  /**
+   * Which texts are about the media: "media.kind.<kind>" is its name, "media.after.<kind>" says "after the video"
+   */
+  public static getKind(media: IMediaDetails | undefined): 'slideshow' | 'video' | 'audio' | 'image' {
     if (MediaHelper.isSlideshow(media)) {
-      return 'Bildserie';
+      return 'slideshow';
     }
     if (MediaHelper.isVideo(media)) {
-      return 'Video';
+      return 'video';
     }
-    return this.isAudio(media) ? 'Audio' : 'Bild';
+    return this.isAudio(media) ? 'audio' : 'image';
+  }
+
+  public static getName(media: IMediaDetails | undefined): string {
+    return t('media.kind.' + MediaKindHelper.getKind(media));
   }
 
   public static getIcon(media: IMediaDetails | undefined): string {

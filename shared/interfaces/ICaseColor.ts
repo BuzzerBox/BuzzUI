@@ -4,7 +4,9 @@
 export interface ICaseColor {
     /** "#rrggbb", which the buzzer keeps and the screens show its team in */
     color: string;
-    name: string;
-    /** For the buzzer's name, e.g. "Blauer" in "Blauer Wireless Buzzer" */
-    adjective: string;
+    /**
+     * Stands for the color in the client's texts: "caseColors.<key>.name" is its name ("Blau") and
+     * "caseColors.<key>.buzzer" the name of a buzzer in that color ("Blauer Wireless Buzzer")
+     */
+    key: string;
 }

@@ -37,19 +37,19 @@
 
   @if (isPlayable() && soundBlocked && mediaVisible) {
     <div class="sound-blocked">
-      <mat-icon>volume_off</mat-icon> Klicken, um den Ton einzuschalten
+      <mat-icon>volume_off</mat-icon> {{'play.media.soundBlocked' | transloco}}
     </div>
   }
 
   @if (isSlideshow() && mediaVisible) {
     <div class="player">
-      <img [src]="getCurrentSlide()" alt="Bild {{slideIndex + 1}} von {{media.slides.length}} zu dieser Frage">
+      <img [src]="getCurrentSlide()" [alt]="'play.media.slideAlt' | transloco: {number: slideIndex + 1, total: media.slides.length}">
     </div>
   }
 
   @if (isImage() && mediaVisible) {
     <div class="player">
-      <img [src]="media.fileSrc" alt="The image for this question">
+      <img [src]="media.fileSrc" [alt]="'play.media.imageAlt' | transloco">
     </div>
   }
 

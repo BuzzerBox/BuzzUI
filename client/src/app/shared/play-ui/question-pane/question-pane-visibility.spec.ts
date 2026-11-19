@@ -29,11 +29,11 @@ describe('QuestionPaneComponent visibility labels', () => {
   });
 
   it('keeps the whole sentence in the tooltip', () => {
-    expect(title('Frage', true, EQuestionAnswerStates.SHOWN, video)).toBe('Frage auf der Anzeige verbergen');
-    expect(title('Frage', false, EQuestionAnswerStates.HIDDEN, video)).toBe('Frage auf der Anzeige zeigen');
-    expect(title('Antworten', false, EQuestionAnswerStates.WAIT_FOR_MEDIA, video))
+    expect(title('question', true, EQuestionAnswerStates.SHOWN, video)).toBe('Frage auf der Anzeige verbergen');
+    expect(title('question', false, EQuestionAnswerStates.HIDDEN, video)).toBe('Frage auf der Anzeige zeigen');
+    expect(title('answers', false, EQuestionAnswerStates.WAIT_FOR_MEDIA, video))
       .toBe('Antworten auf der Anzeige zeigen; sonst erscheinen sie nach dem Video');
-    expect(title('Frage', false, EQuestionAnswerStates.WAIT_FOR_MEDIA, slideshow))
+    expect(title('question', false, EQuestionAnswerStates.WAIT_FOR_MEDIA, slideshow))
       .toBe('Frage auf der Anzeige zeigen; sonst erscheint sie nach der Bildserie');
   });
 });

@@ -5,15 +5,15 @@
     <div class="brand"><span class="brand-bold">Buzzer</span>Box</div>
     <p class="message">
       @if (isWebsocketConnected) {
-        Warte auf Spielaufbau …
+        {{'screen.waitingForSetup' | transloco}}
       } @else {
-        Warte auf Verbindung zum Server …
+        {{'screen.waitingForServer' | transloco}}
       }
     </p>
     @if (isWebsocketConnected && join) {
       <div class="join">
-        <span class="join-step"><mat-icon>wifi</mat-icon>WLAN <strong>{{join.wifiName}}</strong></span>
-        <span class="join-step"><mat-icon>language</mat-icon><strong>{{join.masterAddress}}</strong> öffnen</span>
+        <span class="join-step"><mat-icon>wifi</mat-icon><span [innerHTML]="'screen.joinWifi' | transloco: {wifi: join.wifiName}"></span></span>
+        <span class="join-step"><mat-icon>language</mat-icon><span [innerHTML]="'screen.joinAddress' | transloco: {address: join.masterAddress}"></span></span>
       </div>
     }
   </div>
@@ -22,9 +22,9 @@
     <mat-spinner [diameter]="spinnerDiameter"></mat-spinner>
     <p class="message">
       @if (isWebsocketConnected) {
-        Warte auf Spielaufbau!
+        {{'screen.waitingForSetupClassic' | transloco}}
       } @else {
-        Warte auf Verbindung zum Server!
+        {{'common.waitingForServer' | transloco}}
       }
     </p>
   </div>

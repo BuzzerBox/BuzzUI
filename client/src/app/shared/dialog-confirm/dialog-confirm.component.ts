@@ -16,7 +16,7 @@ export interface IDialogConfirmData {
       <h1 mat-dialog-title>{{data.title}}</h1>
       <div mat-dialog-content><p>{{data.message}}</p></div>
       <div mat-dialog-actions align="end">
-        <button mat-button [mat-dialog-close]="false" cdkFocusInitial>Abbrechen</button>
+        <button mat-button [mat-dialog-close]="false" cdkFocusInitial>{{'common.cancel' | transloco}}</button>
         <button mat-flat-button color="warn" [mat-dialog-close]="true">{{data.confirmText}}</button>
       </div>
     `,

@@ -1,0 +1,1000 @@
+{
+  "language": {
+    "choose": "Sprache"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "ok": "OK",
+    "next": "Weiter",
+    "back": "Zurück",
+    "retry": "Erneut versuchen",
+    "toHome": "Zur Startseite",
+    "waitingForServer": "Warte auf Verbindung zum Server!",
+    "points": {
+      "one": "{{count}} Punkt",
+      "other": "{{count}} Punkte"
+    },
+    "question": "Frage",
+    "answers": "Antworten",
+    "questionProgress": "Frage {{current}}/{{total}}",
+    "version": "Version {{version}}",
+    "name": "Name",
+    "invalidName": "Der Name darf nicht leer sein und keines dieser Zeichen enthalten: \\ / : * ? \" < > | # %",
+    "keep": "Doch nicht",
+    "deleteForever": "Endgültig löschen",
+    "cannotUndo": "Das lässt sich nicht rückgängig machen.",
+    "rename": "Umbenennen",
+    "move": "Verschieben",
+    "copy": "Kopieren",
+    "delete": "Löschen",
+    "show": "Zeigen",
+    "hide": "Verbergen",
+    "change": "Ändern",
+    "remove": "Entfernen",
+    "savedAs": "Wird gespeichert als „{{name}}“",
+    "gameName": "Name des Spiels",
+    "newGame": "Neues Spiel",
+    "continueGame": "Spiel fortsetzen",
+    "manageGames": "Spiele verwalten",
+    "startGame": "Spiel starten",
+    "endGame": "Spiel beenden",
+    "minTeams": "Es müssen mindestens {{count}} Teams spielen.",
+    "teamName": "Teamname",
+    "mediaMissing": "Medien fehlen"
+  },
+  "location": {
+    "label": {
+      "box": "BuzzerBox",
+      "usb": "USB-Stick {{name}}"
+    },
+    "text": {
+      "box": "der BuzzerBox",
+      "usb": "dem USB-Stick {{name}}"
+    }
+  },
+  "caseColors": {
+    "orange": {
+      "name": "Orange",
+      "buzzer": "Oranger Wireless Buzzer"
+    },
+    "yellow": {
+      "name": "Gelb",
+      "buzzer": "Gelber Wireless Buzzer"
+    },
+    "turquoise": {
+      "name": "Türkis",
+      "buzzer": "Türkiser Wireless Buzzer"
+    },
+    "blue": {
+      "name": "Blau",
+      "buzzer": "Blauer Wireless Buzzer"
+    },
+    "purple": {
+      "name": "Lila",
+      "buzzer": "Lila Wireless Buzzer"
+    },
+    "pink": {
+      "name": "Pink",
+      "buzzer": "Pinker Wireless Buzzer"
+    },
+    "white": {
+      "name": "Weiß",
+      "buzzer": "Weißer Wireless Buzzer"
+    },
+    "black": {
+      "name": "Schwarz",
+      "buzzer": "Schwarzer Wireless Buzzer"
+    }
+  },
+  "buzzer": {
+    "wireless": "Funkbuzzer {{mac}}",
+    "offline": "Dieser Funkbuzzer ist gerade nicht verbunden",
+    "batteryLow": "Der Akku dieses Funkbuzzers ist fast leer",
+    "caseColor": "Farbe des Gehäuses",
+    "caseColorNamed": "Gehäuse: {{color}}",
+    "teamColor": "Farbe des Teams auf der Anzeige"
+  },
+  "teams": {
+    "defaultName": "Team {{number}}",
+    "title": "Teams",
+    "buzzersUnknown": "Die Buzzer sind nicht bekannt. Lade die Seite neu, um die Teams zu ändern.",
+    "new": "neu",
+    "losesPoints": "{{team}} wird entfernt und verliert {{points}}.",
+    "apply": "Übernehmen"
+  },
+  "choose": {
+    "lead": "Wofür soll dieses Gerät verwendet werden?",
+    "master": {
+      "title": "Spielleitung",
+      "text": "Für dein Handy, Tablet oder Notebook: Quizze erstellen und verwalten, Spiele starten und leiten, Antworten bewerten. Es steuert immer nur ein Gerät."
+    },
+    "screen": {
+      "title": "Anzeige",
+      "text": "Für Fernseher oder Beamer, die alle sehen: zeigt Fragen, Bilder, Videos und den Punktestand. Es kann beliebig viele Anzeigen geben, auch mehrere Browserfenster auf demselben Gerät."
+    },
+    "devBoard": {
+      "title": "Virtuelles DevBoard",
+      "text": "Nur zum Entwickeln: Buzzer per Mausklick drücken, ohne echte BuzzerBox."
+    },
+    "guide": {
+      "title": "So startest du ein Spiel",
+      "connect": {
+        "title": "Verbinden.",
+        "text": "Verbinde jedes Gerät mit dem WLAN <strong>{{wifi}}</strong> und öffne <strong>{{address}}</strong> im Browser. Dann landest du auf dieser Seite."
+      },
+      "screen": {
+        "title": "Anzeige einrichten.",
+        "text": "Ein Bildschirm am HDMI-Anschluss der BuzzerBox zeigt die Anzeige von selbst. Für jede weitere Anzeige öffnest du diese Seite in einem eigenen Browserfenster und wählst „Anzeige“.",
+        "tipTitle": "Mehrere Fenster, ein Gerät:",
+        "tip": "Ein Notebook kann gleichzeitig Spielleitung und Anzeige sein. Öffne dazu ein zweites Browserfenster, wähle dort „Anzeige“ und schiebe es auf den Beamer oder Fernseher (am besten im Vollbild mit F11). So bekommst du auch mehrere Anzeigen an einem Gerät, eine pro Fenster."
+      },
+      "master": {
+        "title": "Steuerung übernehmen.",
+        "text": "Wähle auf deinem Gerät „Spielleitung“, in einem eigenen Fenster, falls es auch eine Anzeige ist. Funkbuzzer verbindest du auf der Startseite der Steuerung, indem du sie per USB an die BuzzerBox steckst und „Übernehmen“ antippst."
+      },
+      "quiz": {
+        "title": "Quiz wählen.",
+        "text": "„Neues Spiel“ beginnt ein gespeichertes Quiz von vorne, „Spiel fortsetzen“ macht bei einem Spielstand weiter. Noch kein Quiz da? Unter „Spiele verwalten“ erstellst oder importierst du eines."
+      },
+      "teams": {
+        "title": "Teams anlegen.",
+        "text": "Gib jedem Team einen Buzzer, wähle das Aussehen der Anzeige und tippe auf „Spiel starten“."
+      },
+      "play": {
+        "title": "Spielen.",
+        "text": "Drückt ein Team seinen Buzzer, sind alle anderen gesperrt, und du bewertest die Antwort mit „Richtig“ oder „Falsch“. Bei „Falsch“ dürfen die anderen wieder buzzern. Mit „Nächste Frage“ geht es weiter, nach der letzten Frage mit „Spiel beenden“."
+      },
+      "hint": "Das Spiel wird laufend gespeichert. Lädt ein Gerät neu oder verliert kurz das WLAN, geht es danach an derselben Stelle weiter."
+    },
+    "github": "BuzzerBox auf GitHub"
+  },
+  "screen": {
+    "waitingForSetup": "Warte auf Spielaufbau …",
+    "waitingForServer": "Warte auf Verbindung zum Server …",
+    "waitingForSetupClassic": "Warte auf Spielaufbau!",
+    "joinWifi": "WLAN <strong>{{wifi}}</strong>",
+    "joinAddress": "<strong>{{address}}</strong> öffnen"
+  },
+  "home": {
+    "welcome": "Willkommen bei {{name}}!",
+    "newGame": {
+      "text": "Ein gespeichertes Quiz von vorne beginnen",
+      "none": "Noch keine gespeicherten Spiele, erstelle eines in „Spiele verwalten“"
+    },
+    "continueGame": {
+      "text": "Einen früheren Spielstand weiterspielen, wo aufgehört wurde",
+      "none": "Noch keine Spielstände, sie entstehen beim Spielen"
+    },
+    "manageGames": {
+      "text": "Spiele erstellen und bearbeiten, ihre Spielstände und Medien verwalten, importieren und herunterladen"
+    },
+    "version": "Version {{version}}"
+  },
+  "toolbar": {
+    "home": "Zur Startseite",
+    "more": "Mehr",
+    "editTeams": "Teams bearbeiten",
+    "endGameHint": "Beendet das Spiel und zeigt das gewinnende Team an",
+    "pauseGame": "Spiel pausieren",
+    "pauseGameHint": "Speichert das Spiel, um es später unter „Spiel fortsetzen“ weiterzuspielen",
+    "discardGame": "Spiel verwerfen",
+    "discardGameHint": "Beendet das Spiel und löscht seinen Spielstand",
+    "boxSettings": "Einstellungen der BuzzerBox",
+    "resetServer": "Server zurücksetzen",
+    "logout": "Abmelden",
+    "autosave": {
+      "none": "Dieses Spiel wird nicht gespeichert",
+      "where": "„{{state}}“ auf {{location}}",
+      "failed": "Speichern fehlgeschlagen ({{error}}), wird wiederholt: {{where}}",
+      "savedAt": "Automatisch gespeichert um {{time}}: {{where}}",
+      "saving": "Wird automatisch gespeichert: {{where}}"
+    },
+    "confirmReset": {
+      "title": "Server zurücksetzen?",
+      "message": "Alle Geräte starten von vorn.",
+      "confirm": "Zurücksetzen"
+    },
+    "confirmPause": {
+      "title": "Spiel pausieren?",
+      "saved": "Der Spielstand „{{state}}“ bleibt gespeichert. Unter „Spiel fortsetzen“ geht es später an derselben Stelle weiter.",
+      "unsaved": "Dieses Spiel wird nicht gespeichert und kann daher nicht fortgesetzt werden.",
+      "confirm": "Pausieren"
+    },
+    "confirmDiscard": {
+      "title": "Spiel verwerfen?",
+      "saved": "Der Spielstand „{{state}}“ wird gelöscht, auch wenn er schon früher gespielt wurde, und lässt sich nicht fortsetzen.",
+      "unsaved": "Das Spiel wird ohne Endstand beendet.",
+      "confirm": "Verwerfen"
+    }
+  },
+  "boxSettings": {
+    "title": "Einstellungen der BuzzerBox",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "loading": "Die Einstellungen werden geladen …",
+    "unavailable": "Auf diesem Server gibt es keine Einstellungen der BuzzerBox.",
+    "intro": "Aus der Datei <code>buzzerbox.txt</code> auf der Boot-Partition der Speicherkarte. Die Box übernimmt sie bei jedem Start.",
+    "failed": "Das hat nicht geklappt.",
+    "restarting": "Die BuzzerBox startet neu, das dauert etwa eine Minute.",
+    "restartingConnect": "Verbinde dich danach mit dem WLAN „{{wifi}}“ und öffne <strong>{{address}}</strong>.",
+    "restartingReconnect": "Diese Seite verbindet sich danach von selbst wieder.",
+    "saved": "Gespeichert. Die Änderungen gelten ab dem nächsten Start der BuzzerBox.",
+    "savedConnect": "Nach dem Neustart sind alle Geräte getrennt. Verbinde sie mit dem WLAN „{{wifi}}“ und öffne <strong>{{address}}</strong>.",
+    "savedBuzzers": "Funkbuzzer müssen dafür einmal per USB neu übernommen werden.",
+    "restartNow": "Jetzt neu starten",
+    "confirmRestart": "Die BuzzerBox jetzt neu starten? Alle Geräte verlieren kurz die Verbindung.",
+    "restart": "Neu starten",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen",
+    "default": "Standard",
+    "defaultHint": "Die Datei setzt diesen Wert nicht selbst",
+    "invalidInFile": "„{{value}}“ in der Datei ist ungültig, deshalb gilt der Standard.",
+    "invalid": "Ungültig. {{hint}}",
+    "ethernetInWifiNetwork": "Muss in einem anderen Netz liegen als die Adresse im WLAN.",
+    "fromFile": "{{value}} (aus buzzerbox.txt)",
+    "editingWarning": "Ändern sich WLAN oder Adresse, sind nach dem Neustart alle Geräte getrennt und müssen sich neu verbinden.",
+    "readOnly": "Zum Ändern die Speicherkarte in einen Computer stecken und <code>buzzerbox.txt</code> bearbeiten. Mit <code>{{editKey}}=true</code> in der Datei lassen sich die Einstellungen auch hier ändern.",
+    "confirmLeave": {
+      "title": "Änderungen verwerfen?",
+      "message": "Die geänderten Einstellungen sind noch nicht gespeichert.",
+      "confirm": "Verwerfen"
+    },
+    "groups": {
+      "wifi": "WLAN",
+      "buzzers": "Buzzer",
+      "network": "Netzwerk",
+      "displays": "Anzeigen",
+      "hardware": "Hardware"
+    },
+    "fields": {
+      "WIFI_SSID": {
+        "label": "Name des WLANs",
+        "hint": "1 bis 32 Zeichen"
+      },
+      "WIFI_PASSPHRASE": {
+        "label": "Passwort",
+        "hint": "8 bis 63 Zeichen ohne Umlaute"
+      },
+      "WIFI_COUNTRY_CODE": {
+        "label": "Land",
+        "hint": "Zwei Buchstaben, z. B. DE, AT oder CH. Davon hängt ab, welche Kanäle erlaubt sind."
+      },
+      "WIFI_CHANNEL": {
+        "label": "Kanal",
+        "hint": "1 bis 13"
+      },
+      "WIFI_ANTENNA": {
+        "label": "Antenne",
+        "hint": "Die externe Antenne gibt es nur beim Compute Module 4."
+      },
+      "ANALOG_BUZZERS": {
+        "label": "Analoge Buzzer",
+        "hint": "An die Anschlüsse der Box gesteckte Buzzer. Ohne sie bietet die Box nur die Funkbuzzer an."
+      },
+      "SERVER_IP_ADDRESS": {
+        "label": "Adresse im WLAN",
+        "hint": "Geräte bekommen die Adressen .50 bis .150 desselben Netzes."
+      },
+      "ETHERNET_IP_ADDRESS": {
+        "label": "Adresse am Ethernet-Anschluss",
+        "hint": "Für ein Notebook am Kabel; in einem anderen Netz als das WLAN."
+      },
+      "SERVER_HOSTNAMES": {
+        "label": "Namen der Box",
+        "hint": "Unter diesen Namen lässt sich die Box öffnen, durch Leerzeichen getrennt."
+      },
+      "SCREEN_MODE": {
+        "label": "Auflösung am Fernseher",
+        "hint": "Bietet der Fernseher die Auflösung nicht an, wählt er selbst. 4K mit 60 Hz schafft ein Raspberry Pi 4 nicht flüssig."
+      },
+      "TOUCH_DISPLAY": {
+        "label": "Touchscreen",
+        "hint": "Mit dem Touchscreen zeigt die Box dort die Spielleitung."
+      },
+      "TOUCH_DISPLAY_ROTATION": {
+        "label": "Drehung des Touch-Displays",
+        "hint": "Ja stellt das Bild auf den Kopf, falls der Touchscreen andersherum eingebaut ist."
+      },
+      "TOUCH_DISPLAY_SCALE": {
+        "label": "Größe auf dem Touch-Display",
+        "hint": "Wie groß die Spielleitung auf dem Touch-Display erscheint."
+      }
+    },
+    "options": {
+      "yes": "Ja",
+      "no": "Nein",
+      "internal": "Intern",
+      "external": "Extern",
+      "screenModeAuto": "Wahl des Fernsehers (oft 4K)",
+      "scaleAuto": "Automatisch ({{factor}}-fach)",
+      "scaleNormal": "Normal ({{factor}}-fach)",
+      "scale": "{{factor}}-fach"
+    },
+    "hardware": {
+      "model": "Modell",
+      "serialNumber": "Seriennummer",
+      "memory": "Arbeitsspeicher",
+      "storage": "Speicher",
+      "temperature": "Temperatur",
+      "operatingSystem": "Betriebssystem",
+      "uptime": "Läuft seit",
+      "software": "Software",
+      "storageKinds": {
+        "emmc": "eMMC",
+        "sd": "SD-Karte",
+        "usb": "USB-Laufwerk",
+        "drive": "Laufwerk"
+      },
+      "free": "{{size}} frei",
+      "days": {
+        "one": "{{count}} Tag, {{hours}} Std.",
+        "other": "{{count}} Tagen, {{hours}} Std."
+      },
+      "hours": "{{hours}} Std. {{minutes}} Min.",
+      "minutes": "{{minutes}} Min."
+    },
+    "ssh": {
+      "title": "SSH-Zugang",
+      "editingNote": "Schlüssel gelten sofort beim Hinzufügen oder Entfernen. „Speichern“ und „Abbrechen“ betreffen sie nicht.",
+      "intro": "Aus <code>buzzerbox-ssh-keys.txt</code> auf der Boot-Partition. Mit einem dieser Schlüssel kann man sich als <code>{{user}}</code> anmelden und die Box mit <code>sudo</code> verwalten: <code>ssh {{user}}@{{address}}</code>.",
+      "noKeys": "Ohne Schlüssel ist SSH aus.",
+      "unnamed": "Schlüssel ohne Namen",
+      "notActiveYet": "Gilt ab dem nächsten Start der Box.",
+      "removeKey": "Schlüssel entfernen",
+      "addLabel": "Öffentlichen Schlüssel hinzufügen",
+      "private": "Das ist ein privater Schlüssel, der gehört nie auf die Box. Nimm den Inhalt der Datei mit .pub.",
+      "notAKey": "Kein öffentlicher SSH-Schlüssel. Er beginnt z. B. mit ssh-ed25519 oder ssh-rsa.",
+      "addHint": "Der Inhalt einer .pub-Datei, z. B. ~/.ssh/id_ed25519.pub. Gilt sofort.",
+      "add": "Hinzufügen"
+    }
+  },
+  "otherMaster": {
+    "titleTakenOver": "Ein anderes Gerät hat die Steuerung übernommen",
+    "titleRefused": "Ein anderes Gerät steuert gerade die BuzzerBox",
+    "noLongerInControl": "Dieses Gerät steuert die BuzzerBox nicht mehr.",
+    "gameGoesOnThere": "Das Spiel läuft auf dem anderen Gerät weiter.",
+    "canTakeBack": "Du kannst die Steuerung jederzeit zurückholen.",
+    "onlyOne": "Es kann immer nur ein Gerät die BuzzerBox steuern.",
+    "gameRunningThere": "Dort läuft gerade ein Spiel.",
+    "wasItYou": "Warst du das selbst, und das Gerät hatte kurz kein WLAN oder wurde neu geladen? Dann geht es in ein paar Sekunden von selbst weiter.",
+    "retrying": "Versucht es laufend erneut …",
+    "takeBack": "Steuerung zurückholen",
+    "takeOver": "Steuerung übernehmen",
+    "useAsScreen": "Als Anzeige verwenden",
+    "confirm": {
+      "title": "Steuerung übernehmen?",
+      "gameRunning": "Das andere Gerät kann das Spiel dann nicht mehr steuern. Das laufende Spiel geht hier mit dem aktuellen Punktestand weiter.",
+      "noGame": "Das andere Gerät kann die BuzzerBox dann nicht mehr steuern. Was dort gerade eingegeben, aber noch nicht gespeichert wurde, geht verloren.",
+      "confirm": "Übernehmen"
+    }
+  },
+  "loadGame": {
+    "continueHint": "Wähle einen Spielstand und spiele dort weiter, wo aufgehört wurde.",
+    "newHint": "Wähle ein gespeichertes Spiel und beginne es von vorne."
+  },
+  "storage": {
+    "manager": {
+      "hint": "Jedes Spiel hat einen eigenen Ordner mit seinen Versionen, Spielständen und Medien. Öffne ein Spiel, um es zu bearbeiten oder seine Medien zu verwalten.",
+      "create": "Neues Spiel erstellen"
+    },
+    "locations": {
+      "label": "Speicherort",
+      "readOnly": "nur lesbar",
+      "noStick": "Es ist kein USB-Stick eingesteckt.",
+      "plugStick": "Stecke einen USB-Stick in die BuzzerBox, um Spiele darauf zu speichern oder Medien davon zu übernehmen.",
+      "free": "{{size}} frei",
+      "writeProtected": "schreibgeschützt"
+    },
+    "error": {
+      "masterOnly": "Nur die Spielleitung kann auf den Speicher zugreifen.",
+      "unreachable": "Die BuzzerBox ist nicht erreichbar.",
+      "noSpace": "Es ist nicht genug Speicherplatz frei.",
+      "invalidAnswer": "Die BuzzerBox hat keine gültige Antwort geschickt.",
+      "locationGone": "Der Speicherort ist nicht mehr da. Wurde der USB-Stick abgezogen?"
+    }
+  },
+  "fileUpload": {
+    "dropHere": "Datei hier platzieren",
+    "or": "oder",
+    "browse": "Datei suchen",
+    "reset": "Reset"
+  },
+  "mediaStart": {
+    "question": "Frage zu Beginn",
+    "mediaAndAnswers": "Medium und Antworten zu Beginn",
+    "questionState": {
+      "show": "Zeigen",
+      "hide": "Verbergen",
+      "afterMedia": "Nach dem Medium zeigen"
+    },
+    "preset": {
+      "slideshowFirst": "Erstes Bild zeigen, Antworten nach dem letzten",
+      "playFirst": "Abspielen, Antworten danach",
+      "showImage": "Bild zeigen",
+      "playHideAnswers": "Abspielen, Antworten verbergen",
+      "hideBoth": "Beides verbergen",
+      "showAnswers": "Antworten zeigen"
+    }
+  },
+  "devBoard": {
+    "releaseLock": "Release Lock"
+  },
+  "wirelessBuzzers": {
+    "title": "Funkbuzzer",
+    "unknown": "Funkbuzzer",
+    "subtitle": {
+      "one": "Ein Buzzer ist verbunden. Über USB angesteckte lassen sich hier übernehmen.",
+      "other": "{{count}} Buzzer sind verbunden. Über USB angesteckte lassen sich hier übernehmen."
+    },
+    "noColor": "Keine Farbe des Gehäuses",
+    "usb": "Über USB angesteckt",
+    "wifi": "WLAN",
+    "wifiHint": "Über das WLAN mit der BuzzerBox verbunden",
+    "battery": {
+      "charging": "Lädt über USB",
+      "lowHint": "Akku schwach",
+      "hint": "Akku",
+      "low": "schwach"
+    },
+    "firmware": "Firmware {{version}}",
+    "moreSettings": "Weitere Einstellungen",
+    "keepColor": "Farbe nicht ändern",
+    "changeColor": "Farbe des Gehäuses ändern",
+    "identifying": "Der Buzzer wird erkannt …",
+    "alreadyAdopted": "Bereits für diese BuzzerBox übernommen (WLAN „{{ssid}}“).",
+    "alreadyAdoptedConnected": "Bereits für diese BuzzerBox übernommen (WLAN „{{ssid}}“) und verbunden.",
+    "otherWifi": "Der Buzzer ist für das WLAN „{{ssid}}“ eingerichtet, nicht für diese BuzzerBox. Übernimm ihn, damit er sich mit ihr verbindet.",
+    "notAdopted": "Übernimm den Buzzer, damit er sich mit dem WLAN der BuzzerBox verbindet.",
+    "noAnswer": "Das Gerät antwortet nicht. Ist es ein Funkbuzzer? Übernehmen versucht es erneut.",
+    "adopting": "Der Buzzer wird übernommen …",
+    "adoptedConnected": "Übernommen und verbunden (WLAN „{{ssid}}“). Du kannst ihn jetzt abstecken.",
+    "adoptedConnecting": "Übernommen: Der Buzzer verbindet sich mit dem WLAN „{{ssid}}“ …",
+    "failed": "Das Übernehmen hat nicht geklappt. {{reason}}",
+    "error": {
+      "noWifiSettings": "Die BuzzerBox kennt die Einstellungen ihres WLANs nicht (/etc/buzzerbox/wireless-buzzers.conf fehlt).",
+      "noAnswer": "Der Buzzer hat nicht geantwortet. Stecke ihn ab und wieder an und versuche es erneut.",
+      "rejected": "Der Buzzer hat die WLAN-Einstellungen abgelehnt.",
+      "portError": "Die Verbindung über USB ist abgebrochen. Ist der Buzzer noch angesteckt?"
+    },
+    "noColorOption": "Keine",
+    "needsFirmware": "Für die Farbe des Gehäuses braucht der Buzzer Firmware 1.2.0 oder neuer.",
+    "applyColor": "Farbe übernehmen",
+    "adoptAgain": "Erneut übernehmen",
+    "adopt": "Übernehmen"
+  },
+  "update": {
+    "title": "Software-Update",
+    "installedVersion": "Installierte Version {{version}}",
+    "installing": "Das Update wird installiert. Die BuzzerBox startet dabei neu, diese Seite verbindet sich danach von selbst wieder. Bitte den USB-Stick nicht abziehen.",
+    "installingVersion": "Das Update auf {{version}} wird installiert. Die BuzzerBox startet dabei neu, diese Seite verbindet sich danach von selbst wieder. Bitte den USB-Stick nicht abziehen.",
+    "succeeded": "Version {{version}} wurde installiert.",
+    "failed": "Das Update ist fehlgeschlagen: {{message}}",
+    "rolledBack": "Version {{version}} ließ sich nicht starten, deshalb läuft wieder die vorherige Version.",
+    "pageOutdated": "Diese Seite gehört noch zu Version {{version}}.",
+    "reload": "Neu laden",
+    "installNow": "Jetzt installieren",
+    "install": "Installieren",
+    "unsignedTitle": "Achtung: Version {{version}} hat keine gültige Signatur ({{problem}})",
+    "unsignedWarning": "Es lässt sich nicht prüfen, ob dieses Update von den Entwicklern der BuzzerBox stammt und unverändert ist. Ein Update läuft mit vollen Rechten auf der BuzzerBox: Ein fehlerhaftes oder manipuliertes Update kann sie unbrauchbar machen, gespeicherte Spiele und Medien auslesen oder löschen und Schadsoftware installieren.",
+    "unsignedOnlyIf": "Installiere es nur, wenn du genau weißt, woher die Datei stammt.",
+    "acceptRisk": "Ich habe die Warnung gelesen und will das Update trotzdem installieren.",
+    "installAnyway": "Trotzdem installieren",
+    "couldNotStart": "Das Update konnte nicht gestartet werden.",
+    "bundle": {
+      "newer": "neuer",
+      "installed": "installiert",
+      "older": "älter"
+    },
+    "signature": {
+      "missing": "nicht signiert",
+      "noPublicKey": "Signatur nicht prüfbar, die BuzzerBox hat keinen Schlüssel",
+      "invalid": "ungültige Signatur"
+    }
+  },
+  "media": {
+    "of": "Medien von {{game}}",
+    "browser": {
+      "folders": "Ordner",
+      "dropHere": "Medien hierher ziehen oder",
+      "chooseFiles": "Dateien auswählen",
+      "newFolder": "Neuer Ordner",
+      "newFolderName": "Name des neuen Ordners",
+      "invalidFolderName": "Der Name darf nicht mit „.“ beginnen und keines der Zeichen \\ / : * ? \" < > | enthalten.",
+      "create": "Anlegen",
+      "readOnly": "{{location}} ist schreibgeschützt, hier kann nichts hochgeladen werden.",
+      "uploadFailed": "Fehlgeschlagen: {{error}}",
+      "uploaded": "Hochgeladen ({{size}})",
+      "dismiss": "Ausblenden",
+      "empty": "Dieser Ordner enthält keine Medien.",
+      "edit": "Umbenennen, verschieben oder löschen",
+      "useFolder": "Ordner übernehmen",
+      "use": "Übernehmen",
+      "skippedKind": "{{file}} wird übersprungen: Nur Bilder, Videos und Audiodateien können hochgeladen werden.",
+      "skippedName": "{{file}} wird übersprungen: Der Dateiname enthält Zeichen, die ein USB-Stick nicht erlaubt.",
+      "replace": {
+        "title": "Datei ersetzen",
+        "message": "In diesem Ordner gibt es schon eine Datei „{{file}}“. Möchtest du sie ersetzen? Alle Fragen, die sie zeigen, zeigen dann die neue.",
+        "confirm": "Ersetzen"
+      },
+      "notReplaced": "nicht ersetzt",
+      "saved": "„{{name}}“ wurde gespeichert.",
+      "deleted": "„{{name}}“ wurde gelöscht."
+    },
+    "select": {
+      "missing": "Nicht in den Medien des Spiels. Lade eine Datei mit diesem Namen hoch oder wähle ein anderes Medium.",
+      "none": "Kein Medium ausgewählt. Wähle eine Datei oder einen Ordner als Diashow.",
+      "chooseOther": "Wähle ein anderes Medium.",
+      "upload": "Medien hochladen",
+      "fromStick": "Vom USB-Stick übernehmen",
+      "empty": "Das Spiel hat noch keine Medien.",
+      "toggleFolder": "{{folder}} auf- oder zuklappen",
+      "unselectSlideshow": "Diashow abwählen",
+      "slideshowHint": "Die Bilder dieses Ordners nacheinander zeigen",
+      "slideshowSelected": "Als Diashow ausgewählt ({{count}} Bilder)",
+      "asSlideshow": "Als Diashow ({{count}} Bilder)",
+      "skipped": "{{file}} wird übersprungen: Nur Bilder, Videos und Audiodateien mit gültigem Namen können hochgeladen werden.",
+      "exists": "Es gibt schon eine Datei mit diesem Namen.",
+      "notUploaded": "{{file}} wurde nicht hochgeladen: {{reason}}",
+      "kind": {
+        "slideshow": "Diashow · {{count}} Bilder"
+      }
+    },
+    "kind": {
+      "video": "Video",
+      "audio": "Audio",
+      "image": "Bild",
+      "slideshow": "Bildserie"
+    },
+    "after": {
+      "video": "nach dem Video",
+      "audio": "nach dem Audio",
+      "slideshow": "nach der Bildserie",
+      "image": "nach dem Bild"
+    },
+    "afterShort": {
+      "video": "nach Video",
+      "audio": "nach Audio",
+      "slideshow": "nach Bildserie",
+      "image": "nach Bild"
+    }
+  },
+  "import": {
+    "upload": "Spiel hochladen",
+    "uploadHint": "Ein Spiel von diesem Gerät: ein heruntergeladenes Archiv, eine Spieldatei oder einen alten Spielstand",
+    "archive": "Ganzes Spiel mit allen Versionen, Spielständen und Medien ({{size}})",
+    "import": "Importieren",
+    "uploading": "Wird hochgeladen … {{percent}}",
+    "checking": "Wird geprüft und gespeichert …",
+    "questions": {
+      "one": "{{count}} Frage",
+      "other": "{{count}} Fragen"
+    },
+    "withState": "und ein Spielstand ({{teams}} Teams, bei Frage {{question}})",
+    "imported": "„{{name}}“ wurde importiert.",
+    "skipped": "Diese Dateien im Archiv gehören nicht zu einem Spiel und wurden weggelassen:",
+    "missingMedia": "Diese Medien wurden nicht gefunden:",
+    "missingMediaHint": "Lade Dateien mit diesen Namen in die Medien des Spiels hoch, oder stecke den USB-Stick mit den Medien ein und importiere die Datei noch einmal.",
+    "notAGame": "Die Datei ist kein Spiel und kein Spielstand.",
+    "exists": "Es gibt schon ein Spiel „{{name}}“. Wähle einen anderen Namen.",
+    "stateName": "Importiert",
+    "gameName": "Importiertes Spiel"
+  },
+  "game": {
+    "stateNamePrefix": "Spiel"
+  },
+  "themes": {
+    "studio": {
+      "name": "Studio",
+      "description": "Dunkel wie im Fernsehstudio, mit Teamfarben, Effekten und Siegertreppchen"
+    },
+    "daylight": {
+      "name": "Tageslicht",
+      "description": "Wie Studio, aber hell, für helle Räume und Beamer"
+    },
+    "classic": {
+      "name": "Klassisch",
+      "description": "Das schlichte Aussehen der früheren Versionen, ohne Effekte"
+    }
+  },
+  "prepare": {
+    "summary": {
+      "state": "Spielstand „{{state}}“",
+      "savedOn": "gespeichert auf {{location}}"
+    },
+    "stateName": "Name des Spielstands",
+    "stateNameHint": "Unter diesem Namen wird das Spiel automatisch gespeichert.",
+    "buzzers": "Buzzer",
+    "analogBuzzers": "Analoge Buzzer",
+    "digitalBuzzers": "Digitale Buzzer",
+    "buzzerTypeHint": "Ein Spiel läuft entweder mit den Buzzern an der Box oder mit den Funkbuzzern.",
+    "dropsTeams": {
+      "analog": "Dieser Spielstand wurde mit den analogen Buzzern gespielt. Seine Teams und ihre Punkte fallen weg.",
+      "digital": "Dieser Spielstand wurde mit den digitalen Buzzern gespielt. Seine Teams und ihre Punkte fallen weg."
+    },
+    "noWirelessBuzzer": "Kein Funkbuzzer ist verbunden. Schalte die Funkbuzzer ein, sie erscheinen hier, sobald sie sich melden.",
+    "buzzersUnknown": "Die Buzzer sind nicht bekannt. Lade die Seite neu.",
+    "losesPoints": "{{team}} spielt nicht mehr mit und verliert {{points}}.",
+    "sameColor": "{{teams}} haben dieselbe Farbe. Auf der Anzeige unterscheiden sie sich nur am Namen.",
+    "theme": "Aussehen der Anzeige",
+    "noQuestions": "Diese Version hat keine Fragen.",
+    "missingMedia": {
+      "title": "Diese Medien fehlen im Spiel, die Fragen zeigen dann nichts an:",
+      "item": "Frage {{number}}:",
+      "hint": "Lade sie in „Spiele verwalten“ in die Medien des Spiels hoch, oder leite eine neue Version ohne sie ab."
+    },
+    "mediaCheckFailed": "Ob alle Medien da sind, ließ sich nicht prüfen: {{error}}",
+    "progress": {
+      "new": {
+        "one": "{{count}} Frage",
+        "other": "{{count}} Fragen"
+      },
+      "finished": "Beendet bei Frage {{current}} von {{total}}",
+      "continue": "Weiter bei Frage {{current}} von {{total}}"
+    },
+    "confirmMissing": {
+      "one": "Eine Mediendatei fehlt (Frage {{questions}}). Diese Fragen zeigen dann nichts an. Möchtest du trotzdem beginnen?",
+      "other": "{{count}} Mediendateien fehlen (Frage {{questions}}). Diese Fragen zeigen dann nichts an. Möchtest du trotzdem beginnen?",
+      "confirm": "Trotzdem beginnen"
+    }
+  },
+  "games": {
+    "none": {
+      "new": "Auf {{location}} ist noch kein gespeichertes Spiel. Erstelle eines in „Spiele verwalten“ oder lade es dort hoch.",
+      "continue": "Auf {{location}} gibt es noch keine Spielstände. Beginne ein neues Spiel, dann wird es dabei gespeichert.",
+      "manage": "Auf {{location}} sind noch keine Spiele. Erstelle ein neues oder lade eines hoch."
+    },
+    "inUse": "wird gespielt",
+    "begin": "Beginnen",
+    "beginOtherVersion": "Eine andere Version beginnen",
+    "latest": "aktuell",
+    "playsVersion": "spielt Version {{version}}",
+    "reopen": "Wieder öffnen",
+    "continue": "Fortsetzen",
+    "downloadHint": "Das ganze Spiel mit allen Versionen, Spielständen und Medien, um es auf eine andere BuzzerBox zu bringen",
+    "download": "Herunterladen",
+    "downloadWithoutMediaHint": "Nur die Fragen der neuesten Version, als JSON-Datei",
+    "downloadWithoutMedia": "Ohne Medien herunterladen",
+    "manageDisabled": "Das Spiel wird gerade gespielt.",
+    "manageHint": "Umbenennen, verschieben, kopieren oder löschen",
+    "manage": "Verwalten",
+    "states": "Spielstände",
+    "notPlayed": "Dieses Spiel wurde noch nicht gespielt.",
+    "editState": "Umbenennen oder löschen",
+    "versions": "Versionen",
+    "notSavedYet": "Das Spiel wurde noch nicht gespeichert.",
+    "createQuestions": "Fragen erstellen",
+    "versionDetails": {
+      "one": "{{questions}} · gespeichert {{date}} · 1 Spielstand",
+      "other": "{{questions}} · gespeichert {{date}} · {{count}} Spielstände"
+    },
+    "deriveHint": "Öffnet den Editor mit den Fragen dieser Version; beim Speichern entsteht eine neue Version",
+    "derive": "Neue Version daraus",
+    "media": "Medien",
+    "summary": {
+      "unsaved": "Noch nicht gespeichert",
+      "one": "Version {{version}} · {{questions}} · 1 Spielstand",
+      "other": "Version {{version}} · {{questions}} · {{count}} Spielstände"
+    },
+    "questionCount": {
+      "one": "{{count}} Frage",
+      "other": "{{count}} Fragen"
+    },
+    "state": {
+      "finished": "beendet · zuletzt {{date}}",
+      "progress": "Frage {{current}} von {{total}} · zuletzt {{date}}"
+    },
+    "broken": {
+      "one": "Eine Mediendatei fehlt in Version {{version}}, so lässt sie sich nicht vollständig spielen. Beim Starten siehst du, welche.",
+      "other": "{{count}} Mediendateien fehlen in Version {{version}}, so lässt sie sich nicht vollständig spielen. Beim Starten siehst du, welche."
+    },
+    "downloadFailed": "Das Spiel konnte nicht heruntergeladen werden: {{error}}",
+    "result": {
+      "renamed": "„{{old}}“ heißt jetzt „{{name}}“.",
+      "moved": "„{{name}}“ ist jetzt auf {{location}}.",
+      "copied": "Eine Kopie „{{name}}“ ist jetzt auf {{location}}.",
+      "deleted": "„{{name}}“ wurde gelöscht.",
+      "originalKept": "„{{name}}“ ist vollständig auf {{location}}, aber das Original ließ sich nicht ganz löschen. Was davon übrig ist, liegt noch auf {{original}}; lösche es dort.",
+      "stateRenamed": "Der Spielstand heißt jetzt „{{name}}“."
+    },
+    "deleteVersion": {
+      "title": "Version löschen",
+      "blocked": "Lösche zuerst alle Spielstände dieser Version.",
+      "message": "Möchtest du Version {{version}} von „{{game}}“ löschen?",
+      "noQuestionsLeft": "Danach hat das Spiel keine Fragen mehr.",
+      "newLatest": "Danach ist Version {{version}} die neueste.",
+      "deleted": "Version {{version}} wurde gelöscht."
+    },
+    "conflict": "Das geht nicht, während es gespielt wird oder solange Spielstände es brauchen."
+  },
+  "mediaKinds": {
+    "image": "Bild",
+    "playable": "Video & Audio",
+    "slideshow": "Diashow"
+  },
+  "setup": {
+    "mediaQuestions": {
+      "title": "Medienfragen",
+      "description": "Wie Fragen mit Bild, Video, Audio oder Diashow beginnen",
+      "hint": "So beginnen alle Fragen dieses Spiels mit Medien. Einzelne Fragen kannst du später bei der Frage selbst anpassen."
+    },
+    "scoring": {
+      "title": "Wertung",
+      "description": "Doppelte Punkte und Abzüge für falsche Antworten",
+      "hint": "So werden die Antworten in diesem Spiel bewertet. Ein Spielstand behält, was in seiner Version galt.",
+      "doubleAnswer": "Doppelt bewertete Antwort",
+      "wrongAnswer": "Falsche Antwort",
+      "double": {
+        "none": "Nicht möglich",
+        "plusOne": "Punkte der Frage + 1",
+        "double": "Doppelte Punkte"
+      },
+      "wrong": {
+        "questionPoints": "Punkte der Frage abziehen",
+        "onePoint": "1 Punkt abziehen",
+        "none": "Kein Abzug"
+      }
+    },
+    "step": {
+      "game": "Spiel",
+      "questions": "Fragen",
+      "save": "Speichern"
+    },
+    "toManager": "Zur Spielverwaltung",
+    "welcome": "Hallo und herzlich willkommen bei <b>{{name}}</b>! Gib dem neuen Spiel einen Namen und wähle, wo es gespeichert wird. Seine Medien kommen in denselben Ordner.",
+    "saveOn": "Speichern auf",
+    "editing": "Du bearbeitest <b>{{game}}</b> auf {{location}}.",
+    "editingVersion": "Du bearbeitest <b>{{game}}</b> auf {{location}}, ausgehend von Version {{version}}.",
+    "notLatest": "Die neueste ist Version {{version}}; beim Speichern entsteht eine neue Version mit diesen Fragen.",
+    "question": {
+      "move": "Frage verschieben",
+      "number": "Frage {{number}}",
+      "preview": "„{{text}}“",
+      "ownMediaConfig": "Eigener Medienablauf",
+      "complete": "Vollständig",
+      "incomplete": "Noch unvollständig",
+      "delete": "Frage löschen",
+      "text": "Fragetext",
+      "points": "Punkte",
+      "pointsError": "Ganze Zahl ab 1",
+      "showAnswers": "Antwortmöglichkeiten zeigen",
+      "answer": "Antwort {{number}}",
+      "correctAnswer": "Richtige Antwort",
+      "answerIsCorrect": "Antwort {{number}} ist richtig",
+      "needsCorrect": "Hake mindestens eine richtige Antwort an.",
+      "noOptions": "Die Teams sehen keine Antwortmöglichkeiten, die Spielleitung bewertet die Antwort selbst.",
+      "media": "Medien",
+      "ownSequence": "Ablauf: eigener für diese Frage",
+      "useDefault": "Spiel-Standard verwenden",
+      "defaultSequence": "Ablauf: Spiel-Standard für {{kind}}",
+      "customize": "Für diese Frage anpassen",
+      "notesTitle": "Notizen für die Spielleitung",
+      "notes": "Notizen (optional)",
+      "notesHint": "Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige",
+      "add": "Frage hinzufügen",
+      "deleted": "Frage {{number}} gelöscht",
+      "undo": "Rückgängig"
+    },
+    "save": {
+      "summary": {
+        "one": "Das Spiel hat <b>{{count}} Frage</b>. Beim Speichern entsteht eine neue Version; Spielstände spielen weiter die Version, mit der sie begonnen wurden.",
+        "other": "Das Spiel hat <b>{{count}} Fragen</b>. Beim Speichern entsteht eine neue Version; Spielstände spielen weiter die Version, mit der sie begonnen wurden."
+      },
+      "save": "Spiel speichern",
+      "play": "Version {{version}} spielen",
+      "unchanged": "Nichts geändert, es bleibt bei Version {{version}}.",
+      "saved": "Version {{version}} wurde gespeichert."
+    },
+    "error": {
+      "gameGone": "Das Spiel {{game}} gibt es nicht mehr.",
+      "versionGone": "Version {{version}} von {{game}} gibt es nicht mehr.",
+      "exists": "Auf {{location}} gibt es schon ein Spiel „{{name}}“. Wähle einen anderen Namen oder bearbeite es in der Spielverwaltung."
+    }
+  },
+  "editMedia": {
+    "titleFolder": "Ordner „{{name}}“ bearbeiten",
+    "titleFile": "Datei „{{name}}“ bearbeiten",
+    "lockedFolder": "Solange es Versionen gibt, die ihn zeigen, lässt er sich nicht umbenennen, verschieben oder löschen.",
+    "lockedFile": "Solange es Versionen gibt, die sie zeigen, lässt sie sich nicht umbenennen, verschieben oder löschen.",
+    "folder": "Ordner",
+    "deleteFolder": "Ordner löschen",
+    "deleteFile": "Datei löschen",
+    "confirmDeleteFolder": "Möchtest du den Ordner „{{name}}“ mit allen Medien darin löschen?",
+    "confirmDeleteFile": "Möchtest du „{{name}}“ löschen?",
+    "shownFolder": {
+      "one": "Version {{versions}} zeigt Medien aus diesem Ordner.",
+      "other": "Die Versionen {{versions}} zeigen Medien aus diesem Ordner."
+    },
+    "shownFile": {
+      "one": "Version {{versions}} zeigt diese Datei.",
+      "other": "Die Versionen {{versions}} zeigen diese Datei."
+    },
+    "invalidName": "Der Name darf nicht leer sein, nicht mit „.“ beginnen und keines dieser Zeichen enthalten: \\ / : * ? \" < > | # %",
+    "moveAndRename": "Verschieben und umbenennen",
+    "conflictMove": "Dort gibt es schon „{{name}}“, oder eine Version zeigt es inzwischen.",
+    "conflictDelete": "Eine Version des Spiels zeigt es inzwischen."
+  },
+  "editGame": {
+    "title": "„{{name}}“ bearbeiten",
+    "location": "Ort",
+    "currentLocation": "jetziger Ort",
+    "moveOrCopy": "Verschieben oder kopieren",
+    "deleteGame": "Spiel löschen",
+    "confirmDelete": "Möchtest du „{{name}}“ mit {{versions}}, {{states}} und allen Medien löschen?",
+    "versions": {
+      "one": "einer Version",
+      "other": "{{count}} Versionen"
+    },
+    "states": {
+      "one": "einem Spielstand",
+      "other": "{{count}} Spielständen"
+    },
+    "explain": {
+      "rename": "Das Spiel bekommt einen neuen Namen und bleibt mit allen Versionen, Spielständen und Medien, wo es ist.",
+      "copyHere": "Auf {{location}} entsteht eine Kopie mit allen Versionen, Spielständen und Medien unter dem neuen Namen.",
+      "move": "Das Spiel kommt mit allen Versionen, Spielständen und Medien an den neuen Ort und wird von {{location}} gelöscht.",
+      "copy": "Das Spiel bleibt auf {{location}}, und eine Kopie mit allen Versionen, Spielständen und Medien kommt an den neuen Ort."
+    },
+    "makeCopy": "Kopie anlegen",
+    "conflict": "Auf {{location}} gibt es schon ein Spiel „{{name}}“, oder das Spiel wird gerade gespielt. Wähle einen anderen Namen.",
+    "conflictDelete": "Das Spiel wird gerade gespielt und lässt sich deshalb nicht löschen."
+  },
+  "editState": {
+    "title": "Spielstand „{{name}}“ bearbeiten",
+    "delete": "Spielstand löschen",
+    "confirmDelete": "Möchtest du den Spielstand „{{name}}“ löschen?",
+    "conflict": "Es gibt schon einen Spielstand „{{name}}“, oder dieser wird gerade gespielt.",
+    "conflictDelete": "Der Spielstand wird gerade gespielt und lässt sich deshalb nicht löschen."
+  },
+  "copyMedia": {
+    "title": "Medien vom USB-Stick übernehmen",
+    "hint": "Übernommene Dateien und Ordner werden in die Medien von „{{game}}“ kopiert.",
+    "done": "Fertig",
+    "copied": "„{{name}}“ wurde übernommen.",
+    "failed": "„{{name}}“ konnte nicht übernommen werden: {{error}}"
+  },
+  "play": {
+    "buzzed": "{{team}}!",
+    "beginGameHint": "Die erste Frage zeigen und die Buzzer freigeben",
+    "previousQuestion": "Vorherige Frage",
+    "previousQuestionHint": "Springe zur vorherigen Frage",
+    "nextQuestion": "Nächste Frage",
+    "nextQuestionHint": "Springe zur nächsten Frage",
+    "endGameHint": "Beende das Spiel und zeige das gewinnende Team an",
+    "screenSides": "Darüber die Teams links (hochkant: oben) auf der Anzeige, darunter die rechts (unten)",
+    "team": {
+      "leads": "Führt",
+      "addPoint": "1 Punkt hinzufügen",
+      "removePoint": "1 Punkt abziehen",
+      "addQuestionPoints": "Punkte der aktuellen Frage vergeben"
+    },
+    "scores": {
+      "title": "Punkteliste",
+      "entry": "{{place}}. {{team}}: {{points}} Pkt.",
+      "toHomeHint": "Zurück zur Startseite, um ein neues Spiel zu beginnen oder eines fortzusetzen",
+      "final": "Endstand"
+    },
+    "media": {
+      "pauseHint": "Auf der Anzeige pausieren",
+      "playHint": "Auf der Anzeige abspielen",
+      "pause": "Pausieren",
+      "play": "Abspielen",
+      "previousSlide": "Vorheriges Bild",
+      "showSlide": "Bild zeigen",
+      "nextSlide": "Nächstes Bild",
+      "finish": "Abschließen",
+      "showSlideHint": "Aktuelles Bild auf der Anzeige zeigen",
+      "finishHint": "Bildserie abschließen",
+      "replayHint": "Von vorne beginnen",
+      "replay": "Von vorne",
+      "sound": "Ton",
+      "unmute": "Ton einschalten",
+      "mute": "Ton ausschalten",
+      "volumeHint": "Lautstärke auf allen Anzeigegeräten",
+      "exitFullscreenHint": "Vollbild auf der Anzeige beenden",
+      "fullscreenHint": "Medium auf der Anzeige im Vollbild zeigen",
+      "exitFullscreen": "Vollbild beenden",
+      "fullscreen": "Vollbild",
+      "slideshowFinished": "Bildserie abgeschlossen",
+      "controls": "Mediensteuerung",
+      "hideTitle": "{{media}} auf der Anzeige verbergen",
+      "showTitle": "{{media}} auf der Anzeige zeigen",
+      "soundBlocked": "Klicken, um den Ton einzuschalten",
+      "slideAlt": "Bild {{number}} von {{total}} zu dieser Frage",
+      "imageAlt": "Das Bild zu dieser Frage"
+    },
+    "lock": {
+      "releaseHint": "Die Buzzer für alle Teams freigeben",
+      "freeHint": "Die Buzzer sind frei; gibt sie trotzdem noch einmal frei",
+      "release": "Buzzer freigeben",
+      "free": "Buzzer frei",
+      "buzzed": "{{team}} hat gebuzzert",
+      "gradeHint": "Die Antwort des Teams, das gebuzzert hat, bewerten",
+      "grade": "Bewerten",
+      "confirm": {
+        "title": "Buzzer freigeben?",
+        "withTeam": "Die Antwort von {{team}} wird nicht bewertet, und alle Teams können wieder buzzern.",
+        "withoutTeam": "Alle Teams können wieder buzzern.",
+        "confirm": "Freigeben"
+      }
+    },
+    "welcome": {
+      "to": "Willkommen bei",
+      "title": "Willkommen!",
+      "soon": {
+        "one": "Gleich geht's los: {{count}} Frage",
+        "other": "Gleich geht's los: {{count}} Fragen"
+      },
+      "masterHint": "Die Anzeige zeigt diese Begrüßung, die Buzzer sind gesperrt. „Spiel starten“ zeigt die erste Frage und gibt die Buzzer frei."
+    },
+    "onScreen": "Auf der Anzeige",
+    "notes": "Notizen",
+    "correctAnswer": "Richtige Antwort",
+    "revealQuestionHint": "Antippen, um die Frage auf der Anzeige zu zeigen",
+    "revealAnswersHint": "Antippen, um die Antworten auf der Anzeige zu zeigen",
+    "visibility": {
+      "visible": ": sichtbar",
+      "hidden": ": verborgen",
+      "title": {
+        "question": {
+          "hide": "Frage auf der Anzeige verbergen",
+          "show": "Frage auf der Anzeige zeigen",
+          "waiting": "Frage auf der Anzeige zeigen; sonst erscheint sie {{after}}"
+        },
+        "answers": {
+          "hide": "Antworten auf der Anzeige verbergen",
+          "show": "Antworten auf der Anzeige zeigen",
+          "waiting": "Antworten auf der Anzeige zeigen; sonst erscheinen sie {{after}}"
+        }
+      }
+    },
+    "reveal": {
+      "question": {
+        "title": "Frage zeigen?",
+        "message": "Die Frage erscheint dann auf der Anzeige.",
+        "waiting": "Sonst erscheint sie {{after}}."
+      },
+      "answers": {
+        "title": "Antworten zeigen?",
+        "message": "Die Antworten erscheinen dann auf der Anzeige.",
+        "waiting": "Sonst erscheinen sie {{after}}."
+      }
+    },
+    "allCorrectRevealed": "Alle richtigen Antworten wurden aufgedeckt.",
+    "okay": "Okay",
+    "answerOptions": {
+      "unselect": "Auswahl aufheben",
+      "select": "Antwort selektieren",
+      "reveal": "Antwort aufdecken"
+    },
+    "grade": {
+      "closeHint": "Schließen; die Antwort kann später über „Bewerten“ bewertet werden",
+      "close": "Schließen",
+      "pickAnswer": "Tippe die Antwort an, die das Team gegeben hat",
+      "optional": "(optional)",
+      "givenAnswer": "Gegebene Antwort",
+      "alreadyRevealed": "Schon aufgedeckt",
+      "hint": {
+        "hiddenGreen": "Die Antworten sind auf der Anzeige noch verborgen; diese leuchtet grün auf, sobald sie erscheinen.",
+        "hiddenRed": "Die Antworten sind auf der Anzeige noch verborgen; diese leuchtet rot auf, sobald sie erscheinen.",
+        "green": "Diese Antwort leuchtet auf der Anzeige grün auf.",
+        "red": "Diese Antwort leuchtet auf der Anzeige rot auf.",
+        "hidden": "Die Antworten sind auf der Anzeige noch verborgen.",
+        "none": "Ohne Auswahl leuchten bei „Richtig“ alle richtigen Antworten auf."
+      },
+      "how": "Wie war die Antwort?",
+      "correct": "Richtig",
+      "wrong": "Falsch",
+      "bonus": "Bonus",
+      "double": "Doppelt",
+      "laterHint": "Schließt das Fenster; die Buzzer bleiben gesperrt und die Antwort kann später über „Bewerten“ bewertet werden",
+      "later": "Später bewerten",
+      "releaseHint": "Gibt die Buzzer für alle Teams frei, ohne Punkte zu vergeben",
+      "release": "Ohne Wertung freigeben"
+    },
+    "confirmEnd": {
+      "message": "Möchtest du wirklich das Spiel beenden",
+      "no": "Nein, doch nicht",
+      "yes": "Ja, ich will"
+    }
+  }
+}

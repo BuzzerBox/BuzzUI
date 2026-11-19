@@ -5,34 +5,34 @@
       <span class="selection-name">{{activeNode.name}}</span>
       <span class="selection-kind">{{getKindText(activeNode)}}</span>
     </span>
-    <button mat-stroked-button type="button" (click)="browsing = true">Ändern</button>
-    <button mat-button type="button" (click)="changeSelection(undefined)">Entfernen</button>
+    <button mat-stroked-button type="button" (click)="browsing = true">{{'common.change' | transloco}}</button>
+    <button mat-button type="button" (click)="changeSelection(undefined)">{{'common.remove' | transloco}}</button>
   </div>
 } @else if (activeNode === undefined && missingLocation && !browsing) {
   <div class="selection missing">
     <mat-icon class="selection-icon">error_outline</mat-icon>
     <span class="selection-text">
       <span class="selection-name">{{missingLocation}}</span>
-      <span class="selection-kind">Nicht in den Medien des Spiels. Lade eine Datei mit diesem Namen hoch oder wähle ein anderes Medium.</span>
+      <span class="selection-kind">{{'media.select.missing' | transloco}}</span>
     </span>
-    <button mat-stroked-button type="button" (click)="browsing = true">Ändern</button>
-    <button mat-button type="button" (click)="changeSelection(undefined)">Entfernen</button>
+    <button mat-stroked-button type="button" (click)="browsing = true">{{'common.change' | transloco}}</button>
+    <button mat-button type="button" (click)="changeSelection(undefined)">{{'common.remove' | transloco}}</button>
   </div>
 } @else {
   <div class="browser">
     <div class="browser-header">
-      <span class="hint">{{activeNode === undefined ? 'Kein Medium ausgewählt. Wähle eine Datei oder einen Ordner als Diashow.' : 'Wähle ein anderes Medium.'}}</span>
+      <span class="hint">{{(activeNode === undefined ? 'media.select.none' : 'media.select.chooseOther') | transloco}}</span>
       @if (activeNode !== undefined || missingLocation) {
-        <button mat-button type="button" (click)="browsing = false">Abbrechen</button>
+        <button mat-button type="button" (click)="browsing = false">{{'common.cancel' | transloco}}</button>
       }
     </div>
     <div class="media-actions">
       <input type="file" #mediaUpload hidden multiple (change)="upload($any($event.target).files); mediaUpload.value = ''">
       <button mat-stroked-button type="button" [disabled]="uploading" (click)="mediaUpload.click()">
-        <mat-icon>upload</mat-icon> Medien hochladen
+        <mat-icon>upload</mat-icon> {{'media.select.upload' | transloco}}
       </button>
       <button mat-stroked-button type="button" (click)="openCopyDialog()">
-        <mat-icon>usb</mat-icon> Vom USB-Stick übernehmen
+        <mat-icon>usb</mat-icon> {{'media.select.fromStick' | transloco}}
       </button>
       @if (uploading) {
         <mat-spinner diameter="20"></mat-spinner>
@@ -40,7 +40,7 @@
     </div>
 
     @if (dataSource.data.length === 0) {
-      <p class="hint">Das Spiel hat noch keine Medien.</p>
+      <p class="hint">{{'media.select.empty' | transloco}}</p>
     }
     <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="media-tree">
       <!-- files -->
@@ -54,16 +54,16 @@
       <!-- folders -->
       <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
         <div class="mat-tree-node">
-          <button mat-icon-button type="button" matTreeNodeToggle [attr.aria-label]="node.name + ' auf- oder zuklappen'">
+          <button mat-icon-button type="button" matTreeNodeToggle [attr.aria-label]="'media.select.toggleFolder' | transloco: {folder: node.name}">
             <mat-icon class="mat-icon-rtl-mirror">{{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}</mat-icon>
           </button>
           <mat-icon class="node-icon">folder</mat-icon>
           {{node.name}}
           @if (canBeSlideshow(node)) {
             <button mat-stroked-button type="button" class="slideshow-button" [class.background-highlight]="activeNode === node" (click)="selectSlideshow(node)"
-                    [title]="activeNode === node ? 'Diashow abwählen' : 'Die Bilder dieses Ordners nacheinander zeigen'">
+                    [title]="(activeNode === node ? 'media.select.unselectSlideshow' : 'media.select.slideshowHint') | transloco">
               <mat-icon>{{activeNode === node ? 'check' : 'burst_mode'}}</mat-icon>
-              {{activeNode === node ? 'Als Diashow ausgewählt' : 'Als Diashow'}} ({{getSlideImages(node).length}} Bilder)
+              {{(activeNode === node ? 'media.select.slideshowSelected' : 'media.select.asSlideshow') | transloco: {count: getSlideImages(node).length} }}
             </button>
           }
         </div>

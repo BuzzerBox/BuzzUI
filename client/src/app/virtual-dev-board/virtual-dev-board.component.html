@@ -8,9 +8,9 @@
       }
     </div>
     <div id="release-lock-button-container">
-      <mat-button-toggle id="release-lock-button" (mousedown)="sendReleaseLockButtonPress()">Release Lock</mat-button-toggle>
+      <mat-button-toggle id="release-lock-button" (mousedown)="sendReleaseLockButtonPress()">{{'devBoard.releaseLock' | transloco}}</mat-button-toggle>
     </div>
   </div>
 } @else {
-  <app-loading-spinner text="Warte auf Verbindung zum Server!"></app-loading-spinner>
+  <app-loading-spinner [text]="'common.waitingForServer' | transloco"></app-loading-spinner>
 }

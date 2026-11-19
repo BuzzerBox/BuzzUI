@@ -6,6 +6,8 @@ import {BuzzerHelper, IBuzzer, ITeam} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
 import {TeamColorHelper} from '../../helper/team-color.helper';
 import {TeamHelper} from '../../helper/team.helper';
+import {BuzzerNameHelper} from '../../helper/buzzer-name.helper';
+import {tn} from '../../i18n/i18n';
 
 interface ITeamRow {
   buzzer: IBuzzer;
@@ -45,6 +47,10 @@ export class DialogTeamsComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.buzzersSubscription?.unsubscribe();
+  }
+
+  public getBuzzerName(buzzer: IBuzzer): string {
+    return BuzzerNameHelper.getName(buzzer, this.game.getAvailableBuzzers());
   }
 
   /**
@@ -140,7 +146,7 @@ export class DialogTeamsComponent implements OnDestroy {
   }
 
   public formatPoints(points: number): string {
-    return Math.abs(points) === 1 ? `${points} Punkt` : `${points} Punkte`;
+    return tn('common.points', points);
   }
 
   public save(): void {

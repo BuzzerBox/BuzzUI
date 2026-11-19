@@ -2,6 +2,7 @@ import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges
 import {EMediaStates, EQuestionAnswerStates, IMediaQuestionState, MediaHelper, TMediaKind} from '../../../../../shared/shared';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {TranslocoModule} from '@jsverse/transloco';
 
 type MediaAnswerPreset = 'MEDIA_FIRST' | 'PLAY_HIDE_ANSWERS' | 'HIDE_BOTH' | 'SHOW_ANSWERS';
 
@@ -27,7 +28,7 @@ function presetFromConfig(config: IMediaQuestionState): MediaAnswerPreset {
   templateUrl: './media-question-display-order-configuration.component.html',
   styleUrls: ['./media-question-display-order-configuration.component.css'],
   standalone: true,
-  imports: [ReactiveFormsModule, MatButtonToggleModule]
+  imports: [ReactiveFormsModule, MatButtonToggleModule, TranslocoModule]
 })
 export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, OnChanges {
   @Output() questionConfigChange = new EventEmitter<IMediaQuestionState>();
@@ -36,10 +37,11 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
 
   public questionConfig: FormGroup;
 
+  // the labels are keys of texts
   private readonly allQuestionStateOptions = [
-    { label: 'Zeigen',                 key: EQuestionAnswerStates.SHOWN },
-    { label: 'Verbergen',              key: EQuestionAnswerStates.HIDDEN },
-    { label: 'Nach dem Medium zeigen', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
+    { label: 'mediaStart.questionState.show',       key: EQuestionAnswerStates.SHOWN },
+    { label: 'mediaStart.questionState.hide',       key: EQuestionAnswerStates.HIDDEN },
+    { label: 'mediaStart.questionState.afterMedia', key: EQuestionAnswerStates.WAIT_FOR_MEDIA },
   ];
 
   // video, audio or a slideshow: media that ends, so the question and answers can wait for it
@@ -54,15 +56,15 @@ export class MediaQuestionDisplayOrderConfigurationComponent implements OnInit, 
 
   get presetOptions(): { label: string; key: MediaAnswerPreset }[] {
     const options: { label: string; key: MediaAnswerPreset }[] = [
-      { label: this.mediaKind === 'slideshow' ? 'Erstes Bild zeigen, Antworten nach dem letzten' : this.hasEnd ? 'Abspielen, Antworten danach' : 'Bild zeigen', key: 'MEDIA_FIRST' },
+      { label: this.mediaKind === 'slideshow' ? 'mediaStart.preset.slideshowFirst' : this.hasEnd ? 'mediaStart.preset.playFirst' : 'mediaStart.preset.showImage', key: 'MEDIA_FIRST' },
     ];
     // video and audio: the master shows the answers when they like, not when the media ends
     if (this.mediaKind === 'playable') {
-      options.push({ label: 'Abspielen, Antworten verbergen', key: 'PLAY_HIDE_ANSWERS' });
+      options.push({ label: 'mediaStart.preset.playHideAnswers', key: 'PLAY_HIDE_ANSWERS' });
     }
     options.push(
-      { label: 'Beides verbergen', key: 'HIDE_BOTH' },
-      { label: 'Antworten zeigen', key: 'SHOW_ANSWERS' },
+      { label: 'mediaStart.preset.hideBoth', key: 'HIDE_BOTH' },
+      { label: 'mediaStart.preset.showAnswers', key: 'SHOW_ANSWERS' },
     );
     return options;
   }

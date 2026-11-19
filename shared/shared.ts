@@ -11,6 +11,7 @@ export {StorageApiHelper} from './helper/storage-api.helper';
 export {BuzzerHelper} from './helper/buzzer.helper';
 export {ScoringHelper} from './helper/scoring.helper';
 export {BoxSettingsHelper} from './helper/box-settings.helper';
+export {LanguageHelper, TLanguage} from './helper/language.helper';
 
 export {
     PacketHelper

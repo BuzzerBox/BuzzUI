@@ -3,31 +3,31 @@
   <div class="media-buttons">
     <!-- video and audio are played here; images are shown and hidden in the visibility pane -->
     @if (isPlayable()) {
-      <button mat-stroked-button class="media-button" (click)="isPlaying() ? pause() : play()" [title]="isPlaying() ? 'Auf der Anzeige pausieren' : 'Auf der Anzeige abspielen'">
-        <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon> {{ isPlaying() ? 'Pausieren' : 'Abspielen' }}
+      <button mat-stroked-button class="media-button" (click)="isPlaying() ? pause() : play()" [title]="(isPlaying() ? 'play.media.pauseHint' : 'play.media.playHint') | transloco">
+        <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon> {{ (isPlaying() ? 'play.media.pause' : 'play.media.play') | transloco }}
       </button>
     }
     @if (isSlideshow()) {
-      <button mat-stroked-button class="media-button" (click)="previousSlide()" [disabled]="getSlideIndex() === 0" title="Vorheriges Bild">
-        <mat-icon>skip_previous</mat-icon> Vorheriges Bild
+      <button mat-stroked-button class="media-button" (click)="previousSlide()" [disabled]="getSlideIndex() === 0" [title]="'play.media.previousSlide' | transloco">
+        <mat-icon>skip_previous</mat-icon> {{'play.media.previousSlide' | transloco}}
       </button>
       <button mat-stroked-button class="media-button" (click)="nextSlide()" [disabled]="isFinished()" [title]="getNextSlideTitle()">
         <mat-icon>skip_next</mat-icon> {{getNextSlideLabel()}}
       </button>
     }
     @if (isPlayable() || isSlideshow()) {
-      <button mat-stroked-button class="media-button" (click)="replay()" title="Von vorne beginnen">
-        <mat-icon>replay</mat-icon> Von vorne
+      <button mat-stroked-button class="media-button" (click)="replay()" [title]="'play.media.replayHint' | transloco">
+        <mat-icon>replay</mat-icon> {{'play.media.replay' | transloco}}
       </button>
     }
     @if (isPlayable()) {
       <!-- the sound and its volume in one box, like a button -->
-      <span class="volume-control" role="group" aria-label="Ton">
-        <button mat-icon-button (click)="toggleMute()" [title]="mediaVolume.muted ? 'Ton einschalten' : 'Ton ausschalten'"
-          [attr.aria-label]="mediaVolume.muted ? 'Ton einschalten' : 'Ton ausschalten'">
+      <span class="volume-control" role="group" [attr.aria-label]="'play.media.sound' | transloco">
+        <button mat-icon-button (click)="toggleMute()" [title]="(mediaVolume.muted ? 'play.media.unmute' : 'play.media.mute') | transloco"
+          [attr.aria-label]="(mediaVolume.muted ? 'play.media.unmute' : 'play.media.mute') | transloco">
           <mat-icon>{{ mediaVolume.muted ? 'volume_off' : 'volume_up' }}</mat-icon>
         </button>
-        <mat-slider min="0" max="100" step="5" discrete title="Lautstärke auf allen Anzeigegeräten">
+        <mat-slider min="0" max="100" step="5" discrete [title]="'play.media.volumeHint' | transloco">
           <input matSliderThumb [value]="getVolumePercent()" (valueChange)="setVolume($event)"
             (dragStart)="onVolumeDragStart()" (dragEnd)="onVolumeDragEnd()">
         </mat-slider>
@@ -35,14 +35,14 @@
     }
     <!-- audio only shows its note -->
     @if (!isAudio()) {
-      <button mat-stroked-button class="media-button" (click)="toggleFullscreen()" [title]="isFullscreen() ? 'Vollbild auf der Anzeige beenden' : 'Medium auf der Anzeige im Vollbild zeigen'">
-        <mat-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon> {{ isFullscreen() ? 'Vollbild beenden' : 'Vollbild' }}
+      <button mat-stroked-button class="media-button" (click)="toggleFullscreen()" [title]="(isFullscreen() ? 'play.media.exitFullscreenHint' : 'play.media.fullscreenHint') | transloco">
+        <mat-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon> {{ (isFullscreen() ? 'play.media.exitFullscreen' : 'play.media.fullscreen') | transloco }}
       </button>
     }
   </div>
   @if (isSlideshow()) {
-    <div class="slide-position" [class.finished]="isFinished()" [title]="isFinished() ? 'Bildserie abgeschlossen' : ''">
-      <span>Bildserie</span>
+    <div class="slide-position" [class.finished]="isFinished()" [title]="isFinished() ? ('play.media.slideshowFinished' | transloco) : ''">
+      <span>{{'media.kind.slideshow' | transloco}}</span>
       <span>
         {{getSlideIndex() + 1}} / {{getSlideCount()}}
         @if (isFinished()) {

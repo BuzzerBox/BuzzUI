@@ -1,0 +1,1000 @@
+{
+  "language": {
+    "choose": "Language"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "ok": "OK",
+    "next": "Next",
+    "back": "Back",
+    "retry": "Try again",
+    "toHome": "To the home page",
+    "waitingForServer": "Waiting for the connection to the server!",
+    "points": {
+      "one": "{{count}} point",
+      "other": "{{count}} points"
+    },
+    "question": "Question",
+    "answers": "Answers",
+    "questionProgress": "Question {{current}}/{{total}}",
+    "version": "Version {{version}}",
+    "name": "Name",
+    "invalidName": "The name must not be empty or contain any of these characters: \\ / : * ? \" < > | # %",
+    "keep": "No, keep it",
+    "deleteForever": "Delete permanently",
+    "cannotUndo": "This can't be undone.",
+    "rename": "Rename",
+    "move": "Move",
+    "copy": "Copy",
+    "delete": "Delete",
+    "show": "Show",
+    "hide": "Hide",
+    "change": "Change",
+    "remove": "Remove",
+    "savedAs": "Will be saved as “{{name}}”",
+    "gameName": "Name of the game",
+    "newGame": "New game",
+    "continueGame": "Continue game",
+    "manageGames": "Manage games",
+    "startGame": "Start game",
+    "endGame": "End game",
+    "minTeams": "At least {{count}} teams have to play.",
+    "teamName": "Team name",
+    "mediaMissing": "Media missing"
+  },
+  "location": {
+    "label": {
+      "box": "BuzzerBox",
+      "usb": "USB stick {{name}}"
+    },
+    "text": {
+      "box": "the BuzzerBox",
+      "usb": "the USB stick {{name}}"
+    }
+  },
+  "caseColors": {
+    "orange": {
+      "name": "Orange",
+      "buzzer": "Orange wireless buzzer"
+    },
+    "yellow": {
+      "name": "Yellow",
+      "buzzer": "Yellow wireless buzzer"
+    },
+    "turquoise": {
+      "name": "Turquoise",
+      "buzzer": "Turquoise wireless buzzer"
+    },
+    "blue": {
+      "name": "Blue",
+      "buzzer": "Blue wireless buzzer"
+    },
+    "purple": {
+      "name": "Purple",
+      "buzzer": "Purple wireless buzzer"
+    },
+    "pink": {
+      "name": "Pink",
+      "buzzer": "Pink wireless buzzer"
+    },
+    "white": {
+      "name": "White",
+      "buzzer": "White wireless buzzer"
+    },
+    "black": {
+      "name": "Black",
+      "buzzer": "Black wireless buzzer"
+    }
+  },
+  "buzzer": {
+    "wireless": "Wireless buzzer {{mac}}",
+    "offline": "This wireless buzzer is not connected right now",
+    "batteryLow": "The battery of this wireless buzzer is almost empty",
+    "caseColor": "Color of the case",
+    "caseColorNamed": "Case: {{color}}",
+    "teamColor": "The team's color on the screen"
+  },
+  "teams": {
+    "defaultName": "Team {{number}}",
+    "title": "Teams",
+    "buzzersUnknown": "The buzzers are unknown. Reload the page to change the teams.",
+    "new": "new",
+    "losesPoints": "{{team}} will be removed and loses {{points}}.",
+    "apply": "Apply"
+  },
+  "choose": {
+    "lead": "What is this device going to be used for?",
+    "master": {
+      "title": "Game master",
+      "text": "For your phone, tablet or laptop: create and manage quizzes, start and run games, grade answers. Only one device is in control at a time."
+    },
+    "screen": {
+      "title": "Screen",
+      "text": "For the TV or projector that everyone sees: shows questions, images, videos and the scores. There can be any number of screens, also several browser windows on the same device."
+    },
+    "devBoard": {
+      "title": "Virtual dev board",
+      "text": "For development only: press buzzers with a mouse click, without a real BuzzerBox."
+    },
+    "guide": {
+      "title": "How to start a game",
+      "connect": {
+        "title": "Connect.",
+        "text": "Connect each device to the WiFi <strong>{{wifi}}</strong> and open <strong>{{address}}</strong> in the browser. That takes you to this page."
+      },
+      "screen": {
+        "title": "Set up the screen.",
+        "text": "A display on the HDMI port of the BuzzerBox shows the screen by itself. For each further screen, open this page in a browser window of its own and choose “Screen”.",
+        "tipTitle": "Several windows, one device:",
+        "tip": "A laptop can be game master and screen at the same time. Open a second browser window, choose “Screen” there and move it to the projector or TV (best in full screen with F11). This also gives you several screens on one device, one per window."
+      },
+      "master": {
+        "title": "Take control.",
+        "text": "Choose “Game master” on your device, in a window of its own if it is a screen as well. You connect wireless buzzers on the game master's home page by plugging them into the BuzzerBox over USB and tapping “Adopt”."
+      },
+      "quiz": {
+        "title": "Choose a quiz.",
+        "text": "“New game” starts a stored quiz from the beginning, “Continue game” carries on with a savegame. No quiz yet? Create or import one under “Manage games”."
+      },
+      "teams": {
+        "title": "Set up the teams.",
+        "text": "Give each team a buzzer, choose the look of the screen and tap “Start game”."
+      },
+      "play": {
+        "title": "Play.",
+        "text": "When a team presses its buzzer, all others are locked, and you grade the answer with “Correct” or “Wrong”. After “Wrong”, the others may buzz again. “Next question” moves on, and after the last question “End game” does."
+      },
+      "hint": "The game is saved all the time. If a device reloads or loses the WiFi for a moment, it carries on at the same point afterwards."
+    },
+    "github": "BuzzerBox on GitHub"
+  },
+  "screen": {
+    "waitingForSetup": "Waiting for the game to be set up …",
+    "waitingForServer": "Waiting for the connection to the server …",
+    "waitingForSetupClassic": "Waiting for the game to be set up!",
+    "joinWifi": "WiFi <strong>{{wifi}}</strong>",
+    "joinAddress": "Open <strong>{{address}}</strong>"
+  },
+  "home": {
+    "welcome": "Welcome to {{name}}!",
+    "newGame": {
+      "text": "Start a stored quiz from the beginning",
+      "none": "No stored games yet, create one in “Manage games”"
+    },
+    "continueGame": {
+      "text": "Carry on with an earlier savegame where it left off",
+      "none": "No savegames yet, they are made while playing"
+    },
+    "manageGames": {
+      "text": "Create and edit games, manage their savegames and media, import and download them"
+    },
+    "version": "Version {{version}}"
+  },
+  "toolbar": {
+    "home": "To the home page",
+    "more": "More",
+    "editTeams": "Edit teams",
+    "endGameHint": "Ends the game and shows the winning team",
+    "pauseGame": "Pause game",
+    "pauseGameHint": "Saves the game to carry on with it later under “Continue game”",
+    "discardGame": "Discard game",
+    "discardGameHint": "Ends the game and deletes its savegame",
+    "boxSettings": "BuzzerBox settings",
+    "resetServer": "Reset server",
+    "logout": "Log out",
+    "autosave": {
+      "none": "This game is not being saved",
+      "where": "“{{state}}” on {{location}}",
+      "failed": "Saving failed ({{error}}), trying again: {{where}}",
+      "savedAt": "Saved automatically at {{time}}: {{where}}",
+      "saving": "Being saved automatically: {{where}}"
+    },
+    "confirmReset": {
+      "title": "Reset the server?",
+      "message": "All devices start over.",
+      "confirm": "Reset"
+    },
+    "confirmPause": {
+      "title": "Pause the game?",
+      "saved": "The savegame “{{state}}” stays saved. “Continue game” carries on at the same point later.",
+      "unsaved": "This game is not being saved, so it can't be continued.",
+      "confirm": "Pause"
+    },
+    "confirmDiscard": {
+      "title": "Discard the game?",
+      "saved": "The savegame “{{state}}” will be deleted, even if it was played before, and can't be continued.",
+      "unsaved": "The game ends without a final score.",
+      "confirm": "Discard"
+    }
+  },
+  "boxSettings": {
+    "title": "BuzzerBox settings",
+    "edit": "Edit",
+    "save": "Save",
+    "loading": "Loading the settings …",
+    "unavailable": "This server has no BuzzerBox settings.",
+    "intro": "From the file <code>buzzerbox.txt</code> on the memory card's boot partition. The box applies them every time it starts.",
+    "failed": "That didn't work.",
+    "restarting": "The BuzzerBox is restarting, which takes about a minute.",
+    "restartingConnect": "Then connect to the WiFi “{{wifi}}” and open <strong>{{address}}</strong>.",
+    "restartingReconnect": "This page reconnects by itself afterwards.",
+    "saved": "Saved. The changes apply from the BuzzerBox's next start.",
+    "savedConnect": "After the restart, all devices are disconnected. Connect them to the WiFi “{{wifi}}” and open <strong>{{address}}</strong>.",
+    "savedBuzzers": "Wireless buzzers need to be adopted again over USB for this.",
+    "restartNow": "Restart now",
+    "confirmRestart": "Restart the BuzzerBox now? All devices lose their connection for a moment.",
+    "restart": "Restart",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "default": "Default",
+    "defaultHint": "The file doesn't set this value itself",
+    "invalidInFile": "“{{value}}” in the file is invalid, so the default applies.",
+    "invalid": "Invalid. {{hint}}",
+    "ethernetInWifiNetwork": "Must be in a different network from the WiFi address.",
+    "fromFile": "{{value}} (from buzzerbox.txt)",
+    "editingWarning": "If the WiFi or the address changes, all devices are disconnected after the restart and have to connect again.",
+    "readOnly": "To change them, put the memory card into a computer and edit <code>buzzerbox.txt</code>. With <code>{{editKey}}=true</code> in the file, the settings can be changed here as well.",
+    "confirmLeave": {
+      "title": "Discard the changes?",
+      "message": "The changed settings haven't been saved yet.",
+      "confirm": "Discard"
+    },
+    "groups": {
+      "wifi": "WiFi",
+      "buzzers": "Buzzers",
+      "network": "Network",
+      "displays": "Displays",
+      "hardware": "Hardware"
+    },
+    "fields": {
+      "WIFI_SSID": {
+        "label": "WiFi name",
+        "hint": "1 to 32 characters"
+      },
+      "WIFI_PASSPHRASE": {
+        "label": "Password",
+        "hint": "8 to 63 characters, no umlauts or other special letters"
+      },
+      "WIFI_COUNTRY_CODE": {
+        "label": "Country",
+        "hint": "Two letters, e.g. DE, AT or CH. It decides which channels are allowed."
+      },
+      "WIFI_CHANNEL": {
+        "label": "Channel",
+        "hint": "1 to 13"
+      },
+      "WIFI_ANTENNA": {
+        "label": "Antenna",
+        "hint": "Only the Compute Module 4 has the external antenna."
+      },
+      "ANALOG_BUZZERS": {
+        "label": "Analog buzzers",
+        "hint": "Buzzers plugged into the box's sockets. Without them, the box offers only the wireless buzzers."
+      },
+      "SERVER_IP_ADDRESS": {
+        "label": "WiFi address",
+        "hint": "Devices get the addresses .50 to .150 of the same network."
+      },
+      "ETHERNET_IP_ADDRESS": {
+        "label": "Ethernet address",
+        "hint": "For a laptop on a cable; in a different network from the WiFi."
+      },
+      "SERVER_HOSTNAMES": {
+        "label": "Names of the box",
+        "hint": "The box can be opened under these names, separated by spaces."
+      },
+      "SCREEN_MODE": {
+        "label": "TV resolution",
+        "hint": "If the TV doesn't offer the resolution, it chooses one itself. A Raspberry Pi 4 can't play 4K at 60 Hz smoothly."
+      },
+      "TOUCH_DISPLAY": {
+        "label": "Touchscreen",
+        "hint": "With the touchscreen, the box shows the game master's controls on it."
+      },
+      "TOUCH_DISPLAY_ROTATION": {
+        "label": "Rotate the touch display",
+        "hint": "Yes turns the picture upside down, in case the touchscreen is built in the other way round."
+      },
+      "TOUCH_DISPLAY_SCALE": {
+        "label": "Size on the touch display",
+        "hint": "How large the game master's controls appear on the touch display."
+      }
+    },
+    "options": {
+      "yes": "Yes",
+      "no": "No",
+      "internal": "Internal",
+      "external": "External",
+      "screenModeAuto": "The TV's choice (often 4K)",
+      "scaleAuto": "Automatic ({{factor}}×)",
+      "scaleNormal": "Normal ({{factor}}×)",
+      "scale": "{{factor}}×"
+    },
+    "hardware": {
+      "model": "Model",
+      "serialNumber": "Serial number",
+      "memory": "Memory",
+      "storage": "Storage",
+      "temperature": "Temperature",
+      "operatingSystem": "Operating system",
+      "uptime": "Running for",
+      "software": "Software",
+      "storageKinds": {
+        "emmc": "eMMC",
+        "sd": "SD card",
+        "usb": "USB drive",
+        "drive": "Drive"
+      },
+      "free": "{{size}} free",
+      "days": {
+        "one": "{{count}} day, {{hours}} h",
+        "other": "{{count}} days, {{hours}} h"
+      },
+      "hours": "{{hours}} h {{minutes}} min",
+      "minutes": "{{minutes}} min"
+    },
+    "ssh": {
+      "title": "SSH access",
+      "editingNote": "Keys apply as soon as they are added or removed. “Save” and “Cancel” don't affect them.",
+      "intro": "From <code>buzzerbox-ssh-keys.txt</code> on the boot partition. With one of these keys, you can log in as <code>{{user}}</code> and manage the box with <code>sudo</code>: <code>ssh {{user}}@{{address}}</code>.",
+      "noKeys": "Without keys, SSH is off.",
+      "unnamed": "Key without a name",
+      "notActiveYet": "Applies from the box's next start.",
+      "removeKey": "Remove key",
+      "addLabel": "Add a public key",
+      "private": "This is a private key, which never belongs on the box. Use the content of the file ending in .pub.",
+      "notAKey": "Not a public SSH key. It starts with e.g. ssh-ed25519 or ssh-rsa.",
+      "addHint": "The content of a .pub file, e.g. ~/.ssh/id_ed25519.pub. Applies right away.",
+      "add": "Add"
+    }
+  },
+  "otherMaster": {
+    "titleTakenOver": "Another device has taken control",
+    "titleRefused": "Another device is controlling the BuzzerBox right now",
+    "noLongerInControl": "This device no longer controls the BuzzerBox.",
+    "gameGoesOnThere": "The game goes on on the other device.",
+    "canTakeBack": "You can take control back at any time.",
+    "onlyOne": "Only one device can control the BuzzerBox at a time.",
+    "gameRunningThere": "A game is running there right now.",
+    "wasItYou": "Was that you, and the device lost the WiFi for a moment or was reloaded? Then it carries on by itself in a few seconds.",
+    "retrying": "Keeps trying again …",
+    "takeBack": "Take control back",
+    "takeOver": "Take control",
+    "useAsScreen": "Use as a screen",
+    "confirm": {
+      "title": "Take control?",
+      "gameRunning": "The other device can no longer control the game then. The running game carries on here with the current scores.",
+      "noGame": "The other device can no longer control the BuzzerBox then. What was entered there but not saved yet is lost.",
+      "confirm": "Take control"
+    }
+  },
+  "loadGame": {
+    "continueHint": "Choose a savegame and carry on where it left off.",
+    "newHint": "Choose a stored game and start it from the beginning."
+  },
+  "storage": {
+    "manager": {
+      "hint": "Each game has a folder of its own with its versions, savegames and media. Open a game to edit it or to manage its media.",
+      "create": "Create a new game"
+    },
+    "locations": {
+      "label": "Storage location",
+      "readOnly": "read-only",
+      "noStick": "No USB stick is plugged in.",
+      "plugStick": "Plug a USB stick into the BuzzerBox to store games on it or to use media from it.",
+      "free": "{{size}} free",
+      "writeProtected": "read-only"
+    },
+    "error": {
+      "masterOnly": "Only the game master can access the storage.",
+      "unreachable": "The BuzzerBox can't be reached.",
+      "noSpace": "There is not enough free space.",
+      "invalidAnswer": "The BuzzerBox did not send a valid answer.",
+      "locationGone": "The storage location is gone. Was the USB stick pulled out?"
+    }
+  },
+  "fileUpload": {
+    "dropHere": "Drop a file here",
+    "or": "or",
+    "browse": "Browse for a file",
+    "reset": "Reset"
+  },
+  "mediaStart": {
+    "question": "Question at the start",
+    "mediaAndAnswers": "Media and answers at the start",
+    "questionState": {
+      "show": "Show",
+      "hide": "Hide",
+      "afterMedia": "Show after the media"
+    },
+    "preset": {
+      "slideshowFirst": "Show the first image, answers after the last",
+      "playFirst": "Play, answers afterwards",
+      "showImage": "Show the image",
+      "playHideAnswers": "Play, hide the answers",
+      "hideBoth": "Hide both",
+      "showAnswers": "Show the answers"
+    }
+  },
+  "devBoard": {
+    "releaseLock": "Release Lock"
+  },
+  "wirelessBuzzers": {
+    "title": "Wireless buzzers",
+    "unknown": "Wireless buzzer",
+    "subtitle": {
+      "one": "One buzzer is connected. Those plugged in over USB can be adopted here.",
+      "other": "{{count}} buzzers are connected. Those plugged in over USB can be adopted here."
+    },
+    "noColor": "No color of the case",
+    "usb": "Plugged in over USB",
+    "wifi": "WiFi",
+    "wifiHint": "Connected to the BuzzerBox over WiFi",
+    "battery": {
+      "charging": "Charging over USB",
+      "lowHint": "Battery low",
+      "hint": "Battery",
+      "low": "low"
+    },
+    "firmware": "Firmware {{version}}",
+    "moreSettings": "More settings",
+    "keepColor": "Don't change the color",
+    "changeColor": "Change the color of the case",
+    "identifying": "Identifying the buzzer …",
+    "alreadyAdopted": "Already adopted for this BuzzerBox (WiFi “{{ssid}}”).",
+    "alreadyAdoptedConnected": "Already adopted for this BuzzerBox (WiFi “{{ssid}}”) and connected.",
+    "otherWifi": "The buzzer is set up for the WiFi “{{ssid}}”, not for this BuzzerBox. Adopt it, so it connects to this one.",
+    "notAdopted": "Adopt the buzzer, so it connects to the BuzzerBox's WiFi.",
+    "noAnswer": "The device doesn't answer. Is it a wireless buzzer? Adopting tries again.",
+    "adopting": "Adopting the buzzer …",
+    "adoptedConnected": "Adopted and connected (WiFi “{{ssid}}”). You can unplug it now.",
+    "adoptedConnecting": "Adopted: the buzzer is connecting to the WiFi “{{ssid}}” …",
+    "failed": "Adopting didn't work. {{reason}}",
+    "error": {
+      "noWifiSettings": "The BuzzerBox doesn't know the settings of its WiFi (/etc/buzzerbox/wireless-buzzers.conf is missing).",
+      "noAnswer": "The buzzer didn't answer. Unplug it, plug it in again and try again.",
+      "rejected": "The buzzer rejected the WiFi settings.",
+      "portError": "The connection over USB broke off. Is the buzzer still plugged in?"
+    },
+    "noColorOption": "None",
+    "needsFirmware": "For the color of the case, the buzzer needs firmware 1.2.0 or later.",
+    "applyColor": "Apply the color",
+    "adoptAgain": "Adopt again",
+    "adopt": "Adopt"
+  },
+  "update": {
+    "title": "Software update",
+    "installedVersion": "Installed version {{version}}",
+    "installing": "The update is being installed. The BuzzerBox restarts while it does, and this page reconnects by itself afterwards. Please don't pull out the USB stick.",
+    "installingVersion": "The update to {{version}} is being installed. The BuzzerBox restarts while it does, and this page reconnects by itself afterwards. Please don't pull out the USB stick.",
+    "succeeded": "Version {{version}} was installed.",
+    "failed": "The update failed: {{message}}",
+    "rolledBack": "Version {{version}} couldn't be started, so the previous version is running again.",
+    "pageOutdated": "This page still belongs to version {{version}}.",
+    "reload": "Reload",
+    "installNow": "Install now",
+    "install": "Install",
+    "unsignedTitle": "Warning: version {{version}} has no valid signature ({{problem}})",
+    "unsignedWarning": "It can't be checked whether this update comes from the developers of the BuzzerBox and is unchanged. An update runs with full rights on the BuzzerBox: a faulty or manipulated update can make it unusable, read or delete stored games and media, and install malware.",
+    "unsignedOnlyIf": "Only install it if you know exactly where the file comes from.",
+    "acceptRisk": "I have read the warning and want to install the update anyway.",
+    "installAnyway": "Install anyway",
+    "couldNotStart": "The update couldn't be started.",
+    "bundle": {
+      "newer": "newer",
+      "installed": "installed",
+      "older": "older"
+    },
+    "signature": {
+      "missing": "not signed",
+      "noPublicKey": "signature can't be checked, the BuzzerBox has no key",
+      "invalid": "invalid signature"
+    }
+  },
+  "media": {
+    "of": "Media of {{game}}",
+    "browser": {
+      "folders": "Folders",
+      "dropHere": "Drag media here or",
+      "chooseFiles": "Choose files",
+      "newFolder": "New folder",
+      "newFolderName": "Name of the new folder",
+      "invalidFolderName": "The name must not start with “.” or contain any of the characters \\ / : * ? \" < > |.",
+      "create": "Create",
+      "readOnly": "{{location}} is read-only, nothing can be uploaded here.",
+      "uploadFailed": "Failed: {{error}}",
+      "uploaded": "Uploaded ({{size}})",
+      "dismiss": "Dismiss",
+      "empty": "This folder has no media.",
+      "edit": "Rename, move or delete",
+      "useFolder": "Use folder",
+      "use": "Use",
+      "skippedKind": "{{file}} is skipped: only images, videos and audio files can be uploaded.",
+      "skippedName": "{{file}} is skipped: the file name has characters that a USB stick doesn't allow.",
+      "replace": {
+        "title": "Replace file",
+        "message": "This folder already has a file “{{file}}”. Do you want to replace it? All questions that show it show the new one then.",
+        "confirm": "Replace"
+      },
+      "notReplaced": "not replaced",
+      "saved": "“{{name}}” was saved.",
+      "deleted": "“{{name}}” was deleted."
+    },
+    "select": {
+      "missing": "Not in the game's media. Upload a file with this name or choose other media.",
+      "none": "No media selected. Choose a file, or a folder as a slideshow.",
+      "chooseOther": "Choose other media.",
+      "upload": "Upload media",
+      "fromStick": "Use from the USB stick",
+      "empty": "The game has no media yet.",
+      "toggleFolder": "Expand or collapse {{folder}}",
+      "unselectSlideshow": "Unselect the slideshow",
+      "slideshowHint": "Show the images of this folder one after the other",
+      "slideshowSelected": "Selected as a slideshow ({{count}} images)",
+      "asSlideshow": "As a slideshow ({{count}} images)",
+      "skipped": "{{file}} is skipped: only images, videos and audio files with a valid name can be uploaded.",
+      "exists": "There already is a file with this name.",
+      "notUploaded": "{{file}} wasn't uploaded: {{reason}}",
+      "kind": {
+        "slideshow": "Slideshow · {{count}} images"
+      }
+    },
+    "kind": {
+      "video": "Video",
+      "audio": "Audio",
+      "image": "Image",
+      "slideshow": "Slideshow"
+    },
+    "after": {
+      "video": "after the video",
+      "audio": "after the audio",
+      "slideshow": "after the slideshow",
+      "image": "after the image"
+    },
+    "afterShort": {
+      "video": "after video",
+      "audio": "after audio",
+      "slideshow": "after slideshow",
+      "image": "after image"
+    }
+  },
+  "import": {
+    "upload": "Upload a game",
+    "uploadHint": "A game from this device: a downloaded archive, a game file or an old savegame",
+    "archive": "A whole game with all versions, savegames and media ({{size}})",
+    "import": "Import",
+    "uploading": "Uploading … {{percent}}",
+    "checking": "Checking and saving …",
+    "questions": {
+      "one": "{{count}} question",
+      "other": "{{count}} questions"
+    },
+    "withState": "and a savegame ({{teams}} teams, at question {{question}})",
+    "imported": "“{{name}}” was imported.",
+    "skipped": "These files in the archive don't belong to a game and were left out:",
+    "missingMedia": "These media weren't found:",
+    "missingMediaHint": "Upload files with these names to the game's media, or plug in the USB stick with the media and import the file once more.",
+    "notAGame": "The file is neither a game nor a savegame.",
+    "exists": "There already is a game “{{name}}”. Choose another name.",
+    "stateName": "Imported",
+    "gameName": "Imported game"
+  },
+  "game": {
+    "stateNamePrefix": "Game"
+  },
+  "themes": {
+    "studio": {
+      "name": "Studio",
+      "description": "Dark like a TV studio, with team colors, effects and a podium"
+    },
+    "daylight": {
+      "name": "Daylight",
+      "description": "Like Studio, but light, for bright rooms and projectors"
+    },
+    "classic": {
+      "name": "Classic",
+      "description": "The plain look of the earlier versions, without effects"
+    }
+  },
+  "prepare": {
+    "summary": {
+      "state": "Savegame “{{state}}”",
+      "savedOn": "stored on {{location}}"
+    },
+    "stateName": "Name of the savegame",
+    "stateNameHint": "The game is saved automatically under this name.",
+    "buzzers": "Buzzers",
+    "analogBuzzers": "Analog buzzers",
+    "digitalBuzzers": "Digital buzzers",
+    "buzzerTypeHint": "A game is played either with the buzzers on the box or with the wireless buzzers.",
+    "dropsTeams": {
+      "analog": "This savegame was played with the analog buzzers. Its teams and their points are dropped.",
+      "digital": "This savegame was played with the digital buzzers. Its teams and their points are dropped."
+    },
+    "noWirelessBuzzer": "No wireless buzzer is connected. Switch the wireless buzzers on, they appear here as soon as they report in.",
+    "buzzersUnknown": "The buzzers are unknown. Reload the page.",
+    "losesPoints": "{{team}} no longer plays and loses {{points}}.",
+    "sameColor": "{{teams}} have the same color. On the screen, only their names tell them apart.",
+    "theme": "Look of the screen",
+    "noQuestions": "This version has no questions.",
+    "missingMedia": {
+      "title": "These media are missing in the game, so the questions show nothing:",
+      "item": "Question {{number}}:",
+      "hint": "Upload them to the game's media in “Manage games”, or derive a new version without them."
+    },
+    "mediaCheckFailed": "Whether all media are there couldn't be checked: {{error}}",
+    "progress": {
+      "new": {
+        "one": "{{count}} question",
+        "other": "{{count}} questions"
+      },
+      "finished": "Ended at question {{current}} of {{total}}",
+      "continue": "Carries on at question {{current}} of {{total}}"
+    },
+    "confirmMissing": {
+      "one": "One media file is missing (question {{questions}}). These questions show nothing then. Do you want to start anyway?",
+      "other": "{{count}} media files are missing (question {{questions}}). These questions show nothing then. Do you want to start anyway?",
+      "confirm": "Start anyway"
+    }
+  },
+  "games": {
+    "none": {
+      "new": "There is no stored game on {{location}} yet. Create one in “Manage games” or upload it there.",
+      "continue": "There are no savegames on {{location}} yet. Start a new game, and it is saved while you play.",
+      "manage": "There are no games on {{location}} yet. Create a new one or upload one."
+    },
+    "inUse": "being played",
+    "begin": "Start",
+    "beginOtherVersion": "Start another version",
+    "latest": "latest",
+    "playsVersion": "plays version {{version}}",
+    "reopen": "Open again",
+    "continue": "Continue",
+    "downloadHint": "The whole game with all versions, savegames and media, to take it to another BuzzerBox",
+    "download": "Download",
+    "downloadWithoutMediaHint": "Only the questions of the latest version, as a JSON file",
+    "downloadWithoutMedia": "Download without media",
+    "manageDisabled": "The game is being played right now.",
+    "manageHint": "Rename, move, copy or delete",
+    "manage": "Manage",
+    "states": "Savegames",
+    "notPlayed": "This game hasn't been played yet.",
+    "editState": "Rename or delete",
+    "versions": "Versions",
+    "notSavedYet": "The game hasn't been saved yet.",
+    "createQuestions": "Create questions",
+    "versionDetails": {
+      "one": "{{questions}} · saved {{date}} · 1 savegame",
+      "other": "{{questions}} · saved {{date}} · {{count}} savegames"
+    },
+    "deriveHint": "Opens the editor with the questions of this version; saving makes a new version",
+    "derive": "New version from it",
+    "media": "Media",
+    "summary": {
+      "unsaved": "Not saved yet",
+      "one": "Version {{version}} · {{questions}} · 1 savegame",
+      "other": "Version {{version}} · {{questions}} · {{count}} savegames"
+    },
+    "questionCount": {
+      "one": "{{count}} question",
+      "other": "{{count}} questions"
+    },
+    "state": {
+      "finished": "ended · last played {{date}}",
+      "progress": "Question {{current}} of {{total}} · last played {{date}}"
+    },
+    "broken": {
+      "one": "One media file is missing in version {{version}}, so it can't be played completely. You see which one when you start it.",
+      "other": "{{count}} media files are missing in version {{version}}, so it can't be played completely. You see which ones when you start it."
+    },
+    "downloadFailed": "The game couldn't be downloaded: {{error}}",
+    "result": {
+      "renamed": "“{{old}}” is now called “{{name}}”.",
+      "moved": "“{{name}}” is now on {{location}}.",
+      "copied": "A copy “{{name}}” is now on {{location}}.",
+      "deleted": "“{{name}}” was deleted.",
+      "originalKept": "“{{name}}” is completely on {{location}}, but the original couldn't be deleted entirely. What is left of it is still on {{original}}; delete it there.",
+      "stateRenamed": "The savegame is now called “{{name}}”."
+    },
+    "deleteVersion": {
+      "title": "Delete version",
+      "blocked": "Delete all savegames of this version first.",
+      "message": "Do you want to delete version {{version}} of “{{game}}”?",
+      "noQuestionsLeft": "The game has no questions afterwards.",
+      "newLatest": "Version {{version}} is the latest afterwards.",
+      "deleted": "Version {{version}} was deleted."
+    },
+    "conflict": "That isn't possible while it is being played or as long as savegames need it."
+  },
+  "mediaKinds": {
+    "image": "Image",
+    "playable": "Video & audio",
+    "slideshow": "Slideshow"
+  },
+  "setup": {
+    "mediaQuestions": {
+      "title": "Media questions",
+      "description": "How questions with an image, video, audio or slideshow start",
+      "hint": "This is how all questions with media start in this game. You can adjust single questions later at the question itself."
+    },
+    "scoring": {
+      "title": "Scoring",
+      "description": "Double points and deductions for wrong answers",
+      "hint": "This is how answers are scored in this game. A savegame keeps what its version said.",
+      "doubleAnswer": "Answer graded as double",
+      "wrongAnswer": "Wrong answer",
+      "double": {
+        "none": "Not possible",
+        "plusOne": "Points of the question + 1",
+        "double": "Double points"
+      },
+      "wrong": {
+        "questionPoints": "Deduct the points of the question",
+        "onePoint": "Deduct 1 point",
+        "none": "No deduction"
+      }
+    },
+    "step": {
+      "game": "Game",
+      "questions": "Questions",
+      "save": "Save"
+    },
+    "toManager": "To the game manager",
+    "welcome": "Hello and welcome to <b>{{name}}</b>! Give the new game a name and choose where it is stored. Its media go into the same folder.",
+    "saveOn": "Store on",
+    "editing": "You are editing <b>{{game}}</b> on {{location}}.",
+    "editingVersion": "You are editing <b>{{game}}</b> on {{location}}, starting from version {{version}}.",
+    "notLatest": "The latest is version {{version}}; saving makes a new version with these questions.",
+    "question": {
+      "move": "Move question",
+      "number": "Question {{number}}",
+      "preview": "“{{text}}”",
+      "ownMediaConfig": "Own media sequence",
+      "complete": "Complete",
+      "incomplete": "Not complete yet",
+      "delete": "Delete question",
+      "text": "Question text",
+      "points": "Points",
+      "pointsError": "Whole number from 1",
+      "showAnswers": "Show answer options",
+      "answer": "Answer {{number}}",
+      "correctAnswer": "Correct answer",
+      "answerIsCorrect": "Answer {{number}} is correct",
+      "needsCorrect": "Check at least one correct answer.",
+      "noOptions": "The teams see no answer options, the game master grades the answer.",
+      "media": "Media",
+      "ownSequence": "Sequence: own for this question",
+      "useDefault": "Use the game's default",
+      "defaultSequence": "Sequence: the game's default for {{kind}}",
+      "customize": "Adjust for this question",
+      "notesTitle": "Notes for the game master",
+      "notes": "Notes (optional)",
+      "notesHint": "Only visible in the game master's view, not on the screen",
+      "add": "Add question",
+      "deleted": "Question {{number}} deleted",
+      "undo": "Undo"
+    },
+    "save": {
+      "summary": {
+        "one": "The game has <b>{{count}} question</b>. Saving makes a new version; savegames keep playing the version they were started with.",
+        "other": "The game has <b>{{count}} questions</b>. Saving makes a new version; savegames keep playing the version they were started with."
+      },
+      "save": "Save game",
+      "play": "Play version {{version}}",
+      "unchanged": "Nothing changed, it stays at version {{version}}.",
+      "saved": "Version {{version}} was saved."
+    },
+    "error": {
+      "gameGone": "The game {{game}} no longer exists.",
+      "versionGone": "Version {{version}} of {{game}} no longer exists.",
+      "exists": "There already is a game “{{name}}” on {{location}}. Choose another name or edit it in the game manager."
+    }
+  },
+  "editMedia": {
+    "titleFolder": "Edit folder “{{name}}”",
+    "titleFile": "Edit file “{{name}}”",
+    "lockedFolder": "As long as there are versions that show it, it can't be renamed, moved or deleted.",
+    "lockedFile": "As long as there are versions that show it, it can't be renamed, moved or deleted.",
+    "folder": "Folder",
+    "deleteFolder": "Delete folder",
+    "deleteFile": "Delete file",
+    "confirmDeleteFolder": "Do you want to delete the folder “{{name}}” with all media in it?",
+    "confirmDeleteFile": "Do you want to delete “{{name}}”?",
+    "shownFolder": {
+      "one": "Version {{versions}} shows media from this folder.",
+      "other": "The versions {{versions}} show media from this folder."
+    },
+    "shownFile": {
+      "one": "Version {{versions}} shows this file.",
+      "other": "The versions {{versions}} show this file."
+    },
+    "invalidName": "The name must not be empty, start with “.” or contain any of these characters: \\ / : * ? \" < > | # %",
+    "moveAndRename": "Move and rename",
+    "conflictMove": "There already is “{{name}}” there, or a version shows it by now.",
+    "conflictDelete": "A version of the game shows it by now."
+  },
+  "editGame": {
+    "title": "Edit “{{name}}”",
+    "location": "Location",
+    "currentLocation": "current location",
+    "moveOrCopy": "Move or copy",
+    "deleteGame": "Delete game",
+    "confirmDelete": "Do you want to delete “{{name}}” with {{versions}}, {{states}} and all media?",
+    "versions": {
+      "one": "one version",
+      "other": "{{count}} versions"
+    },
+    "states": {
+      "one": "one savegame",
+      "other": "{{count}} savegames"
+    },
+    "explain": {
+      "rename": "The game gets a new name and stays where it is with all versions, savegames and media.",
+      "copyHere": "A copy with all versions, savegames and media is made on {{location}} under the new name.",
+      "move": "The game goes to the new location with all versions, savegames and media and is deleted from {{location}}.",
+      "copy": "The game stays on {{location}}, and a copy with all versions, savegames and media goes to the new location."
+    },
+    "makeCopy": "Make a copy",
+    "conflict": "There already is a game “{{name}}” on {{location}}, or the game is being played right now. Choose another name.",
+    "conflictDelete": "The game is being played right now, so it can't be deleted."
+  },
+  "editState": {
+    "title": "Edit savegame “{{name}}”",
+    "delete": "Delete savegame",
+    "confirmDelete": "Do you want to delete the savegame “{{name}}”?",
+    "conflict": "There already is a savegame “{{name}}”, or this one is being played right now.",
+    "conflictDelete": "The savegame is being played right now, so it can't be deleted."
+  },
+  "copyMedia": {
+    "title": "Use media from the USB stick",
+    "hint": "The files and folders you use are copied into the media of “{{game}}”.",
+    "done": "Done",
+    "copied": "“{{name}}” was copied.",
+    "failed": "“{{name}}” couldn't be copied: {{error}}"
+  },
+  "play": {
+    "buzzed": "{{team}}!",
+    "beginGameHint": "Show the first question and release the buzzers",
+    "previousQuestion": "Previous question",
+    "previousQuestionHint": "Go to the previous question",
+    "nextQuestion": "Next question",
+    "nextQuestionHint": "Go to the next question",
+    "endGameHint": "End the game and show the winning team",
+    "screenSides": "Above it the teams on the left (portrait: top) of the screen, below it those on the right (bottom)",
+    "team": {
+      "leads": "In the lead",
+      "addPoint": "Add 1 point",
+      "removePoint": "Deduct 1 point",
+      "addQuestionPoints": "Award the points of the current question"
+    },
+    "scores": {
+      "title": "Scores",
+      "entry": "{{place}}. {{team}}: {{points}} pts.",
+      "toHomeHint": "Back to the home page, to start a new game or continue one",
+      "final": "Final score"
+    },
+    "media": {
+      "pauseHint": "Pause on the screen",
+      "playHint": "Play on the screen",
+      "pause": "Pause",
+      "play": "Play",
+      "previousSlide": "Previous image",
+      "showSlide": "Show image",
+      "nextSlide": "Next image",
+      "finish": "Finish",
+      "showSlideHint": "Show the current image on the screen",
+      "finishHint": "Finish the slideshow",
+      "replayHint": "Start over",
+      "replay": "Restart",
+      "sound": "Sound",
+      "unmute": "Turn the sound on",
+      "mute": "Turn the sound off",
+      "volumeHint": "Volume on all screens",
+      "exitFullscreenHint": "Leave full screen on the screen",
+      "fullscreenHint": "Show the media in full screen on the screen",
+      "exitFullscreen": "Leave full screen",
+      "fullscreen": "Full screen",
+      "slideshowFinished": "Slideshow finished",
+      "controls": "Media controls",
+      "hideTitle": "{{media}}: hide on the screen",
+      "showTitle": "{{media}}: show on the screen",
+      "soundBlocked": "Click to turn the sound on",
+      "slideAlt": "Image {{number}} of {{total}} for this question",
+      "imageAlt": "The image for this question"
+    },
+    "lock": {
+      "releaseHint": "Release the buzzers for all teams",
+      "freeHint": "The buzzers are free; releases them once more anyway",
+      "release": "Release buzzers",
+      "free": "Buzzers free",
+      "buzzed": "{{team}} buzzed",
+      "gradeHint": "Grade the answer of the team that buzzed",
+      "grade": "Grade",
+      "confirm": {
+        "title": "Release the buzzers?",
+        "withTeam": "The answer of {{team}} isn't graded, and all teams can buzz again.",
+        "withoutTeam": "All teams can buzz again.",
+        "confirm": "Release"
+      }
+    },
+    "welcome": {
+      "to": "Welcome to",
+      "title": "Welcome!",
+      "soon": {
+        "one": "About to start: {{count}} question",
+        "other": "About to start: {{count}} questions"
+      },
+      "masterHint": "The screen shows this welcome, and the buzzers are locked. “Start game” shows the first question and releases the buzzers."
+    },
+    "onScreen": "On the screen",
+    "notes": "Notes",
+    "correctAnswer": "Correct answer",
+    "revealQuestionHint": "Tap to show the question on the screen",
+    "revealAnswersHint": "Tap to show the answers on the screen",
+    "visibility": {
+      "visible": ": visible",
+      "hidden": ": hidden",
+      "title": {
+        "question": {
+          "hide": "Hide the question on the screen",
+          "show": "Show the question on the screen",
+          "waiting": "Show the question on the screen; otherwise it appears {{after}}"
+        },
+        "answers": {
+          "hide": "Hide the answers on the screen",
+          "show": "Show the answers on the screen",
+          "waiting": "Show the answers on the screen; otherwise they appear {{after}}"
+        }
+      }
+    },
+    "reveal": {
+      "question": {
+        "title": "Show the question?",
+        "message": "The question appears on the screen then.",
+        "waiting": "Otherwise it appears {{after}}."
+      },
+      "answers": {
+        "title": "Show the answers?",
+        "message": "The answers appear on the screen then.",
+        "waiting": "Otherwise they appear {{after}}."
+      }
+    },
+    "allCorrectRevealed": "All correct answers have been revealed.",
+    "okay": "Okay",
+    "answerOptions": {
+      "unselect": "Unselect",
+      "select": "Select the answer",
+      "reveal": "Reveal the answer"
+    },
+    "grade": {
+      "closeHint": "Close; the answer can be graded later with “Grade”",
+      "close": "Close",
+      "pickAnswer": "Tap the answer the team gave",
+      "optional": "(optional)",
+      "givenAnswer": "Given answer",
+      "alreadyRevealed": "Already revealed",
+      "hint": {
+        "hiddenGreen": "The answers are still hidden on the screen; this one lights up green as soon as they appear.",
+        "hiddenRed": "The answers are still hidden on the screen; this one lights up red as soon as they appear.",
+        "green": "This answer lights up green on the screen.",
+        "red": "This answer lights up red on the screen.",
+        "hidden": "The answers are still hidden on the screen.",
+        "none": "Without a choice, “Correct” lights up all correct answers."
+      },
+      "how": "How was the answer?",
+      "correct": "Correct",
+      "wrong": "Wrong",
+      "bonus": "Bonus",
+      "double": "Double",
+      "laterHint": "Closes the window; the buzzers stay locked and the answer can be graded later with “Grade”",
+      "later": "Grade later",
+      "releaseHint": "Releases the buzzers for all teams without awarding points",
+      "release": "Release without grading"
+    },
+    "confirmEnd": {
+      "message": "Do you really want to end the game?",
+      "no": "No, not yet",
+      "yes": "Yes, end it"
+    }
+  }
+}

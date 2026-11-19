@@ -18,7 +18,7 @@ describe('WirelessBuzzersComponent', () => {
   let game: jasmine.SpyObj<GameService>;
 
   const udp = (mac: string, more: Partial<IBuzzer> = {}): IBuzzer =>
-    ({id: 'udp:' + mac, name: 'Funkbuzzer ' + mac.slice(-5), keyBind: '', byteBind: '', type: 'udp', online: true, ...more});
+    ({id: 'udp:' + mac, keyBind: '', byteBind: '', type: 'udp', online: true, ...more});
 
   beforeEach(async () => {
     usbBuzzers = new BehaviorSubject<IUsbBuzzer[]>([]);
@@ -59,7 +59,7 @@ describe('WirelessBuzzersComponent', () => {
     it('shows the buzzers that are online over WiFi, with their color, firmware and battery', () => {
       online(
         {id: 'b0', name: 'Buzzer 1', keyBind: '', byteBind: '', type: 'serial'},
-        udp('AA:BB:CC:DD:EE:01', {name: 'Blauer Wireless Buzzer', color: '#1e88e5', firmwareVersion: '1.3.0', batteryPercent: 87}),
+        udp('AA:BB:CC:DD:EE:01', {color: '#1e88e5', firmwareVersion: '1.3.0', batteryPercent: 87}),
         udp('AA:BB:CC:DD:EE:02', {online: false}),
         udp('AA:BB:CC:DD:EE:03', {firmwareVersion: '1.2.0', batteryLow: true})
       );
@@ -245,14 +245,14 @@ describe('WirelessBuzzersComponent', () => {
       expect(game.adoptUsbBuzzer).toHaveBeenCalledWith('/dev/ttyACM0', undefined);
     });
 
-    it('names the buzzer as the server does among the others of its color', () => {
-      online(udp('14:2B:2F:AF:8F:DC', {name: 'Gelber Wireless Buzzer (8F:DC)', color: '#fdd835', online: false}));
+    it('names the buzzer as among the others of its color', () => {
+      online(udp('14:2B:2F:AF:8F:DC', {color: '#fdd835', online: false}), udp('AA:BB:CC:DD:EE:01', {color: '#fdd835', online: false}));
       show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2b:2f:af:8f:dc', firmwareVersion: '1.2.0', color: '#fdd835'});
       expect(text()).toContain('Gelber Wireless Buzzer (8F:DC)');
     });
 
     it('shows the color it was just given over USB before the heartbeats tell it', () => {
-      online(udp('14:2B:2F:AF:8F:DC', {name: 'Funkbuzzer 8F:DC'}));
+      online(udp('14:2B:2F:AF:8F:DC'));
       show({path: '/dev/ttyACM0', state: 'adopted', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.3.0', color: '#1e88e5',
         ssid: 'BuzzerBoxNetwork', isAdopted: true, isConnected: true});
       expect(rows()[0].textContent).toContain('Blauer Wireless Buzzer');

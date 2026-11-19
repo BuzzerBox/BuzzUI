@@ -1,3 +1,4 @@
+import {t, tn} from '../../i18n/i18n';
 import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
 import {Router} from '@angular/router';
 import {MatDialog} from '@angular/material/dialog';
@@ -94,11 +95,17 @@ export class GameListComponent implements OnChanges {
 
   public getSummary(game: IGameInfo): string {
     if (game.latestVersion == null) {
-      return 'Noch nicht gespeichert';
+      return t('games.summary.unsaved');
     }
     const latest = game.versions[0];
-    const states = game.states.length === 1 ? '1 Spielstand' : `${game.states.length} Spielstände`;
-    return `Version ${latest.version} · ${latest.questionCount} Fragen · ${states}`;
+    return tn('games.summary', game.states.length, {version: latest.version, questions: tn('games.questionCount', latest.questionCount)});
+  }
+
+  public getVersionDetails(version: IGameVersionInfo): string {
+    return tn('games.versionDetails', version.stateCount, {
+      questions: tn('games.questionCount', version.questionCount),
+      date: FormatHelper.formatDateTime(version.savedAt)
+    });
   }
 
   public getQuestionCount(game: IGameInfo, version: number): number {
@@ -107,8 +114,9 @@ export class GameListComponent implements OnChanges {
 
   public getStateDetails(game: IGameInfo, state: IGameStateInfo): string {
     const questionCount = this.getQuestionCount(game, state.gameVersion);
-    const progress = state.finished ? 'beendet' : `Frage ${Math.min(state.currentQuestionNumber + 1, questionCount)} von ${questionCount}`;
-    return `${progress} · zuletzt ${FormatHelper.formatDateTime(state.updatedAt)}`;
+    const date = FormatHelper.formatDateTime(state.updatedAt);
+    return state.finished ? t('games.state.finished', {date})
+      : t('games.state.progress', {current: Math.min(state.currentQuestionNumber + 1, questionCount), total: questionCount, date});
   }
 
   public formatDate(isoDate: string): string {
@@ -138,8 +146,7 @@ export class GameListComponent implements OnChanges {
   }
 
   public getBrokenHint(version: IGameVersionInfo): string {
-    const count = version.missingMediaCount === 1 ? 'Eine Mediendatei fehlt' : `${version.missingMediaCount} Mediendateien fehlen`;
-    return `${count} in Version ${version.version}, so lässt sie sich nicht vollständig spielen. Beim Starten siehst du, welche.`;
+    return tn('games.broken', version.missingMediaCount, {version: version.version});
   }
 
   public continueState(game: IGameInfo, state: IGameStateInfo): void {
@@ -170,7 +177,7 @@ export class GameListComponent implements OnChanges {
       link.download = game.name + StorageApiHelper.GAME_ARCHIVE_EXTENSION;
       link.click();
     } catch (e) {
-      this.snackBar.open('Das Spiel konnte nicht heruntergeladen werden: ' + StorageService.getErrorMessage(e), 'OK', {duration: 6000});
+      this.snackBar.open(t('games.downloadFailed', {error: StorageService.getErrorMessage(e)}), t('common.ok'), {duration: 6000});
     }
   }
 
@@ -184,7 +191,7 @@ export class GameListComponent implements OnChanges {
       const definition = await this.storage.getVersion(this.getRef(game), game.latestVersion);
       GameFileHelper.download(game.name + StorageApiHelper.JSON_EXTENSION, GameFileHelper.makeBundle(game.name, definition));
     } catch (e) {
-      this.snackBar.open(StorageService.getErrorMessage(e), 'OK', {duration: 6000});
+      this.snackBar.open(StorageService.getErrorMessage(e), t('common.ok'), {duration: 6000});
     } finally {
       this.busy = false;
     }
@@ -203,16 +210,17 @@ export class GameListComponent implements OnChanges {
     }
     const where = StorageService.getLocationText(result.to);
     const messages = {
-      renamed: `„${game.name}“ heißt jetzt „${result.name}“.`,
-      moved: `„${result.name}“ ist jetzt auf ${where}.`,
-      copied: `Eine Kopie „${result.name}“ ist jetzt auf ${where}.`,
-      deleted: `„${game.name}“ wurde gelöscht.`
+      renamed: t('games.result.renamed', {old: game.name, name: result.name}),
+      moved: t('games.result.moved', {name: result.name, location: where}),
+      copied: t('games.result.copied', {name: result.name, location: where}),
+      deleted: t('games.result.deleted', {name: game.name})
     };
     if (result.originalKept) {
-      this.snackBar.open(`„${result.name}“ ist vollständig auf ${where}, aber das Original ließ sich nicht ganz löschen. Was `
-        + `davon übrig ist, liegt noch auf ${StorageService.getLocationText(this.location)}; lösche es dort.`, 'OK', {duration: 10000});
+      this.snackBar.open(t('games.result.originalKept', {
+        name: result.name, location: where, original: StorageService.getLocationText(this.location)
+      }), t('common.ok'), {duration: 10000});
     } else {
-      this.snackBar.open(messages[result.action], 'OK', {duration: 4000});
+      this.snackBar.open(messages[result.action], t('common.ok'), {duration: 4000});
     }
     this.changed.emit();
     await this.reload();
@@ -224,7 +232,7 @@ export class GameListComponent implements OnChanges {
       width: '480px'
     }).afterClosed().toPromise();
     if (result) {
-      this.snackBar.open(result.action === 'renamed' ? `Der Spielstand heißt jetzt „${result.name}“.` : `„${result.name}“ wurde gelöscht.`, 'OK', {duration: 4000});
+      this.snackBar.open(t(result.action === 'renamed' ? 'games.result.stateRenamed' : 'games.result.deleted', {name: result.name}), t('common.ok'), {duration: 4000});
       await this.reload();
     }
   }
@@ -238,37 +246,37 @@ export class GameListComponent implements OnChanges {
 
   public getDeleteVersionHint(version: IGameVersionInfo): string {
     if (this.canDeleteVersion(version)) {
-      return 'Version löschen';
+      return t('games.deleteVersion.title');
     }
-    return 'Lösche zuerst alle Spielstände dieser Version.';
+    return t('games.deleteVersion.blocked');
   }
 
   public async deleteVersion(game: IGameInfo, version: IGameVersionInfo): Promise<void> {
     let consequence = '';
     if (game.versions.length === 1) {
-      consequence = ' Danach hat das Spiel keine Fragen mehr.';
+      consequence = ' ' + t('games.deleteVersion.noQuestionsLeft');
     } else if (version.version === game.latestVersion) {
-      consequence = ` Danach ist Version ${game.versions[1].version} die neueste.`;
+      consequence = ' ' + t('games.deleteVersion.newLatest', {version: game.versions[1].version});
     }
-    if (await this.confirm('Version löschen', `Möchtest du Version ${version.version} von „${game.name}“ löschen?${consequence}`)) {
-      await this.run(() => this.storage.deleteVersion(this.getRef(game), version.version), `Version ${version.version} wurde gelöscht.`);
+    if (await this.confirm(t('games.deleteVersion.title'), t('games.deleteVersion.message', {version: version.version, game: game.name}) + consequence)) {
+      await this.run(() => this.storage.deleteVersion(this.getRef(game), version.version), t('games.deleteVersion.deleted', {version: version.version}));
     }
   }
 
   private async run(action: () => Promise<void>, successMessage: string): Promise<void> {
     try {
       await action();
-      this.snackBar.open(successMessage, 'OK', {duration: 4000});
+      this.snackBar.open(successMessage, t('common.ok'), {duration: 4000});
     } catch (e) {
-      const message = StorageService.isConflict(e) ? 'Das geht nicht, während es gespielt wird oder solange Spielstände es brauchen.' : StorageService.getErrorMessage(e);
-      this.snackBar.open(message, 'OK', {duration: 6000});
+      const message = StorageService.isConflict(e) ? t('games.conflict') : StorageService.getErrorMessage(e);
+      this.snackBar.open(message, t('common.ok'), {duration: 6000});
     }
     await this.reload();
   }
 
   private confirm(title: string, message: string): Promise<boolean> {
     return this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
-      data: {title, message, confirmText: 'Löschen'}
+      data: {title, message, confirmText: t('common.delete')}
     }).afterClosed().toPromise().then(result => !!result);
   }
 }

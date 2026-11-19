@@ -2,7 +2,9 @@ import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {GameService} from '../../services/game.service';
 import {MatDialog} from '@angular/material/dialog';
-import {IAutosaveInfoPacket} from '../../../../../shared/shared';
+import {IAutosaveInfoPacket, TLanguage} from '../../../../../shared/shared';
+import {LANGUAGE_NAMES, t} from '../../i18n/i18n';
+import {LanguageService} from '../../i18n/language.service';
 import {DialogTeamsComponent} from '../dialog-teams/dialog-teams.component';
 import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {DialogConfirmEndingGameComponent} from '../../shared/play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
@@ -36,9 +38,18 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   // the box's touch display stays the master
   public readonly canLogout = !KioskHelper.isActive();
   public autosave: IAutosaveInfoPacket = null;
+  public readonly languageNames = LANGUAGE_NAMES;
   private subscription: Subscription;
 
-  constructor(private game: GameService, private dialog: MatDialog) { }
+  constructor(private game: GameService, private dialog: MatDialog, private language: LanguageService) { }
+
+  public otherLanguages(): TLanguage[] {
+    return this.language.languages.filter(language => language !== this.language.getLanguage());
+  }
+
+  public setLanguage(language: TLanguage): void {
+    this.game.setLanguage(language);
+  }
 
   public openTeamsDialog(): void {
     this.dialog.open(DialogTeamsComponent);
@@ -54,15 +65,18 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
 
   public getAutosaveText(): string {
     if (this.autosave?.storage == null) {
-      return 'Dieses Spiel wird nicht gespeichert';
+      return t('toolbar.autosave.none');
     }
-    const where = `„${this.autosave.storage.stateName}“ auf ${this.autosave.locationName ?? 'der BuzzerBox'}`;
+    // the server names the box "BuzzerBox" and a USB stick by its name
+    const location = this.autosave.locationName == null || this.autosave.locationName === 'BuzzerBox'
+      ? t('location.text.box') : t('location.text.usb', {name: this.autosave.locationName});
+    const where = t('toolbar.autosave.where', {state: this.autosave.storage.stateName, location});
     if (this.autosave.error) {
-      return `Speichern fehlgeschlagen (${this.autosave.error}), wird wiederholt: ${where}`;
+      return t('toolbar.autosave.failed', {error: this.autosave.error, where});
     }
     return this.autosave.savedAt
-      ? `Automatisch gespeichert um ${FormatHelper.formatDateTime(this.autosave.savedAt)}: ${where}`
-      : `Wird automatisch gespeichert: ${where}`;
+      ? t('toolbar.autosave.savedAt', {time: FormatHelper.formatDateTime(this.autosave.savedAt), where})
+      : t('toolbar.autosave.saving', {where});
   }
 
   /**
@@ -77,7 +91,7 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   }
 
   public resetServer(): void {
-    this.confirm('Server zurücksetzen?', 'Alle Geräte starten von vorn.', 'Zurücksetzen', () => this.game.resetServer());
+    this.confirm(t('toolbar.confirmReset.title'), t('toolbar.confirmReset.message'), t('toolbar.confirmReset.confirm'), () => this.game.resetServer());
   }
 
   /**
@@ -122,9 +136,9 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   public pauseGame(): void {
     const stateName = this.autosave?.storage?.stateName;
     const message = stateName
-      ? `Der Spielstand „${stateName}“ bleibt gespeichert. Unter „Spiel fortsetzen“ geht es später an derselben Stelle weiter.`
-      : 'Dieses Spiel wird nicht gespeichert und kann daher nicht fortgesetzt werden.';
-    this.confirm('Spiel pausieren?', message, 'Pausieren', () => this.game.resetServer());
+      ? t('toolbar.confirmPause.saved', {state: stateName})
+      : t('toolbar.confirmPause.unsaved');
+    this.confirm(t('toolbar.confirmPause.title'), message, t('toolbar.confirmPause.confirm'), () => this.game.resetServer());
   }
 
   /**
@@ -133,9 +147,9 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   public discardGame(): void {
     const stateName = this.autosave?.storage?.stateName;
     const message = stateName
-      ? `Der Spielstand „${stateName}“ wird gelöscht, auch wenn er schon früher gespielt wurde, und lässt sich nicht fortsetzen.`
-      : 'Das Spiel wird ohne Endstand beendet.';
-    this.confirm('Spiel verwerfen?', message, 'Verwerfen', () => this.game.resetServer(true));
+      ? t('toolbar.confirmDiscard.saved', {state: stateName})
+      : t('toolbar.confirmDiscard.unsaved');
+    this.confirm(t('toolbar.confirmDiscard.title'), message, t('toolbar.confirmDiscard.confirm'), () => this.game.resetServer(true));
   }
 
   private confirm(title: string, message: string, confirmText: string, onConfirmed: () => void): void {

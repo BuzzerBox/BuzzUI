@@ -1,3 +1,5 @@
+import {BuzzerNameHelper} from '../../helper/buzzer-name.helper';
+import {t, tn} from '../../i18n/i18n';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Router} from '@angular/router';
 import {Subscription} from 'rxjs';
@@ -91,7 +93,7 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
     try {
       const location = await this.storage.getLocation(this.navigation.locationId);
       if (location == null) {
-        throw new Error('Der Speicherort ist nicht mehr da. Wurde der USB-Stick abgezogen?');
+        throw new Error(t('storage.error.locationGone'));
       }
       this.ref = {location, gameName: this.navigation.gameName};
       this.definition = await this.storage.getVersion(this.ref, this.navigation.gameVersion);
@@ -304,16 +306,24 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
   }
 
   public formatPoints(points: number): string {
-    return Math.abs(points) === 1 ? `${points} Punkt` : `${points} Punkte`;
+    return tn('common.points', points);
+  }
+
+  public getBuzzerName(buzzer: IBuzzer): string {
+    return BuzzerNameHelper.getName(buzzer, this.game.getAvailableBuzzers());
+  }
+
+  public getLocationText(): string {
+    return StorageService.getLocationText(this.ref.location);
   }
 
   public getProgress(): string {
     const questionCount = this.definition.questions.length;
     if (this.state == null) {
-      return `${questionCount} Fragen`;
+      return tn('prepare.progress.new', questionCount);
     }
     const current = Math.min((this.state.gameState?.currentQuestionNumber ?? 0) + 1, questionCount);
-    return `${this.state.finished ? 'Beendet' : 'Weiter'} bei Frage ${current} von ${questionCount}`;
+    return t(this.state.finished ? 'prepare.progress.finished' : 'prepare.progress.continue', {current, total: questionCount});
   }
 
   public canStart(): boolean {
@@ -369,12 +379,11 @@ export class PrepareGameComponent implements OnInit, OnDestroy {
     if (this.missingMedia.length === 0) {
       return true;
     }
-    const count = this.missingMedia.length === 1 ? 'Eine Mediendatei fehlt' : `${this.missingMedia.length} Mediendateien fehlen`;
     return this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
       data: {
-        title: 'Medien fehlen',
-        message: `${count} (Frage ${this.getMissingQuestionNumbers()}). Diese Fragen zeigen dann nichts an. Möchtest du trotzdem beginnen?`,
-        confirmText: 'Trotzdem beginnen'
+        title: t('common.mediaMissing'),
+        message: tn('prepare.confirmMissing', this.missingMedia.length, {questions: this.getMissingQuestionNumbers()}),
+        confirmText: t('prepare.confirmMissing.confirm')
       }
     }).afterClosed().toPromise().then(result => !!result);
   }

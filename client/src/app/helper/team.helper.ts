@@ -1,4 +1,5 @@
 import {BuzzerHelper, IBuzzer, ITeam} from '../../../../shared/shared';
+import {t} from '../i18n/i18n';
 
 // TODO what is still needed?
 export class TeamHelper {
@@ -20,15 +21,16 @@ export class TeamHelper {
 
   /**
    * The name a new team on that buzzer starts with: the color of a wireless buzzer's case ("Blau", "Blau 2" for the
-   * next one of that color), or else its position ("Team 3")
+   * next one of that color), or else its position ("Team 3"), in the language at that time
    * @param position of the team among the buzzers that can play
    * @param takenNames the names the teams before it start with
    */
   public static makeDefaultName(buzzer: IBuzzer, position: number, takenNames: string[]): string {
-    const colorName = buzzer.type === 'udp' ? BuzzerHelper.getCaseColorName(buzzer.color) : undefined;
-    if (colorName == null) {
-      return 'Team ' + (position + 1);
+    const caseColor = buzzer.type === 'udp' ? BuzzerHelper.getCaseColor(buzzer.color) : undefined;
+    if (caseColor == null) {
+      return t('teams.defaultName', {number: position + 1});
     }
+    const colorName = t(`caseColors.${caseColor.key}.name`);
     let name = colorName;
     for (let i = 2; takenNames.includes(name); i++) {
       name = `${colorName} ${i}`;

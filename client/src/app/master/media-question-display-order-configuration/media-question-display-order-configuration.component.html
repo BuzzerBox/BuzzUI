@@ -1,15 +1,15 @@
 <form [formGroup]="questionConfig">
-  <p class="label">Frage zu Beginn</p>
-  <mat-button-toggle-group name="questionState" aria-label="Frage zu Beginn" formControlName="questionState">
+  <p class="label">{{'mediaStart.question' | transloco}}</p>
+  <mat-button-toggle-group name="questionState" [attr.aria-label]="'mediaStart.question' | transloco" formControlName="questionState">
     @for (option of questionStateOptions; track option.key) {
-      <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+      <mat-button-toggle [value]="option.key">{{option.label | transloco}}</mat-button-toggle>
     }
   </mat-button-toggle-group>
 
-  <p class="label">Medium und Antworten zu Beginn</p>
-  <mat-button-toggle-group name="preset" aria-label="Medium und Antworten zu Beginn" formControlName="preset">
+  <p class="label">{{'mediaStart.mediaAndAnswers' | transloco}}</p>
+  <mat-button-toggle-group name="preset" [attr.aria-label]="'mediaStart.mediaAndAnswers' | transloco" formControlName="preset">
     @for (option of presetOptions; track option.key) {
-      <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+      <mat-button-toggle [value]="option.key">{{option.label | transloco}}</mat-button-toggle>
     }
   </mat-button-toggle-group>
 </form>

@@ -4,6 +4,7 @@ import {GameService, IMasterRejection} from '../../services/game.service';
 import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {baseUrlScreen} from '../../screen/paths-screen';
 import {KioskHelper} from '../../helper/kiosk.helper';
+import {t} from '../../i18n/i18n';
 
 /**
  * Shown when another device is the master: explains why, keeps trying to get in and lets this device take over
@@ -30,11 +31,11 @@ export class MasterAlreadyRegisteredComponent {
 
   public takeOver(): void {
     const message = this.getRejection().isGameRunning
-      ? 'Das andere Gerät kann das Spiel dann nicht mehr steuern. Das laufende Spiel geht hier mit dem aktuellen Punktestand weiter.'
-      : 'Das andere Gerät kann die BuzzerBox dann nicht mehr steuern. Was dort gerade eingegeben, aber noch nicht gespeichert wurde, geht verloren.';
+      ? t('otherMaster.confirm.gameRunning')
+      : t('otherMaster.confirm.noGame');
     this.game.pauseMasterRetry(true);
     this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
-      data: {title: 'Steuerung übernehmen?', message, confirmText: 'Übernehmen'}
+      data: {title: t('otherMaster.confirm.title'), message, confirmText: t('otherMaster.confirm.confirm')}
     }).afterClosed().subscribe(confirmed => {
       if (confirmed) {
         this.game.registerAgainAsMaster(true);

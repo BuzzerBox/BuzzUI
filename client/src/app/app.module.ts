@@ -19,6 +19,9 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import { DialogConfirmEndingGameComponent } from './shared/play-ui/dialogs/dialog-confirm-ending-game/dialog-confirm-ending-game.component';
 import {MatDialogModule} from '@angular/material/dialog';
 import { provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
+import {TranslocoModule} from '@jsverse/transloco';
+import {provideI18n} from './i18n/i18n.providers';
+import {LanguageSwitchComponent} from './i18n/language-switch.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -36,5 +39,7 @@ import { provideHttpClient, withInterceptorsFromDi } from "@angular/common/http"
         MatBottomSheetModule,
         // MatListModule,
         MatSnackBarModule,
-        MatDialogModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
+        MatDialogModule,
+        TranslocoModule,
+        LanguageSwitchComponent], providers: [provideHttpClient(withInterceptorsFromDi()), provideI18n()] })
 export class AppModule { }

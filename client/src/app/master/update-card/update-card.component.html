@@ -2,33 +2,32 @@
   <mat-card class="update-card" appearance="outlined">
     <mat-card-header>
       <mat-icon mat-card-avatar>system_update</mat-icon>
-      <mat-card-title>Software-Update</mat-card-title>
-      <mat-card-subtitle>Installierte Version {{info.installedVersion}}</mat-card-subtitle>
+      <mat-card-title>{{'update.title' | transloco}}</mat-card-title>
+      <mat-card-subtitle>{{'update.installedVersion' | transloco: {version: info.installedVersion} }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       @if (isUpdating()) {
         <div class="status">
           <mat-spinner diameter="24"></mat-spinner>
           <span>
-            Das Update{{info.status?.version ? ' auf ' + info.status.version : ''}} wird installiert. Die BuzzerBox
-            startet dabei neu, diese Seite verbindet sich danach von selbst wieder. Bitte den USB-Stick nicht abziehen.
+            {{(info.status?.version ? 'update.installingVersion' : 'update.installing') | transloco: {version: info.status?.version} }}
           </span>
         </div>
       } @else {
         @switch (info.status?.state) {
           @case (EUpdateStates.SUCCEEDED) {
-            <p class="status success"><mat-icon>check_circle</mat-icon>Version {{info.status.version}} wurde installiert.</p>
+            <p class="status success"><mat-icon>check_circle</mat-icon>{{'update.succeeded' | transloco: {version: info.status.version} }}</p>
             @if (info.status.message) {
               <p class="status warning"><mat-icon>warning</mat-icon>{{info.status.message}}</p>
             }
           }
           @case (EUpdateStates.FAILED) {
-            <p class="status error"><mat-icon>error</mat-icon>Das Update ist fehlgeschlagen: {{info.status.message}}</p>
+            <p class="status error"><mat-icon>error</mat-icon>{{'update.failed' | transloco: {message: info.status.message} }}</p>
           }
           @case (EUpdateStates.ROLLED_BACK) {
             <p class="status error">
               <mat-icon>error</mat-icon>
-              Version {{info.status.version}} ließ sich nicht starten, deshalb läuft wieder die vorherige Version.
+              {{'update.rolledBack' | transloco: {version: info.status.version} }}
               {{info.status.message}}
             </p>
           }
@@ -39,8 +38,8 @@
       }
       @if (isPageOutdated()) {
         <p class="status">
-          Diese Seite gehört noch zu Version {{pageVersion}}.
-          <button mat-stroked-button (click)="reload()">Neu laden</button>
+          {{'update.pageOutdated' | transloco: {version: pageVersion} }}
+          <button mat-stroked-button (click)="reload()">{{'update.reload' | transloco}}</button>
         </p>
       }
 
@@ -49,7 +48,7 @@
           @for (bundle of info.bundles; track bundle.fileName) {
             <mat-list-item>
               <span matListItemTitle>
-                Version {{bundle.version}} <span class="label" [class.newer]="bundle.isNewer">{{getBundleLabel(bundle)}}</span>
+                {{'common.version' | transloco: {version: bundle.version} }} <span class="label" [class.newer]="bundle.isNewer">{{getBundleLabel(bundle)}}</span>
                 @if (!isSigned(bundle)) {
                   <span class="label unsigned"><mat-icon inline>warning</mat-icon>{{getSignatureProblem(bundle)}}</span>
                 }
@@ -57,10 +56,10 @@
               <span matListItemLine>{{bundle.fileName}}</span>
               <span matListItemMeta>
                 @if (confirmFileName === bundle.fileName && isSigned(bundle)) {
-                  <button mat-button (click)="confirmFileName = null">Abbrechen</button>
-                  <button mat-flat-button color="primary" (click)="install(bundle)">Jetzt installieren</button>
+                  <button mat-button (click)="confirmFileName = null">{{'common.cancel' | transloco}}</button>
+                  <button mat-flat-button color="primary" (click)="install(bundle)">{{'update.installNow' | transloco}}</button>
                 } @else if (confirmFileName !== bundle.fileName && !isInstalled(bundle)) {
-                  <button mat-stroked-button [disabled]="isUpdating()" (click)="askToConfirm(bundle)">Installieren</button>
+                  <button mat-stroked-button [disabled]="isUpdating()" (click)="askToConfirm(bundle)">{{'update.install' | transloco}}</button>
                 }
               </span>
             </mat-list-item>
@@ -70,21 +69,19 @@
           <div class="unsigned-warning" role="alert">
             <div class="unsigned-warning-title">
               <mat-icon>warning</mat-icon>
-              <span>Achtung: Version {{bundle.version}} hat keine gültige Signatur ({{getSignatureProblem(bundle)}})</span>
+              <span>{{'update.unsignedTitle' | transloco: {version: bundle.version, problem: getSignatureProblem(bundle)} }}</span>
             </div>
             <p>
-              Es lässt sich nicht prüfen, ob dieses Update von den Entwicklern der BuzzerBox stammt und unverändert ist.
-              Ein Update läuft mit vollen Rechten auf der BuzzerBox: Ein fehlerhaftes oder manipuliertes Update kann sie
-              unbrauchbar machen, gespeicherte Spiele und Medien auslesen oder löschen und Schadsoftware installieren.
+              {{'update.unsignedWarning' | transloco}}
             </p>
-            <p><strong>Installiere es nur, wenn du genau weißt, woher die Datei stammt.</strong></p>
+            <p><strong>{{'update.unsignedOnlyIf' | transloco}}</strong></p>
             <mat-checkbox [checked]="isRiskAccepted" (change)="isRiskAccepted = $event.checked">
-              Ich habe die Warnung gelesen und will das Update trotzdem installieren.
+              {{'update.acceptRisk' | transloco}}
             </mat-checkbox>
             <div class="unsigned-warning-actions">
-              <button mat-button (click)="confirmFileName = null">Abbrechen</button>
+              <button mat-button (click)="confirmFileName = null">{{'common.cancel' | transloco}}</button>
               <button mat-flat-button color="warn" [disabled]="!isRiskAccepted || isUpdating()" (click)="install(bundle)">
-                Trotzdem installieren
+                {{'update.installAnyway' | transloco}}
               </button>
             </div>
           </div>

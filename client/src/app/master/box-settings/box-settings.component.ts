@@ -5,11 +5,14 @@ import {map} from 'rxjs/operators';
 import {DialogConfirmComponent, IDialogConfirmData} from '../../shared/dialog-confirm/dialog-confirm.component';
 import {BoxSettingsHelper, IBoxSetting, IBoxSettingsPacket, IBoxSshKey, IResponsePacket, EPacketTypes} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
+import {t, tn} from '../../i18n/i18n';
+import {FormatHelper} from '../../helper/format.helper';
 
+/**
+ * A setting's label and hint are the texts boxSettings.fields.<key>.label and .hint
+ */
 interface IBoxSettingField {
   key: string;
-  label: string;
-  hint?: string;
   // e.g. for the passphrase, which is only shown on request
   isSecret?: boolean;
   options?: IBoxSettingOption[];
@@ -21,10 +24,15 @@ interface IBoxSettingField {
 
 interface IBoxSettingOption {
   value: string;
+  // the key of its text, with its parameters
   label: string;
+  params?: Record<string, unknown>;
+  // for the touch display's size: the factor, written as the language writes numbers when it is shown
+  factor?: number;
 }
 
 interface IBoxSettingGroup {
+  // the key of its heading
   title: string;
   icon: string;
   fields: IBoxSettingField[];
@@ -45,79 +53,62 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
   public readonly editKey = BoxSettingsHelper.EDIT_KEY;
   public readonly groups: IBoxSettingGroup[] = [
     {
-      title: 'WLAN', icon: 'wifi', fields: [
-        {key: 'WIFI_SSID', label: 'Name des WLANs', hint: '1 bis 32 Zeichen'},
-        {key: 'WIFI_PASSPHRASE', label: 'Passwort', hint: '8 bis 63 Zeichen ohne Umlaute', isSecret: true},
-        {key: 'WIFI_COUNTRY_CODE', label: 'Land', hint: 'Zwei Buchstaben, z. B. DE, AT oder CH. Davon hängt ab, welche Kanäle erlaubt sind.'},
-        {key: 'WIFI_CHANNEL', label: 'Kanal', hint: '1 bis 13'},
+      title: 'boxSettings.groups.wifi', icon: 'wifi', fields: [
+        {key: 'WIFI_SSID'},
+        {key: 'WIFI_PASSPHRASE', isSecret: true},
+        {key: 'WIFI_COUNTRY_CODE'},
+        {key: 'WIFI_CHANNEL'},
         {
-          key: 'WIFI_ANTENNA', label: 'Antenne', hint: 'Die externe Antenne gibt es nur beim Compute Module 4.', options: [
-            {value: 'internal', label: 'Intern'},
-            {value: 'external', label: 'Extern'}
+          key: 'WIFI_ANTENNA', options: [
+            {value: 'internal', label: 'boxSettings.options.internal'},
+            {value: 'external', label: 'boxSettings.options.external'}
           ]
         }
       ]
     },
     {
-      title: 'Buzzer', icon: 'radio_button_checked', fields: [
-        {
-          key: 'ANALOG_BUZZERS', label: 'Analoge Buzzer',
-          hint: 'An die Anschlüsse der Box gesteckte Buzzer. Ohne sie bietet die Box nur die Funkbuzzer an.', options: [
-            {value: 'yes', label: 'Ja'},
-            {value: 'no', label: 'Nein'}
-          ]
-        }
+      title: 'boxSettings.groups.buzzers', icon: 'radio_button_checked', fields: [
+        {key: 'ANALOG_BUZZERS', options: [
+            {value: 'yes', label: 'boxSettings.options.yes'},
+            {value: 'no', label: 'boxSettings.options.no'}
+          ]}
       ]
     },
     {
-      title: 'Netzwerk', icon: 'lan', fields: [
-        {key: 'SERVER_IP_ADDRESS', label: 'Adresse im WLAN', hint: 'Geräte bekommen die Adressen .50 bis .150 desselben Netzes.'},
-        {key: 'ETHERNET_IP_ADDRESS', label: 'Adresse am Ethernet-Anschluss', hint: 'Für ein Notebook am Kabel; in einem anderen Netz als das WLAN.'},
-        {key: 'SERVER_HOSTNAMES', label: 'Namen der Box', hint: 'Unter diesen Namen lässt sich die Box öffnen, durch Leerzeichen getrennt.'}
+      title: 'boxSettings.groups.network', icon: 'lan', fields: [
+        {key: 'SERVER_IP_ADDRESS'},
+        {key: 'ETHERNET_IP_ADDRESS'},
+        {key: 'SERVER_HOSTNAMES'}
       ]
     },
     {
-      title: 'Anzeigen', icon: 'tv', fields: [
+      title: 'boxSettings.groups.displays', icon: 'tv', fields: [
         {
-          key: 'SCREEN_MODE', label: 'Auflösung am Fernseher', isSelect: true,
-          hint: 'Bietet der Fernseher die Auflösung nicht an, wählt er selbst. 4K mit 60 Hz schafft ein Raspberry Pi 4 nicht flüssig.',
-          options: [
+          // the resolutions' names are the same in every language
+          key: 'SCREEN_MODE', isSelect: true, options: [
             {value: '1920x1080@60', label: 'Full HD (1920 × 1080), 60 Hz'},
             {value: '1920x1080@50', label: 'Full HD (1920 × 1080), 50 Hz'},
             {value: '1280x720@60', label: 'HD (1280 × 720), 60 Hz'},
             {value: '2560x1440@60', label: 'QHD (2560 × 1440), 60 Hz'},
             {value: '3840x2160@30', label: '4K (3840 × 2160), 30 Hz'},
-            {value: 'auto', label: 'Wahl des Fernsehers (oft 4K)'}
+            {value: 'auto', label: 'boxSettings.options.screenModeAuto'}
           ]
         },
+        // only the 10" Touch Display 2 is supported so far, see #129
+        {key: 'TOUCH_DISPLAY', options: [
+            {value: '10inch', label: 'boxSettings.options.yes'},
+            {value: 'none', label: 'boxSettings.options.no'}
+          ]},
+        // only landscape is supported, so it is either way round: 270 is how the box's display is built in
+        {key: 'TOUCH_DISPLAY_ROTATION', needsTouchDisplay: true, options: [
+            {value: '90', label: 'boxSettings.options.yes'},
+            {value: '270', label: 'boxSettings.options.no'}
+          ]},
         {
-          // only the 10" Touch Display 2 is supported so far, see #129
-          key: 'TOUCH_DISPLAY', label: 'Touchscreen',
-          hint: 'Mit dem Touchscreen zeigt die Box dort die Spielleitung.', options: [
-            {value: '10inch', label: 'Ja'},
-            {value: 'none', label: 'Nein'}
-          ]
-        },
-        {
-          // only landscape is supported, so it is either way round: 270 is how the box's display is built in
-          key: 'TOUCH_DISPLAY_ROTATION', label: 'Drehung des Touch-Displays', needsTouchDisplay: true,
-          hint: 'Ja stellt das Bild auf den Kopf, falls der Touchscreen andersherum eingebaut ist.', options: [
-            {value: '90', label: 'Ja'},
-            {value: '270', label: 'Nein'}
-          ]
-        },
-        {
-          key: 'TOUCH_DISPLAY_SCALE', label: 'Größe auf dem Touch-Display', isSelect: true, needsTouchDisplay: true,
-          hint: 'Wie groß die Spielleitung auf dem Touch-Display erscheint.',
-          options: [
-            {value: 'auto', label: 'Automatisch (1,5-fach)'},
-            {value: '1', label: 'Normal (1-fach)'},
-            {value: '1.25', label: '1,25-fach'},
-            {value: '1.5', label: '1,5-fach'},
-            {value: '1.75', label: '1,75-fach'},
-            {value: '2', label: '2-fach'},
-            {value: '2.5', label: '2,5-fach'},
-            {value: '3', label: '3-fach'}
+          key: 'TOUCH_DISPLAY_SCALE', isSelect: true, needsTouchDisplay: true, options: [
+            {value: 'auto', label: 'boxSettings.options.scaleAuto', factor: 1.5},
+            {value: '1', label: 'boxSettings.options.scaleNormal', factor: 1},
+            ...[1.25, 1.5, 1.75, 2, 2.5, 3].map(factor => ({value: String(factor), label: 'boxSettings.options.scale', factor}))
           ]
         }
       ]
@@ -134,6 +125,7 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
   private initialDraft: Record<string, string> = {};
   public isSecretShown = false;
   public isRunning = false;
+  // why saving or restarting failed: the server's reason, or '' for none, which shows a general text
   public error: string | null = null;
   // saved since the page opened, so the box should restart
   public isSaved = false;
@@ -146,6 +138,7 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
   public newSshKey = '';
   public confirmingRemoval: string | null = null;
   // why adding or removing a key failed, shown at the keys rather than at the settings
+  // (like error)
   public sshError: string | null = null;
   public isRestarting = false;
   private subscriptions: Subscription[] = [];
@@ -173,7 +166,28 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
     if (field.isSecret && !this.isSecretShown) {
       return '•'.repeat(Math.max(value.length, 8));
     }
-    return field.options?.find(o => o.value === value.toLowerCase())?.label ?? value;
+    const option = field.options?.find(o => o.value === value.toLowerCase());
+    return option ? this.getOptionLabel(option) : value;
+  }
+
+  public getOptionLabel(option: IBoxSettingOption): string {
+    const params = option.factor != null ? {factor: FormatHelper.formatNumber(option.factor)} : option.params;
+    return t(option.label, params);
+  }
+
+  public getLabel(field: IBoxSettingField): string {
+    return t(`boxSettings.fields.${field.key}.label`);
+  }
+
+  public getHint(field: IBoxSettingField): string {
+    return t(`boxSettings.fields.${field.key}.hint`);
+  }
+
+  /**
+   * Parameters for a text in [innerHTML], escaped, since the WiFi's name and the address are typed in
+   */
+  public escaped(params: Record<string, string>): Record<string, string> {
+    return Object.fromEntries(Object.entries(params).map(([key, value]) => [key, FormatHelper.escapeHtml(value ?? '')]));
   }
 
   /**
@@ -194,7 +208,7 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
     if (value == null || value === '' || field.options.some(o => o.value === value)) {
       return field.options;
     }
-    return [...field.options, {value, label: `${value} (aus buzzerbox.txt)`}];
+    return [...field.options, {value, label: 'boxSettings.fromFile', params: {value}}];
   }
 
   public startEditing(): void {
@@ -223,9 +237,9 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
     }
     return this.dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
       data: {
-        title: 'Änderungen verwerfen?',
-        message: 'Die geänderten Einstellungen sind noch nicht gespeichert.',
-        confirmText: 'Verwerfen'
+        title: t('boxSettings.confirmLeave.title'),
+        message: t('boxSettings.confirmLeave.message'),
+        confirmText: t('boxSettings.confirmLeave.confirm')
       }
     }).afterClosed().pipe(map(confirmed => confirmed === true));
   }
@@ -293,30 +307,33 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
     if (hardware == null) {
       return [];
     }
-    const storageKinds = {emmc: 'eMMC', sd: 'SD-Karte', usb: 'USB-Laufwerk', other: 'Laufwerk'};
+    const storage = hardware.storage;
     const rows: {label: string, value: string | null}[] = [
-      {label: 'Modell', value: hardware.model ?? null},
-      {label: 'Seriennummer', value: hardware.serialNumber ?? null},
+      {label: 'model', value: hardware.model ?? null},
+      {label: 'serialNumber', value: hardware.serialNumber ?? null},
       // Linux keeps some memory for itself, so a 4 GB board tells about 3.7 GB
-      {label: 'Arbeitsspeicher', value: hardware.memoryInBytes != null ? `${Math.ceil(hardware.memoryInBytes / 1024 ** 3)} GB` : null},
+      {label: 'memory', value: hardware.memoryInBytes != null ? `${Math.ceil(hardware.memoryInBytes / 1024 ** 3)} GB` : null},
       {
-        label: 'Speicher', value: hardware.storage == null ? null : [
-          storageKinds[hardware.storage.kind],
-          hardware.storage.sizeInBytes != null ? BoxSettingsComponent.formatGigabytes(hardware.storage.sizeInBytes) : null,
-          hardware.storage.freeInBytes != null ? `${BoxSettingsComponent.formatGigabytes(hardware.storage.freeInBytes)} frei` : null
+        label: 'storage', value: storage == null ? null : [
+          // "other" would look like the plural form of a text with a number, see pluralKey()
+          t(`boxSettings.hardware.storageKinds.${storage.kind === 'other' ? 'drive' : storage.kind}`),
+          storage.sizeInBytes != null ? BoxSettingsComponent.formatGigabytes(storage.sizeInBytes) : null,
+          storage.freeInBytes != null ? t('boxSettings.hardware.free', {size: BoxSettingsComponent.formatGigabytes(storage.freeInBytes)}) : null
         ].filter(part => part != null).join(', ')
       },
-      {label: 'Temperatur', value: hardware.temperatureInCelsius != null ? `${hardware.temperatureInCelsius.toLocaleString('de-DE')} °C` : null},
-      {label: 'Betriebssystem', value: hardware.operatingSystem ?? null},
-      {label: 'Läuft seit', value: hardware.uptimeInSeconds != null ? BoxSettingsComponent.formatDuration(hardware.uptimeInSeconds) : null},
-      {label: 'Software', value: hardware.softwareVersion != null ? `Version ${hardware.softwareVersion}` : null}
+      {label: 'temperature', value: hardware.temperatureInCelsius != null ? `${FormatHelper.formatNumber(hardware.temperatureInCelsius)} °C` : null},
+      {label: 'operatingSystem', value: hardware.operatingSystem ?? null},
+      {label: 'uptime', value: hardware.uptimeInSeconds != null ? BoxSettingsComponent.formatDuration(hardware.uptimeInSeconds) : null},
+      {label: 'software', value: hardware.softwareVersion != null ? t('common.version', {version: hardware.softwareVersion}) : null}
     ];
-    return rows.filter(row => row.value != null && row.value !== '') as {label: string, value: string}[];
+    return rows
+      .filter(row => row.value != null && row.value !== '')
+      .map(row => ({label: t(`boxSettings.hardware.${row.label}`), value: row.value}));
   }
 
   private static formatGigabytes(bytes: number): string {
     const gigabytes = bytes / 1000 ** 3;
-    return `${gigabytes.toLocaleString('de-DE', {maximumFractionDigits: gigabytes < 10 ? 1 : 0})} GB`;
+    return `${FormatHelper.formatNumber(gigabytes, {maximumFractionDigits: gigabytes < 10 ? 1 : 0})} GB`;
   }
 
   private static formatDuration(seconds: number): string {
@@ -324,9 +341,9 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
     const hours = Math.floor(seconds % 86400 / 3600);
     const minutes = Math.floor(seconds % 3600 / 60);
     if (days > 0) {
-      return `${days} ${days === 1 ? 'Tag' : 'Tagen'}, ${hours} Std.`;
+      return tn('boxSettings.hardware.days', days, {hours});
     }
-    return hours > 0 ? `${hours} Std. ${minutes} Min.` : `${minutes} Min.`;
+    return hours > 0 ? t('boxSettings.hardware.hours', {hours, minutes}) : t('boxSettings.hardware.minutes', {minutes});
   }
 
   /**
@@ -377,14 +394,14 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
     this.isRunning = false;
     const isSshResponse = [EPacketTypes.ADD_SSH_KEY, EPacketTypes.REMOVE_SSH_KEY].includes(response.responseTo);
     if (isSshResponse) {
-      this.sshError = response.wasSuccessful ? null : response.reason ?? 'Das hat nicht geklappt.';
+      this.sshError = response.wasSuccessful ? null : response.reason ?? '';
       if (response.wasSuccessful && response.responseTo === EPacketTypes.ADD_SSH_KEY) {
         this.newSshKey = '';
       }
       return;
     }
     if (!response.wasSuccessful) {
-      this.error = response.reason ?? 'Das hat nicht geklappt.';
+      this.error = response.reason ?? '';
       return;
     }
     if (response.responseTo === EPacketTypes.SAVE_BOX_SETTINGS) {

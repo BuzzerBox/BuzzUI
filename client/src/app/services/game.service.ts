@@ -48,6 +48,8 @@ import {
   ISaveBoxSettingsPacket,
   IAddSshKeyPacket,
   IRemoveSshKeyPacket,
+  ISetLanguagePacket,
+  TLanguage,
   BuzzerHelper,
   PacketHelper,
   IScoring,
@@ -62,6 +64,8 @@ import {TeamHelper} from '../helper/team.helper';
 import * as Uuid from 'uuid';
 import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
 import {ConfigService} from './config.service';
+import {LanguageService} from '../i18n/language.service';
+import {tn} from '../i18n/i18n';
 
 export type ZeroVoidCallback = () => void;
 
@@ -136,7 +140,8 @@ export class GameService implements OnDestroy {
   constructor(
     private webSocketService: WebSocketService,
     private router: Router,
-    private config: ConfigService
+    private config: ConfigService,
+    private language: LanguageService
   ) {
     this.webSocketListenSubscription = this.webSocketService.listen(this.onMessage.bind(this));
     this.webSocketService.observeReconnects().subscribe(() => this.onReconnected());
@@ -202,6 +207,25 @@ export class GameService implements OnDestroy {
       clientTime: Date.now(),
       masterId: this.masterId,
       takeOver: this.takeOverRequested || undefined
+    });
+    // the screens follow the master's language; a refused master's packet is ignored
+    this.sendLanguage();
+  }
+
+  /**
+   * Changes the language of this device, and as the master also of the screens
+   */
+  public setLanguage(language: TLanguage): void {
+    this.language.setLanguage(language);
+    if (this.initedAsMaster) {
+      this.sendLanguage();
+    }
+  }
+
+  private sendLanguage(): void {
+    this.webSocketService.send<ISetLanguagePacket>({
+      packetType: EPacketTypes.SET_LANGUAGE,
+      language: this.language.getLanguage()
     });
   }
 
@@ -344,6 +368,12 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.BOX_SETTINGS:
         this.boxSettingsSubject.next(message as IBoxSettingsPacket);
+        break;
+      case EPacketTypes.SET_LANGUAGE:
+        // what the master chose
+        if (this.initedAsScreen) {
+          this.language.setLanguage((message as ISetLanguagePacket).language);
+        }
         break;
       default:
         break;
@@ -621,7 +651,7 @@ export class GameService implements OnDestroy {
       return null;
     }
     const points = GameService.getQuestionPoints(question);
-    return points === 1 ? '1 Punkt' : `${points} Punkte`;
+    return tn('common.points', points);
   }
 
   public removePoint(team: ITeam): void {

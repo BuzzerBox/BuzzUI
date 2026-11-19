@@ -78,4 +78,9 @@ export enum EPacketTypes {
      * Sent from the master to remove an SSH key from the box, see IRemoveSshKeyPacket
      */
     REMOVE_SSH_KEY,
+    /**
+     * Sent from the master to choose the language, and from the server to the screens, which follow it, see
+     * ISetLanguagePacket
+     */
+    SET_LANGUAGE,
 }

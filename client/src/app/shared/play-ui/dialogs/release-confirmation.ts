@@ -1,3 +1,4 @@
+import {t} from '../../../i18n/i18n';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {DialogConfirmComponent, IDialogConfirmData} from '../../dialog-confirm/dialog-confirm.component';
 
@@ -8,11 +9,11 @@ import {DialogConfirmComponent, IDialogConfirmData} from '../../dialog-confirm/d
 export function openReleaseConfirmation(dialog: MatDialog, teamName: string | null): MatDialogRef<DialogConfirmComponent, boolean> {
   return dialog.open<DialogConfirmComponent, IDialogConfirmData, boolean>(DialogConfirmComponent, {
     data: {
-      title: 'Buzzer freigeben?',
+      title: t('play.lock.confirm.title'),
       message: teamName
-        ? `Die Antwort von ${teamName} wird nicht bewertet, und alle Teams können wieder buzzern.`
-        : 'Alle Teams können wieder buzzern.',
-      confirmText: 'Freigeben'
+        ? t('play.lock.confirm.withTeam', {team: teamName})
+        : t('play.lock.confirm.withoutTeam'),
+      confirmText: t('play.lock.confirm.confirm')
     }
   });
 }

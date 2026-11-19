@@ -1,3 +1,4 @@
+import {t} from '../../i18n/i18n';
 import {Component, Input} from '@angular/core';
 import {BuzzerHelper} from '../../../../../shared/shared';
 
@@ -29,10 +30,10 @@ export class BuzzerColorComponent {
   @Input() isCaseColor = false;
 
   public getLabel(): string {
-    const name = BuzzerHelper.getCaseColorName(this.color);
-    if (this.isCaseColor) {
-      return name ? `Gehäuse: ${name}` : 'Farbe des Gehäuses';
+    if (!this.isCaseColor) {
+      return t('buzzer.teamColor');
     }
-    return 'Farbe des Teams auf der Anzeige';
+    const caseColor = BuzzerHelper.getCaseColor(this.color);
+    return caseColor ? t('buzzer.caseColorNamed', {color: t(`caseColors.${caseColor.key}.name`)}) : t('buzzer.caseColor');
   }
 }

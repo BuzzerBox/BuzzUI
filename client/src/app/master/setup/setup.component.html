@@ -1,14 +1,14 @@
 <ng-template #gameSettingsSection>
   <mat-expansion-panel class="media-defaults">
     <mat-expansion-panel-header>
-      <mat-panel-title>Medienfragen</mat-panel-title>
-      <mat-panel-description>Wie Fragen mit Bild, Video, Audio oder Diashow beginnen</mat-panel-description>
+      <mat-panel-title>{{'setup.mediaQuestions.title' | transloco}}</mat-panel-title>
+      <mat-panel-description>{{'setup.mediaQuestions.description' | transloco}}</mat-panel-description>
     </mat-expansion-panel-header>
-    <p class="hint">So beginnen alle Fragen dieses Spiels mit Medien. Einzelne Fragen kannst du später bei der Frage selbst anpassen.</p>
+    <p class="hint">{{'setup.mediaQuestions.hint' | transloco}}</p>
     <div class="media-defaults-kinds">
       @for (kind of mediaKinds; track kind) {
         <div class="media-defaults-kind">
-          <h3>{{mediaKindLabels[kind]}}</h3>
+          <h3>{{mediaKindLabels[kind] | transloco}}</h3>
           <app-media-question-display-order-configuration [initialConfig]="mediaDefaults[kind]" [mediaKind]="kind" (questionConfigChange)="changeMediaDefault(kind, $event)"></app-media-question-display-order-configuration>
         </div>
       }
@@ -16,21 +16,21 @@
   </mat-expansion-panel>
   <mat-expansion-panel class="media-defaults">
     <mat-expansion-panel-header>
-      <mat-panel-title>Wertung</mat-panel-title>
-      <mat-panel-description>Doppelte Punkte und Abzüge für falsche Antworten</mat-panel-description>
+      <mat-panel-title>{{'setup.scoring.title' | transloco}}</mat-panel-title>
+      <mat-panel-description>{{'setup.scoring.description' | transloco}}</mat-panel-description>
     </mat-expansion-panel-header>
-    <p class="hint">So werden die Antworten in diesem Spiel bewertet. Ein Spielstand behält, was in seiner Version galt.</p>
+    <p class="hint">{{'setup.scoring.hint' | transloco}}</p>
     <div class="scoring-settings">
-      <p class="label">Doppelt bewertete Antwort</p>
-      <mat-button-toggle-group aria-label="Doppelt bewertete Antwort" [value]="scoring.doubleAnswer" (change)="changeScoring({doubleAnswer: $event.value})">
+      <p class="label">{{'setup.scoring.doubleAnswer' | transloco}}</p>
+      <mat-button-toggle-group [attr.aria-label]="'setup.scoring.doubleAnswer' | transloco" [value]="scoring.doubleAnswer" (change)="changeScoring({doubleAnswer: $event.value})">
         @for (option of doubleAnswerOptions; track option.key) {
-          <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+          <mat-button-toggle [value]="option.key">{{option.label | transloco}}</mat-button-toggle>
         }
       </mat-button-toggle-group>
-      <p class="label">Falsche Antwort</p>
-      <mat-button-toggle-group aria-label="Falsche Antwort" [value]="scoring.wrongAnswer" (change)="changeScoring({wrongAnswer: $event.value})">
+      <p class="label">{{'setup.scoring.wrongAnswer' | transloco}}</p>
+      <mat-button-toggle-group [attr.aria-label]="'setup.scoring.wrongAnswer' | transloco" [value]="scoring.wrongAnswer" (change)="changeScoring({wrongAnswer: $event.value})">
         @for (option of wrongAnswerOptions; track option.key) {
-          <mat-button-toggle [value]="option.key">{{option.label}}</mat-button-toggle>
+          <mat-button-toggle [value]="option.key">{{option.label | transloco}}</mat-button-toggle>
         }
       </mat-button-toggle-group>
     </div>
@@ -40,49 +40,49 @@
 <app-toolbar-master [showHomeIcon]="true"></app-toolbar-master>
 <mat-horizontal-stepper linear="true">
   <mat-step [completed]="ref !== null">
-    <ng-template matStepLabel>Spiel</ng-template>
+    <ng-template matStepLabel>{{'setup.step.game' | transloco}}</ng-template>
     @if (loading) {
       <mat-spinner diameter="48"></mat-spinner>
     } @else if (loadError) {
       <p class="error"><mat-icon>error</mat-icon>{{loadError}}</p>
-      <a mat-stroked-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
+      <a mat-stroked-button [routerLink]="managerUrl">{{'setup.toManager' | transloco}}</a>
     } @else if (isNewGame() && ref === null) {
-      <p>Hallo und herzlich willkommen bei <b>{{getGameName()}}</b>! Gib dem neuen Spiel einen Namen und wähle, wo es
-        gespeichert wird. Seine Medien kommen in denselben Ordner.</p>
+      <!-- the texts mark names in bold themselves -->
+      <p [innerHTML]="'setup.welcome' | transloco: {name: getGameName()}"></p>
       <form (ngSubmit)="createGame()">
         <mat-form-field class="game-name">
-          <mat-label>Name des Spiels</mat-label>
+          <mat-label>{{'common.gameName' | transloco}}</mat-label>
           <input matInput [formControl]="newGameName" required>
           @if (newGameName.value && getSanitizedNewGameName() !== newGameName.value) {
-            <mat-hint>Wird gespeichert als „{{getSanitizedNewGameName()}}“</mat-hint>
+            <mat-hint>{{'common.savedAs' | transloco: {name: getSanitizedNewGameName()} }}</mat-hint>
           }
         </mat-form-field>
-        <p class="label">Speichern auf</p>
+        <p class="label">{{'setup.saveOn' | transloco}}</p>
         <app-storage-locations [initialId]="newGameLocationId" (selectedChange)="newGameLocation = $event"></app-storage-locations>
         <ng-container *ngTemplateOutlet="gameSettingsSection"></ng-container>
         @if (createError) {
           <p class="error"><mat-icon>error</mat-icon>{{createError}}</p>
         }
         <div>
-          <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
-          <button mat-button type="submit" [disabled]="creating || !getSanitizedNewGameName() || !newGameLocation?.writable">Weiter</button>
+          <a mat-button [routerLink]="managerUrl">{{'setup.toManager' | transloco}}</a>
+          <button mat-button type="submit" [disabled]="creating || !getSanitizedNewGameName() || !newGameLocation?.writable">{{'common.next' | transloco}}</button>
         </div>
       </form>
     } @else if (ref) {
       <p>
-        Du bearbeitest <b>{{ref.gameName}}</b> auf {{getLocationText(ref.location)}}{{loadedVersion !== null ? ', ausgehend von Version ' + loadedVersion : ''}}.
+        <span [innerHTML]="(loadedVersion !== null ? 'setup.editingVersion' : 'setup.editing') | transloco: {game: ref.gameName, location: getLocationText(ref.location), version: loadedVersion}"></span>
         @if (loadedVersion !== null && loadedVersion !== latestVersion) {
-          Die neueste ist Version {{latestVersion}}; beim Speichern entsteht eine neue Version mit diesen Fragen.
+          {{'setup.notLatest' | transloco: {version: latestVersion} }}
         }
       </p>
       <ng-container *ngTemplateOutlet="gameSettingsSection"></ng-container>
       <div>
-        <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
-        <button mat-button matStepperNext>Weiter</button>
+        <a mat-button [routerLink]="managerUrl">{{'setup.toManager' | transloco}}</a>
+        <button mat-button matStepperNext>{{'common.next' | transloco}}</button>
       </div>
     }
   </mat-step>
-  <mat-step [stepControl]="questionsFormGroup" label="Fragen">
+  <mat-step [stepControl]="questionsFormGroup" [label]="'setup.step.questions' | transloco">
     <!--    <ng-template [ngIf]="showQuestions">-->
     <!--    <ng-template>-->
     <form #questionForm [formGroup]="questionsFormGroup" id="questionForm" (input)="onQuestionsChanged()" (change)="onQuestionsChanged()">
@@ -92,17 +92,17 @@
           <mat-expansion-panel hideToggle [expanded]="step === i" (opened)="setStep(i)" cdkDrag>
             <mat-expansion-panel-header>
               <mat-panel-title>
-                <mat-icon cdkDragHandle class="drag-handle" title="Frage verschieben">drag_indicator</mat-icon>
-                <span class="panel-number">Frage {{i + 1}}</span>
+                <mat-icon cdkDragHandle class="drag-handle" [title]="'setup.question.move' | transloco">drag_indicator</mat-icon>
+                <span class="panel-number">{{'setup.question.number' | transloco: {number: i + 1} }}</span>
                 @if (getQuestionPreview(questionFormGroupName); as preview) {
-                  <span class="panel-preview">„{{preview}}“</span>
+                  <span class="panel-preview">{{'setup.question.preview' | transloco: {text: preview} }}</span>
                 }
               </mat-panel-title>
               <mat-panel-description>
                 <span class="panel-header-icons">
                   @if (getMediaKind(questionFormGroupName); as kind) {
-                    <span class="panel-header-info" [title]="questionInitialConfig[i] ? 'Eigener Medienablauf' : ''">
-                      <mat-icon>{{mediaKindIcons[kind]}}</mat-icon>{{mediaKindLabels[kind]}}
+                    <span class="panel-header-info" [title]="questionInitialConfig[i] ? ('setup.question.ownMediaConfig' | transloco) : ''">
+                      <mat-icon>{{mediaKindIcons[kind]}}</mat-icon>{{mediaKindLabels[kind] | transloco}}
                       @if (questionInitialConfig[i]) {
                         <mat-icon class="panel-header-custom-media">tune</mat-icon>
                       }
@@ -110,10 +110,10 @@
                   }
                   <span class="panel-header-info">{{getPointsText(questionFormGroupName)}}</span>
                   <mat-icon class="valid-icon" [class.green-icon]="questionsFormGroup.controls[questionFormGroupName]?.valid"
-                            [title]="questionsFormGroup.controls[questionFormGroupName]?.valid ? 'Vollständig' : 'Noch unvollständig'">
+                            [title]="(questionsFormGroup.controls[questionFormGroupName]?.valid ? 'setup.question.complete' : 'setup.question.incomplete') | transloco">
                     {{questionsFormGroup.controls[questionFormGroupName]?.valid ? 'check_circle' : 'radio_button_unchecked'}}
                   </mat-icon>
-                  <button mat-icon-button type="button" (click)="removeQuestion(i, $event)" title="Frage löschen">
+                  <button mat-icon-button type="button" (click)="removeQuestion(i, $event)" [title]="'setup.question.delete' | transloco">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </span>
@@ -122,60 +122,60 @@
 
             <div class="question-card" [formGroupName]="questionFormGroupName">
               <section class="question-section">
-                <h4 class="section-title">Frage</h4>
+                <h4 class="section-title">{{'common.question' | transloco}}</h4>
                 <div class="question-row">
                   <mat-form-field class="question-text">
-                    <mat-label>Fragetext</mat-label>
+                    <mat-label>{{'setup.question.text' | transloco}}</mat-label>
                     <textarea matInput formControlName="text" cdkTextareaAutosize cdkAutosizeMinRows="1"></textarea>
                   </mat-form-field>
                   <mat-form-field class="points">
-                    <mat-label>Punkte</mat-label>
+                    <mat-label>{{'setup.question.points' | transloco}}</mat-label>
                     <input matInput type="number" min="1" step="1" formControlName="points">
-                    <mat-error>Ganze Zahl ab 1</mat-error>
+                    <mat-error>{{'setup.question.pointsError' | transloco}}</mat-error>
                   </mat-form-field>
                 </div>
               </section>
 
               <section class="question-section">
                 <div class="section-header">
-                  <h4 class="section-title">Antworten</h4>
-                  <mat-slide-toggle formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">Antwortmöglichkeiten zeigen</mat-slide-toggle>
+                  <h4 class="section-title">{{'common.answers' | transloco}}</h4>
+                  <mat-slide-toggle formControlName="answersVisible" (change)="applyShowAnswersState(questionFormGroupName, $event.checked)">{{'setup.question.showAnswers' | transloco}}</mat-slide-toggle>
                 </div>
                 @if (getQuestionFormGroup(questionFormGroupName).get('answersVisible').value) {
                   <div class="answers" formGroupName="answers">
                     @for (answerIndex of answerIndexes; track answerIndex) {
                       <mat-form-field [formGroupName]="ANSWER_FORM_GROUP_BASE_NAME + answerIndex"
                                       [class.correct-answer]="isCorrectAnswer(questionFormGroupName, answerIndex)">
-                        <mat-label>Antwort {{answerIndex + 1}}</mat-label>
+                        <mat-label>{{'setup.question.answer' | transloco: {number: answerIndex + 1} }}</mat-label>
                         <input matInput formControlName="text">
-                        <mat-checkbox matSuffix formControlName="isCorrect" class="correct-checkbox" title="Richtige Antwort"
-                                      [attr.aria-label]="'Antwort ' + (answerIndex + 1) + ' ist richtig'"></mat-checkbox>
+                        <mat-checkbox matSuffix formControlName="isCorrect" class="correct-checkbox" [title]="'setup.question.correctAnswer' | transloco"
+                                      [attr.aria-label]="'setup.question.answerIsCorrect' | transloco: {number: answerIndex + 1}"></mat-checkbox>
                       </mat-form-field>
                     }
                   </div>
                   @if (getAnswerFromGroup(questionFormGroupName).hasError('error')) {
-                    <p class="hint">Hake mindestens eine richtige Antwort an.</p>
+                    <p class="hint">{{'setup.question.needsCorrect' | transloco}}</p>
                   }
                 } @else {
-                  <p class="hint">Die Teams sehen keine Antwortmöglichkeiten, die Spielleitung bewertet die Antwort selbst.</p>
+                  <p class="hint">{{'setup.question.noOptions' | transloco}}</p>
                 }
               </section>
 
               <section class="question-section">
-                <h4 class="section-title">Medien</h4>
+                <h4 class="section-title">{{'setup.question.media' | transloco}}</h4>
                 <app-select-media [game]="ref" [fileLocation]="getQuestionFormGroup(questionFormGroupName).get('mediaSrc').value.toString()" (locationChange)="changeMediaSelection({selection: $event, question: i}); onQuestionsChanged()"></app-select-media>
                 @if (getMediaKind(questionFormGroupName); as kind) {
                   <div class="media-config">
                     @if (questionInitialConfig[i]) {
                       <div class="media-config-line">
-                        <span class="hint">Ablauf: eigener für diese Frage</span>
-                        <button mat-button type="button" (click)="resetQuestionConfig(i)">Spiel-Standard verwenden</button>
+                        <span class="hint">{{'setup.question.ownSequence' | transloco}}</span>
+                        <button mat-button type="button" (click)="resetQuestionConfig(i)">{{'setup.question.useDefault' | transloco}}</button>
                       </div>
                       <app-media-question-display-order-configuration [initialConfig]="questionInitialConfig[i]" [mediaKind]="kind" (questionConfigChange)="changeQuestionConfig({config: $event, question: i})"></app-media-question-display-order-configuration>
                     } @else {
                       <div class="media-config-line">
-                        <span class="hint">Ablauf: Spiel-Standard für {{mediaKindLabels[kind]}}</span>
-                        <button mat-button type="button" (click)="customizeQuestionConfig(i, kind)">Für diese Frage anpassen</button>
+                        <span class="hint">{{'setup.question.defaultSequence' | transloco: {kind: mediaKindLabels[kind] | transloco} }}</span>
+                        <button mat-button type="button" (click)="customizeQuestionConfig(i, kind)">{{'setup.question.customize' | transloco}}</button>
                       </div>
                     }
                   </div>
@@ -183,16 +183,16 @@
               </section>
 
               <section class="question-section">
-                <h4 class="section-title">Notizen für die Spielleitung</h4>
+                <h4 class="section-title">{{'setup.question.notesTitle' | transloco}}</h4>
                 <mat-form-field class="notes">
-                  <mat-label>Notizen (optional)</mat-label>
+                  <mat-label>{{'setup.question.notes' | transloco}}</mat-label>
                   <textarea matInput formControlName="notes" cdkTextareaAutosize cdkAutosizeMinRows="2"></textarea>
-                  <mat-hint>Nur in der Spielleitungsansicht sichtbar, nicht auf der Anzeige</mat-hint>
+                  <mat-hint>{{'setup.question.notesHint' | transloco}}</mat-hint>
                 </mat-form-field>
               </section>
             </div>
             <mat-action-row>
-              <button mat-button type="button" color="primary" (click)="addQuestionToFormGroup()"><mat-icon>add</mat-icon> Frage hinzufügen</button>
+              <button mat-button type="button" color="primary" (click)="addQuestionToFormGroup()"><mat-icon>add</mat-icon> {{'setup.question.add' | transloco}}</button>
             </mat-action-row>
           </mat-expansion-panel>
         }
@@ -200,25 +200,24 @@
       <!--<button mat-raised-button (click)="addQuestionToFormGroup()">Frage hinzufügen</button>-->
 
       <div>
-        <button mat-button matStepperPrevious>Zurück</button>
-        <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">Weiter</button>
+        <button mat-button matStepperPrevious>{{'common.back' | transloco}}</button>
+        <button mat-button matStepperNext [disabled]="!questionsFormGroup.valid">{{'common.next' | transloco}}</button>
       </div>
     </form>
   <!--    </ng-template>-->
 </mat-step>
 <mat-step>
-  <ng-template matStepLabel>Speichern</ng-template>
-  <p>Das Spiel hat <b>{{getNumberOfQuestions()}} Frage(n)</b>. Beim Speichern entsteht eine neue Version; Spielstände
-    spielen weiter die Version, mit der sie begonnen wurden.</p>
+  <ng-template matStepLabel>{{'setup.step.save' | transloco}}</ng-template>
+  <p [innerHTML]="(getNumberOfQuestions() === 1 ? 'setup.save.summary.one' : 'setup.save.summary.other') | transloco: {count: getNumberOfQuestions()}"></p>
   @if (saveError) {
     <p class="error"><mat-icon>error</mat-icon>{{saveError}}</p>
   }
   <div>
-    <button mat-button matStepperPrevious>Zurück</button>
-    <button mat-raised-button color="primary" [disabled]="saving || !questionsFormGroup.valid" (click)="saveGame()">Spiel speichern</button>
+    <button mat-button matStepperPrevious>{{'common.back' | transloco}}</button>
+    <button mat-raised-button color="primary" [disabled]="saving || !questionsFormGroup.valid" (click)="saveGame()">{{'setup.save.save' | transloco}}</button>
     @if (savedVersion !== null) {
-      <button mat-button (click)="playSavedVersion()"><mat-icon>play_arrow</mat-icon> Version {{savedVersion}} spielen</button>
-      <a mat-button [routerLink]="managerUrl">Zur Spielverwaltung</a>
+      <button mat-button (click)="playSavedVersion()"><mat-icon>play_arrow</mat-icon> {{'setup.save.play' | transloco: {version: savedVersion} }}</button>
+      <a mat-button [routerLink]="managerUrl">{{'setup.toManager' | transloco}}</a>
     }
   </div>
 </mat-step>

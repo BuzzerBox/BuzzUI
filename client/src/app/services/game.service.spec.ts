@@ -12,6 +12,7 @@ import {
   IGamePacket,
   IGameState,
   IRegisterMasterPacket,
+  ISetLanguagePacket,
   ITeam,
   IUsbBuzzer,
   IUsbBuzzersPacket,
@@ -19,6 +20,7 @@ import {
   PacketHelper
 } from '../../../../shared/shared';
 import {baseUrlMaster, pathsMaster} from '../master/paths-master';
+import {LanguageService} from '../i18n/language.service';
 
 describe('GameService', () => {
   let service: GameService;
@@ -52,6 +54,47 @@ describe('GameService', () => {
     ...PacketHelper.makeResponsePacket(EPacketTypes.REGISTER_MASTER, false),
     isGameRunning
   } as IGamePacket);
+
+  describe('the language', () => {
+    const languagesSent = () => sent
+      .filter(m => (m as IGamePacket).packetType === EPacketTypes.SET_LANGUAGE)
+      .map(m => (m as ISetLanguagePacket).language);
+    const setLanguage = (language: string) => receive({packetType: EPacketTypes.SET_LANGUAGE, language} as IGamePacket);
+
+    afterEach(() => {
+      localStorage.removeItem('buzzerbox.language');
+      document.documentElement.lang = 'de';
+    });
+
+    it('tells the server the language of the master when it registers and when it changes', () => {
+      service.useAsMaster();
+      expect(languagesSent()).toEqual(['de']);
+      service.setLanguage('en');
+      expect(TestBed.inject(LanguageService).getLanguage()).toBe('en');
+      expect(languagesSent()).toEqual(['de', 'en']);
+    });
+
+    it('only changes the language of a device that is not the master', () => {
+      service.setLanguage('en');
+      expect(TestBed.inject(LanguageService).getLanguage()).toBe('en');
+      expect(languagesSent()).toEqual([]);
+    });
+
+    it('lets a screen follow the language of the master', () => {
+      service.useAsScreen();
+      setLanguage('en');
+      expect(TestBed.inject(LanguageService).getLanguage()).toBe('en');
+      setLanguage('xx');
+      expect(TestBed.inject(LanguageService).getLanguage()).toBe('en');
+      expect(languagesSent()).toEqual([]);
+    });
+
+    it('keeps the language of the master whatever the server sends', () => {
+      service.useAsMaster();
+      setLanguage('en');
+      expect(TestBed.inject(LanguageService).getLanguage()).toBe('de');
+    });
+  });
 
   it('shows a refused master the page about the other master', () => {
     service.useAsMaster();

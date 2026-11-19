@@ -85,7 +85,7 @@ export class BoxSettingsService {
             content = await this.readSettingsFile();
         } catch (e) {
             LoggerService.warn(`Could not read the box's settings in ${this.config.file}`, e);
-            packet.error = e?.code === 'ENOENT' ? 'Diese BuzzerBox hat keine Datei buzzerbox.txt.' : 'Die Datei buzzerbox.txt ließ sich nicht lesen.';
+            packet.error = e?.code === 'ENOENT' ? 'This BuzzerBox has no buzzerbox.txt.' : 'Could not read buzzerbox.txt.';
             return packet;
         }
         const defaults = await this.readDefaults();
@@ -131,15 +131,15 @@ export class BoxSettingsService {
      */
     public async addSshKey(text: string): Promise<string | null> {
         if (BoxSettingsHelper.isPrivateKey(text)) {
-            return 'Das ist ein privater Schlüssel. Er gehört nie auf die Box: nimm den öffentlichen (die Datei mit .pub) und verwende diesen privaten Schlüssel nicht mehr, falls ihn jemand anderes gesehen hat.';
+            return 'This is a private key. It never belongs on the box: use the public one (the file ending in .pub), and stop using this private key if anyone else has seen it.';
         }
         const key = BoxSettingsService.checkSshKey(text);
         if (key == null) {
-            return 'Das ist kein öffentlicher SSH-Schlüssel, den die Box annimmt (z. B. der Inhalt von ~/.ssh/id_ed25519.pub).';
+            return 'This is not a public SSH key the box accepts (e.g. the content of ~/.ssh/id_ed25519.pub).';
         }
         return this.changeSshKeys(keys => {
             if (keys.some(k => k.fingerprint === key.fingerprint)) {
-                return 'Dieser Schlüssel ist schon eingetragen.';
+                return 'This key is already on the box.';
             }
             keys.push(key);
             return null;
@@ -153,7 +153,7 @@ export class BoxSettingsService {
         return this.changeSshKeys(keys => {
             const index = keys.findIndex(k => k.fingerprint === fingerprint);
             if (index < 0) {
-                return 'Dieser Schlüssel ist nicht eingetragen.';
+                return 'This key is not on the box.';
             }
             keys.splice(index, 1);
             return null;
@@ -167,10 +167,10 @@ export class BoxSettingsService {
     private async changeSshKeys(change: (keys: (IBoxSshKey & {line: string})[]) => string | null): Promise<string | null> {
         const current = await this.read();
         if (!current.available || !current.sshAvailable) {
-            return 'Diese BuzzerBox hat keine Datei buzzerbox-ssh-keys.txt.';
+            return 'This BuzzerBox has no buzzerbox-ssh-keys.txt.';
         }
         if (!current.editable) {
-            return `Die SSH-Schlüssel dürfen nur geändert werden, wenn buzzerbox.txt ${BoxSettingsHelper.EDIT_KEY}=true enthält.`;
+            return `The SSH keys can only be changed if buzzerbox.txt contains ${BoxSettingsHelper.EDIT_KEY}=true.`;
         }
         const keys = await this.readSshKeys();
         const reason = change(keys);
@@ -188,7 +188,7 @@ export class BoxSettingsService {
             }
         } catch (e) {
             LoggerService.error('Could not change the box\'s SSH keys', e);
-            return `Die SSH-Schlüssel ließen sich nicht speichern: ${e?.message ?? e}`;
+            return `Could not save the SSH keys: ${e?.message ?? e}`;
         }
         return null;
     }
@@ -272,10 +272,10 @@ export class BoxSettingsService {
     public async save(values: Record<string, string>): Promise<string | null> {
         const current = await this.read();
         if (!current.available) {
-            return current.error ?? 'Die Einstellungen der BuzzerBox sind auf diesem Server nicht verfügbar.';
+            return current.error ?? 'This server has no BuzzerBox settings.';
         }
         if (!current.editable) {
-            return `Die Einstellungen dürfen nur geändert werden, wenn buzzerbox.txt ${BoxSettingsHelper.EDIT_KEY}=true enthält.`;
+            return `The settings can only be changed if buzzerbox.txt contains ${BoxSettingsHelper.EDIT_KEY}=true.`;
         }
         const keys = Object.keys(values ?? {});
         if (keys.length === 0) {
@@ -283,15 +283,15 @@ export class BoxSettingsService {
         }
         for (const key of keys) {
             if (!BoxSettingsHelper.KEYS.includes(key)) {
-                return `Die Einstellung ${key} lässt sich nicht ändern.`;
+                return `The setting ${key} cannot be changed.`;
             }
             if (typeof values[key] !== 'string' || !BoxSettingsHelper.isValid(key, values[key])) {
-                return `Der Wert von ${key} ist ungültig.`;
+                return `The value of ${key} is invalid.`;
             }
         }
         const valueOf = (key: string) => values[key] ?? current.settings.find(s => s.key === key).value;
         if (BoxSettingsHelper.isSameNetwork(valueOf('SERVER_IP_ADDRESS'), valueOf('ETHERNET_IP_ADDRESS'))) {
-            return 'Die Adressen im WLAN und am Ethernet-Anschluss müssen in verschiedenen Netzen liegen.';
+            return 'The WiFi and Ethernet addresses must be in different networks.';
         }
         LoggerService.log(`Saving the box's settings ${keys.join(', ')}`);
         try {
@@ -304,7 +304,7 @@ export class BoxSettingsService {
             }
         } catch (e) {
             LoggerService.error('Could not save the box\'s settings', e);
-            return `Die Einstellungen ließen sich nicht speichern: ${e?.message ?? e}`;
+            return `Could not save the settings: ${e?.message ?? e}`;
         }
         return null;
     }
@@ -315,14 +315,14 @@ export class BoxSettingsService {
      */
     public async restart(): Promise<string | null> {
         if (!this.config.enabled || !this.config.useHelper) {
-            return 'Diese BuzzerBox kann nicht von hier aus neu gestartet werden.';
+            return 'This BuzzerBox cannot be restarted from here.';
         }
         LoggerService.log('Restarting the box for its settings');
         try {
             await this.run(this.config.restartCommand);
         } catch (e) {
             LoggerService.error('Could not restart the box', e);
-            return `Die BuzzerBox ließ sich nicht neu starten: ${e?.message ?? e}`;
+            return `Could not restart the BuzzerBox: ${e?.message ?? e}`;
         }
         return null;
     }

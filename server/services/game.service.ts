@@ -43,12 +43,15 @@ import {
     ISaveBoxSettingsPacket,
     IAddSshKeyPacket,
     IRemoveSshKeyPacket,
+    ISetLanguagePacket,
     ITeam,
     ITeamSetPointsPacket,
     IUpdateInfoPacket,
     IUpdateMediaStatePacket,
     IUpdateTeamsPacket,
     BuzzerHelper,
+    LanguageHelper,
+    TLanguage,
     PacketHelper,
     ScoringHelper
 } from "../../shared/shared";
@@ -99,6 +102,8 @@ export class GameService {
     // TODO: maybe rename it to lastBuzzerPressed to reflect an upcoming change in behavior for this field
     private lastKeyPressed: string;
     private configInvalidReason: string;
+    // what the master chose, which the screens follow; unknown until a master registered, and kept across games
+    private language: TLanguage | undefined;
 
     private constructor() {
         if (!this.validateConfig()) {
@@ -230,7 +235,22 @@ export class GameService {
             this.onChangeSshKeysPacket(packet, BoxSettingsService.get().addSshKey((packet as IAddSshKeyPacket).key));
         } else if (packet.packetType === EPacketTypes.REMOVE_SSH_KEY) {
             this.onChangeSshKeysPacket(packet, BoxSettingsService.get().removeSshKey((packet as IRemoveSshKeyPacket).fingerprint));
+        } else if (packet.packetType === EPacketTypes.SET_LANGUAGE) {
+            this.onSetLanguagePacket(packet as ISetLanguagePacket);
         }
+    }
+
+    /**
+     * The screens show their texts in the master's language
+     */
+    private onSetLanguagePacket(packet: ISetLanguagePacket): void {
+        const language = LanguageHelper.normalize(packet.language);
+        if (language == null) {
+            LoggerService.warn(`Ignoring the unknown language ${packet.language}`);
+            return;
+        }
+        this.language = language;
+        this.sendToAllScreens<ISetLanguagePacket>({packetType: EPacketTypes.SET_LANGUAGE, language});
     }
 
     private isGameSetUp(): boolean {
@@ -470,7 +490,7 @@ export class GameService {
     private async onSaveBoxSettingsPacket(packet: ISaveBoxSettingsPacket): Promise<void> {
         // the settings belong to the start page, where no game is set up
         const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
-            ? 'Die Einstellungen lassen sich nur ändern, solange kein Spiel eingerichtet ist.'
+            ? 'The settings can only be changed while no game is set up.'
             : await BoxSettingsService.get().save(packet.values);
         if (reason != null) {
             LoggerService.warn(`Not saving the box's settings: ${reason}`);
@@ -493,7 +513,7 @@ export class GameService {
 
     private async onRestartBoxPacket(packet: IGamePacket): Promise<void> {
         const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
-            ? 'Die BuzzerBox lässt sich nur neu starten, solange kein Spiel eingerichtet ist.'
+            ? 'The BuzzerBox can only be restarted while no game is set up.'
             : await BoxSettingsService.get().restart();
         if (reason != null) {
             LoggerService.warn(`Not restarting the box: ${reason}`);
@@ -751,6 +771,9 @@ export class GameService {
 
     private onRegisterScreenPacket(con: WebSocketConnection, sub: Subscription, packet: IRegisterScreenPacket): void {
         this.webSocketConnectionsScreens.set(packet.screenId, con);
+        if (this.language != null) {
+            con.send<ISetLanguagePacket>({packetType: EPacketTypes.SET_LANGUAGE, language: this.language});
+        }
         if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_START || this.currentStateInAutomaton === EGameStates.LOST_MASTER || this.currentStateInAutomaton === EGameStates.PLAYING) {
             con.send<IDataForScreenPacket>(this.makeInitDataForScreen());
         }

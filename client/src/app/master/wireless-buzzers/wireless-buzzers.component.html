@@ -2,8 +2,8 @@
   <mat-card class="wireless-buzzers" appearance="outlined">
     <mat-card-header>
       <mat-icon mat-card-avatar>settings_remote</mat-icon>
-      <mat-card-title>Funkbuzzer</mat-card-title>
-      <mat-card-subtitle>{{rows.length === 1 ? 'Ein Buzzer ist' : rows.length + ' Buzzer sind'}} verbunden. Über USB angesteckte lassen sich hier übernehmen.</mat-card-subtitle>
+      <mat-card-title>{{'wirelessBuzzers.title' | transloco}}</mat-card-title>
+      <mat-card-subtitle>{{(rows.length === 1 ? 'wirelessBuzzers.subtitle.one' : 'wirelessBuzzers.subtitle.other') | transloco: {count: rows.length} }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       @for (row of rows; track row.key) {
@@ -14,42 +14,42 @@
                 @if (getColor(row); as color) {
                   <app-buzzer-color [color]="color" [isCaseColor]="true"></app-buzzer-color>
                 } @else {
-                  <span class="no-color" title="Keine Farbe des Gehäuses"></span>
+                  <span class="no-color" [title]="'wirelessBuzzers.noColor' | transloco"></span>
                 }
                 {{getName(row)}}
               </span>
               <span class="facts">
                 @if (row.usb) {
-                  <span class="connection" title="Über USB angesteckt"><mat-icon>usb</mat-icon>USB</span>
+                  <span class="connection" [title]="'wirelessBuzzers.usb' | transloco"><mat-icon>usb</mat-icon>USB</span>
                 }
                 @if (row.wifi) {
-                  <span class="connection" title="Über das WLAN mit der BuzzerBox verbunden"><mat-icon>wifi</mat-icon>WLAN</span>
+                  <span class="connection" [title]="'wirelessBuzzers.wifiHint' | transloco"><mat-icon>wifi</mat-icon>{{'wirelessBuzzers.wifi' | transloco}}</span>
                 }
                 @if (row.usb || hasBatteryPercent(row) || isBatteryLow(row)) {
                   <span class="battery" [class.low]="isBatteryLow(row)"
-                        [attr.title]="row.usb ? 'Lädt über USB' : isBatteryLow(row) ? 'Akku schwach' : 'Akku'">
+                        [attr.title]="(row.usb ? 'wirelessBuzzers.battery.charging' : isBatteryLow(row) ? 'wirelessBuzzers.battery.lowHint' : 'wirelessBuzzers.battery.hint') | transloco">
                     <mat-icon>{{getBatteryIcon(row)}}</mat-icon>
                     @if (hasBatteryPercent(row)) {
                       {{getBatteryPercent(row)}} %
                     } @else if (isBatteryLow(row)) {
-                      schwach
+                      {{'wirelessBuzzers.battery.low' | transloco}}
                     }
                   </span>
                 }
                 @if (getFirmwareVersion(row); as firmwareVersion) {
-                  <span class="firmware">Firmware {{firmwareVersion}}</span>
+                  <span class="firmware">{{'wirelessBuzzers.firmware' | transloco: {version: firmwareVersion} }}</span>
                 }
               </span>
             </div>
             @if (row.usb && hasColorMenu(row.usb)) {
-              <button mat-icon-button class="more" [matMenuTriggerFor]="buzzerMenu" aria-label="Weitere Einstellungen"
-                      title="Weitere Einstellungen">
+              <button mat-icon-button class="more" [matMenuTriggerFor]="buzzerMenu" [attr.aria-label]="'wirelessBuzzers.moreSettings' | transloco"
+                      [title]="'wirelessBuzzers.moreSettings' | transloco">
                 <mat-icon>more_vert</mat-icon>
               </button>
               <mat-menu #buzzerMenu="matMenu">
                 <button mat-menu-item (click)="toggleColorChange(row.usb)">
                   <mat-icon>{{isChangingColor(row.usb) ? 'close' : 'palette'}}</mat-icon>
-                  <span>{{isChangingColor(row.usb) ? 'Farbe nicht ändern' : 'Farbe des Gehäuses ändern'}}</span>
+                  <span>{{(isChangingColor(row.usb) ? 'wirelessBuzzers.keepColor' : 'wirelessBuzzers.changeColor') | transloco}}</span>
                 </button>
               </mat-menu>
             }
@@ -58,54 +58,54 @@
             <div class="usb">
               @switch (buzzer.state) {
                 @case ('identifying') {
-                  <div class="status"><mat-spinner diameter="20"></mat-spinner><span>Der Buzzer wird erkannt …</span></div>
+                  <div class="status"><mat-spinner diameter="20"></mat-spinner><span>{{'wirelessBuzzers.identifying' | transloco}}</span></div>
                 }
                 @case ('detected') {
                   @if (buzzer.isAdopted) {
                     <p class="status success">
                       <mat-icon>check_circle</mat-icon>
-                      <span>Bereits für diese BuzzerBox übernommen (WLAN „{{buzzer.ssid}}“){{buzzer.isConnected ? ' und verbunden' : ''}}.</span>
+                      <span>{{(buzzer.isConnected ? 'wirelessBuzzers.alreadyAdoptedConnected' : 'wirelessBuzzers.alreadyAdopted') | transloco: {ssid: buzzer.ssid} }}</span>
                     </p>
                   } @else if (buzzer.ssid) {
                     <p>
-                      Der Buzzer ist für das WLAN „{{buzzer.ssid}}“ eingerichtet, nicht für diese BuzzerBox. Übernimm ihn, damit er
-                      sich mit ihr verbindet.
+                      {{'wirelessBuzzers.otherWifi' | transloco: {ssid: buzzer.ssid} }}
                     </p>
                   } @else {
-                    <p>Übernimm den Buzzer, damit er sich mit dem WLAN der BuzzerBox verbindet.</p>
+                    <p>{{'wirelessBuzzers.notAdopted' | transloco}}</p>
                   }
                 }
                 @case ('no-answer') {
                   <p class="status warning">
-                    <mat-icon>warning</mat-icon><span>Das Gerät antwortet nicht. Ist es ein Funkbuzzer? Übernehmen versucht es erneut.</span>
+                    <mat-icon>warning</mat-icon><span>{{'wirelessBuzzers.noAnswer' | transloco}}</span>
                   </p>
                 }
                 @case ('adopting') {
-                  <div class="status"><mat-spinner diameter="20"></mat-spinner><span>Der Buzzer wird übernommen …</span></div>
+                  <div class="status"><mat-spinner diameter="20"></mat-spinner><span>{{'wirelessBuzzers.adopting' | transloco}}</span></div>
                 }
                 @case ('adopted') {
                   <p class="status success">
                     <mat-icon>check_circle</mat-icon>
                     @if (buzzer.isConnected) {
-                      <span>Übernommen und verbunden (WLAN „{{buzzer.ssid}}“). Du kannst ihn jetzt abstecken.</span>
+                      <span>{{'wirelessBuzzers.adoptedConnected' | transloco: {ssid: buzzer.ssid} }}</span>
                     } @else {
-                      <span>Übernommen: Der Buzzer verbindet sich mit dem WLAN „{{buzzer.ssid}}“ …</span>
+                      <span>{{'wirelessBuzzers.adoptedConnecting' | transloco: {ssid: buzzer.ssid} }}</span>
                     }
                   </p>
                 }
                 @case ('failed') {
-                  <p class="status error"><mat-icon>error</mat-icon><span>Das Übernehmen hat nicht geklappt. {{getErrorMessage(buzzer.error)}}</span></p>
+                  <p class="status error"><mat-icon>error</mat-icon><span>{{'wirelessBuzzers.failed' | transloco: {reason: getErrorMessage(buzzer.error)} }}</span></p>
                 }
               }
               @if (isColorPickerShown(buzzer)) {
                 <div class="case-colors">
-                  <span class="case-colors-label">Farbe des Gehäuses</span>
-                  <div class="swatches" role="radiogroup" aria-label="Farbe des Gehäuses">
+                  <span class="case-colors-label">{{'buzzer.caseColor' | transloco}}</span>
+                  <div class="swatches" role="radiogroup" [attr.aria-label]="'buzzer.caseColor' | transloco">
                     @for (caseColor of caseColors; track caseColor.color) {
                       <button type="button" class="swatch" role="radio" [style.background]="caseColor.color"
                               [class.light]="isLight(caseColor.color)" [class.selected]="getChosenColor(buzzer) === caseColor.color"
                               [attr.aria-checked]="getChosenColor(buzzer) === caseColor.color"
-                              [attr.title]="caseColor.name" [attr.aria-label]="caseColor.name"
+                              [attr.title]="'caseColors.' + caseColor.key + '.name' | transloco"
+                              [attr.aria-label]="'caseColors.' + caseColor.key + '.name' | transloco"
                               (click)="chooseColor(buzzer, caseColor.color)">
                         @if (getChosenColor(buzzer) === caseColor.color) {
                           <mat-icon>check</mat-icon>
@@ -113,26 +113,26 @@
                       </button>
                     }
                     <button type="button" class="swatch none" role="radio" [class.selected]="!getChosenColor(buzzer)"
-                            [attr.aria-checked]="!getChosenColor(buzzer)" title="Keine" aria-label="Keine"
+                            [attr.aria-checked]="!getChosenColor(buzzer)" [title]="'wirelessBuzzers.noColorOption' | transloco" [attr.aria-label]="'wirelessBuzzers.noColorOption' | transloco"
                             (click)="chooseColor(buzzer, '')">
                       <mat-icon>block</mat-icon>
                     </button>
                   </div>
                 </div>
               } @else if (needsNewerFirmwareForColor(buzzer)) {
-                <p class="hint">Für die Farbe des Gehäuses braucht der Buzzer Firmware 1.2.0 oder neuer.</p>
+                <p class="hint">{{'wirelessBuzzers.needsFirmware' | transloco}}</p>
               }
               @if (hasActions(buzzer)) {
                 <div class="actions">
                   @if ((buzzer.state === 'detected' && buzzer.isAdopted) || buzzer.state === 'adopted') {
                     @if (isColorChanged(buzzer)) {
-                      <button mat-flat-button color="primary" (click)="adopt(buzzer)">Farbe übernehmen</button>
+                      <button mat-flat-button color="primary" (click)="adopt(buzzer)">{{'wirelessBuzzers.applyColor' | transloco}}</button>
                     } @else if (buzzer.state === 'detected') {
-                      <button mat-stroked-button (click)="adopt(buzzer)">Erneut übernehmen</button>
+                      <button mat-stroked-button (click)="adopt(buzzer)">{{'wirelessBuzzers.adoptAgain' | transloco}}</button>
                     }
                   } @else if (buzzer.state === 'detected' || buzzer.state === 'no-answer' || buzzer.state === 'failed') {
                     <button mat-flat-button color="primary" (click)="adopt(buzzer)">
-                      {{buzzer.state === 'failed' ? 'Erneut versuchen' : 'Übernehmen'}}
+                      {{(buzzer.state === 'failed' ? 'common.retry' : 'wirelessBuzzers.adopt') | transloco}}
                     </button>
                   }
                 </div>

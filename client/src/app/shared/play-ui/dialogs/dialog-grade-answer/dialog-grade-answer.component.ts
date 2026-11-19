@@ -1,3 +1,4 @@
+import {tn} from '../../../../i18n/i18n';
 import {Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {EGradeResults, IAnswer, IScoring, ScoringHelper} from '../../../../../../../shared/shared';
@@ -75,7 +76,7 @@ export class DialogGradeAnswerComponent {
   }
 
   public formatPoints(points: number): string {
-    return points === 1 ? '1 Punkt' : `${points} Punkte`;
+    return tn('common.points', points);
   }
 
   /**

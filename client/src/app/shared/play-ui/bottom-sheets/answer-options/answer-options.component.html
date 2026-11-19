@@ -1,9 +1,9 @@
 <mat-nav-list>
   @if (isAlreadyLoggedIn()) {
-    <a mat-list-item (click)="logOutAnswer()">Auswahl aufheben</a>
+    <a mat-list-item (click)="logOutAnswer()">{{'play.answerOptions.unselect' | transloco}}</a>
   }
   @if (!isAlreadyLoggedIn()) {
-    <a mat-list-item (click)="logInAnswer()">Antwort selektieren</a>
+    <a mat-list-item (click)="logInAnswer()">{{'play.answerOptions.select' | transloco}}</a>
   }
-  <a mat-list-item (click)="activateAnswer()">Antwort aufdecken</a>
+  <a mat-list-item (click)="activateAnswer()">{{'play.answerOptions.reveal' | transloco}}</a>
 </mat-nav-list>

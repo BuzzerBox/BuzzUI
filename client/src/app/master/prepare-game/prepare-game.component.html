@@ -2,42 +2,41 @@
 <div class="page">
   @if (error) {
     <p class="error"><mat-icon>error</mat-icon>{{error}}</p>
-    <a mat-stroked-button [routerLink]="homeUrl">Zur Startseite</a>
+    <a mat-stroked-button [routerLink]="homeUrl">{{'common.toHome' | transloco}}</a>
   } @else if (!definition) {
     <mat-spinner diameter="48"></mat-spinner>
   } @else {
     <h1>{{ref.gameName}}</h1>
     <p class="summary">
-      {{isContinuing() ? 'Spielstand „' + navigation.stateName + '“' : 'Neues Spiel'}} · Version {{definition.version}} · {{getProgress()}}
-      · gespeichert auf {{ref.location.type === 'box' ? 'der BuzzerBox' : 'dem USB-Stick ' + ref.location.name}}
+      {{(isContinuing() ? 'prepare.summary.state' : 'common.newGame') | transloco: {state: navigation.stateName} }} · {{'common.version' | transloco: {version: definition.version} }} · {{getProgress()}}
+      · {{'prepare.summary.savedOn' | transloco: {location: getLocationText()} }}
     </p>
 
     @if (!isContinuing()) {
       <mat-form-field class="state-name">
-        <mat-label>Name des Spielstands</mat-label>
+        <mat-label>{{'prepare.stateName' | transloco}}</mat-label>
         <input matInput [formControl]="stateName">
-        <mat-hint>Unter diesem Namen wird das Spiel automatisch gespeichert.</mat-hint>
+        <mat-hint>{{'prepare.stateNameHint' | transloco}}</mat-hint>
       </mat-form-field>
     }
 
-    <h2>Teams</h2>
+    <h2>{{'teams.title' | transloco}}</h2>
     @if (canChooseBuzzerType()) {
       <mat-button-toggle-group class="buzzer-type" [value]="buzzerType" (change)="chooseBuzzerType($event.value)"
-                               aria-label="Buzzer">
-        <mat-button-toggle value="serial">Analoge Buzzer</mat-button-toggle>
-        <mat-button-toggle value="udp">Digitale Buzzer</mat-button-toggle>
+                               [attr.aria-label]="'prepare.buzzers' | transloco">
+        <mat-button-toggle value="serial">{{'prepare.analogBuzzers' | transloco}}</mat-button-toggle>
+        <mat-button-toggle value="udp">{{'prepare.digitalBuzzers' | transloco}}</mat-button-toggle>
       </mat-button-toggle-group>
-      <p class="hint">Ein Spiel läuft entweder mit den Buzzern an der Box oder mit den Funkbuzzern.</p>
+      <p class="hint">{{'prepare.buzzerTypeHint' | transloco}}</p>
     }
     @if (dropsSavedTeams()) {
-      <p class="warning">Dieser Spielstand wurde mit den {{buzzerType === 'udp' ? 'analogen' : 'digitalen'}} Buzzern gespielt.
-        Seine Teams und ihre Punkte fallen weg.</p>
+      <p class="warning">{{(buzzerType === 'udp' ? 'prepare.dropsTeams.analog' : 'prepare.dropsTeams.digital') | transloco}}</p>
     }
     @if (rows.length === 0) {
       @if (buzzerType === 'udp') {
-        <p>Kein Funkbuzzer ist verbunden. Schalte die Funkbuzzer ein, sie erscheinen hier, sobald sie sich melden.</p>
+        <p>{{'prepare.noWirelessBuzzer' | transloco}}</p>
       } @else {
-        <p>Die Buzzer sind nicht bekannt. Lade die Seite neu.</p>
+        <p>{{'prepare.buzzersUnknown' | transloco}}</p>
       }
     }
     <form [formGroup]="teamsFormGroup">
@@ -45,16 +44,16 @@
         <div class="team-row" [class.inactive]="!isActive(row)">
           <mat-checkbox [checked]="isActive(row)" (change)="setActive(row, $event.checked)">
             <app-buzzer-color [color]="getColor(row)" [isCaseColor]="hasCaseColor(row)"></app-buzzer-color>
-          {{row.buzzer.name}}
+          {{getBuzzerName(row.buzzer)}}
             @if (row.buzzer.online === false) {
-              <mat-icon class="buzzer-status" title="Dieser Funkbuzzer ist gerade nicht verbunden">wifi_off</mat-icon>
+              <mat-icon class="buzzer-status" [title]="'buzzer.offline' | transloco">wifi_off</mat-icon>
             }
             @if (row.buzzer.batteryLow) {
-              <mat-icon class="buzzer-status" title="Der Akku dieses Funkbuzzers ist fast leer">battery_alert</mat-icon>
+              <mat-icon class="buzzer-status" [title]="'buzzer.batteryLow' | transloco">battery_alert</mat-icon>
             }
           </mat-checkbox>
           <mat-form-field class="team-name">
-            <mat-label>Teamname</mat-label>
+            <mat-label>{{'common.teamName' | transloco}}</mat-label>
             <input matInput [formControlName]="row.controlName">
           </mat-form-field>
           <span class="team-points">
@@ -64,21 +63,21 @@
           </span>
         </div>
         @if (losesPoints(row)) {
-          <div class="warning">{{row.team.name}} spielt nicht mehr mit und verliert {{formatPoints(row.team.points)}}.</div>
+          <div class="warning">{{'prepare.losesPoints' | transloco: {team: row.team.name, points: formatPoints(row.team.points)} }}</div>
         }
       }
     </form>
     @if (getActiveCount() < MIN_TEAMS) {
-      <p class="warning">Es müssen mindestens {{MIN_TEAMS}} Teams spielen.</p>
+      <p class="warning">{{'common.minTeams' | transloco: {count: MIN_TEAMS} }}</p>
     }
     @if (getTeamsWithSameColor(); as sameColor) {
       @if (sameColor.length > 0) {
-        <p class="hint">{{sameColor.join(', ')}} haben dieselbe Farbe. Auf der Anzeige unterscheiden sie sich nur am Namen.</p>
+        <p class="hint">{{'prepare.sameColor' | transloco: {teams: sameColor.join(', ')} }}</p>
       }
     }
 
-    <h2>Aussehen der Anzeige</h2>
-    <div class="themes" role="radiogroup" aria-label="Aussehen der Anzeige">
+    <h2>{{'prepare.theme' | transloco}}</h2>
+    <div class="themes" role="radiogroup" [attr.aria-label]="'prepare.theme' | transloco">
       @for (theme of themes; track theme.id) {
         <button type="button" class="theme" role="radio" [attr.aria-checked]="theme.id === themeId"
                 [class.selected]="theme.id === themeId" (click)="chooseTheme(theme)">
@@ -97,35 +96,35 @@
             @if (theme.id === themeId) {
               <mat-icon>check_circle</mat-icon>
             }
-            {{theme.name}}
+            {{'themes.' + theme.id + '.name' | transloco}}
           </span>
-          <span class="theme-description">{{theme.description}}</span>
+          <span class="theme-description">{{'themes.' + theme.id + '.description' | transloco}}</span>
         </button>
       }
     </div>
 
     @if (definition.questions.length === 0) {
-      <p class="warning">Diese Version hat keine Fragen.</p>
+      <p class="warning">{{'prepare.noQuestions' | transloco}}</p>
     }
     @if (missingMedia.length > 0) {
       <div class="missing-media" role="alert">
-        <p class="missing-title"><mat-icon>warning</mat-icon>Diese Medien fehlen im Spiel, die Fragen zeigen dann nichts an:</p>
+        <p class="missing-title"><mat-icon>warning</mat-icon>{{'prepare.missingMedia.title' | transloco}}</p>
         <ul>
           @for (media of missingMedia; track media.questionNumber + '/' + media.path) {
-            <li>Frage {{media.questionNumber}}: <code>{{media.path}}</code></li>
+            <li>{{'prepare.missingMedia.item' | transloco: {number: media.questionNumber} }} <code>{{media.path}}</code></li>
           }
         </ul>
-        <p>Lade sie in „Spiele verwalten“ in die Medien des Spiels hoch, oder leite eine neue Version ohne sie ab.</p>
+        <p>{{'prepare.missingMedia.hint' | transloco}}</p>
       </div>
     }
     @if (mediaCheckError) {
-      <p class="warning">Ob alle Medien da sind, ließ sich nicht prüfen: {{mediaCheckError}}</p>
+      <p class="warning">{{'prepare.mediaCheckFailed' | transloco: {error: mediaCheckError} }}</p>
     }
 
     <div class="actions">
-      <a mat-button [routerLink]="homeUrl">Abbrechen</a>
+      <a mat-button [routerLink]="homeUrl">{{'common.cancel' | transloco}}</a>
       <button mat-raised-button color="primary" [disabled]="!canStart()" (click)="start()">
-        <mat-icon>play_arrow</mat-icon> {{isContinuing() ? 'Spiel fortsetzen' : 'Spiel starten'}}
+        <mat-icon>play_arrow</mat-icon> {{(isContinuing() ? 'common.continueGame' : 'common.startGame') | transloco}}
       </button>
     </div>
   }
