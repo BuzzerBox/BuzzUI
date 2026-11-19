@@ -60,7 +60,3 @@ cp config.dev.json.example config.dev.json
 
 Then open http://localhost:4200. The number keys are the buzzers on a screen, and `Q` releases them. The
 [development setup](docs/development.md) has the details.
-
-## License
-
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), as stated in the `package.json` files.
