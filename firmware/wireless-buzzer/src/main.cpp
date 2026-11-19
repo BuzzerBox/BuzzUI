@@ -9,6 +9,7 @@
 #include <esp_sleep.h>
 #include <esp_timer.h>
 
+#include "battery.h"
 #include "button.h"
 #include "clock_sync.h"
 #include "config.h"
@@ -29,6 +30,7 @@ static Button externalButton;
 static Indicator indicator;
 // Serial only while USB is plugged in, see UsbLink
 static UsbLink usb;
+static Battery battery;
 static ClockSync clockSync;
 static PowerPolicy policy({CONNECT_TIMEOUT_MS, CONTACT_TIMEOUT_MS, LOST_TIMEOUT_MS, IDLE_TIMEOUT_MS});
 static WiFiUDP udp;
@@ -47,7 +49,6 @@ static IPAddress serverIp;
 
 static uint32_t heartbeatSeq = 0;
 static uint32_t lastHeartbeatMs = 0;
-static uint16_t batteryMv = 0;
 static uint32_t lastBatteryMs = 0;
 
 // the press that is sent until the server acknowledges it
@@ -165,8 +166,9 @@ static void sendHeartbeat() {
     diagnostics.uptimeS = millis() / 1000;
     diagnostics.wifiDrops = wifiDrops;
     diagnostics.lastWifiReason = lastWifiReason;
-    size_t length = messages::buildHeartbeat(packet, sizeof(packet), mac, LOCAL_PORT, heartbeatSeq, batteryMv,
-                                             FIRMWARE_VERSION, diagnostics, wifi.color);
+    size_t length = messages::buildHeartbeat(packet, sizeof(packet), mac, LOCAL_PORT, heartbeatSeq,
+                                             battery.millivolts(), FIRMWARE_VERSION, diagnostics, wifi.color,
+                                             battery.percent());
     clockSync.onSent(heartbeatSeq, esp_timer_get_time());
     sendPacket(packet, length);
 }
@@ -281,15 +283,6 @@ static void readSerial() {
 
 // ----- power
 
-static uint16_t readBattery() {
-    uint32_t sum = 0;
-    for (int i = 0; i < 8; i++) {
-        sum += analogReadMilliVolts(BATTERY_PIN);
-    }
-    // the divider halves the voltage
-    return (uint16_t) (sum / 8 * 2);
-}
-
 static void goToSleep() {
     Serial.println("Going to sleep, press the button to wake up");
     indicator.shutdown();
@@ -312,17 +305,24 @@ static void goToSleep() {
     // the pull-ups of the RTC GPIOs need the RTC peripherals powered while asleep
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
     for (gpio_num_t pin : {BUTTON_PIN, EXTERNAL_BUTTON_PIN}) {
-        if (pin != GPIO_NUM_NC && pin < GPIO_NUM_34) {
+        if (hasPullUp(pin)) {
             rtc_gpio_pullup_en(pin);
             rtc_gpio_pulldown_dis(pin);
         }
     }
-    // ext0 wakes up on one pin, ext1 on a set of pins that are all low (or any high): here the other one
+    // ext0 wakes up on one pin, ext1 on a set of pins that are all low (the ESP32-S3: any low; the same for one pin) or
+    // any high: here the other one
     esp_sleep_enable_ext0_wakeup(BUTTON_PIN, buttonHeld ? 1 : 0);
     if (hasExternalButton) {
+#if CONFIG_IDF_TARGET_ESP32S3
+        const esp_sleep_ext1_wakeup_mode_t lowMode = ESP_EXT1_WAKEUP_ANY_LOW;
+#else
+        const esp_sleep_ext1_wakeup_mode_t lowMode = ESP_EXT1_WAKEUP_ALL_LOW;
+#endif
         esp_sleep_enable_ext1_wakeup(1ULL << EXTERNAL_BUTTON_PIN,
-                                     externalButtonHeld ? ESP_EXT1_WAKEUP_ANY_HIGH : ESP_EXT1_WAKEUP_ALL_LOW);
+                                     externalButtonHeld ? ESP_EXT1_WAKEUP_ANY_HIGH : lowMode);
     }
+    battery.end();
     usb.end();
     esp_deep_sleep_start();
 }
@@ -368,7 +368,7 @@ static void updateIndicator(uint32_t nowMs) {
         }
     }
     indicator.setPattern(pattern);
-    indicator.setBatteryLow(batteryMv > 0 && batteryMv < BATTERY_LOW_MV);
+    indicator.setBatteryLow(battery.millivolts() > 0 && battery.millivolts() < BATTERY_LOW_MV);
     indicator.update(nowMs);
 }
 
@@ -402,7 +402,7 @@ void setup() {
     printReady();
 
     policy.onWake(millis());
-    batteryMv = readBattery();
+    battery.begin();
     lastBatteryMs = millis();
     if (hasWifi) {
         connectWifi(true);
@@ -419,6 +419,7 @@ void loop() {
         Serial.printf("Started: %s, %s\n", resetReason, hasWifi ? wifi.ssid : "no WiFi yet");
     }
     readSerial();
+    policy.setPluggedIn(nowMs, STAY_AWAKE_ON_USB && usb.isConnected());
 
     if (hasWifi) {
         bool isConnected = WiFi.status() == WL_CONNECTED;
@@ -470,7 +471,7 @@ void loop() {
 
     if (nowMs - lastBatteryMs >= 30000) {
         lastBatteryMs = nowMs;
-        batteryMv = readBattery();
+        battery.update();
     }
 
     logConnection(nowMs);

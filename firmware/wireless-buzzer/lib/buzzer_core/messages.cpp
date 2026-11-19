@@ -15,7 +15,8 @@ static size_t serialize(const JsonDocument &doc, char *out, size_t size) {
 }
 
 size_t buildHeartbeat(char *out, size_t size, const char *mac, uint16_t listenPort, uint32_t seq, uint16_t batteryMv,
-                      const char *firmwareVersion, const Diagnostics &diagnostics, const char *color) {
+                      const char *firmwareVersion, const Diagnostics &diagnostics, const char *color,
+                      int batteryPercent) {
     JsonDocument doc;
     doc["t"] = "HB";
     doc["id"] = mac;
@@ -33,6 +34,9 @@ size_t buildHeartbeat(char *out, size_t size, const char *mac, uint16_t listenPo
     }
     if (color != nullptr && color[0] != '\0') {
         doc["col"] = color;
+    }
+    if (batteryPercent >= 0) {
+        doc["pct"] = batteryPercent > 100 ? 100 : batteryPercent;
     }
     return serialize(doc, out, size);
 }

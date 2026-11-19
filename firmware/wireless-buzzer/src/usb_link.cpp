@@ -1,5 +1,31 @@
 #include "usb_link.h"
 
+#if CONFIG_IDF_TARGET_ESP32S3
+
+#include <USB.h>
+
+void UsbLink::begin() {
+    // with ARDUINO_USB_CDC_ON_BOOT the core starts USB; this only sets up Serial. A line to a closed port is dropped
+    // right away, nothing waits for it.
+    Serial.begin(115200);
+    connected = (bool) USB;
+}
+
+bool UsbLink::poll(uint32_t nowMs) {
+    connected = (bool) USB;
+    // the DTR and RTS that opening the port raises
+    bool open = (bool) Serial;
+    bool opened = open && !portOpen;
+    portOpen = open;
+    return opened;
+}
+
+void UsbLink::end() {
+    Serial.flush();
+}
+
+#else
+
 #include <driver/gpio.h>
 
 static const gpio_num_t TX_PIN = GPIO_NUM_1;
@@ -83,3 +109,5 @@ void UsbLink::end() {
         disconnect();
     }
 }
+
+#endif

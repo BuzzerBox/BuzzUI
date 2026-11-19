@@ -3,8 +3,9 @@
 #include <stdint.h>
 
 /**
- * Decides when the buzzer goes back to deep sleep. It stays awake while the server says a game is running. Without a
- * game it sleeps after a while without anything happening, and it gives up when it can't reach the server.
+ * Decides when the buzzer goes back to deep sleep. It stays awake while the server says a game is running, and while it
+ * is plugged into a computer or the box over USB. Without either it sleeps after a while without anything happening,
+ * and it gives up when it can't reach the server.
  */
 class PowerPolicy {
 public:
@@ -33,6 +34,11 @@ public:
     void onActivity(uint32_t nowMs);
     /** An answer of the server */
     void onState(uint32_t nowMs, bool game);
+    /**
+     * Whether a computer or the box has the buzzer on USB, which can't wake it while it sleeps (the Feather ESP32-S3:
+     * its USB is gone in deep sleep). Unplugging it starts the idle time.
+     */
+    void setPluggedIn(uint32_t nowMs, bool pluggedIn);
 
     Connection connection(uint32_t nowMs) const;
     bool isGameRunning(uint32_t nowMs) const;
@@ -44,6 +50,7 @@ private:
     uint32_t lastContactMs = 0;
     bool hadContact = false;
     bool game = false;
+    bool pluggedIn = false;
 
     // since then, also across the wraparound of millis() after 49 days. An event taken a moment after now (the loop
     // reads the time before handling what came in) is no time ago, not 49 days.
