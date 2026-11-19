@@ -2,12 +2,35 @@
 
 ## The box's settings
 
-Each BuzzerBox has a few settings of its own: the name and password of its WiFi, its address, and whether it has
-wired buzzers. They are in the file **`buzzerbox.txt`** on the box's memory card, which any computer can read.
+Each BuzzerBox has a few settings of its own: the name and password of its WiFi, its address, whether it has wired
+buzzers, and the TV's resolution. They are in the file **`buzzerbox.txt`** on the box's memory card, which any computer
+can read.
 
 **Give your box its own WiFi password.** Every box starts with the same one, which is public.
 
-To change them:
+### On the game master
+
+The gear icon at the top of the game master's home page opens the page **BuzzerBox settings** (Einstellungen der
+BuzzerBox). It shows the settings, the box's hardware (model, memory, storage, temperature, software version) and who can
+log in over SSH. It is only there while no game is set up.
+
+By default the page only shows the settings. To change them there, the file has to allow it once: add the line
+`EDIT_IN_MASTER=true` to `buzzerbox.txt` on the memory card (see below). Whoever can take out the card decides, so
+guests on the WiFi can't change the box. Then:
+
+1. Click **Edit** (Bearbeiten). Each field says what it takes, and the page checks it as you type.
+
+   ![Editing the BuzzerBox settings on the game master](images/box-settings.png)
+2. Change what you need and click **Save** (Speichern) at the bottom. If you leave the page with changes that aren't
+   saved, it asks first.
+3. The settings apply from the box's next start, so the page offers **Restart now** (Jetzt neu starten). If you changed
+   the WiFi or the address, it tells you which WiFi to join and what to open afterwards.
+
+Saving and restarting aren't possible while a game is set up.
+
+### On the memory card
+
+Without `EDIT_IN_MASTER=true`, or to change that line itself:
 
 1. Switch the box off and take out its **SD card**. (A box with a Compute Module has no card; ask whoever built it.)
 2. Put the card into a computer. It shows up as a drive called **`bootfs`**.
@@ -27,6 +50,8 @@ To change them:
    | `WIFI_CHANNEL` | The WiFi channel; try another one if the WiFi is unreliable where many other WiFis are | 1 to 13 |
    | `ANALOG_BUZZERS` | `no` for a box without ports for wired buzzers | `yes` or `no` |
    | `SERVER_HOSTNAMES` | The names devices can open the box under | names separated by spaces |
+   | `SCREEN_MODE` | The TV's resolution, e.g. `1920x1080@60`; `auto` lets the TV choose | see the reference |
+   | `EDIT_IN_MASTER` | `true` lets the game master change the settings | `true` or `false` |
 
    Keep the format `NAME=value`, without spaces around `=` and without quotes. The other lines are for technicians, see
    the [box settings reference](../box-settings.md).
