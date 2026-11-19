@@ -331,7 +331,6 @@ export class GameService {
                     type: 'serial',
                     // optional in the config, so missing from its type
                     color: BuzzerHelper.normalizeColor((buzzConf as {color?: string}).color)
-                    // TODO remove EKeyBind
                 }
                 this.buzzerConfig.push(c);
                 this.keyOrByteCodesInUse.push(c.byteBind);
@@ -1023,9 +1022,8 @@ export class GameService {
         // it is very likely, that the master already reloaded the page, thus this is null
         this.sendToMaster<ISetBuzzerLockPacket>(packet);
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
-        // release the lock via i2c if necessary
+        // release the box's lock too
         if (sendSerial && !packet.setLock) {
-            // MicroControllerI2CAdapter.releaseBuzzerLock().catch(this.handleI2CError);
             MicroControllerSerialAdapter.sendSerialCommandReleaseLock();
         }
     }
@@ -1041,51 +1039,6 @@ export class GameService {
         this.currentGameState.mediaVolume = packet.mediaVolume;
         this.sendToMaster<ISetMediaVolumePacket>(packet);
         this.sendToAllScreens<ISetMediaVolumePacket>(packet);
-    }
-
-    private startMicroControllerI2CPolling(): void {
-        // setInterval(this.handleMicroControllerI2CRead.bind(this), parseInt(config.i2c.pollingInMS, 10));
-    }
-
-    /*private async handleMicroControllerI2CRead(): Promise<void> {
-        if (await MicroControllerI2CAdapter.isBuzzerLockActive()) {
-            const buzzerNumber: number = await MicroControllerI2CAdapter.getPressedBuzzer();
-            console.log("got number " + buzzerNumber);
-            if (0 <= buzzerNumber && buzzerNumber <= 9) {
-                this.handlePressedBuzzer(buzzerNumber);
-            }
-        } else {
-            // console.log("no buzzer lock active");
-            const buzzerNumber: number = await MicroControllerI2CAdapter.getPressedBuzzer();
-            console.log("got number " + buzzerNumber);
-            if (0 <= buzzerNumber && buzzerNumber <= 9) {
-                this.handlePressedBuzzer(buzzerNumber);
-            } else if (buzzerNumber === 127) {
-                this.handleIdleSituation();
-            }
-        }
-    }*/
-
-    private handleI2CError(e): void {
-        console.log("I2C error occured", e);
-    }
-
-    private handlePressedBuzzer(buzzerNumber: number): void {
-        const lockPacket: ISetBuzzerLockPacket =  PacketHelper.makeBuzzerLockPacket(true);
-        const markTeamPacket: IMarkTeamPacket = PacketHelper.makeMarkTeamPacket(this.teams[buzzerNumber].teamId, true);
-        this.sendToMaster<ISetBuzzerLockPacket>(lockPacket);
-        this.sendToMaster<IMarkTeamPacket>(markTeamPacket);
-        this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
-        this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
-    }
-
-    private handleIdleSituation(): void {
-        const lockPacket: ISetBuzzerLockPacket =  PacketHelper.makeBuzzerLockPacket(false);
-        const markTeamPacket: IMarkTeamPacket = PacketHelper.makeUnmarkAllTeamsPacket();
-        this.sendToMaster<ISetBuzzerLockPacket>(lockPacket);
-        this.sendToMaster<IMarkTeamPacket>(markTeamPacket);
-        this.sendToAllScreens<ISetBuzzerLockPacket>(lockPacket);
-        this.sendToAllScreens<IMarkTeamPacket>(markTeamPacket);
     }
 
     private onSerialDataIn(data: Buffer): void {
