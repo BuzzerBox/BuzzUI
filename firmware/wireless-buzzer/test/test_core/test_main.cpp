@@ -163,6 +163,27 @@ void test_an_event_a_moment_after_now_is_no_time_ago() {
     TEST_ASSERT_FALSE(policy.shouldSleep(5000));
 }
 
+void test_stays_awake_while_plugged_in() {
+    PowerPolicy policy(TIMEOUTS);
+    policy.onWake(0);
+    policy.setPluggedIn(0, true);
+    // no WiFi and no server, for an hour
+    TEST_ASSERT_FALSE(policy.shouldSleep(3600000));
+    // unplugged, it has the time to connect again
+    policy.setPluggedIn(3600000, false);
+    TEST_ASSERT_FALSE(policy.shouldSleep(3600000 + 20000));
+    TEST_ASSERT_TRUE(policy.shouldSleep(3600000 + 20001));
+}
+
+void test_stays_awake_while_plugged_in_after_losing_the_server() {
+    PowerPolicy policy(TIMEOUTS);
+    policy.onWake(0);
+    policy.onState(1000, false);
+    policy.setPluggedIn(1000, true);
+    TEST_ASSERT_TRUE(policy.connection(100000) == PowerPolicy::Connection::LOST);
+    TEST_ASSERT_FALSE(policy.shouldSleep(100000));
+}
+
 // ----- messages
 
 void test_builds_a_heartbeat() {
@@ -188,6 +209,19 @@ void test_tells_the_color_in_the_heartbeat() {
     TEST_ASSERT_NOT_NULL(strstr(out, ",\"col\":\"#1e88e5\"}"));
     messages::buildHeartbeat(out, sizeof(out), "AA:BB:CC:DD:EE:01", 5006, 7, 3912, "1.0.0", messages::Diagnostics(), "");
     TEST_ASSERT_NULL(strstr(out, "col"));
+}
+
+void test_tells_the_battery_charge_in_the_heartbeat() {
+    char out[200];
+    messages::buildHeartbeat(out, sizeof(out), "AA:BB:CC:DD:EE:01", 5006, 7, 3912, "1.3.0", messages::Diagnostics(),
+                             "", 87);
+    TEST_ASSERT_NOT_NULL(strstr(out, ",\"pct\":87}"));
+    // a fuel gauge may tell more than 100 % right after charging
+    messages::buildHeartbeat(out, sizeof(out), "AA:BB:CC:DD:EE:01", 5006, 7, 4200, "1.3.0", messages::Diagnostics(),
+                             "", 103);
+    TEST_ASSERT_NOT_NULL(strstr(out, ",\"pct\":100}"));
+    messages::buildHeartbeat(out, sizeof(out), "AA:BB:CC:DD:EE:01", 5006, 7, 3912, "1.3.0", messages::Diagnostics());
+    TEST_ASSERT_NULL(strstr(out, "pct"));
 }
 
 void test_builds_a_press_with_and_without_the_server_time() {
@@ -314,8 +348,11 @@ int main() {
     RUN_TEST(test_a_lost_server_ends_even_a_game_after_a_while);
     RUN_TEST(test_timeouts_survive_the_millis_wraparound);
     RUN_TEST(test_an_event_a_moment_after_now_is_no_time_ago);
+    RUN_TEST(test_stays_awake_while_plugged_in);
+    RUN_TEST(test_stays_awake_while_plugged_in_after_losing_the_server);
     RUN_TEST(test_builds_a_heartbeat);
     RUN_TEST(test_tells_the_color_in_the_heartbeat);
+    RUN_TEST(test_tells_the_battery_charge_in_the_heartbeat);
     RUN_TEST(test_builds_a_press_with_and_without_the_server_time);
     RUN_TEST(test_does_not_overflow_a_small_buffer);
     RUN_TEST(test_parses_a_state);

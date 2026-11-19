@@ -8,7 +8,7 @@
  *
  *   buzzer → server  {"t":"HB","id":<MAC>,"lp":<port>,"seq":<n>,"bat":<mV>,"fw":<version>,           every second
  *                     "rr":<reset reason>,"up":<s awake>,"wd":<WiFi drops>,"wr":<last drop reason>,
- *                     "col":<color of the case, "#rrggbb">}
+ *                     "col":<color of the case, "#rrggbb">,"pct":<battery charge in %, from a fuel gauge>}
  *   buzzer → server  {"t":"PRESS","id":<MAC>,"n":<press number>,"ts":<µs on the server's clock>}
  *   server → buzzer  {"t":"STATE","selected":…,"locked":…,"game":…,"st":<server µs>,"ack":<seq>,"pa":<n>}
  *
@@ -51,9 +51,13 @@ struct WifiSettings {
     bool hasColor = false;
 };
 
-/** The length of the packet, or 0 if it doesn't fit */
+/**
+ * The length of the packet, or 0 if it doesn't fit
+ * @param batteryPercent the charge of the battery from a fuel gauge (0-100), or -1 without one
+ */
 size_t buildHeartbeat(char *out, size_t size, const char *mac, uint16_t listenPort, uint32_t seq, uint16_t batteryMv,
-                      const char *firmwareVersion, const Diagnostics &diagnostics, const char *color = "");
+                      const char *firmwareVersion, const Diagnostics &diagnostics, const char *color = "",
+                      int batteryPercent = -1);
 /** Without a synchronized clock the time is left out; the server then takes the press after the others */
 size_t buildPress(char *out, size_t size, const char *mac, uint32_t number, bool hasServerTime, int64_t serverUs);
 bool parseState(const char *json, size_t length, State &state);

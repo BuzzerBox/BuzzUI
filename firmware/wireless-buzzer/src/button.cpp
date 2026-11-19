@@ -1,5 +1,7 @@
 #include "button.h"
 
+#include "config.h"
+
 #include <esp_timer.h>
 
 void IRAM_ATTR Button::onFallingEdge(void *arg) {
@@ -27,8 +29,8 @@ void Button::clearEdge() {
 void Button::begin(gpio_num_t buttonPin, uint32_t debounceMs) {
     pin = buttonPin;
     debounceUs = (int64_t) debounceMs * 1000;
-    // pins 34-39 have no pull-ups, the board has one
-    pinMode(pin, pin < GPIO_NUM_34 ? INPUT_PULLUP : INPUT);
+    // the ESP32's pins 34-39 have no pull-ups, the board has one
+    pinMode(pin, hasPullUp(pin) ? INPUT_PULLUP : INPUT);
     // the press that woke the buzzer up doesn't buzz
     held = isDown();
     attachInterruptArg(digitalPinToInterrupt(pin), onFallingEdge, this, FALLING);

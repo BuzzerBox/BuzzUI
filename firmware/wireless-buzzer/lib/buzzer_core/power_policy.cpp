@@ -20,6 +20,13 @@ void PowerPolicy::onState(uint32_t nowMs, bool gameRunning) {
     game = gameRunning;
 }
 
+void PowerPolicy::setPluggedIn(uint32_t nowMs, bool plugged) {
+    if (pluggedIn && !plugged) {
+        lastActivityMs = nowMs;
+    }
+    pluggedIn = plugged;
+}
+
 PowerPolicy::Connection PowerPolicy::connection(uint32_t nowMs) const {
     if (!hadContact) {
         return Connection::CONNECTING;
@@ -32,6 +39,9 @@ bool PowerPolicy::isGameRunning(uint32_t nowMs) const {
 }
 
 bool PowerPolicy::shouldSleep(uint32_t nowMs) const {
+    if (pluggedIn) {
+        return false;
+    }
     switch (connection(nowMs)) {
         case Connection::CONNECTING:
             return since(nowMs, lastActivityMs) > timeouts.connectMs;

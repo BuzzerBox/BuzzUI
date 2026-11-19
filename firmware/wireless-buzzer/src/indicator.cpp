@@ -6,8 +6,8 @@ static const uint32_t FLASH_PERIOD_MS = 300;
 static const int LIGHT_CHANNEL = 0;
 
 void Indicator::begin() {
-    pinMode(NEOPIXEL_I2C_POWER, OUTPUT);
-    digitalWrite(NEOPIXEL_I2C_POWER, HIGH);
+    pinMode(PIXEL_POWER_PIN, OUTPUT);
+    digitalWrite(PIXEL_POWER_PIN, HIGH);
     if (LIGHT_PIN >= 0) {
         ledcSetup(LIGHT_CHANNEL, 5000, 8);
         ledcAttachPin(LIGHT_PIN, LIGHT_CHANNEL);
@@ -89,5 +89,5 @@ void Indicator::show(Color color, bool light) {
 
 void Indicator::shutdown() {
     show({0, 0, 0}, false);
-    digitalWrite(NEOPIXEL_I2C_POWER, LOW);
+    digitalWrite(PIXEL_POWER_PIN, LOW);
 }
