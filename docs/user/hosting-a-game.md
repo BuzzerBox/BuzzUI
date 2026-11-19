@@ -40,8 +40,10 @@ After choosing a game, you prepare it:
 1. **Name of the savegame.** The game is saved under this name while you play. It starts with the date and time.
 2. **Buzzers.** A game is played either with the box's **analog buzzers** (the wired ones) or with the **digital
    buzzers** (the wireless ones), not with both. Tick a buzzer for each team that plays and type its name. A team on a
-   wireless buzzer with a case color is named after it, like "Blue". At least two teams have to play. A wireless buzzer
-   that is switched off or asleep is marked as not connected, and one with an almost empty battery with a battery icon.
+   wireless buzzer with a case color is named after it, like "Blue". At least two teams have to play, and each needs a
+   name of its own: while two have the same one, both are marked with "Another team already has this name" (*Ein
+   anderes Team hat schon diesen Namen*) and the game can't start. A wireless buzzer that is switched off or asleep is
+   marked as not connected, and one with an almost empty battery with a battery icon.
 3. **Look of the screen** (*Aussehen der Anzeige*):
    - **Studio**: dark like a TV studio, with team colors, effects and a podium at the end.
    - **Daylight** (*Tageslicht*): the same, but light, for bright rooms and projectors.
@@ -122,7 +124,7 @@ The toolbar of the play page shows when the game was last saved (the cloud icon)
 
 | Entry | What it does |
 |---|---|
-| **Edit teams** (*Teams bearbeiten*) | Rename teams, or add and remove them during the game. A removed team loses its points. |
+| **Edit teams** (*Teams bearbeiten*) | Rename teams, or add and remove them during the game. A removed team loses its points. Like at the start, two teams can't have the same name. |
 | **Language** | German or English, for the game master and all screens. |
 | **End game** (*Spiel beenden*) | Ends the game and shows the final score with the winners. |
 | **Pause game** (*Spiel pausieren*) | Goes back to the home page and keeps the savegame, to carry on later with **Continue game**. |

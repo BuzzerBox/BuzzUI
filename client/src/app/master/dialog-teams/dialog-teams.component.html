@@ -18,7 +18,10 @@
         </mat-checkbox>
         <mat-form-field class="team-name">
           <mat-label>{{'common.teamName' | transloco}}</mat-label>
-          <input matInput [formControlName]="row.controlName">
+          <input matInput [formControlName]="row.controlName" [errorStateMatcher]="nameErrorStateMatcher">
+          @if (hasDuplicateName(row)) {
+            <mat-error>{{'teams.duplicateName' | transloco}}</mat-error>
+          }
         </mat-form-field>
         <span class="team-points">
           @if (row.team) {

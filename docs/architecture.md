@@ -153,7 +153,9 @@ every heartbeat (`col`), so it becomes `IBuzzer.color`. The server copies it ont
 screens' `TeamColorHelper` prefers it over the palette by position. The client names wireless buzzers in the master's
 language (`BuzzerNameHelper`): after the color ("Blauer Wireless Buzzer", with the end of the MAC if two share one),
 or "Funkbuzzer" and the end of the MAC. A new team on a colored buzzer is named after the color ("Blau", "Blau 2",
-`TeamHelper.makeDefaultName`).
+`TeamHelper.makeDefaultName`), one on another buzzer "Team <n>", skipping names the other teams have. Teams that play
+need distinct names (compared ignoring case and surrounding spaces): `TeamHelper.distinctNamesValidator` on the team
+forms of `prepare-game` and `dialog-teams` blocks starting or applying while two have the same name.
 
 ### Adopting wireless buzzers over USB
 
