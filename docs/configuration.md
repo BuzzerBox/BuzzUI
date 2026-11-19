@@ -75,7 +75,6 @@ and `/srv/storage`.
 | `serial.stuffingBit` | `0` | The second byte of a command without a parameter. |
 | `serial.eol` | `255` | The byte that ends every command. |
 | `serial.heartbeatIntervalInMS` | `2000` | How often the server sends a heartbeat, so the box shows that the Pi is connected. |
-| `i2c.*` | | Not used. Left from when the microcontroller was read over I2C. |
 
 A command to the microcontroller is three bytes: `[command, parameter or stuffingBit, eol]`.
 

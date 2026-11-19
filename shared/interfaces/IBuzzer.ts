@@ -1,5 +1,3 @@
-import {EKeyBinds} from '../shared';
-
 export interface IBuzzer {
     id: string;
     /** Of a buzzer of the box, from the config. The client names a UDP buzzer after its color, in its language. */

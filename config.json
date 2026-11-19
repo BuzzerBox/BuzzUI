@@ -75,17 +75,6 @@
       "byte": 30
     }
   ],
-  "i2c": {
-    "pollingInMS": "150",
-    "busNumber": "1",
-    "addresses": {
-      "microController": "25"
-    },
-    "commands": {
-      "softRelease": "1",
-      "setBuzzer": "2"
-    }
-  },
   "boxSettingsFile": "/etc/buzzerbox/box.conf",
   "serial": {
     "baudRate": 115200,
