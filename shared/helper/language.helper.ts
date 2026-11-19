@@ -6,7 +6,8 @@ export type TLanguage = 'de' | 'en';
 
 export class LanguageHelper {
     public static readonly LANGUAGES: TLanguage[] = ['de', 'en'];
-    public static readonly DEFAULT_LANGUAGE: TLanguage = 'de';
+    // until the master chooses one, and for a text a language lacks
+    public static readonly DEFAULT_LANGUAGE: TLanguage = 'en';
 
     private constructor() {
         // hide constructor

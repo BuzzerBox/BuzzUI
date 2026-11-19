@@ -7,9 +7,8 @@ import {
   platformBrowserDynamicTesting
 } from '@angular/platform-browser-dynamic/testing';
 
-import {getI18nTestingModule} from './app/i18n/i18n-testing.module';
+import {getI18nTestingModule, SPEC_LANGUAGE} from './app/i18n/i18n-testing.module';
 import {setActiveLanguage} from './app/i18n/i18n';
-import {LanguageHelper} from '../../shared/shared';
 
 // First, initialize the Angular testing environment.
 getTestBed().initTestEnvironment(
@@ -19,8 +18,8 @@ getTestBed().initTestEnvironment(
 }
 );
 
-// every spec gets the app's texts in the default language, see getI18nTestingModule()
+// every spec gets the app's texts in German, see getI18nTestingModule()
 beforeEach(() => {
-  setActiveLanguage(LanguageHelper.DEFAULT_LANGUAGE);
+  setActiveLanguage(SPEC_LANGUAGE);
   TestBed.configureTestingModule({imports: [getI18nTestingModule()]});
 });

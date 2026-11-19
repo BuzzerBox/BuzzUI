@@ -3,6 +3,7 @@ import {TranslocoService} from '@jsverse/transloco';
 import {LanguageHelper} from '../../../../shared/shared';
 import {pluralKey, setActiveLanguage, t, tn, TRANSLATIONS} from './i18n';
 import {LanguageService} from './language.service';
+import {SPEC_LANGUAGE} from './i18n-testing.module';
 
 function flatten(texts: Record<string, unknown>, prefix = ''): Record<string, string> {
   return Object.entries(texts).reduce((all, [key, value]) => typeof value === 'string'
@@ -72,13 +73,16 @@ describe('LanguageService', () => {
   });
 
   afterEach(() => {
+    // the other specs check German texts
+    service.setLanguage(SPEC_LANGUAGE);
     localStorage.removeItem('buzzerbox.language');
     document.documentElement.lang = LanguageHelper.DEFAULT_LANGUAGE;
   });
 
-  it('starts in the default language', () => {
+  it('starts in the default language, English', () => {
     service.init();
-    expect(service.getLanguage()).toBe('de');
+    expect(service.getLanguage()).toBe('en');
+    expect(t('common.cancel')).toBe('Cancel');
   });
 
   it('changes the language of the pipe and of t(), and remembers it', () => {
@@ -97,10 +101,11 @@ describe('LanguageService', () => {
   });
 
   it('ignores a language it does not know', () => {
+    service.setLanguage('de');
     service.setLanguage('fr');
     expect(service.getLanguage()).toBe('de');
     localStorage.setItem('buzzerbox.language', 'fr');
     service.init();
-    expect(service.getLanguage()).toBe('de');
+    expect(service.getLanguage()).toBe('en');
   });
 });
