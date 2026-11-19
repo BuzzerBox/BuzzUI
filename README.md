@@ -8,6 +8,27 @@ The box opens its own WiFi and needs no internet. The person hosting joins that 
 a browser, and runs the game from there. The TV on the box's HDMI port shows the *screen*. The first team to press its
 buzzer locks out the others, and the game master grades the answer.
 
+**Website:** [buzzerbox.github.io](https://buzzerbox.github.io/)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/user/images/screen-buzz.jpg" alt="The screen on the TV when a team buzzed"></td>
+    <td width="50%"><img src="docs/user/images/play-question.png" alt="The game master's play page"></td>
+  </tr>
+  <tr>
+    <td align="center">The screen on the TV: a team buzzed first</td>
+    <td align="center">The game master runs the game from a phone, tablet or notebook</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/user/images/editor-questions.png" alt="The editor for a game's questions"></td>
+    <td width="50%"><img src="docs/user/images/screen-podium.png" alt="The final score on the screen"></td>
+  </tr>
+  <tr>
+    <td align="center">Quizzes are made in the browser, with images, videos and audio</td>
+    <td align="center">The final score</td>
+  </tr>
+</table>
+
 ## Documentation
 
 **For hosts** (people who run a quiz with a BuzzerBox): start with the [user guide](docs/user/README.md).
