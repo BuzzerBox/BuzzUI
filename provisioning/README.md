@@ -49,7 +49,7 @@ installed packages. Options:
   ```
 
 If `install/.assets/update-public-key.pem` exists, it goes into the image. Without it, the box can't install updates
-(see the main README).
+(see [operations](../docs/operations.md#signing)).
 
 The build runs natively on an arm64 machine (Apple Silicon, or the arm64 GitHub runner). On x86-64, register arm64
 emulation first: `docker run --privileged --rm tonistiigi/binfmt --install arm64`.

@@ -51,6 +51,5 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "8.46.4"
   },
-  "author": "Patrick M. Aufdermauer",
-  "license": "CC-BY-SA-4.0"
+  "author": "Patrick M. Aufdermauer"
 }
