@@ -23,6 +23,20 @@ export class FormatHelper {
   }
 
   /**
+   * A number as the active language writes it, like "1,5" or "1.5"
+   */
+  public static formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
+    return value.toLocaleString(LOCALES[getActiveLanguage()], options);
+  }
+
+  /**
+   * Text that goes into [innerHTML] with a translated text, so that e.g. a WiFi name with "<" in it stays text
+   */
+  public static escapeHtml(text: string): string {
+    return text.replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;'})[c]);
+  }
+
+  /**
    * An ISO date as day and time, like "15.10.2026, 20:30" or "15 Oct 2026, 20:30"
    */
   public static formatDateTime(isoDate: string): string {

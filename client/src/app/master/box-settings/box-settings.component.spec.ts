@@ -15,6 +15,8 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ReplaySubject, Subject} from 'rxjs';
 import {BoxSettingsHelper, EPacketTypes, IBoxSettingsPacket, IResponsePacket} from '../../../../../shared/shared';
 import {GameService} from '../../services/game.service';
+import {TranslocoService} from '@jsverse/transloco';
+import {setActiveLanguage} from '../../i18n/i18n';
 import {BoxSettingsComponent} from './box-settings.component';
 
 describe('BoxSettingsComponent', () => {
@@ -145,8 +147,9 @@ describe('BoxSettingsComponent', () => {
     const component = fixture.componentInstance;
     component.startEditing();
     const field = (key: string) => component.groups.flatMap(g => g.fields).find(f => f.key === key);
-    expect(field('TOUCH_DISPLAY').options).toEqual([{value: '10inch', label: 'Ja'}, {value: 'none', label: 'Nein'}]);
-    expect(field('TOUCH_DISPLAY_ROTATION').options).toEqual([{value: '90', label: 'Ja'}, {value: '270', label: 'Nein'}]);
+    const shown = (key: string) => field(key).options.map(o => [o.value, component.getOptionLabel(o)]);
+    expect(shown('TOUCH_DISPLAY')).toEqual([['10inch', 'Ja'], ['none', 'Nein']]);
+    expect(shown('TOUCH_DISPLAY_ROTATION')).toEqual([['90', 'Ja'], ['270', 'Nein']]);
     expect(component.getOptions(field('TOUCH_DISPLAY')).map(o => o.value)).toEqual(['10inch', 'none', '7inch']);
     expect(component.getOptions(field('TOUCH_DISPLAY_ROTATION')).map(o => o.value)).toEqual(['90', '270', '0']);
   });
@@ -261,5 +264,24 @@ describe('BoxSettingsComponent', () => {
     expect(await firstValueFrom(component.canLeave() as Observable<boolean>)).toBeTrue();
     component.cancelEditing();
     expect(component.canLeave()).toBeTrue();
+  });
+
+  it('shows its texts in English', () => {
+    setActiveLanguage('en');
+    TestBed.inject(TranslocoService).setActiveLang('en');
+    fixture.detectChanges();
+    const info = makeInfo(false);
+    info.settings.find(s => s.key === 'TOUCH_DISPLAY').value = '10inch';
+    settings.next(info);
+    fixture.detectChanges();
+    expect(text()).toContain('BuzzerBox settings');
+    expect(text()).toContain('WiFi name');
+    expect(text()).toContain('Touchscreen');
+    expect(text()).toContain('Yes');
+    // 1.5 as English writes it
+    expect(text()).toContain('Automatic (1.5×)');
+    expect(text()).toContain('Running for');
+    expect(text()).toContain('1 day, 2 h');
+    expect(text()).not.toContain('Einstellungen');
   });
 });

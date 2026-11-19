@@ -207,6 +207,147 @@
       "confirm": "Discard"
     }
   },
+  "boxSettings": {
+    "title": "BuzzerBox settings",
+    "edit": "Edit",
+    "save": "Save",
+    "loading": "Loading the settings …",
+    "unavailable": "This server has no BuzzerBox settings.",
+    "intro": "From the file <code>buzzerbox.txt</code> on the memory card's boot partition. The box applies them every time it starts.",
+    "failed": "That didn't work.",
+    "restarting": "The BuzzerBox is restarting, which takes about a minute.",
+    "restartingConnect": "Then connect to the WiFi “{{wifi}}” and open <strong>{{address}}</strong>.",
+    "restartingReconnect": "This page reconnects by itself afterwards.",
+    "saved": "Saved. The changes apply from the BuzzerBox's next start.",
+    "savedConnect": "After the restart, all devices are disconnected. Connect them to the WiFi “{{wifi}}” and open <strong>{{address}}</strong>.",
+    "savedBuzzers": "Wireless buzzers need to be adopted again over USB for this.",
+    "restartNow": "Restart now",
+    "confirmRestart": "Restart the BuzzerBox now? All devices lose their connection for a moment.",
+    "restart": "Restart",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "default": "Default",
+    "defaultHint": "The file doesn't set this value itself",
+    "invalidInFile": "“{{value}}” in the file is invalid, so the default applies.",
+    "invalid": "Invalid. {{hint}}",
+    "ethernetInWifiNetwork": "Must be in a different network from the WiFi address.",
+    "fromFile": "{{value}} (from buzzerbox.txt)",
+    "editingWarning": "If the WiFi or the address changes, all devices are disconnected after the restart and have to connect again.",
+    "readOnly": "To change them, put the memory card into a computer and edit <code>buzzerbox.txt</code>. With <code>{{editKey}}=true</code> in the file, the settings can be changed here as well.",
+    "confirmLeave": {
+      "title": "Discard the changes?",
+      "message": "The changed settings haven't been saved yet.",
+      "confirm": "Discard"
+    },
+    "groups": {
+      "wifi": "WiFi",
+      "buzzers": "Buzzers",
+      "network": "Network",
+      "displays": "Displays",
+      "hardware": "Hardware"
+    },
+    "fields": {
+      "WIFI_SSID": {
+        "label": "WiFi name",
+        "hint": "1 to 32 characters"
+      },
+      "WIFI_PASSPHRASE": {
+        "label": "Password",
+        "hint": "8 to 63 characters, no umlauts or other special letters"
+      },
+      "WIFI_COUNTRY_CODE": {
+        "label": "Country",
+        "hint": "Two letters, e.g. DE, AT or CH. It decides which channels are allowed."
+      },
+      "WIFI_CHANNEL": {
+        "label": "Channel",
+        "hint": "1 to 13"
+      },
+      "WIFI_ANTENNA": {
+        "label": "Antenna",
+        "hint": "Only the Compute Module 4 has the external antenna."
+      },
+      "ANALOG_BUZZERS": {
+        "label": "Analog buzzers",
+        "hint": "Buzzers plugged into the box's sockets. Without them, the box offers only the wireless buzzers."
+      },
+      "SERVER_IP_ADDRESS": {
+        "label": "WiFi address",
+        "hint": "Devices get the addresses .50 to .150 of the same network."
+      },
+      "ETHERNET_IP_ADDRESS": {
+        "label": "Ethernet address",
+        "hint": "For a laptop on a cable; in a different network from the WiFi."
+      },
+      "SERVER_HOSTNAMES": {
+        "label": "Names of the box",
+        "hint": "The box can be opened under these names, separated by spaces."
+      },
+      "SCREEN_MODE": {
+        "label": "TV resolution",
+        "hint": "If the TV doesn't offer the resolution, it chooses one itself. A Raspberry Pi 4 can't play 4K at 60 Hz smoothly."
+      },
+      "TOUCH_DISPLAY": {
+        "label": "Touchscreen",
+        "hint": "With the touchscreen, the box shows the game master's controls on it."
+      },
+      "TOUCH_DISPLAY_ROTATION": {
+        "label": "Rotate the touch display",
+        "hint": "Yes turns the picture upside down, in case the touchscreen is built in the other way round."
+      },
+      "TOUCH_DISPLAY_SCALE": {
+        "label": "Size on the touch display",
+        "hint": "How large the game master's controls appear on the touch display."
+      }
+    },
+    "options": {
+      "yes": "Yes",
+      "no": "No",
+      "internal": "Internal",
+      "external": "External",
+      "screenModeAuto": "The TV's choice (often 4K)",
+      "scaleAuto": "Automatic ({{factor}}×)",
+      "scaleNormal": "Normal ({{factor}}×)",
+      "scale": "{{factor}}×"
+    },
+    "hardware": {
+      "model": "Model",
+      "serialNumber": "Serial number",
+      "memory": "Memory",
+      "storage": "Storage",
+      "temperature": "Temperature",
+      "operatingSystem": "Operating system",
+      "uptime": "Running for",
+      "software": "Software",
+      "storageKinds": {
+        "emmc": "eMMC",
+        "sd": "SD card",
+        "usb": "USB drive",
+        "drive": "Drive"
+      },
+      "free": "{{size}} free",
+      "days": {
+        "one": "{{count}} day, {{hours}} h",
+        "other": "{{count}} days, {{hours}} h"
+      },
+      "hours": "{{hours}} h {{minutes}} min",
+      "minutes": "{{minutes}} min"
+    },
+    "ssh": {
+      "title": "SSH access",
+      "editingNote": "Keys apply as soon as they are added or removed. “Save” and “Cancel” don't affect them.",
+      "intro": "From <code>buzzerbox-ssh-keys.txt</code> on the boot partition. With one of these keys, you can log in as <code>{{user}}</code> and manage the box with <code>sudo</code>: <code>ssh {{user}}@{{address}}</code>.",
+      "noKeys": "Without keys, SSH is off.",
+      "unnamed": "Key without a name",
+      "notActiveYet": "Applies from the box's next start.",
+      "removeKey": "Remove key",
+      "addLabel": "Add a public key",
+      "private": "This is a private key, which never belongs on the box. Use the content of the file ending in .pub.",
+      "notAKey": "Not a public SSH key. It starts with e.g. ssh-ed25519 or ssh-rsa.",
+      "addHint": "The content of a .pub file, e.g. ~/.ssh/id_ed25519.pub. Applies right away.",
+      "add": "Add"
+    }
+  },
   "otherMaster": {
     "titleTakenOver": "Another device has taken control",
     "titleRefused": "Another device is controlling the BuzzerBox right now",

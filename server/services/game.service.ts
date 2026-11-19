@@ -490,7 +490,7 @@ export class GameService {
     private async onSaveBoxSettingsPacket(packet: ISaveBoxSettingsPacket): Promise<void> {
         // the settings belong to the start page, where no game is set up
         const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
-            ? 'Die Einstellungen lassen sich nur ändern, solange kein Spiel eingerichtet ist.'
+            ? 'The settings can only be changed while no game is set up.'
             : await BoxSettingsService.get().save(packet.values);
         if (reason != null) {
             LoggerService.warn(`Not saving the box's settings: ${reason}`);
@@ -513,7 +513,7 @@ export class GameService {
 
     private async onRestartBoxPacket(packet: IGamePacket): Promise<void> {
         const reason = this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP
-            ? 'Die BuzzerBox lässt sich nur neu starten, solange kein Spiel eingerichtet ist.'
+            ? 'The BuzzerBox can only be restarted while no game is set up.'
             : await BoxSettingsService.get().restart();
         if (reason != null) {
             LoggerService.warn(`Not restarting the box: ${reason}`);

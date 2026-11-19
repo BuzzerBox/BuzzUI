@@ -207,6 +207,147 @@
       "confirm": "Verwerfen"
     }
   },
+  "boxSettings": {
+    "title": "Einstellungen der BuzzerBox",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "loading": "Die Einstellungen werden geladen …",
+    "unavailable": "Auf diesem Server gibt es keine Einstellungen der BuzzerBox.",
+    "intro": "Aus der Datei <code>buzzerbox.txt</code> auf der Boot-Partition der Speicherkarte. Die Box übernimmt sie bei jedem Start.",
+    "failed": "Das hat nicht geklappt.",
+    "restarting": "Die BuzzerBox startet neu, das dauert etwa eine Minute.",
+    "restartingConnect": "Verbinde dich danach mit dem WLAN „{{wifi}}“ und öffne <strong>{{address}}</strong>.",
+    "restartingReconnect": "Diese Seite verbindet sich danach von selbst wieder.",
+    "saved": "Gespeichert. Die Änderungen gelten ab dem nächsten Start der BuzzerBox.",
+    "savedConnect": "Nach dem Neustart sind alle Geräte getrennt. Verbinde sie mit dem WLAN „{{wifi}}“ und öffne <strong>{{address}}</strong>.",
+    "savedBuzzers": "Funkbuzzer müssen dafür einmal per USB neu übernommen werden.",
+    "restartNow": "Jetzt neu starten",
+    "confirmRestart": "Die BuzzerBox jetzt neu starten? Alle Geräte verlieren kurz die Verbindung.",
+    "restart": "Neu starten",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen",
+    "default": "Standard",
+    "defaultHint": "Die Datei setzt diesen Wert nicht selbst",
+    "invalidInFile": "„{{value}}“ in der Datei ist ungültig, deshalb gilt der Standard.",
+    "invalid": "Ungültig. {{hint}}",
+    "ethernetInWifiNetwork": "Muss in einem anderen Netz liegen als die Adresse im WLAN.",
+    "fromFile": "{{value}} (aus buzzerbox.txt)",
+    "editingWarning": "Ändern sich WLAN oder Adresse, sind nach dem Neustart alle Geräte getrennt und müssen sich neu verbinden.",
+    "readOnly": "Zum Ändern die Speicherkarte in einen Computer stecken und <code>buzzerbox.txt</code> bearbeiten. Mit <code>{{editKey}}=true</code> in der Datei lassen sich die Einstellungen auch hier ändern.",
+    "confirmLeave": {
+      "title": "Änderungen verwerfen?",
+      "message": "Die geänderten Einstellungen sind noch nicht gespeichert.",
+      "confirm": "Verwerfen"
+    },
+    "groups": {
+      "wifi": "WLAN",
+      "buzzers": "Buzzer",
+      "network": "Netzwerk",
+      "displays": "Anzeigen",
+      "hardware": "Hardware"
+    },
+    "fields": {
+      "WIFI_SSID": {
+        "label": "Name des WLANs",
+        "hint": "1 bis 32 Zeichen"
+      },
+      "WIFI_PASSPHRASE": {
+        "label": "Passwort",
+        "hint": "8 bis 63 Zeichen ohne Umlaute"
+      },
+      "WIFI_COUNTRY_CODE": {
+        "label": "Land",
+        "hint": "Zwei Buchstaben, z. B. DE, AT oder CH. Davon hängt ab, welche Kanäle erlaubt sind."
+      },
+      "WIFI_CHANNEL": {
+        "label": "Kanal",
+        "hint": "1 bis 13"
+      },
+      "WIFI_ANTENNA": {
+        "label": "Antenne",
+        "hint": "Die externe Antenne gibt es nur beim Compute Module 4."
+      },
+      "ANALOG_BUZZERS": {
+        "label": "Analoge Buzzer",
+        "hint": "An die Anschlüsse der Box gesteckte Buzzer. Ohne sie bietet die Box nur die Funkbuzzer an."
+      },
+      "SERVER_IP_ADDRESS": {
+        "label": "Adresse im WLAN",
+        "hint": "Geräte bekommen die Adressen .50 bis .150 desselben Netzes."
+      },
+      "ETHERNET_IP_ADDRESS": {
+        "label": "Adresse am Ethernet-Anschluss",
+        "hint": "Für ein Notebook am Kabel; in einem anderen Netz als das WLAN."
+      },
+      "SERVER_HOSTNAMES": {
+        "label": "Namen der Box",
+        "hint": "Unter diesen Namen lässt sich die Box öffnen, durch Leerzeichen getrennt."
+      },
+      "SCREEN_MODE": {
+        "label": "Auflösung am Fernseher",
+        "hint": "Bietet der Fernseher die Auflösung nicht an, wählt er selbst. 4K mit 60 Hz schafft ein Raspberry Pi 4 nicht flüssig."
+      },
+      "TOUCH_DISPLAY": {
+        "label": "Touchscreen",
+        "hint": "Mit dem Touchscreen zeigt die Box dort die Spielleitung."
+      },
+      "TOUCH_DISPLAY_ROTATION": {
+        "label": "Drehung des Touch-Displays",
+        "hint": "Ja stellt das Bild auf den Kopf, falls der Touchscreen andersherum eingebaut ist."
+      },
+      "TOUCH_DISPLAY_SCALE": {
+        "label": "Größe auf dem Touch-Display",
+        "hint": "Wie groß die Spielleitung auf dem Touch-Display erscheint."
+      }
+    },
+    "options": {
+      "yes": "Ja",
+      "no": "Nein",
+      "internal": "Intern",
+      "external": "Extern",
+      "screenModeAuto": "Wahl des Fernsehers (oft 4K)",
+      "scaleAuto": "Automatisch ({{factor}}-fach)",
+      "scaleNormal": "Normal ({{factor}}-fach)",
+      "scale": "{{factor}}-fach"
+    },
+    "hardware": {
+      "model": "Modell",
+      "serialNumber": "Seriennummer",
+      "memory": "Arbeitsspeicher",
+      "storage": "Speicher",
+      "temperature": "Temperatur",
+      "operatingSystem": "Betriebssystem",
+      "uptime": "Läuft seit",
+      "software": "Software",
+      "storageKinds": {
+        "emmc": "eMMC",
+        "sd": "SD-Karte",
+        "usb": "USB-Laufwerk",
+        "drive": "Laufwerk"
+      },
+      "free": "{{size}} frei",
+      "days": {
+        "one": "{{count}} Tag, {{hours}} Std.",
+        "other": "{{count}} Tagen, {{hours}} Std."
+      },
+      "hours": "{{hours}} Std. {{minutes}} Min.",
+      "minutes": "{{minutes}} Min."
+    },
+    "ssh": {
+      "title": "SSH-Zugang",
+      "editingNote": "Schlüssel gelten sofort beim Hinzufügen oder Entfernen. „Speichern“ und „Abbrechen“ betreffen sie nicht.",
+      "intro": "Aus <code>buzzerbox-ssh-keys.txt</code> auf der Boot-Partition. Mit einem dieser Schlüssel kann man sich als <code>{{user}}</code> anmelden und die Box mit <code>sudo</code> verwalten: <code>ssh {{user}}@{{address}}</code>.",
+      "noKeys": "Ohne Schlüssel ist SSH aus.",
+      "unnamed": "Schlüssel ohne Namen",
+      "notActiveYet": "Gilt ab dem nächsten Start der Box.",
+      "removeKey": "Schlüssel entfernen",
+      "addLabel": "Öffentlichen Schlüssel hinzufügen",
+      "private": "Das ist ein privater Schlüssel, der gehört nie auf die Box. Nimm den Inhalt der Datei mit .pub.",
+      "notAKey": "Kein öffentlicher SSH-Schlüssel. Er beginnt z. B. mit ssh-ed25519 oder ssh-rsa.",
+      "addHint": "Der Inhalt einer .pub-Datei, z. B. ~/.ssh/id_ed25519.pub. Gilt sofort.",
+      "add": "Hinzufügen"
+    }
+  },
   "otherMaster": {
     "titleTakenOver": "Ein anderes Gerät hat die Steuerung übernommen",
     "titleRefused": "Ein anderes Gerät steuert gerade die BuzzerBox",
