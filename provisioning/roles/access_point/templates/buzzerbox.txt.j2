@@ -37,3 +37,6 @@ TOUCH_DISPLAY_ROTATION={{ touch_display_rotation }}
 # How large the master is drawn on the touch display, as a factor from 1 to 3 (e.g. 1.5), or auto: by the display's
 # pixel density, about 150 pixels of the page per inch (5inch 1.5, 7inch 1.25, 10inch 1.5)
 TOUCH_DISPLAY_SCALE={{ touch_display_scale }}
+# Whether the settings above can also be changed on the master's start page (true or false). This setting itself can
+# only be changed here.
+EDIT_IN_MASTER={{ 'true' if box_settings_edit_in_master else 'false' }}

@@ -1,0 +1,226 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* room for the bar with "Speichern" at the bottom */
+.page.editing {
+  padding-bottom: 88px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header h1 {
+  flex: 1;
+  margin: 8px 0;
+  font-weight: 400;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background-color: #fff;
+}
+
+.actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: #fff;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.actions-inner {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+
+.intro, .note {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.group {
+  margin-top: 16px;
+}
+
+.group h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.row {
+  display: grid;
+  /* the labels on one line, the values in the rest */
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  column-gap: 16px;
+  min-height: 40px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.row.edit {
+  margin-bottom: 12px;
+  border-bottom: none;
+}
+
+/* as wide as its buttons, not the whole column */
+.row.edit mat-button-toggle-group {
+  justify-self: start;
+}
+
+.label {
+  color: rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.secret {
+  letter-spacing: 2px;
+}
+
+.reveal {
+  margin: -8px 0;
+}
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  background-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.row .invalid, .row .hint {
+  grid-column: 2;
+  font-size: 12px;
+}
+
+.row .hint {
+  color: rgba(0, 0, 0, 0.6);
+  margin-top: 4px;
+}
+
+.field {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.invalid, .error {
+  color: #c62828;
+}
+
+.status {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.success mat-icon {
+  color: #2e7d32;
+}
+
+.warning mat-icon {
+  color: #ef6c00;
+}
+
+.saved {
+  margin-top: 16px;
+  padding: 8px 16px 16px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.note-box {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.ssh-key {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ssh-key-icon {
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.ssh-key-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.ssh-key-details {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  overflow-wrap: anywhere;
+}
+
+.ssh-key-confirm {
+  display: flex;
+  gap: 4px;
+}
+
+.warning-text {
+  color: #ef6c00;
+}
+
+.ssh-new {
+  margin-top: 12px;
+}
+
+.ssh-new textarea {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.ssh-add {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+  .row {
+    grid-template-columns: 1fr;
+    padding: 4px 0;
+  }
+
+  .label {
+    white-space: normal;
+  }
+
+  .row .invalid, .row .hint {
+    grid-column: 1;
+  }
+}

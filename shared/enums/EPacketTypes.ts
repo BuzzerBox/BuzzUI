@@ -52,4 +52,30 @@ export enum EPacketTypes {
      * Sent from the master to give a wireless buzzer plugged in over USB the box's WiFi, see IAdoptUsbBuzzerPacket
      */
     ADOPT_USB_BUZZER,
+    /**
+     * Sent from the master to get the box's settings (buzzerbox.txt); the server answers with BOX_SETTINGS. It has no
+     * interface of its own, it is a plain IGamePacket.
+     */
+    REQUEST_BOX_SETTINGS,
+    /**
+     * Sent from the server to the master with the box's settings, see IBoxSettingsPacket
+     */
+    BOX_SETTINGS,
+    /**
+     * Sent from the master to change the box's settings, see ISaveBoxSettingsPacket
+     */
+    SAVE_BOX_SETTINGS,
+    /**
+     * Sent from the master to restart the box, so that changed settings count; a plain IGamePacket. Only allowed while
+     * no game is set up.
+     */
+    RESTART_BOX,
+    /**
+     * Sent from the master to allow an SSH key on the box, see IAddSshKeyPacket
+     */
+    ADD_SSH_KEY,
+    /**
+     * Sent from the master to remove an SSH key from the box, see IRemoveSshKeyPacket
+     */
+    REMOVE_SSH_KEY,
 }

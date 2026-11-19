@@ -12,7 +12,8 @@ const pathsForState: Record<EGameStatesMaster, string[]> = {
   [EGameStatesMaster.STARTING]: [pathsMaster.start],
   [EGameStatesMaster.MASTER_ACCEPTED]: [pathsMaster.start],
   // like the setup, these are only there while no game is set up
-  [EGameStatesMaster.RECEIVED_PRESETUP_DATA]: [pathsMaster.home, pathsMaster.setup, pathsMaster.loadGame, pathsMaster.prepare, pathsMaster.storage],
+  [EGameStatesMaster.RECEIVED_PRESETUP_DATA]: [pathsMaster.home, pathsMaster.setup, pathsMaster.loadGame, pathsMaster.prepare, pathsMaster.storage,
+    pathsMaster.settings],
   // only until the server answers the START_GAME the master sends right after the setup or a rejoin
   [EGameStatesMaster.READY_TO_START]: [pathsMaster.play],
   [EGameStatesMaster.PLAYING]: [pathsMaster.play],

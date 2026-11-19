@@ -29,7 +29,10 @@ export class ToolbarMasterComponent implements OnInit, OnDestroy {
   @Input() showResetServer = false;
   // on the play page: the current question's number and points, see QuestionPaneComponent
   @Input() showQuestionProgress = false;
+  // the box's settings (buzzerbox.txt), only on the start page as well
+  @Input() showSettings = false;
   public readonly homeUrl = '/' + baseUrlMaster + pathsMaster.home;
+  public readonly settingsUrl = '/' + baseUrlMaster + pathsMaster.settings;
   // the box's touch display stays the master
   public readonly canLogout = !KioskHelper.isActive();
   public autosave: IAutosaveInfoPacket = null;

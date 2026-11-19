@@ -44,6 +44,10 @@ import {
   IUsbBuzzer,
   IUsbBuzzersPacket,
   IAdoptUsbBuzzerPacket,
+  IBoxSettingsPacket,
+  ISaveBoxSettingsPacket,
+  IAddSshKeyPacket,
+  IRemoveSshKeyPacket,
   BuzzerHelper,
   PacketHelper,
   IScoring,
@@ -109,6 +113,9 @@ export class GameService implements OnDestroy {
   private mediaVolumeSubject = new ReplaySubject<IMediaVolume>(1);
   private updateInfoSubject = new ReplaySubject<IUpdateInfoPacket>(1);
   private installUpdateResponseSubject = new Subject<IResponsePacket>();
+  // the box's settings (buzzerbox.txt), which the master asks for, and the answers to saving them or restarting the box
+  private boxSettingsSubject = new ReplaySubject<IBoxSettingsPacket>(1);
+  private boxSettingsResponseSubject = new Subject<IResponsePacket>();
   // the token for the storage API, which the server gives the master only
   private storageTokenSubject = new BehaviorSubject<string | null>(null);
   private autosaveInfoSubject = new ReplaySubject<IAutosaveInfoPacket>(1);
@@ -335,6 +342,9 @@ export class GameService implements OnDestroy {
       case EPacketTypes.USB_BUZZERS:
         this.usbBuzzersSubject.next((message as IUsbBuzzersPacket).buzzers ?? []);
         break;
+      case EPacketTypes.BOX_SETTINGS:
+        this.boxSettingsSubject.next(message as IBoxSettingsPacket);
+        break;
       default:
         break;
     }
@@ -377,6 +387,9 @@ export class GameService implements OnDestroy {
       this.handleStartGameResponse(packet);
     } else if (packet.responseTo === EPacketTypes.INSTALL_UPDATE) {
       this.installUpdateResponseSubject.next(packet);
+    } else if ([EPacketTypes.SAVE_BOX_SETTINGS, EPacketTypes.RESTART_BOX, EPacketTypes.ADD_SSH_KEY, EPacketTypes.REMOVE_SSH_KEY]
+      .includes(packet.responseTo)) {
+      this.boxSettingsResponseSubject.next(packet);
     }
   }
 
@@ -1043,6 +1056,46 @@ export class GameService implements OnDestroy {
    */
   public adoptUsbBuzzer(path: string, color?: string): void {
     this.webSocketService.send<IAdoptUsbBuzzerPacket>({packetType: EPacketTypes.ADOPT_USB_BUZZER, path, color});
+  }
+
+  /**
+   * The box's settings, after requestBoxSettings() and after saving them
+   */
+  public observeBoxSettings(): Observable<IBoxSettingsPacket> {
+    return this.boxSettingsSubject.asObservable();
+  }
+
+  /**
+   * The answers to saveBoxSettings(), restartBox(), addSshKey() and removeSshKey()
+   */
+  public observeBoxSettingsResponses(): Observable<IResponsePacket> {
+    return this.boxSettingsResponseSubject.asObservable();
+  }
+
+  public requestBoxSettings(): void {
+    this.webSocketService.send<IGamePacket>({packetType: EPacketTypes.REQUEST_BOX_SETTINGS});
+  }
+
+  /**
+   * @param values only the settings that change, by key; they count from the box's next start
+   */
+  public saveBoxSettings(values: Record<string, string>): void {
+    this.webSocketService.send<ISaveBoxSettingsPacket>({packetType: EPacketTypes.SAVE_BOX_SETTINGS, values});
+  }
+
+  public restartBox(): void {
+    this.webSocketService.send<IGamePacket>({packetType: EPacketTypes.RESTART_BOX});
+  }
+
+  /**
+   * Lets the public key log into the box over SSH, right away
+   */
+  public addSshKey(key: string): void {
+    this.webSocketService.send<IAddSshKeyPacket>({packetType: EPacketTypes.ADD_SSH_KEY, key});
+  }
+
+  public removeSshKey(fingerprint: string): void {
+    this.webSocketService.send<IRemoveSshKeyPacket>({packetType: EPacketTypes.REMOVE_SSH_KEY, fingerprint});
   }
 
   /**

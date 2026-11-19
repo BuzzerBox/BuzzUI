@@ -57,6 +57,11 @@
     }
   </mat-menu>
 }
+@if (showSettings) {
+  <a mat-icon-button [routerLink]="settingsUrl" title="Einstellungen der BuzzerBox">
+    <mat-icon>settings</mat-icon>
+  </a>
+}
 @if (showResetServer) {
   <button mat-icon-button (click)="resetServer()" title="Server zurücksetzen">
     <mat-icon>restart_alt</mat-icon>

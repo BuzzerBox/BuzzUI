@@ -86,6 +86,21 @@
     mode: "0440"
     validate: visudo -cf %s
 
+- name: Install the settings helper
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../install/.assets/scripts/buzzerbox-settings.sh"
+    dest: /usr/local/sbin/buzzerbox-settings
+    mode: "0755"
+
+# the master shows the settings of buzzerbox.txt (roles/access_point) and changes them if the file allows it
+- name: Let the server change the settings
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/buzzerbox-settings
+    content: "{{ lookup('file', playbook_dir ~ '/../install/.assets/configs/sudoers/buzzerbox-settings')
+                 | replace('pi ALL', buzzerbox_user ~ ' ALL') }}\n"
+    mode: "0440"
+    validate: visudo -cf %s
+
 - name: Install the public key that updates are checked with
   ansible.builtin.copy:
     src: "{{ buzzerbox_update_public_key }}"

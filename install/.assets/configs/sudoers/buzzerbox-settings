@@ -1,0 +1,3 @@
+# lets the BuzzerBox server (running as pi) change the box's settings in buzzerbox.txt and its SSH keys, and restart the
+# box for the settings, from the master, see buzzerbox-settings.sh
+pi ALL=(root) NOPASSWD: /usr/local/sbin/buzzerbox-settings write, /usr/local/sbin/buzzerbox-settings restart, /usr/local/sbin/buzzerbox-settings write-ssh-keys
