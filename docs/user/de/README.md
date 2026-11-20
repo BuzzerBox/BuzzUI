@@ -14,6 +14,6 @@ eigenes WLAN mit und braucht kein Internet.
 6. [Fehlerbehebung](troubleshooting.md): kein Bild, keine Verbindung, ein Buzzer, der nicht reagiert, ein Video, das
    ruckelt.
 
-**Zur Sprache.** Die BuzzerBox spricht Deutsch und Englisch. Wähle die *Sprache* (*Language*) auf der ersten Seite oder
-in der Werkzeugleiste der Spielleitung, und die Anzeigen folgen. Diese Anleitung verwendet die deutschen Namen der
+**Zur Sprache.** Die BuzzerBox spricht Deutsch und Englisch. Sie startet auf Englisch; wähle *Language* (*Sprache*)
+auf der ersten Seite oder in der Werkzeugleiste der Spielleitung, und die Anzeigen folgen. Diese Anleitung verwendet die deutschen Namen der
 Schaltflächen.
