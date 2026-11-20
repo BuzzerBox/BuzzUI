@@ -15,7 +15,15 @@ BuzzUI is the web app for the BuzzerBox, a quiz-show buzzer system that runs on 
 
 **Every new feature and every change must be added to the documentation**, in the same branch and PR as the code. A change isn't finished until the docs describe it: if nothing needed updating, say so in the PR.
 - **Technical docs:** `docs/` (architecture, configuration, development, game file format, box settings, operations), the READMEs and this file. New packets, config keys, `buzzerbox.txt` keys, services and pages go here.
-- **User guide for hosts:** `docs/user/`, for anything a host sees or does differently. It names the English UI texts, with the German ones in parentheses for the main buttons.
+- **User guide for hosts:** `docs/user/`, for anything a host sees or does differently. It names the English UI texts, with the German ones in parentheses for the main buttons. It is also in German, see below.
+
+**Keep the languages of the user guide aligned.** The user guide is in English (`docs/user/`) and German (`docs/user/de/`); the technical docs are English only. Every change to the user guide is made in every language, in the same PR, so that no language falls behind:
+- Each language has the same files with the same names, and each page the same sections in the same order, so a page and its translation can be compared side by side.
+- Each language names the UI texts of its own language, exactly as `client/src/i18n/<language>.json` has them (the German guide uses German texts, without the English ones in parentheses, except *Language* (*Sprache*): the box starts in English). A change to a UI text that a guide names changes that guide too.
+- All languages share the screenshots of `docs/user/images/` (`../images/` from `de/`).
+- Links to another page stay within the language. Links to a section use that language's heading (`#einen-buzzer-übernehmen` in German), so changing a heading means changing the links to it in that language.
+- A new or removed page goes into every language, and into the language's section of `SECTIONS` in `scripts/sync-docs.rb` of buzzerbox.github.io, which builds the guide into the website (English under `/docs/user/`, German under `/de/docs/user/`). A new language needs its folder, a section there and its strings in the website's `_data/i18n.yml`.
+- If a translation can't be done in the PR, say so in the PR, so it is caught up before the next release.
 
 Screenshots are in `docs/user/images/`. If a change alters a screen they show, either take them again or say in the PR that they're out of date. Git keeps every old version, so retake only the screenshots a change affects, and compress new or retaken PNGs before committing: `pngquant --quality=70-90 --skip-if-larger --strip --force --ext .png <files>` (`brew install pngquant`; exit code 98 means a file was left as it was, since it couldn't reach that quality). Leave JPGs as they are.
 

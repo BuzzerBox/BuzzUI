@@ -11,6 +11,8 @@ needs no internet.
 5. [Box settings and updates](box-settings-and-updates.md): the WiFi name and password, and installing updates.
 6. [Troubleshooting](troubleshooting.md): no picture, no connection, a buzzer that doesn't react, a video that stutters.
 
-**About the language.** The BuzzerBox speaks German and English. It starts in German; choose *Language* (*Sprache*)
+Auf Deutsch: [Benutzerhandbuch](de/README.md).
+
+**About the language.** The BuzzerBox speaks German and English. It starts in English; choose *Language* (*Sprache*)
 on the first page or in the game master's toolbar, and the screens follow. This guide uses the English names of the
 buttons and gives the German ones in parentheses where it helps, for example *New game* (*Neues Spiel*).
