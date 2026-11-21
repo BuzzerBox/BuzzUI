@@ -580,6 +580,7 @@ export class GameService implements OnDestroy {
           team.points = 0;
         }
       }
+      this.applyBuzzerColors(this.teams);
       this.questions = questions;
       if (gameState == null) {
         this.currentGameState = {
@@ -949,6 +950,23 @@ export class GameService implements OnDestroy {
 
   public sendKeypress(keyCode: string): void {
     this.webSocketService.send<IKeypressOnScreenPacket>(PacketHelper.makeKeypressOnScreenPacket(keyCode));
+  }
+
+  /**
+   * Gives each team the color of its buzzer, as the server does with its own copy of the teams (which it only sends
+   * the master again when a buzzer's color changes). Without it, the master's teams would take the palette's color by
+   * their position, while the screens show the buzzers' colors.
+   */
+  private applyBuzzerColors(teams: ITeam[]): void {
+    const buzzers = this.getAvailableBuzzers();
+    for (const team of teams) {
+      const color = buzzers.find(buzzer => buzzer.id === team.buzzerId)?.color;
+      if (color == null) {
+        delete team.color;
+      } else {
+        team.color = color;
+      }
+    }
   }
 
   private mergeBuzzerIdsFromPresetupDataWithSetTeams(teams: ITeam[]): ITeam[] {
