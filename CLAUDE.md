@@ -10,7 +10,7 @@ This repository (BuzzerBox, formerly BuzzUI) holds the web app and the wireless 
 - `client/` – Angular 21 (NgModules, Angular Material, Karma/Jasmine) SPA used by both the game master and the display screen.
 - `shared/` – enums, packet interfaces and helpers imported by both, through `shared/shared.ts` (the barrel). It has no build of its own.
 - `config.json` (repo root) – runtime config that both the server and the client import directly as JSON.
-- `firmware/wireless-buzzer/` – PlatformIO firmware of the wireless ESP32 buzzers (C++, not linked to the TypeScript parts). The box's microcontroller firmware is still in the BuzzController repo.
+- `firmware/wireless-buzzer/` – PlatformIO firmware of the wireless ESP32 buzzers (C++, not linked to the TypeScript parts). The box's microcontroller firmware isn't in this repo; its serial protocol is described in `docs/architecture.md`.
 
 ## Documentation
 
