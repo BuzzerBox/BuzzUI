@@ -132,6 +132,33 @@ and later.
 With the WiFi it has, the box shows a buzzer that already has its WiFi as adopted, and one that is connected to it
 right now as connected.
 
+### USB mode
+
+Since firmware 1.4.0, a buzzer plugged into the box plays over USB: its heartbeats and presses go over the cable,
+which a busy WiFi can't delay or drop (`lib/buzzer_core/usb_mode.*`). The packets are the same JSON as over UDP:
+
+```
+box → buzzer   BUZZ LINK                         (after BUZZ READY, and again while no packet came for 2 s)
+buzzer → box   BUZZ PKT {"t":"HB",…}  |  BUZZ PKT {"t":"PRESS",…}
+box → buzzer   BUZZ PKT {"t":"STATE",…}
+```
+
+- Only the box sends `BUZZ LINK`, so on a computer the buzzer stays on the WiFi. Without anything from the box over USB
+  for 3 s (`USB_CONTACT_TIMEOUT_MS`), or once USB is unplugged, it plays over the WiFi again right away.
+- The WiFi stays connected meanwhile, with a heartbeat every 2 s (`STANDBY_HEARTBEAT_INTERVAL_MS`), so that the server
+  knows it still works. A buzzer without WiFi settings plays over USB too.
+- A press goes over USB alone for its first 3 sends (`PRESS_USB_ONLY_SENDS`), then over the WiFi as well, in case the
+  cable was just pulled; the server takes each press number once.
+- STATE packets count from both ways. For the clock, a heartbeat over USB is taken as sent once the line went out
+  (`Serial.flush()`), and an answer as received when its first character came, so that the round trip stays even
+  although the heartbeat line is longer.
+- While it plays over USB, the buzzer stays awake (the box powers it).
+- Nothing waits for the serial connection without end (`UsbLink::write()`): the core's `write()` waits as long as a
+  host has the port open (DTR) without reading, and the S3's buffer holds only 64 bytes, so a buzzer that sends a line
+  every second would stop. A line waits at most 50 ms for room (`USB_WRITE_TIMEOUT_MS`) and is dropped otherwise, and
+  after one that was dropped the next ones don't wait until one goes out. The log goes the same way. Each `BUZZ` line
+  starts with a newline, so the box finds the next one after a line that was cut off.
+
 On the Feather ESP32-S3, the serial connection is the ESP32-S3's own USB: lines only go out while a program has the
 port open (DTR). The box doesn't reset it to wake it (RTS doesn't reach its reset, and with DTR off it would stop
 sending), see `udpBuzzer.provisioning.wakeUsbIds` in the [configuration](../../docs/configuration.md).
@@ -153,4 +180,4 @@ for a dev server on your computer, send those lines in a serial terminal.
 - `src/indicator.*` — the NeoPixel and the light
 - `include/config.h` — pins (for each board) and timings
 - `lib/buzzer_core/` — the logic without hardware, tested natively: `clock_sync` (the server's clock), `power_policy`
-  (when to sleep) and `messages` (the JSON packets)
+  (when to sleep), `usb_mode` (whether the game goes over USB) and `messages` (the JSON packets)

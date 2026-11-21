@@ -14,7 +14,7 @@ export interface IWirelessBuzzerRow {
   key: string;
   /** While it is plugged in over USB: what the box found out there, and adopting it */
   usb?: IUsbBuzzer;
-  /** While it talks to the server over WiFi (UdpBuzzerService) */
+  /** While it talks to the server (UdpBuzzerService): over WiFi, or over USB (IBuzzer.connection) */
   wifi?: IBuzzer;
 }
 
@@ -63,7 +63,7 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
 
   /**
    * Those plugged in over USB first, so that one that connects over WiFi while it is adopted stays where it is; then
-   * those that are online over WiFi, in the server's order
+   * the other ones that are online, in the server's order
    */
   public static makeRows(usbBuzzers: IUsbBuzzer[], buzzers: IBuzzer[]): IWirelessBuzzerRow[] {
     const online = buzzers.filter(buzzer => buzzer.type === 'udp' && buzzer.online);
@@ -99,6 +99,20 @@ export class WirelessBuzzersComponent implements OnInit, OnDestroy {
    */
   public getColor(row: IWirelessBuzzerRow): string | undefined {
     return row.usb ? row.usb.color : row.wifi?.color;
+  }
+
+  /**
+   * The game goes over USB right now (buzzer firmware 1.4.0 and later)
+   */
+  public isPlayingOverUsb(row: IWirelessBuzzerRow): boolean {
+    return row.usb?.isUsbLinked === true || row.wifi?.connection === 'usb';
+  }
+
+  /**
+   * Its WiFi works: one that plays over USB tells so with a heartbeat now and then
+   */
+  public hasWifi(row: IWirelessBuzzerRow): boolean {
+    return row.usb ? row.usb.isConnected === true : row.wifi != null && row.wifi.connection !== 'usb';
   }
 
   public getFirmwareVersion(row: IWirelessBuzzerRow): string | undefined {

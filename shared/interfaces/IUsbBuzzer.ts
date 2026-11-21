@@ -29,8 +29,13 @@ export interface IUsbBuzzer {
      * was adopted
      */
     isAdopted?: boolean;
-    /** It talks to this server over WiFi right now (UdpBuzzerService) */
+    /**
+     * It talks to this server over WiFi right now (UdpBuzzerService); also while it plays over USB, as it then sends a
+     * heartbeat over the WiFi now and then
+     */
     isConnected?: boolean;
+    /** The game goes over USB right now (buzzer firmware 1.4.0 and later), see BuzzerProvisioningService */
+    isUsbLinked?: boolean;
     /**
      * The color of its case as the buzzer told when it was detected, or as it was given when it was adopted; missing if
      * it has none. Only buzzers with firmware 1.2.0 and later keep a color, see BuzzerHelper.supportsCaseColor().

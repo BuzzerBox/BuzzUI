@@ -6,7 +6,7 @@ import {MatIconModule} from '@angular/material/icon';
 
 import { TeamCardComponent } from './team-card.component';
 import {GameService} from '../../../services/game.service';
-import {EGradeResults, EPacketTypes, IGameState, IGradeAnswerPacket, IMarkTeamPacket, ITeam} from '../../../../../../shared/shared';
+import {EGradeResults, EPacketTypes, IBuzzer, IGameState, IGradeAnswerPacket, IMarkTeamPacket, ITeam} from '../../../../../../shared/shared';
 
 // like on the play page, so the card's own change detection runs as it does there
 @Component({
@@ -24,6 +24,7 @@ describe('TeamCardComponent', () => {
   let gameState: Partial<IGameState>;
   let markTeam: Subject<IMarkTeamPacket>;
   let gradeAnswer: Subject<IGradeAnswerPacket>;
+  let buzzers: IBuzzer[];
 
   beforeEach(async () => {
     teams = [
@@ -33,7 +34,9 @@ describe('TeamCardComponent', () => {
     gameState = {markedTeamIds: []};
     markTeam = new Subject();
     gradeAnswer = new Subject();
+    buzzers = [];
     const game = {
+      getAvailableBuzzers: () => buzzers,
       getTeams: () => teams,
       getGameStateData: () => gameState,
       getCurrentQuestion: () => null,
@@ -56,6 +59,42 @@ describe('TeamCardComponent', () => {
   const card = (): HTMLElement => fixture.nativeElement.querySelector('.team-card');
   const otherCard = (): HTMLElement => fixture.nativeElement.querySelector('.other .team-card');
   const text = (): string => fixture.nativeElement.textContent;
+
+  describe('on the master', () => {
+    const udp = (more: Partial<IBuzzer>): IBuzzer =>
+      ({id: 'udp:14:2B:2F:AF:8F:DC', keyBind: '', byteBind: '', type: 'udp', online: true, ...more});
+    const masterCard = (team: ITeam) => {
+      const master = TestBed.createComponent(TeamCardComponent);
+      master.componentRef.setInput('team', team);
+      master.componentRef.setInput('isMaster', true);
+      master.detectChanges();
+      return master;
+    };
+    const icon = (master: ComponentFixture<TeamCardComponent>) =>
+      (master.nativeElement as HTMLElement).querySelector<HTMLElement>('mat-icon.connection');
+
+    it('shows how the wireless buzzer of the team is connected', () => {
+      const team: ITeam = {teamId: 'C', name: 'Blau', buzzerId: 'udp:14:2B:2F:AF:8F:DC', buzzerIndex: 2, points: 0};
+      buzzers = [udp({connection: 'usb'})];
+      const master = masterCard(team);
+      expect(icon(master).textContent.trim()).toBe('usb');
+      expect(icon(master).title).toBe('Der Buzzer spielt über USB');
+      // unplugged, it plays over WiFi
+      buzzers = [udp({connection: 'wifi'})];
+      master.detectChanges();
+      expect(icon(master).textContent.trim()).toBe('wifi');
+      expect(icon(master).classList).not.toContain('offline');
+      buzzers = [udp({online: false, connection: undefined})];
+      master.detectChanges();
+      expect(icon(master).textContent.trim()).toBe('wifi_off');
+      expect(icon(master).classList).toContain('offline');
+    });
+
+    it('shows no connection for a buzzer of the box, nor on the screens', () => {
+      expect(icon(masterCard(teams[0]))).toBeNull();
+      expect(fixture.nativeElement.querySelector('mat-icon.connection')).toBeNull();
+    });
+  });
 
   it('lights up when its team buzzed, and the other teams step back', () => {
     gameState.markedTeamIds = ['A'];

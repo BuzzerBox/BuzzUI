@@ -3,6 +3,11 @@
   @if (isShowStyle && isLeader()) {
     <mat-icon class="crown" [attr.aria-label]="'play.team.leads' | transloco">emoji_events</mat-icon>
   }
+  @if (getConnection(); as connection) {
+    <mat-icon class="connection" [class.offline]="connection === 'offline'"
+              [title]="'play.team.connection.' + connection | transloco"
+              [attr.aria-label]="'play.team.connection.' + connection | transloco">{{connection === 'offline' ? 'wifi_off' : connection}}</mat-icon>
+  }
   <mat-card-header>
     <mat-card-title>{{getName()}}</mat-card-title>
   </mat-card-header>

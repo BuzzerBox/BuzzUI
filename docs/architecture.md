@@ -143,7 +143,8 @@ buzzer's side; **change both sides together**, in the same PR.
 - A buzzer repeats a press until a `STATE` with its `pa` arrives, so the server takes each `n` once per buzzer.
 - Presses that arrive within `pressCollectionWindowInMS` (50 ms) are compared by `ts` (0 means the first to arrive
   wins), and the earliest one whose buzzer has a team wins.
-- A buzzer's ID is `udp:<MAC>` (`BuzzerHelper`). One that sends nothing for `heartbeatTimeoutInMS` is shown as offline
+- A buzzer's ID is `udp:<MAC>` (`BuzzerHelper`). One that sends nothing, over the WiFi or over USB ([USB
+  mode](#usb-mode)), for `heartbeatTimeoutInMS` is shown as offline
   but stays in the list, so the list only grows and each buzzer keeps its `buzzerIndex` while the server runs.
 - The master gets the whole list in `AVAILABLE_BUZZERS` whenever it changes, also when a battery gets low
   (`batteryLowInMV`, with 100 mV of hysteresis).
@@ -181,6 +182,40 @@ buzzer → box:  BUZZ OK  |  BUZZ ERROR <reason>
   send the WiFi name, passphrase and its address, from `udpBuzzer.provisioning.settingsFile`.
 - The master's home page shows one list (`master/wireless-buzzers`) that merges the USB buzzers with the online UDP
   buzzers by MAC.
+- The port stays open until the buzzer is unplugged (one session per port), so that a buzzer that wakes up later is
+  heard, and so that the game can go over it.
+
+### USB mode
+
+While a buzzer with firmware 1.4.0 or later is plugged into the box, the game goes over the cable instead of the
+WiFi, which a busy WiFi can't delay or drop (`udpBuzzer.provisioning.usbMode`). The packets are the same JSON as over
+UDP, as lines on the open session:
+
+```
+box → buzzer:  BUZZ LINK                     after BUZZ READY, and again while no packet came for 2 s
+buzzer → box:  BUZZ PKT {"t":"HB",…}  |  BUZZ PKT {"t":"PRESS",…}
+box → buzzer:  BUZZ PKT {"t":"STATE",…}
+```
+
+- Only the box sends `BUZZ LINK`, so on a computer the buzzer stays on the WiFi. Older firmware ignores it, and the
+  server only sends it to 1.4.0 and later (`BuzzerHelper.supportsUsbMode`).
+- `UdpBuzzerService` takes the packets from either way (`onUsbPacket`) and counts a buzzer as one, by its MAC: the
+  answer to a packet goes back the way it came, and a press number counts once, whichever way it arrived. State
+  changes go over USB while the buzzer played there in the last 3 s, and also over the WiFi while that works, since the
+  server may notice a pulled cable later than the buzzer.
+- The buzzer stays connected to the WiFi and sends a heartbeat there every 2 s, so the server knows its address and
+  that the WiFi works (`IUsbBuzzer.isConnected`). Unplugged, or without an answer over USB for 3 s, it plays over the
+  WiFi again right away; a press it sent over USB three times without an answer goes over the WiFi as well. A buzzer
+  without the box's WiFi plays over USB too, just not once it is unplugged.
+- The master sees how each buzzer plays: `IBuzzer.connection` (`usb` or `wifi`) in `AVAILABLE_BUZZERS`, and
+  `IUsbBuzzer.isUsbLinked`, which the list shows on its USB and WLAN badges. On the play page, each team card on a
+  wireless buzzer shows it as a small icon (`usb`, `wifi`, or `wifi_off` while offline; `TeamCardComponent`).
+- The port of a Feather ESP32-S3 drops DTR when the server closes it or stops (`hupcl`; a Feather V2 keeps its lines,
+  which lead to its reset), so the buzzer knows that no one reads. The buzzer doesn't wait more than 50 ms for room
+  in its serial buffer and drops a line that doesn't fit; each `BUZZ` line starts with a newline, so the server finds
+  the next one after a line that was cut off.
+- The clock: the buzzer takes the time of a heartbeat over USB once the line went out and the time of the answer when
+  its first character arrives, so the round trip stays even although the heartbeat line is longer than the answer.
 
 ### Browser keys
 

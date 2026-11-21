@@ -50,6 +50,7 @@ describe('WirelessBuzzersComponent', () => {
   const text = () => element().textContent;
   const rows = () => [...element().querySelectorAll<HTMLElement>('.buzzer')];
   const button = () => element().querySelector<HTMLButtonElement>('.actions button');
+  const connections = (row: HTMLElement) => [...row.querySelectorAll<HTMLElement>('.connection')].map(chip => chip.textContent.trim());
 
   it('shows nothing without buzzers', () => {
     expect(element().querySelector('mat-card')).toBeNull();
@@ -96,6 +97,33 @@ describe('WirelessBuzzersComponent', () => {
       expect(rows()[0].textContent).toContain('USB');
       expect(rows()[0].textContent).not.toContain('WLAN');
       expect(text()).toContain('Ein Buzzer ist verbunden');
+    });
+
+    it('shows a buzzer that plays over USB, and whether its WiFi works', () => {
+      online(udp('14:2B:2F:AF:8F:DC', {firmwareVersion: '1.4.0', connection: 'usb'}));
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.4.0',
+        ssid: 'BuzzerBoxNetwork', isAdopted: true, isConnected: true, isUsbLinked: true});
+      expect(rows().length).toBe(1);
+      const chips = [...rows()[0].querySelectorAll<HTMLElement>('.connection')];
+      expect(connections(rows()[0])).toEqual(['usbUSB', 'wifiWLAN']);
+      expect(chips.map(chip => chip.classList.contains('active'))).toEqual([true, false]);
+      expect(text()).toContain('Spielt über USB, solange er angesteckt ist. Du kannst ihn jederzeit abstecken');
+      // without the WiFi it plays over USB alone
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', firmwareVersion: '1.4.0',
+        isUsbLinked: true});
+      expect(connections(rows()[0])).toEqual(['usbUSB']);
+      expect(text()).toContain('Übernimm ihn, damit er auch abgesteckt über WLAN spielen kann');
+    });
+
+    it('shows WiFi for a buzzer that plays over USB only when its WiFi works', () => {
+      online(udp('14:2B:2F:AF:8F:DC', {connection: 'usb'}));
+      show({path: '/dev/ttyACM0', state: 'detected', macAddress: '14:2B:2F:AF:8F:DC', isUsbLinked: true});
+      expect(connections(rows()[0])).toEqual(['usbUSB']);
+      // unplugged, it plays over WiFi
+      show();
+      online(udp('14:2B:2F:AF:8F:DC', {connection: 'wifi'}));
+      expect(connections(rows()[0])).toEqual(['wifiWLAN']);
+      expect(rows()[0].querySelector('.connection').classList).toContain('active');
     });
 
     it('shows the bars of the battery', () => {

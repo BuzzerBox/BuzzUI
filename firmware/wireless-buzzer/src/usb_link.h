@@ -20,11 +20,19 @@ public:
     /** True once when USB was plugged in and Serial started (on the S3: when a program opened the port) */
     bool poll(uint32_t nowMs);
     bool isConnected() const { return connected; }
+    /**
+     * Writes what fits into the send buffer, waiting for room at most timeoutMs; false if not all of it went out. The
+     * core's own write() waits without end while a host has the port open but doesn't read (the S3's buffer holds 64
+     * bytes), which would stop the buzzer. After a write that didn't go out, the next ones don't wait, until one does.
+     */
+    bool write(const char *data, size_t length, uint32_t timeoutMs);
     /** Before deep sleep */
     void end();
 
 private:
     bool connected = false;
+    // the last write didn't go out
+    bool stalled = false;
     uint32_t lastCheckMs = 0;
     // in a row, before it counts
     int highChecks = 0;

@@ -37,6 +37,19 @@ WiFi they were given.
 To change the color of an adopted buzzer, plug it in again, choose *Change the color of the case* in its menu ⋮
 (*More settings*), pick the color and tap **Apply the color**.
 
+## Playing over USB
+
+A buzzer that is plugged into the BuzzerBox **plays over the USB cable** (firmware 1.4.0 or later): its presses don't
+go over the WiFi then, so a crowded WiFi can't delay them. That's handy for a buzzer that sits next to the box anyway,
+or when the WiFi is unreliable at a venue.
+
+- It switches by itself: a few seconds after it is plugged in, the **USB** badge in the list is highlighted, and the
+  list says *Plays over USB while it is plugged in*. **Unplug it at any time**, also during a game: it plays over the
+  WiFi right away, without you doing anything. Plugged in again, it goes back to USB.
+- The **WiFi** badge next to it means its WiFi works, so it can be unplugged. A buzzer that hasn't been adopted plays
+  over USB too, but can't play once it is unplugged: adopt it for that.
+- It charges meanwhile, and stays awake while it plays over USB.
+
 ## Names and colors
 
 A buzzer is named after the color of its case, for example *Blue wireless buzzer*, and a new team on it after the

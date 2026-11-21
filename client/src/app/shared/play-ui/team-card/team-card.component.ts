@@ -1,5 +1,5 @@
 import {Component, DoCheck, HostBinding, Input, OnDestroy, OnInit} from '@angular/core';
-import {ITeam, IMarkTeamPacket, IGradeAnswerPacket, EGradeResults} from '../../../../../../shared/shared';
+import {BuzzerHelper, ITeam, IMarkTeamPacket, IGradeAnswerPacket, EGradeResults} from '../../../../../../shared/shared';
 import {GameService} from '../../../services/game.service';
 import {SubscriptionsHelper} from '../../../helper/subscriptions.helper';
 import {TeamColorHelper} from '../../../helper/team-color.helper';
@@ -123,6 +123,21 @@ export class TeamCardComponent implements OnInit, DoCheck, OnDestroy {
 
   public getPoints(): number {
     return this.team.points ?? 0;
+  }
+
+  /**
+   * For the master: how the team's wireless buzzer reaches the box right now, over USB (while it is plugged in) or
+   * over the WiFi, or not at all. Null for a buzzer of the box, and on the screens.
+   */
+  public getConnection(): 'usb' | 'wifi' | 'offline' | null {
+    if (!this.isMaster || !BuzzerHelper.isUdpBuzzerId(this.team.buzzerId)) {
+      return null;
+    }
+    const buzzer = this.game.getAvailableBuzzers().find(available => available.id === this.team.buzzerId);
+    if (!buzzer?.online) {
+      return 'offline';
+    }
+    return buzzer.connection === 'usb' ? 'usb' : 'wifi';
   }
 
   /**

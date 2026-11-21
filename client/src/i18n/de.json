@@ -429,8 +429,10 @@
     },
     "noColor": "Keine Farbe des Gehäuses",
     "usb": "Über USB angesteckt",
+    "usbActive": "Spielt über USB: an der BuzzerBox angesteckt, läuft das Spiel über das Kabel",
     "wifi": "WLAN",
     "wifiHint": "Über das WLAN mit der BuzzerBox verbunden",
+    "wifiStandby": "Das WLAN funktioniert: Der Buzzer wechselt dorthin, wenn er abgesteckt wird",
     "battery": {
       "charging": "Lädt über USB",
       "lowHint": "Akku schwach",
@@ -450,6 +452,8 @@
     "adopting": "Der Buzzer wird übernommen …",
     "adoptedConnected": "Übernommen und verbunden (WLAN „{{ssid}}“). Du kannst ihn jetzt abstecken.",
     "adoptedConnecting": "Übernommen: Der Buzzer verbindet sich mit dem WLAN „{{ssid}}“ …",
+    "usbMode": "Spielt über USB, solange er angesteckt ist. Du kannst ihn jederzeit abstecken: Er wechselt von selbst ins WLAN.",
+    "usbModeOnly": "Spielt über USB, solange er angesteckt ist. Übernimm ihn, damit er auch abgesteckt über WLAN spielen kann.",
     "failed": "Das Übernehmen hat nicht geklappt. {{reason}}",
     "error": {
       "noWifiSettings": "Die BuzzerBox kennt die Einstellungen ihres WLANs nicht (/etc/buzzerbox/wireless-buzzers.conf fehlt).",
@@ -866,7 +870,12 @@
       "leads": "Führt",
       "addPoint": "1 Punkt hinzufügen",
       "removePoint": "1 Punkt abziehen",
-      "addQuestionPoints": "Punkte der aktuellen Frage vergeben"
+      "addQuestionPoints": "Punkte der aktuellen Frage vergeben",
+      "connection": {
+        "usb": "Der Buzzer spielt über USB",
+        "wifi": "Der Buzzer spielt über WLAN",
+        "offline": "Der Buzzer ist offline"
+      }
     },
     "scores": {
       "title": "Punkteliste",

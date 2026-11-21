@@ -1,5 +1,38 @@
 #include "usb_link.h"
 
+bool UsbLink::write(const char *data, size_t length, uint32_t timeoutMs) {
+    if (!connected) {
+        return false;
+    }
+    uint32_t startMs = millis();
+    size_t written = 0;
+    while (written < length) {
+        int room = Serial.availableForWrite();
+        if (room <= 0) {
+            // starts sending what is in the buffer, as the core's write() does while it waits; on the S3 nothing else
+            // may, and the buffer would stay full
+            Serial.flush();
+            if (stalled || millis() - startMs >= timeoutMs) {
+                stalled = true;
+                return false;
+            }
+            // the USB task (S3) or the UART sends meanwhile
+            delay(1);
+            continue;
+        }
+        size_t chunk = length - written < (size_t) room ? length - written : (size_t) room;
+        size_t sent = Serial.write((const uint8_t *) data + written, chunk);
+        if (sent == 0) {
+            stalled = true;
+            return false;
+        }
+        written += sent;
+    }
+    Serial.flush();
+    stalled = false;
+    return true;
+}
+
 #if CONFIG_IDF_TARGET_ESP32S3
 
 #include <USB.h>

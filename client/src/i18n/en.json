@@ -429,8 +429,10 @@
     },
     "noColor": "No color of the case",
     "usb": "Plugged in over USB",
+    "usbActive": "Plays over USB: plugged into the BuzzerBox, the game goes over the cable",
     "wifi": "WiFi",
     "wifiHint": "Connected to the BuzzerBox over WiFi",
+    "wifiStandby": "The WiFi works: the buzzer switches to it when it is unplugged",
     "battery": {
       "charging": "Charging over USB",
       "lowHint": "Battery low",
@@ -450,6 +452,8 @@
     "adopting": "Adopting the buzzer …",
     "adoptedConnected": "Adopted and connected (WiFi “{{ssid}}”). You can unplug it now.",
     "adoptedConnecting": "Adopted: the buzzer is connecting to the WiFi “{{ssid}}” …",
+    "usbMode": "Plays over USB while it is plugged in. You can unplug it at any time: it switches to the WiFi by itself.",
+    "usbModeOnly": "Plays over USB while it is plugged in. Adopt it, so it can play over WiFi once it is unplugged.",
     "failed": "Adopting didn't work. {{reason}}",
     "error": {
       "noWifiSettings": "The BuzzerBox doesn't know the settings of its WiFi (/etc/buzzerbox/wireless-buzzers.conf is missing).",
@@ -866,7 +870,12 @@
       "leads": "In the lead",
       "addPoint": "Add 1 point",
       "removePoint": "Deduct 1 point",
-      "addQuestionPoints": "Award the points of the current question"
+      "addQuestionPoints": "Award the points of the current question",
+      "connection": {
+        "usb": "The buzzer plays over USB",
+        "wifi": "The buzzer plays over WiFi",
+        "offline": "The buzzer is offline"
+      }
     },
     "scores": {
       "title": "Scores",

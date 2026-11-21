@@ -76,6 +76,15 @@ echo '{"t":"PRESS","id":"AA:BB:CC:DD:EE:01","n":1,"ts":0}' | nc -u -w1 localhost
 Each press needs a new `n`, since the server takes every `n` only once per buzzer. The
 [architecture](architecture.md#wireless-buzzers-udp) describes the packets.
 
+**USB mode.** The server only looks at serial ports with the buzzers' USB IDs (`udpBuzzer.provisioning.usbIds`), so a
+virtual port isn't found. Try it with a real buzzer (firmware 1.4.0 or later) plugged into your computer: the server
+log says *plays over USB* when it switched, and *plays over WiFi* after you unplug it.
+
+On macOS, node-serialport often hands over what a buzzer sends only when the server writes to the port next (it waits
+for the port with `uv_poll`, which macOS doesn't report reliably for serial devices). Over USB, heartbeats and presses
+then arrive in bursts, one or more seconds late. Linux, which the box runs, isn't affected; pyserial on macOS isn't
+either. So judge the timing of USB mode on the box, not on a Mac.
+
 **Adopting a real wireless buzzer.** To give a buzzer on your desk your own WiFi instead of a box's, point
 `udpBuzzer.provisioning.settingsFile` in `config.dev.json` at a file like this (`wireless-buzzers.dev.conf` is ignored
 by git for this purpose), with your computer's address in that network:

@@ -6,6 +6,7 @@
 #include "clock_sync.h"
 #include "messages.h"
 #include "power_policy.h"
+#include "usb_mode.h"
 
 void setUp() {}
 void tearDown() {}
@@ -333,6 +334,63 @@ void test_rejects_invalid_wifi() {
     TEST_ASSERT_EQUAL_STRING("kept", wifi.ssid);
 }
 
+// ----- UsbMode
+
+static const UsbMode::Timeouts USB_TIMEOUTS = {3000};
+
+void test_usb_mode_starts_with_the_box_and_not_with_usb_alone() {
+    UsbMode mode(USB_TIMEOUTS);
+    // plugged into a computer, nothing says BUZZ LINK
+    TEST_ASSERT_TRUE(mode.update(1000, true) == UsbMode::Change::NONE);
+    TEST_ASSERT_FALSE(mode.isLinked());
+    mode.onContact(1500);
+    TEST_ASSERT_TRUE(mode.update(1500, true) == UsbMode::Change::TO_USB);
+    TEST_ASSERT_TRUE(mode.isLinked());
+    TEST_ASSERT_TRUE(mode.update(1600, true) == UsbMode::Change::NONE);
+}
+
+void test_usb_mode_ends_when_the_box_stops_answering() {
+    UsbMode mode(USB_TIMEOUTS);
+    mode.onContact(1000);
+    mode.update(1000, true);
+    mode.onContact(2000);
+    TEST_ASSERT_TRUE(mode.update(5000, true) == UsbMode::Change::NONE);
+    TEST_ASSERT_TRUE(mode.update(5001, true) == UsbMode::Change::TO_WIFI);
+    TEST_ASSERT_FALSE(mode.isLinked());
+    // and comes back with the next contact
+    mode.onContact(6000);
+    TEST_ASSERT_TRUE(mode.update(6000, true) == UsbMode::Change::TO_USB);
+}
+
+void test_usb_mode_ends_right_away_when_unplugged() {
+    UsbMode mode(USB_TIMEOUTS);
+    mode.onContact(1000);
+    mode.update(1000, true);
+    TEST_ASSERT_TRUE(mode.update(1100, false) == UsbMode::Change::TO_WIFI);
+    // plugged in again, it waits for the box
+    TEST_ASSERT_TRUE(mode.update(1200, true) == UsbMode::Change::NONE);
+    TEST_ASSERT_FALSE(mode.isLinked());
+}
+
+void test_usb_mode_survives_the_millis_wraparound() {
+    UsbMode mode(USB_TIMEOUTS);
+    mode.onContact(0xFFFFFF00U);
+    mode.update(0xFFFFFF00U, true);
+    TEST_ASSERT_TRUE(mode.update(1000, true) == UsbMode::Change::NONE);
+    TEST_ASSERT_TRUE(mode.isLinked());
+    // a contact a moment after the loop read the time
+    mode.onContact(2010);
+    TEST_ASSERT_TRUE(mode.update(2000, true) == UsbMode::Change::NONE);
+    TEST_ASSERT_TRUE(mode.isLinked());
+}
+
+void test_a_press_goes_over_the_wifi_too_when_usb_does_not_answer() {
+    TEST_ASSERT_TRUE(UsbMode::sendsPressOverWifi(false, 0, 3));
+    TEST_ASSERT_FALSE(UsbMode::sendsPressOverWifi(true, 0, 3));
+    TEST_ASSERT_FALSE(UsbMode::sendsPressOverWifi(true, 2, 3));
+    TEST_ASSERT_TRUE(UsbMode::sendsPressOverWifi(true, 3, 3));
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_clock_follows_the_server_from_the_middle_of_the_round_trip);
@@ -363,5 +421,10 @@ int main() {
     RUN_TEST(test_parses_the_color);
     RUN_TEST(test_rejects_an_invalid_color);
     RUN_TEST(test_rejects_invalid_wifi);
+    RUN_TEST(test_usb_mode_starts_with_the_box_and_not_with_usb_alone);
+    RUN_TEST(test_usb_mode_ends_when_the_box_stops_answering);
+    RUN_TEST(test_usb_mode_ends_right_away_when_unplugged);
+    RUN_TEST(test_usb_mode_survives_the_millis_wraparound);
+    RUN_TEST(test_a_press_goes_over_the_wifi_too_when_usb_does_not_answer);
     return UNITY_END();
 }
