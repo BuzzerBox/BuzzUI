@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")"
 
-REPO_RAW_URL="${REPO_RAW_URL:-https://raw.githubusercontent.com/BuzzerBox/BuzzUI/main/deploy/test}"
+REPO_RAW_URL="${REPO_RAW_URL:-https://raw.githubusercontent.com/BuzzerBox/BuzzerBox/main/deploy/test}"
 caddyfile_changed=false
 for file in Caddyfile docker-compose.yml; do
   if curl -fsSL "$REPO_RAW_URL/$file" -o "$file.new" && [ -s "$file.new" ]; then

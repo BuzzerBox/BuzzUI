@@ -48,7 +48,7 @@ interface ISessionResult {
 export type UsbBuzzersChangedCallback = (buzzers: IUsbBuzzer[]) => void;
 
 /**
- * Wireless buzzers (BuzzController/wireless) plugged into the box over USB: the box finds out who they are, and gives
+ * Wireless buzzers (firmware/wireless-buzzer) plugged into the box over USB: the box finds out who they are, and gives
  * one the box's WiFi when the master adopts it. The buzzer shows up as a serial port (udpBuzzer.provisioning.usbIds):
  * the USB serial chip of a Feather V2, or the Feather ESP32-S3 itself. Text lines at 115200 baud:
  *

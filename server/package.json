@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/server/main.js",
   "repository": {
-    "url": "https://github.com/BuzzerBox/BuzzUI"
+    "url": "https://github.com/BuzzerBox/BuzzerBox"
   },
   "scripts": {
     "transpile": "tsc",

@@ -69,7 +69,7 @@ A value that isn't allowed is ignored, and the box uses its default for it, so a
 ## Installing an update
 
 Updates for the BuzzerBox come as a file `buzzerbox-update-<version>.tar` and are installed from a USB stick. You get
-them from the [releases on GitHub](https://github.com/BuzzerBox/BuzzUI/releases) (under *Assets*), or from whoever
+them from the [releases on GitHub](https://github.com/BuzzerBox/BuzzerBox/releases) (under *Assets*), or from whoever
 looks after your box.
 
 1. On a computer, create a folder named **`updates`** at the top level of a USB stick and put the file into it:

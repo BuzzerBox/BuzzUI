@@ -97,7 +97,7 @@ the buttons.
 
 ## Protocol
 
-JSON over UDP with the game server (BuzzUI `server/services/udp-buzzer.service.ts`, port 5005; the buzzer listens on
+JSON over UDP with the game server ([`server/services/udp-buzzer.service.ts`](../../server/services/udp-buzzer.service.ts), port 5005; the buzzer listens on
 5006):
 
 | Direction | Packet |
@@ -114,7 +114,7 @@ Presses that arrive within 50 ms of each other are compared by `ts`. The buzzer 
 the heartbeat answers, as NTP does: the sample with the shortest round trip wins (`lib/buzzer_core/clock_sync.*`). So a
 press that took longer over the WiFi still wins if it was first.
 
-USB, text lines at 115200 baud (BuzzUI `server/services/buzzer-provisioning.service.ts`):
+USB, text lines at 115200 baud ([`server/services/buzzer-provisioning.service.ts`](../../server/services/buzzer-provisioning.service.ts)):
 
 ```
 box → buzzer   BUZZ HELLO
@@ -134,7 +134,7 @@ right now as connected.
 
 On the Feather ESP32-S3, the serial connection is the ESP32-S3's own USB: lines only go out while a program has the
 port open (DTR). The box doesn't reset it to wake it (RTS doesn't reach its reset, and with DTR off it would stop
-sending), see `wakeUsbIds` in BuzzUI.
+sending), see `udpBuzzer.provisioning.wakeUsbIds` in the [configuration](../../docs/configuration.md).
 
 On the Feather V2, the buzzer only uses the serial connection while USB is plugged in. Without USB the Feather's USB serial chip
 (CH9102) has no power, and an ESP32 that kept its serial output (TX) high would power it halfway through that line: the

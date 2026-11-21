@@ -1,6 +1,6 @@
-# BuzzUI
+# BuzzerBox
 
-The web app of the **BuzzerBox**, a quiz-show buzzer system: a small box (a Raspberry Pi 4 or Compute Module 4) that
+The web app and the wireless buzzers of the **BuzzerBox**, a quiz-show buzzer system: a small box (a Raspberry Pi 4 or Compute Module 4) that
 teams plug their buzzers into, with a TV that shows the questions and scores, and a phone, tablet or notebook that
 runs the game.
 
@@ -66,10 +66,10 @@ buzzer locks out the others, and the game master grades the answer.
 | `install/` | The update helper, its hooks and the public key that updates are checked with. `install.sh` is the old installer for Raspbian Buster and is only kept for boxes from before the image. |
 | `scripts/` | Building the update bundle, and helpers for development. |
 | `deploy/test/` | The test environment that runs the latest `main` in Docker. |
+| [`firmware/wireless-buzzer/`](firmware/wireless-buzzer/README.md) | The firmware of the wireless buzzers (ESP32 Feather V2 or Feather ESP32-S3, PlatformIO). Its README documents the UDP and the USB protocol from the buzzer's side; change both sides together. |
 
-The firmware of the box's microcontroller and of the wireless buzzers is in the
-[BuzzController](https://github.com/BuzzerBox/BuzzController) repository. Its README documents the serial and the UDP
-protocol from the buzzers' side; change both sides together.
+The firmware of the box's microcontroller is in the [BuzzController](https://github.com/BuzzerBox/BuzzController)
+repository, whose README documents the serial protocol from the box's side.
 
 ## Trying it out
 

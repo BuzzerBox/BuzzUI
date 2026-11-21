@@ -213,7 +213,7 @@ static void receivePackets() {
     }
 }
 
-// ----- USB: the box gives the WiFi, see BuzzUI server/services/buzzer-provisioning.service.ts
+// ----- USB: the box gives the WiFi, see server/services/buzzer-provisioning.service.ts
 
 static void printReady() {
     // which WiFi it has, so that the box can tell whether it is adopted already, and its color

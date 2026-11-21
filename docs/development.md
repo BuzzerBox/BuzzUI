@@ -132,6 +132,23 @@ Every text of the UI is in `client/src/i18n/de.json` and `en.json`. A new text n
 that they have the same keys and parameters. See [languages](architecture.md#languages) for how templates and code
 use them.
 
+## Wireless buzzer firmware
+
+The firmware of the wireless buzzers is in [`firmware/wireless-buzzer/`](../firmware/wireless-buzzer/README.md). It
+needs [PlatformIO](https://platformio.org/) and is built from that directory:
+
+```sh
+cd firmware/wireless-buzzer
+pio run                    # build for the Feather V2 (-e feather_s3 for the Feather ESP32-S3)
+pio run --target upload    # flash over USB
+pio test -e native         # tests of lib/buzzer_core on this computer
+```
+
+Its version is `FIRMWARE_VERSION` in `include/config.h`, separate from the box's `version.json`. A change to the UDP or
+USB protocol changes the firmware and the server (`UdpBuzzerService`, `BuzzerProvisioningService`) in the same PR.
+To try a buzzer against a dev server, see [Buzzers without a box](#buzzers-without-a-box) and
+`udpBuzzer.provisioning.settingsFile` in the [configuration](configuration.md).
+
 ## Building what runs on a box
 
 - `scripts/create-installation-files.sh` builds the client and the server into `install/.assets/compilations/`.
