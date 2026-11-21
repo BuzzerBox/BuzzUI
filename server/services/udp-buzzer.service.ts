@@ -107,7 +107,7 @@ export type UdpBuzzerStateProvider = (buzzerId: string) => IUdpBuzzerState;
 export class UdpBuzzerService {
     private static instance: UdpBuzzerService;
     private static readonly MAC_ADDRESS = /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/i;
-    // the longest a press can take to arrive: the buzzer sends it again for 300 ms (BuzzController/wireless config.h)
+    // the longest a press can take to arrive: the buzzer sends it again for 300 ms (firmware/wireless-buzzer/include/config.h)
     private static readonly MAX_PRESS_DELAY_IN_US = 500000;
 
     private socket: dgram.Socket;

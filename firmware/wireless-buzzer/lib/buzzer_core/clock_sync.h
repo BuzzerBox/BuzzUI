@@ -4,7 +4,7 @@
 
 /**
  * Follows the game server's clock, so that a press can be sent with the time it happened on that clock. The server
- * compares the presses of a short window by that time (BuzzUI UdpBuzzerService), which is fair even when one press
+ * compares the presses of a short window by that time (UdpBuzzerService in server/services/udp-buzzer.service.ts), which is fair even when one press
  * takes longer over the WiFi.
  *
  * Each heartbeat carries a sequence number, and the server's answer echoes it with its clock. Halfway between sending

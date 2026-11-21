@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /**
- * The packets between the buzzer and the game server (BuzzUI server/services/udp-buzzer.service.ts), JSON over UDP:
+ * The packets between the buzzer and the game server (server/services/udp-buzzer.service.ts), JSON over UDP:
  *
  *   buzzer → server  {"t":"HB","id":<MAC>,"lp":<port>,"seq":<n>,"bat":<mV>,"fw":<version>,           every second
  *                     "rr":<reset reason>,"up":<s awake>,"wd":<WiFi drops>,"wr":<last drop reason>,
@@ -12,7 +12,7 @@
  *   buzzer → server  {"t":"PRESS","id":<MAC>,"n":<press number>,"ts":<µs on the server's clock>}
  *   server → buzzer  {"t":"STATE","selected":…,"locked":…,"game":…,"st":<server µs>,"ack":<seq>,"pa":<n>}
  *
- * and the WiFi the box gives it over USB (BuzzUI server/services/buzzer-provisioning.service.ts), where the buzzer
+ * and the WiFi the box gives it over USB (server/services/buzzer-provisioning.service.ts), where the buzzer
  * tells which WiFi it has: BUZZ READY <MAC> <firmware> {"ssid":…,"host":…,"port":…,"color":…}, or {} without one.
  * Never the passphrase. The box also tells the color of the buzzer's case ("color" in BUZZ WIFI), which the buzzer
  * keeps, so that it shows in that color on every box.

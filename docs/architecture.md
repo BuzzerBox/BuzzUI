@@ -128,8 +128,8 @@ baud). Its firmware is in the [BuzzController](https://github.com/BuzzerBox/Buzz
 
 ESP32 buzzers (Adafruit Feather V2 or Feather ESP32-S3) join the box's WiFi and send JSON packets to UDP port 5005
 (`UdpBuzzerService`). They aren't configured anywhere: a buzzer appears when it sends heartbeats. Their firmware is in
-BuzzController (`wireless/`), whose README documents the protocol from the buzzer's side; **change both sides
-together**.
+[`firmware/wireless-buzzer/`](../firmware/wireless-buzzer/README.md), whose README documents the protocol from the
+buzzer's side; **change both sides together**, in the same PR.
 
 | Packet | Direction | Fields |
 |---|---|---|

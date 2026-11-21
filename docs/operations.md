@@ -161,7 +161,7 @@ Other places worth knowing:
 
 `deploy/test/` runs the latest `main` in Docker, so changes can be tried without a box. On every push to `main`,
 `test-images.yml` builds `server/docker/Dockerfile` and `client/docker/Dockerfile` (build context: the repository root)
-and publishes them as `ghcr.io/buzzerbox/buzzui-server:test` and `ghcr.io/buzzerbox/buzzui-client:test`.
+and publishes them as `ghcr.io/buzzerbox/buzzerbox-server:test` and `ghcr.io/buzzerbox/buzzerbox-client:test`.
 
 The images run the production code, with `config.test.json` merged into `config.json` at build time
 (`scripts/merge-config.js`): the browser's number keys are buzzers, the serial port and updates are off, and media

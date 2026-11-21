@@ -32,7 +32,7 @@ services:
       - client
 
   server:
-    image: ghcr.io/buzzerbox/buzzui-server:test
+    image: ghcr.io/buzzerbox/buzzerbox-server:test
     restart: unless-stopped
     volumes:
       - ./media:/srv/media:ro
@@ -40,7 +40,7 @@ services:
       - storage:/srv/storage
 
   client:
-    image: ghcr.io/buzzerbox/buzzui-client:test
+    image: ghcr.io/buzzerbox/buzzerbox-client:test
     restart: unless-stopped
 
 volumes:

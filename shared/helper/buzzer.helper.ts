@@ -55,7 +55,7 @@ export class BuzzerHelper {
     }
 
     /**
-     * Whether a wireless buzzer with that firmware keeps the color of its case (BuzzController/wireless 1.2.0)
+     * Whether a wireless buzzer with that firmware keeps the color of its case (firmware 1.2.0, firmware/wireless-buzzer)
      */
     public static supportsCaseColor(firmwareVersion: string): boolean {
         return typeof firmwareVersion === 'string'

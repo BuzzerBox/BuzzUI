@@ -72,7 +72,7 @@ also nie unbrauchbar.
 ## Ein Update installieren
 
 Updates für die BuzzerBox kommen als Datei `buzzerbox-update-<version>.tar` und werden von einem USB-Stick installiert.
-Du bekommst sie bei den [Releases auf GitHub](https://github.com/BuzzerBox/BuzzUI/releases) (unter *Assets*) oder von
+Du bekommst sie bei den [Releases auf GitHub](https://github.com/BuzzerBox/BuzzerBox/releases) (unter *Assets*) oder von
 der Person, die sich um deine Box kümmert.
 
 1. Lege am Computer ganz oben auf einem USB-Stick einen Ordner namens **`updates`** an und leg die Datei hinein:
