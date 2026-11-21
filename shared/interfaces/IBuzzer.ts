@@ -11,8 +11,16 @@ export interface IBuzzer {
      * server found on the network, see BuzzerHelper
      */
     type?: 'serial' | 'udp';
-    /** For a UDP buzzer: whether it sent a heartbeat lately. A buzzer that went offline stays in the list. */
+    /**
+     * For a UDP buzzer: whether it sent a heartbeat lately, over the WiFi or over USB. A buzzer that went offline stays
+     * in the list.
+     */
     online?: boolean;
+    /**
+     * For a UDP buzzer that is online: how the game reaches it right now. 'usb' while it is plugged into the box and plays
+     * over USB (firmware 1.4.0 and later), and else 'wifi'.
+     */
+    connection?: 'usb' | 'wifi';
     /** For a UDP buzzer: its battery is low, see udpBuzzer.batteryLowInMV in the config */
     batteryLow?: boolean;
     /**

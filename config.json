@@ -98,7 +98,8 @@
       "enabled": true,
       "settingsFile": "/etc/buzzerbox/wireless-buzzers.conf",
       "usbIds": ["1a86:55d4", "239a:8113", "239a:811b"],
-      "wakeUsbIds": ["1a86:55d4"]
+      "wakeUsbIds": ["1a86:55d4"],
+      "usbMode": true
     }
   },
   "enableBrowserKeypressEvents": false,

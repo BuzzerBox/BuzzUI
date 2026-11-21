@@ -24,8 +24,8 @@ no server tests.
 | `main.ts` | Starts the services |
 | `services/game.service.ts` | The game automaton and the packet dispatch |
 | `services/serial-port.service.ts`, `objects/adapters/` | The box's microcontroller |
-| `services/udp-buzzer.service.ts` | Wireless buzzers over WiFi |
-| `services/buzzer-provisioning.service.ts` | Adopting wireless buzzers over USB |
+| `services/udp-buzzer.service.ts` | Wireless buzzers over WiFi, and over USB while they are plugged in |
+| `services/buzzer-provisioning.service.ts` | Wireless buzzers plugged in over USB: adopting them, and the game over USB |
 | `services/storage.service.ts`, `storage-api.service.ts` | Games on the box and on USB sticks, and their REST API |
 | `services/autosave.service.ts` | Saving the running game |
 | `services/file-server.service.ts` | Serving media |

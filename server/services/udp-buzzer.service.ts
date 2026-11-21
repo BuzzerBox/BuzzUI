@@ -68,11 +68,17 @@ interface IStatePacket {
 interface IUdpBuzzer {
     id: string;
     macAddress: string;
-    ip: string;
-    port: number;
-    // Date.now() of the last packet from it
-    lastSeen: number;
+    // where it receives STATE packets over UDP; unknown until a packet came over the WiFi
+    ip?: string;
+    port?: number;
+    // Date.now() of the last packet from it over the WiFi and over USB
+    lastUdpSeen?: number;
+    lastUsbSeen?: number;
+    // while it is plugged into the box and talks to it over USB
+    usb?: IUsbLink;
+    // as the master was told last, see refresh()
     online: boolean;
+    connection?: 'usb' | 'wifi';
     // the n of the last press, so that a press sent again is taken once
     lastPressNumber?: number;
     batteryLow: boolean;
@@ -85,6 +91,18 @@ interface IUdpBuzzer {
     lastUptimeS?: number;
     lastWifiDrops?: number;
 }
+
+/**
+ * A buzzer plugged into the box, which sends its packets over USB (BuzzerProvisioningService)
+ */
+export interface IUsbLink {
+    // the serial port
+    path: string;
+    // sends a packet (JSON) to the buzzer
+    send: (packet: string) => void;
+}
+
+type TPacketSource = {kind: 'udp', rinfo: dgram.RemoteInfo} | {kind: 'usb', link: IUsbLink};
 
 export interface IUdpBuzzerState {
     selected: boolean;
@@ -103,12 +121,20 @@ export type UdpBuzzerStateProvider = (buzzerId: string) => IUdpBuzzerState;
  * Talks to the wireless buzzers (ESP32) over UDP. They announce themselves with heartbeats, so they don't have to be
  * configured. A buzzer that stops sending heartbeats is shown as offline but stays known with the same ID, so its team
  * keeps it when it comes back.
+ *
+ * A buzzer plugged into the box sends the same packets over USB instead (firmware 1.4.0 and later, see
+ * BuzzerProvisioningService), which doesn't suffer from a busy WiFi: then the server sends it its state over USB too,
+ * and over the WiFi again once it is unplugged. It counts as one buzzer either way, so a press that it sends over both
+ * while the cable is pulled counts once.
  */
 export class UdpBuzzerService {
     private static instance: UdpBuzzerService;
     private static readonly MAC_ADDRESS = /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/i;
     // the longest a press can take to arrive: the buzzer sends it again for 300 ms (firmware/wireless-buzzer/include/config.h)
     private static readonly MAX_PRESS_DELAY_IN_US = 500000;
+    // without a packet over USB for this long, the buzzer plays over the WiFi again, as the buzzer does
+    // (BuzzController/wireless config.h USB_CONTACT_TIMEOUT_MS)
+    private static readonly USB_TIMEOUT_IN_MS = 3000;
 
     private socket: dgram.Socket;
     // by MAC address, in the order they were found, which is the order of their buzzerIndex
@@ -162,6 +188,39 @@ export class UdpBuzzerService {
     }
 
     /**
+     * It sent a heartbeat over the WiFi lately; also while it plays over USB, when it does so now and then
+     */
+    public isOnlineOverWifi(macAddress: string): boolean {
+        const buzzer = this.buzzers.get(macAddress.toUpperCase());
+        return buzzer != null && this.isRecent(buzzer.lastUdpSeen);
+    }
+
+    public isPlayingOverUsb(macAddress: string): boolean {
+        const buzzer = this.buzzers.get(macAddress.toUpperCase());
+        return buzzer != null && this.isUsbActive(buzzer);
+    }
+
+    /**
+     * A packet that a buzzer plugged into the box sent over USB
+     */
+    public onUsbPacket(text: string, link: IUsbLink): void {
+        this.onText(text, {kind: 'usb', link}, `USB ${link.path}`);
+    }
+
+    /**
+     * The buzzer at that port was unplugged: its state goes over the WiFi again
+     */
+    public onUsbLinkClosed(path: string): void {
+        for (const buzzer of this.buzzers.values()) {
+            if (buzzer.usb?.path === path) {
+                buzzer.usb = undefined;
+                buzzer.lastUsbSeen = undefined;
+                this.refresh(buzzer);
+            }
+        }
+    }
+
+    /**
      * All buzzers found since the server started, in the order they were found. The client names them after the color
      * of their case.
      */
@@ -173,6 +232,7 @@ export class UdpBuzzerService {
             byteBind: '',
             type: 'udp',
             online: buzzer.online,
+            connection: buzzer.connection,
             batteryLow: buzzer.batteryLow,
             batteryPercent: buzzer.batteryPercent,
             firmwareVersion: buzzer.firmwareVersion,
@@ -197,77 +257,107 @@ export class UdpBuzzerService {
     }
 
     private onMessage(msg: Buffer, rinfo: dgram.RemoteInfo): void {
+        this.onText(msg.toString(), {kind: 'udp', rinfo}, rinfo.address);
+    }
+
+    /**
+     * @param from where the packet came from, for the log
+     */
+    private onText(msg: string, source: TPacketSource, from: string): void {
         let packet: IHeartbeatPacket | IPressPacket;
         try {
-            packet = JSON.parse(msg.toString());
+            packet = JSON.parse(msg);
         } catch (e) {
-            LoggerService.warn(`Ignoring broken UDP packet from ${rinfo.address}: ${msg}`);
+            LoggerService.warn(`Ignoring broken buzzer packet from ${from}: ${msg}`);
             return;
         }
         // anything on the WiFi can send here; only MAC addresses become buzzers, so the list can't fill up with junk
         if (typeof packet?.id !== 'string' || !UdpBuzzerService.MAC_ADDRESS.test(packet.id)) {
-            LoggerService.warn(`Ignoring UDP packet without a valid buzzer ID from ${rinfo.address}: ${msg}`);
+            LoggerService.warn(`Ignoring buzzer packet without a valid buzzer ID from ${from}: ${msg}`);
             return;
         }
         // a failing packet must not take the server down
         try {
             if (packet.t === EUdpPacketType.HEARTBEAT) {
-                const buzzer = this.onSignOfLife(packet.id, rinfo, packet.lp);
+                const buzzer = this.onSignOfLife(packet.id, source, packet.lp);
                 this.onBattery(buzzer, packet.bat);
                 this.onBatteryPercent(buzzer, packet.pct);
                 this.onFirmwareVersion(buzzer, packet.fw);
                 this.onColor(buzzer, packet.col);
                 this.onDiagnostics(buzzer, packet);
-                this.sendState(buzzer, {ack: packet.seq});
+                this.sendState(buzzer, {ack: packet.seq}, source);
             } else if (packet.t === EUdpPacketType.PRESS) {
                 // the press may come before the first heartbeat
-                const buzzer = this.onSignOfLife(packet.id, rinfo);
+                const buzzer = this.onSignOfLife(packet.id, source);
                 const isRepeated = typeof packet.n === 'number' && packet.n === buzzer.lastPressNumber;
                 if (!isRepeated) {
                     buzzer.lastPressNumber = packet.n;
                     this.onPress(buzzer, packet.ts, this.now());
                 }
-                // so that the buzzer stops sending it; whether it won follows after the collection window
-                this.sendState(buzzer, {pa: packet.n});
+                // so that the buzzer stops sending it, the way it came; whether it won follows after the window
+                this.sendState(buzzer, {pa: packet.n}, source);
             } else {
-                LoggerService.warn(`Ignoring UDP packet of unknown type from ${rinfo.address}: ${msg}`);
+                LoggerService.warn(`Ignoring buzzer packet of unknown type from ${from}: ${msg}`);
             }
         } catch (e) {
-            LoggerService.error(`Could not handle UDP packet from ${rinfo.address}: ${msg}`, e);
+            LoggerService.error(`Could not handle buzzer packet from ${from}: ${msg}`, e);
         }
     }
 
-    private onSignOfLife(macAddress: string, rinfo: dgram.RemoteInfo, listenPort?: number): IUdpBuzzer {
+    private onSignOfLife(macAddress: string, source: TPacketSource, listenPort?: number): IUdpBuzzer {
         const key = macAddress.toUpperCase();
         let buzzer = this.buzzers.get(key);
-        let changed = false;
         if (buzzer == null) {
-            buzzer = {
-                id: BuzzerHelper.makeUdpBuzzerId(key),
-                macAddress: key,
-                ip: rinfo.address,
-                port: UdpBuzzerService.isValidPort(listenPort) ? listenPort : rinfo.port,
-                lastSeen: Date.now(),
-                online: true,
-                batteryLow: false
-            };
+            buzzer = {id: BuzzerHelper.makeUdpBuzzerId(key), macAddress: key, online: false, batteryLow: false};
             this.buzzers.set(key, buzzer);
-            LoggerService.log(`Found UDP buzzer ${key} at ${buzzer.ip}:${buzzer.port}`);
-            changed = true;
-        } else if (!buzzer.online) {
-            LoggerService.log(`UDP buzzer ${key} is back at ${rinfo.address}`);
-            buzzer.online = true;
-            changed = true;
+            LoggerService.log(`Found UDP buzzer ${key}` + (source.kind === 'udp' ? ` at ${source.rinfo.address}` : ' over USB'));
         }
-        buzzer.lastSeen = Date.now();
-        buzzer.ip = rinfo.address;
-        if (UdpBuzzerService.isValidPort(listenPort)) {
-            buzzer.port = listenPort;
+        if (source.kind === 'udp') {
+            buzzer.lastUdpSeen = Date.now();
+            buzzer.ip = source.rinfo.address;
+            if (UdpBuzzerService.isValidPort(listenPort)) {
+                buzzer.port = listenPort;
+            } else if (buzzer.port == null) {
+                buzzer.port = source.rinfo.port;
+            }
+        } else {
+            buzzer.lastUsbSeen = Date.now();
+            buzzer.usb = source.link;
         }
-        if (changed) {
-            this.notifyBuzzersChanged();
-        }
+        this.refresh(buzzer);
         return buzzer;
+    }
+
+    private isRecent(time: number | undefined, timeoutInMS = ConfigService.get().udpBuzzer.heartbeatTimeoutInMS): boolean {
+        return time != null && Date.now() - time <= timeoutInMS;
+    }
+
+    private isUsbActive(buzzer: IUdpBuzzer): boolean {
+        const timeoutInMS = Math.min(UdpBuzzerService.USB_TIMEOUT_IN_MS, ConfigService.get().udpBuzzer.heartbeatTimeoutInMS);
+        return buzzer.usb != null && this.isRecent(buzzer.lastUsbSeen, timeoutInMS);
+    }
+
+    /**
+     * Whether it is online and how the game reaches it, from when it was heard of last; tells the master if that
+     * changed
+     */
+    private refresh(buzzer: IUdpBuzzer): void {
+        const usb = this.isUsbActive(buzzer);
+        const online = usb || this.isRecent(buzzer.lastUdpSeen);
+        const connection = !online ? undefined : usb ? 'usb' : 'wifi';
+        if (online === buzzer.online && connection === buzzer.connection) {
+            return;
+        }
+        if (!online) {
+            LoggerService.log(`UDP buzzer ${buzzer.macAddress} is offline`);
+        } else if (connection === 'usb') {
+            LoggerService.log(`UDP buzzer ${buzzer.macAddress} plays over USB (${buzzer.usb.path})`);
+        } else {
+            LoggerService.log(`UDP buzzer ${buzzer.macAddress} plays over WiFi (${buzzer.ip})`);
+        }
+        buzzer.online = online;
+        buzzer.connection = connection;
+        this.notifyBuzzersChanged();
     }
 
     /**
@@ -384,18 +474,12 @@ export class UdpBuzzerService {
         }
     }
 
+    /**
+     * Also a buzzer that stopped talking over USB, which then plays over the WiFi, if it still works
+     */
     private markTimedOutBuzzersOffline(): void {
-        const timeoutInMS = ConfigService.get().udpBuzzer.heartbeatTimeoutInMS;
-        let changed = false;
         for (const buzzer of this.buzzers.values()) {
-            if (buzzer.online && Date.now() - buzzer.lastSeen > timeoutInMS) {
-                LoggerService.log(`UDP buzzer ${buzzer.macAddress} is offline`);
-                buzzer.online = false;
-                changed = true;
-            }
-        }
-        if (changed) {
-            this.notifyBuzzersChanged();
+            this.refresh(buzzer);
         }
     }
 
@@ -412,9 +496,28 @@ export class UdpBuzzerService {
         return seconds * 1000000 + Math.floor(nanoseconds / 1000);
     }
 
-    private sendState(buzzer: IUdpBuzzer, answer: {ack?: number, pa?: number} = {}): void {
+    /**
+     * @param source the answer to a packet goes back the way the packet came. Else the state goes over USB while the
+     * buzzer plays there, and also over the WiFi while that works: the cable may have been pulled a moment ago, which
+     * the server notices later than the buzzer. The buzzer takes it either way.
+     */
+    private sendState(buzzer: IUdpBuzzer, answer: {ack?: number, pa?: number} = {}, source?: TPacketSource): void {
         const packet: IStatePacket = {t: EUdpPacketType.STATE, ...this.stateProvider(buzzer.id), st: this.now(), ...answer};
-        this.socket.send(Buffer.from(JSON.stringify(packet)), buzzer.port, buzzer.ip, err => {
+        const json = JSON.stringify(packet);
+        if (source?.kind === 'usb') {
+            source.link.send(json);
+            return;
+        }
+        if (source == null && this.isUsbActive(buzzer)) {
+            buzzer.usb.send(json);
+            if (!this.isRecent(buzzer.lastUdpSeen)) {
+                return;
+            }
+        }
+        if (buzzer.ip == null || buzzer.port == null) {
+            return;
+        }
+        this.socket.send(Buffer.from(json), buzzer.port, buzzer.ip, err => {
             if (err) {
                 LoggerService.warn(`Could not send the state to UDP buzzer ${buzzer.macAddress} at ${buzzer.ip}:${buzzer.port}: ${err}`);
             }

@@ -96,6 +96,11 @@ einer Box mit kabelgebundenen Buzzern macht ihr Freigabe-Taster dasselbe.
 **Punkte von Hand.** Jedes Team hat Knöpfe, um einen Punkt hinzuzufügen oder abzuziehen und um die Punkte der aktuellen
 Frage zu vergeben, etwa für eine Frage, die ohne Buzzer beantwortet wurde.
 
+**Wie jeder Funkbuzzer verbunden ist.** Ein kleines Symbol in der Ecke jedes Teams an einem Funkbuzzer zeigt, wie sein
+Buzzer die Box gerade erreicht: **USB**, solange er an der Box angesteckt ist und [über USB spielt](wireless-buzzers.md#über-usb-spielen),
+sonst **WLAN**, und ein rotes durchgestrichenes WLAN-Symbol, solange er offline ist. Dann weck ihn mit seinem Knopf,
+siehe [Wenn ein Buzzer offline ist](wireless-buzzers.md#wenn-ein-buzzer-offline-ist).
+
 ### Fragen und Antworten auf der Anzeige
 
 - **Vorherige Frage** und **Nächste Frage** wechseln zwischen den Fragen. Nach der letzten Frage steht dort

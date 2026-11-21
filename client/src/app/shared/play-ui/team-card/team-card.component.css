@@ -1,5 +1,22 @@
 .team-card {
+  position: relative;
   margin: 0.25em;
+}
+
+/* the master: how the team's wireless buzzer is connected, small in the corner */
+.connection {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+.connection.offline {
+  color: #c62828;
+  opacity: 1;
 }
 
 .marked {

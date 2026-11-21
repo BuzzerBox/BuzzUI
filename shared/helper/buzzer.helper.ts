@@ -6,6 +6,7 @@ export class BuzzerHelper {
     private static readonly UDP_ID_PREFIX = 'udp:';
     private static readonly COLOR = /^#[0-9a-f]{6}$/i;
     private static readonly FIRST_FIRMWARE_WITH_CASE_COLOR = '1.2.0';
+    private static readonly FIRST_FIRMWARE_WITH_USB_MODE = '1.4.0';
 
     /**
      * The colors the cases of the wireless buzzers come in, which the master chooses from when adopting one. Red and
@@ -60,6 +61,15 @@ export class BuzzerHelper {
     public static supportsCaseColor(firmwareVersion: string): boolean {
         return typeof firmwareVersion === 'string'
             && VersionHelper.compare(firmwareVersion, BuzzerHelper.FIRST_FIRMWARE_WITH_CASE_COLOR) >= 0;
+    }
+
+    /**
+     * Whether a wireless buzzer with that firmware plays over USB while it is plugged into the box (BuzzController/wireless
+     * 1.4.0), see BuzzerProvisioningService
+     */
+    public static supportsUsbMode(firmwareVersion: string): boolean {
+        return typeof firmwareVersion === 'string'
+            && VersionHelper.compare(firmwareVersion, BuzzerHelper.FIRST_FIRMWARE_WITH_USB_MODE) >= 0;
     }
 
     public static isUdpBuzzerId(buzzerId: string): boolean {

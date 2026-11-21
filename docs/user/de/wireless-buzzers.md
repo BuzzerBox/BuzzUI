@@ -38,6 +38,20 @@ geändert wurde**: Buzzer behalten das WLAN, das sie bekommen haben.
 Um die Farbe eines übernommenen Buzzers zu ändern, steck ihn wieder an, wähle in seinem Menü ⋮ (*Weitere
 Einstellungen*) *Farbe des Gehäuses ändern*, wähle die Farbe und tippe auf **Farbe übernehmen**.
 
+## Über USB spielen
+
+Ein Buzzer, der an der BuzzerBox angesteckt ist, **spielt über das USB-Kabel** (ab Firmware 1.4.0): Seine Tastendrücke
+gehen dann nicht über das WLAN, sodass ein volles WLAN sie nicht verzögern kann. Das ist praktisch für einen Buzzer,
+der ohnehin neben der Box steht, oder wenn das WLAN am Spielort unzuverlässig ist.
+
+- Er wechselt von selbst: Ein paar Sekunden nach dem Anstecken ist das **USB**-Abzeichen in der Liste hervorgehoben,
+  und die Liste meldet *Spielt über USB, solange er angesteckt ist*. **Steck ihn jederzeit ab**, auch während eines
+  Spiels: Er spielt sofort über das WLAN weiter, ohne dass du etwas tun musst. Wieder angesteckt, wechselt er zurück
+  zu USB.
+- Das **WLAN**-Abzeichen daneben heißt, dass sein WLAN funktioniert und er abgesteckt werden kann. Ein Buzzer, der
+  nicht übernommen wurde, spielt auch über USB, aber abgesteckt nicht mehr: Übernimm ihn dafür.
+- Er lädt dabei und bleibt wach, solange er über USB spielt.
+
 ## Namen und Farben
 
 Ein Buzzer wird nach der Farbe seines Gehäuses benannt, zum Beispiel *Blauer Wireless Buzzer*, und ein neues Team daran

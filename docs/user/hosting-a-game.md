@@ -95,6 +95,11 @@ with wired buzzers, its release button does the same.
 **Points by hand.** Each team has buttons to add or deduct a point, and to award the points of the current question,
 for example for a question answered without buzzers.
 
+**How each wireless buzzer is connected.** A small symbol in the corner of each team on a wireless buzzer shows how its
+buzzer reaches the box right now: **USB** while it is plugged into the box and [plays over USB](wireless-buzzers.md#playing-over-usb),
+**WiFi** otherwise, and a red crossed-out WiFi symbol while it is offline. Then wake it with its button, see
+[When a buzzer is offline](wireless-buzzers.md#when-a-buzzer-is-offline).
+
 ### Questions and answers on the screen
 
 - **Previous question** and **Next question** (*Nächste Frage*) move between the questions. After the last question,

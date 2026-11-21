@@ -91,6 +91,7 @@ A command to the microcontroller is three bytes: `[command, parameter or stuffin
 | `udpBuzzer.provisioning.settingsFile` | `/etc/buzzerbox/wireless-buzzers.conf` | The WiFi name, passphrase and server address a buzzer is given (`KEY=value`), written by `buzzerbox-apply-settings`. |
 | `udpBuzzer.provisioning.usbIds` | `1a86:55d4`, `239a:8113`, `239a:811b` | The USB IDs (`vendor:product`) of serial ports that are buzzers: the Feather V2's CH9102 and the Feather ESP32-S3. |
 | `udpBuzzer.provisioning.wakeUsbIds` | `1a86:55d4` | Those of them whose buzzer may be asleep while plugged in and is woken by a reset. |
+| `udpBuzzer.provisioning.usbMode` | `true` | Whether a buzzer plugged into the box plays over USB instead of the WiFi (firmware 1.4.0 and later), see [USB mode](architecture.md#usb-mode). |
 
 ### `update`: USB updates
 
