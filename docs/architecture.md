@@ -150,7 +150,8 @@ together**.
 
 **Colors and names.** A buzzer's case color (`BuzzerHelper.CASE_COLORS`) is stored on the buzzer and reported in
 every heartbeat (`col`), so it becomes `IBuzzer.color`. The server copies it onto the team (`ITeam.color`), and the
-screens' `TeamColorHelper` prefers it over the palette by position. The client names wireless buzzers in the master's
+screens' `TeamColorHelper` prefers it over the palette by position. The master does the same with its own teams when it
+sets up a game (`GameService.setGameData`), since the server only sends them back when a buzzer's color changes. The client names wireless buzzers in the master's
 language (`BuzzerNameHelper`): after the color ("Blauer Wireless Buzzer", with the end of the MAC if two share one),
 or "Funkbuzzer" and the end of the MAC. A new team on a colored buzzer is named after the color ("Blau", "Blau 2",
 `TeamHelper.makeDefaultName`), one on another buzzer "Team <n>", skipping names the other teams have. Teams that play

@@ -272,6 +272,18 @@ describe('GameService', () => {
       expect(mapped.gameState.markedTeamIds).toEqual(['udp:01']);
     });
 
+    it('gives the teams of a new game the colors of their buzzers, as on the screens', () => {
+      accept([{...udp('AA:BB:CC:DD:EE:01'), color: '#fdd835'}, {...udp('AA:BB:CC:DD:EE:02'), color: '#1e88e5'}, udp('AA:BB:CC:DD:EE:03')]);
+      const teams: ITeam[] = [
+        {name: 'Gelb', buzzerId: 'udp:AA:BB:CC:DD:EE:01', teamId: 'udp:AA:BB:CC:DD:EE:01', buzzerIndex: 0},
+        {name: 'Blau', buzzerId: 'udp:AA:BB:CC:DD:EE:02', teamId: 'udp:AA:BB:CC:DD:EE:02', buzzerIndex: 1},
+        // a color it had before, while its buzzer has none now
+        {name: 'Ohne', buzzerId: 'udp:AA:BB:CC:DD:EE:03', teamId: 'udp:AA:BB:CC:DD:EE:03', buzzerIndex: 2, color: '#e53935'}
+      ];
+      service.setGameData(teams, []);
+      expect(service.getTeams().map(team => [team.name, team.color])).toEqual([['Gelb', '#fdd835'], ['Blau', '#1e88e5'], ['Ohne', undefined]]);
+    });
+
     it('drops a saved team whose UDP buzzer is not there, and keeps teams of the box off UDP buzzers', () => {
       accept([box('new0'), box('new1'), udp('02')]);
       const saved: ITeam[] = [
