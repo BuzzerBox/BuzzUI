@@ -12,6 +12,7 @@
  *   buzzer → server  {"t":"PRESS","id":<MAC>,"n":<press number>,"ts":<µs on the server's clock>}
  *   server → buzzer  {"t":"STATE","selected":…,"locked":…,"game":…,"st":<server µs>,"ack":<seq>,"pa":<n>}
  *
+ * Plugged into the box, the same packets go over USB as BUZZ PKT <json> lines (UsbMode, firmware 1.4.0),
  * and the WiFi the box gives it over USB (server/services/buzzer-provisioning.service.ts), where the buzzer
  * tells which WiFi it has: BUZZ READY <MAC> <firmware> {"ssid":…,"host":…,"port":…,"color":…}, or {} without one.
  * Never the passphrase. The box also tells the color of the buzzer's case ("color" in BUZZ WIFI), which the buzzer

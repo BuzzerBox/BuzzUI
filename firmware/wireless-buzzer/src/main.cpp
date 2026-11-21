@@ -1,7 +1,9 @@
 // The wireless buzzer: sleeps until its button is pressed, then connects to the BuzzerBox's WiFi and game server, and
-// stays awake while a game is running. Plugged into the box over USB, it gets the box's WiFi. See README.md.
+// stays awake while a game is running. Plugged into the box over USB, it gets the box's WiFi, and the game goes over
+// USB until it is unplugged (UsbMode). See README.md.
 
 #include <Arduino.h>
+#include <stdarg.h>
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -17,6 +19,7 @@
 #include "messages.h"
 #include "power_policy.h"
 #include "usb_link.h"
+#include "usb_mode.h"
 
 // kept through deep sleep (but not when the power was off): the access point of the last connection, for a quicker one
 RTC_DATA_ATTR static int32_t lastChannel = 0;
@@ -34,6 +37,27 @@ static Battery battery;
 static ClockSync clockSync;
 static PowerPolicy policy({CONNECT_TIMEOUT_MS, CONTACT_TIMEOUT_MS, LOST_TIMEOUT_MS, IDLE_TIMEOUT_MS});
 static WiFiUDP udp;
+static UsbMode usbMode({USB_CONTACT_TIMEOUT_MS});
+
+// The log, over USB while it is plugged in. A line that doesn't fit is dropped, see UsbLink::write().
+static void logLine(const char *format, ...) {
+    char text[256];
+    va_list args;
+    va_start(args, format);
+    int length = vsnprintf(text, sizeof(text), format, args);
+    va_end(args);
+    if (length > 0) {
+        usb.write(text, length < (int) sizeof(text) ? length : sizeof(text) - 1, USB_WRITE_TIMEOUT_MS);
+    }
+}
+
+// A line of the protocol with the box. It starts with a newline as well, so that the box finds its start after a log
+// line that was cut off.
+static bool sendLine(const char *text) {
+    char line[384];
+    int length = snprintf(line, sizeof(line), "\n%s\n", text);
+    return length > 0 && length < (int) sizeof(line) && usb.write(line, length, USB_WRITE_TIMEOUT_MS);
+}
 
 static messages::WifiSettings wifi;
 static bool hasWifi = false;
@@ -49,6 +73,8 @@ static IPAddress serverIp;
 
 static uint32_t heartbeatSeq = 0;
 static uint32_t lastHeartbeatMs = 0;
+// of the last heartbeat over the WiFi while the game goes over USB
+static uint32_t lastStandbyHeartbeatMs = 0;
 static uint32_t lastBatteryMs = 0;
 
 // the press that is sent until the server acknowledges it
@@ -63,6 +89,8 @@ static struct {
 
 static char line[320];
 static size_t lineLength = 0;
+// when the first character of the line came, for the clock (see onState)
+static int64_t lineStartUs = 0;
 // the rest of a line that was too long is skipped
 static bool skippingLine = false;
 
@@ -140,25 +168,43 @@ static void onConnected() {
     lastChannel = WiFi.channel();
     memcpy(lastBssid, WiFi.BSSID(), sizeof(lastBssid));
     if (!serverIp.fromString(wifi.host) && !WiFi.hostByName(wifi.host, serverIp)) {
-        Serial.printf("Can't resolve the server %s\n", wifi.host);
+        logLine("Can't resolve the server %s\n", wifi.host);
     }
     udp.begin(LOCAL_PORT);
-    Serial.printf("Connected to %s as %s, server %s:%u\n", wifi.ssid, WiFi.localIP().toString().c_str(),
+    logLine("Connected to %s as %s, server %s:%u\n", wifi.ssid, WiFi.localIP().toString().c_str(),
                   serverIp.toString().c_str(), wifi.port);
     // right away, not in a second
     lastHeartbeatMs = millis() - HEARTBEAT_INTERVAL_MS;
 }
 
-static void sendPacket(const char *packet, size_t length) {
-    if (!connected || length == 0 || (uint32_t) serverIp == 0) {
-        return;
+// how a packet goes to the server
+enum class Link { WIFI, USB };
+
+// false if it couldn't be sent
+static bool sendPacket(Link link, const char *packet, size_t length) {
+    if (length == 0) {
+        return false;
+    }
+    if (link == Link::USB) {
+        // the same JSON as over UDP, as a line among the log (BuzzerProvisioningService in server/services/buzzer-provisioning.service.ts)
+        char text[300];
+        if (length + 10 > sizeof(text)) {
+            return false;
+        }
+        memcpy(text, "BUZZ PKT ", 9);
+        memcpy(text + 9, packet, length);
+        text[9 + length] = '\0';
+        return sendLine(text);
+    }
+    if (!connected || (uint32_t) serverIp == 0) {
+        return false;
     }
     udp.beginPacket(serverIp, wifi.port);
     udp.write((const uint8_t *) packet, length);
-    udp.endPacket();
+    return udp.endPacket() == 1;
 }
 
-static void sendHeartbeat() {
+static void sendHeartbeat(Link link) {
     char packet[256];
     heartbeatSeq++;
     messages::Diagnostics diagnostics;
@@ -169,17 +215,46 @@ static void sendHeartbeat() {
     size_t length = messages::buildHeartbeat(packet, sizeof(packet), mac, LOCAL_PORT, heartbeatSeq,
                                              battery.millivolts(), FIRMWARE_VERSION, diagnostics, wifi.color,
                                              battery.percent());
-    clockSync.onSent(heartbeatSeq, esp_timer_get_time());
-    sendPacket(packet, length);
+    if (link == Link::USB) {
+        // At 115200 baud the line takes about 20 ms, while the server's answer is shorter. Taking the time once it went
+        // out (and the answer's when its first character comes, see readSerial) keeps the round trip even, which the
+        // clock takes for granted.
+        if (sendPacket(link, packet, length)) {
+            // the Feather V2's UART sends the rest of its buffer meanwhile; the S3 sends right away
+            Serial.flush();
+            clockSync.onSent(heartbeatSeq, esp_timer_get_time());
+        }
+    } else {
+        clockSync.onSent(heartbeatSeq, esp_timer_get_time());
+        sendPacket(link, packet, length);
+    }
 }
 
 static void sendPress() {
     char packet[160];
     size_t length = messages::buildPress(packet, sizeof(packet), mac, press.number, press.hasServerTime,
                                          press.serverUs);
-    sendPacket(packet, length);
+    if (usbMode.isLinked()) {
+        sendPacket(Link::USB, packet, length);
+    }
+    if (UsbMode::sendsPressOverWifi(usbMode.isLinked(), press.sends, PRESS_USB_ONLY_SENDS)) {
+        sendPacket(Link::WIFI, packet, length);
+    }
     press.sends++;
     press.lastSendMs = millis();
+}
+
+// a STATE of the server, over the WiFi or over USB
+static void onState(const messages::State &state, int64_t receivedUs) {
+    if (state.hasAck) {
+        clockSync.onAnswer(state.ack, state.serverUs, receivedUs);
+    }
+    if (state.hasPressAck && press.active && state.pressAck == press.number) {
+        press.active = false;
+        logLine("The server got press %u after %d sends\n", press.number, press.sends);
+    }
+    serverState = state;
+    policy.onState(millis(), state.game);
 }
 
 static void receivePackets() {
@@ -192,28 +267,21 @@ static void receivePackets() {
         }
         // anything on the WiFi can send here; only the server says what the buzzer shows
         if (!(udp.remoteIP() == serverIp)) {
-            Serial.printf("Ignoring a packet from %s, not the server\n", udp.remoteIP().toString().c_str());
+            logLine("Ignoring a packet from %s, not the server\n", udp.remoteIP().toString().c_str());
             continue;
         }
         packet[length] = '\0';
         messages::State state;
         if (!messages::parseState(packet, length, state)) {
-            Serial.printf("Ignoring a packet from %s: %s\n", udp.remoteIP().toString().c_str(), packet);
+            logLine("Ignoring a packet from %s: %s\n", udp.remoteIP().toString().c_str(), packet);
             continue;
         }
-        if (state.hasAck) {
-            clockSync.onAnswer(state.ack, state.serverUs, nowUs);
-        }
-        if (state.hasPressAck && press.active && state.pressAck == press.number) {
-            press.active = false;
-            Serial.printf("The server got press %u after %d sends\n", press.number, press.sends);
-        }
-        serverState = state;
-        policy.onState(millis(), state.game);
+        onState(state, nowUs);
     }
 }
 
-// ----- USB: the box gives the WiFi, see server/services/buzzer-provisioning.service.ts
+// ----- USB: the box gives the WiFi, and the game goes over USB while the box talks to the buzzer there (UsbMode), see
+// server/services/buzzer-provisioning.service.ts
 
 static void printReady() {
     // which WiFi it has, so that the box can tell whether it is adopted already, and its color
@@ -221,19 +289,33 @@ static void printReady() {
     if (messages::buildWifiInfo(wifiInfo, sizeof(wifiInfo), hasWifi, wifi) == 0) {
         strcpy(wifiInfo, "{}");
     }
-    Serial.printf("BUZZ READY %s %s %s\n", mac, FIRMWARE_VERSION, wifiInfo);
+    char text[300];
+    snprintf(text, sizeof(text), "BUZZ READY %s %s %s", mac, FIRMWARE_VERSION, wifiInfo);
+    sendLine(text);
 }
 
-static void onLine(const char *text) {
+static void onLine(const char *text, int64_t startUs) {
     static const char WIFI_PREFIX[] = "BUZZ WIFI ";
-    if (strcmp(text, "BUZZ HELLO") == 0) {
+    static const char PACKET_PREFIX[] = "BUZZ PKT ";
+    if (strncmp(text, PACKET_PREFIX, sizeof(PACKET_PREFIX) - 1) == 0) {
+        const char *json = text + sizeof(PACKET_PREFIX) - 1;
+        messages::State state;
+        if (messages::parseState(json, strlen(json), state)) {
+            usbMode.onContact(millis());
+            onState(state, startUs);
+        } else {
+            logLine("Ignoring a packet over USB: %s\n", json);
+        }
+    } else if (strcmp(text, "BUZZ LINK") == 0) {
+        usbMode.onContact(millis());
+    } else if (strcmp(text, "BUZZ HELLO") == 0) {
         policy.onActivity(millis());
         printReady();
     } else if (strncmp(text, WIFI_PREFIX, sizeof(WIFI_PREFIX) - 1) == 0) {
         policy.onActivity(millis());
         messages::WifiSettings received;
         if (!messages::parseWifi(text + sizeof(WIFI_PREFIX) - 1, received)) {
-            Serial.println("BUZZ ERROR invalid WiFi settings");
+            sendLine("BUZZ ERROR invalid WiFi settings");
             indicator.flash(255, 0, 0, 3);
             return;
         }
@@ -254,7 +336,7 @@ static void onLine(const char *text) {
             clockSync.reset();
             connectWifi(false);
         }
-        Serial.println("BUZZ OK");
+        sendLine("BUZZ OK");
         indicator.flash(0, 255, 0, 3);
     }
 }
@@ -265,11 +347,14 @@ static void readSerial() {
         if (c == '\n') {
             if (!skippingLine) {
                 line[lineLength] = '\0';
-                onLine(line);
+                onLine(line, lineStartUs);
             }
             lineLength = 0;
             skippingLine = false;
         } else if (c != '\r' && !skippingLine) {
+            if (lineLength == 0) {
+                lineStartUs = esp_timer_get_time();
+            }
             if (lineLength < sizeof(line) - 1) {
                 line[lineLength++] = c;
             } else {
@@ -284,7 +369,7 @@ static void readSerial() {
 // ----- power
 
 static void goToSleep() {
-    Serial.println("Going to sleep, press the button to wake up");
+    logLine("Going to sleep, press the button to wake up\n");
     indicator.shutdown();
     udp.stop();
     WiFi.disconnect(true);
@@ -300,7 +385,7 @@ static void goToSleep() {
     bool buttonHeld = button.isDown();
     bool externalButtonHeld = hasExternalButton && externalButton.isDown();
     if (buttonHeld || externalButtonHeld) {
-        Serial.println("A button is stuck, it wakes the buzzer when it is released");
+        logLine("A button is stuck, it wakes the buzzer when it is released\n");
     }
     // the pull-ups of the RTC GPIOs need the RTC peripherals powered while asleep
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
@@ -335,16 +420,17 @@ static void logConnection(uint32_t nowMs) {
     }
     logged = connection;
     if (connection == PowerPolicy::Connection::ONLINE) {
-        Serial.printf("The server answers (game: %s, clock synchronized to %lld µs)\n", serverState.game ? "yes" : "no",
+        logLine("The server answers (game: %s, clock synchronized to %lld µs)\n", serverState.game ? "yes" : "no",
                       clockSync.accuracyUs());
     } else if (connection == PowerPolicy::Connection::LOST) {
-        Serial.println("The server stopped answering");
+        logLine("The server stopped answering\n");
     }
 }
 
 static void updateIndicator(uint32_t nowMs) {
     Indicator::Pattern pattern;
-    if (!hasWifi) {
+    // over USB a buzzer plays without the WiFi too
+    if (!hasWifi && !usbMode.isLinked()) {
         pattern = Indicator::Pattern::NO_WIFI;
     } else {
         switch (policy.connection(nowMs)) {
@@ -387,7 +473,7 @@ void setup() {
         pressNumber = esp_random();
     }
     resetReason = describeResetReason(esp_reset_reason());
-    Serial.printf("Started: %s\n", resetReason);
+    logLine("Started: %s\n", resetReason);
     WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
         lastWifiReason = info.wifi_sta_disconnected.reason;
     }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
@@ -407,7 +493,7 @@ void setup() {
     if (hasWifi) {
         connectWifi(true);
     } else {
-        Serial.println("No WiFi yet, plug the buzzer into the BuzzerBox over USB");
+        logLine("No WiFi yet, plug the buzzer into the BuzzerBox over USB\n");
     }
 }
 
@@ -416,10 +502,26 @@ void loop() {
     if (usb.poll(nowMs)) {
         // the box greets a buzzer that shows up; it answers right away
         printReady();
-        Serial.printf("Started: %s, %s\n", resetReason, hasWifi ? wifi.ssid : "no WiFi yet");
+        logLine("Started: %s, %s\n", resetReason, hasWifi ? wifi.ssid : "no WiFi yet");
     }
     readSerial();
-    policy.setPluggedIn(nowMs, STAY_AWAKE_ON_USB && usb.isConnected());
+    switch (usbMode.update(nowMs, usb.isConnected())) {
+        case UsbMode::Change::TO_USB:
+            logLine("Playing over USB\n");
+            // right away, not in a second
+            lastHeartbeatMs = nowMs - HEARTBEAT_INTERVAL_MS;
+            lastStandbyHeartbeatMs = nowMs;
+            break;
+        case UsbMode::Change::TO_WIFI:
+            logLine("Playing over WiFi%s\n", connected ? "" : " (once it is connected)");
+            lastHeartbeatMs = nowMs - HEARTBEAT_INTERVAL_MS;
+            break;
+        case UsbMode::Change::NONE:
+        default:
+            break;
+    }
+    // the box powers a buzzer that plays over USB, which is ready for a game then
+    policy.setPluggedIn(nowMs, (STAY_AWAKE_ON_USB && usb.isConnected()) || usbMode.isLinked());
 
     if (hasWifi) {
         bool isConnected = WiFi.status() == WL_CONNECTED;
@@ -431,20 +533,29 @@ void loop() {
             wifiDrops++;
             // the core may reconnect by itself; if it doesn't, see below
             connectStartMs = nowMs;
-            Serial.printf("WiFi lost (reason %u)\n", lastWifiReason);
+            logLine("WiFi lost (reason %u)\n", lastWifiReason);
         } else if (!isConnected && nowMs - connectStartMs > connectTimeoutMs) {
             // the access point changed (so scan), or it went away and the core doesn't try again (so start over)
-            Serial.println("Not connected, looking for the WiFi again");
+            logLine("Not connected, looking for the WiFi again\n");
             connectWifi(false);
         }
     }
 
     if (connected) {
         receivePackets();
+    }
+    if (usbMode.isLinked()) {
         if (nowMs - lastHeartbeatMs >= HEARTBEAT_INTERVAL_MS) {
             lastHeartbeatMs = nowMs;
-            sendHeartbeat();
+            sendHeartbeat(Link::USB);
         }
+        if (connected && nowMs - lastStandbyHeartbeatMs >= STANDBY_HEARTBEAT_INTERVAL_MS) {
+            lastStandbyHeartbeatMs = nowMs;
+            sendHeartbeat(Link::WIFI);
+        }
+    } else if (connected && nowMs - lastHeartbeatMs >= HEARTBEAT_INTERVAL_MS) {
+        lastHeartbeatMs = nowMs;
+        sendHeartbeat(Link::WIFI);
     }
 
     int64_t pressedUs;
@@ -459,13 +570,14 @@ void loop() {
         policy.onActivity(nowMs);
         press = {true, ++pressNumber, clockSync.isSynced(), clockSync.toServer(pressedUs), 0, 0};
         sendPress();
-        Serial.printf("Pressed, sent press %u%s\n", press.number, connected ? "" : " (but there is no WiFi)");
+        logLine("Pressed, sent press %u %s\n", press.number,
+                      usbMode.isLinked() ? "over USB" : connected ? "over WiFi" : "(but there is no WiFi)");
     } else if (press.active && nowMs - press.lastSendMs >= PRESS_RESEND_INTERVAL_MS) {
         if (press.sends < PRESS_SENDS) {
             sendPress();
         } else {
             press.active = false;
-            Serial.printf("The server didn't acknowledge press %u\n", press.number);
+            logLine("The server didn't acknowledge press %u\n", press.number);
         }
     }
 

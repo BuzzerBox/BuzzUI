@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.3.0"
+#define FIRMWARE_VERSION "1.4.0"
 
 // ----- Hardware: an Adafruit ESP32 Feather V2 (env feather) or Feather ESP32-S3 (env feather_s3)
 
@@ -70,6 +70,18 @@ constexpr uint32_t FAST_CONNECT_TIMEOUT_MS = 3000;
 // not connected for this long, it starts over with a scan: the Arduino core doesn't reconnect after every drop (not
 // when the box's access point shuts down), and its reconnect keeps the channel of the last connection
 constexpr uint32_t RECONNECT_TIMEOUT_MS = 10000;
+
+// ----- USB mode (see UsbMode): while the box talks to the buzzer over USB, the game goes over USB
+
+// without anything from the box over USB for this long, the game goes over the WiFi again
+constexpr uint32_t USB_CONTACT_TIMEOUT_MS = 3000;
+// meanwhile a heartbeat over the WiFi this often tells the server that the WiFi still works (its heartbeatTimeoutInMS
+// is 5 s)
+constexpr uint32_t STANDBY_HEARTBEAT_INTERVAL_MS = 2000;
+// a press is sent over USB alone this often, then over the WiFi as well, in case the cable was just pulled
+constexpr int PRESS_USB_ONLY_SENDS = 3;
+// the longest a line waits for room in the serial buffer, see UsbLink::write(); a heartbeat takes 22 ms at 115200 baud
+constexpr uint32_t USB_WRITE_TIMEOUT_MS = 50;
 
 // ----- Power (see PowerPolicy)
 
