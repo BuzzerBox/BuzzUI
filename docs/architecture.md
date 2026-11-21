@@ -112,7 +112,7 @@ The server maps every input (below) to a team's buzzer and handles the lock itse
 ### The box's analog buzzers (serial)
 
 A microcontroller in the box reads the wired buzzers and talks to the Pi over the GPIO UART (`/dev/ttyS0`, 115200
-baud). Its firmware is in the [BuzzController](https://github.com/BuzzerBox/BuzzController) repository.
+baud).
 
 - **Microcontroller → Pi:** one byte per event: the buzzer's `byte` from `config.json` (`0x31`… for buzzers 1…), or
   `softReleaseByte` (`0x71`) for the release button.

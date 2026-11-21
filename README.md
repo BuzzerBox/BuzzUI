@@ -68,9 +68,6 @@ buzzer locks out the others, and the game master grades the answer.
 | `deploy/test/` | The test environment that runs the latest `main` in Docker. |
 | [`firmware/wireless-buzzer/`](firmware/wireless-buzzer/README.md) | The firmware of the wireless buzzers (ESP32 Feather V2 or Feather ESP32-S3, PlatformIO). Its README documents the UDP and the USB protocol from the buzzer's side; change both sides together. |
 
-The firmware of the box's microcontroller is in the [BuzzController](https://github.com/BuzzerBox/BuzzController)
-repository, whose README documents the serial protocol from the box's side.
-
 ## Trying it out
 
 ```sh
