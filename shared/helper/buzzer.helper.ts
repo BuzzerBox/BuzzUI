@@ -64,8 +64,8 @@ export class BuzzerHelper {
     }
 
     /**
-     * Whether a wireless buzzer with that firmware plays over USB while it is plugged into the box (BuzzController/wireless
-     * 1.4.0), see BuzzerProvisioningService
+     * Whether a wireless buzzer with that firmware plays over USB while it is plugged into the box (firmware
+     * 1.4.0, firmware/wireless-buzzer), see BuzzerProvisioningService
      */
     public static supportsUsbMode(firmwareVersion: string): boolean {
         return typeof firmwareVersion === 'string'

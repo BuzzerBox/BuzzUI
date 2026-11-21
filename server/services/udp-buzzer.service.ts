@@ -133,7 +133,7 @@ export class UdpBuzzerService {
     // the longest a press can take to arrive: the buzzer sends it again for 300 ms (firmware/wireless-buzzer/include/config.h)
     private static readonly MAX_PRESS_DELAY_IN_US = 500000;
     // without a packet over USB for this long, the buzzer plays over the WiFi again, as the buzzer does
-    // (BuzzController/wireless config.h USB_CONTACT_TIMEOUT_MS)
+    // (firmware/wireless-buzzer/include/config.h USB_CONTACT_TIMEOUT_MS)
     private static readonly USB_TIMEOUT_IN_MS = 3000;
 
     private socket: dgram.Socket;
