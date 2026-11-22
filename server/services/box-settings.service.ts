@@ -37,9 +37,6 @@ export class BoxSettingsService {
             LoggerService.log(`No box settings in ${file}, using the defaults`);
         }
         this.appliedSettings = BoxSettingsService.parse(content);
-        if (!this.hasAnalogBuzzers()) {
-            LoggerService.log('This box has no analog buzzers (ANALOG_BUZZERS=no), only the wireless ones are offered');
-        }
     }
 
     /**
@@ -50,12 +47,11 @@ export class BoxSettingsService {
     }
 
     /**
-     * Whether the box has analog buzzers, wired to its buzzer ports and read by its microcontroller on the serial port.
-     * A box without them (e.g. the compact one with a touch display) offers only the wireless buzzers. This is what the
-     * box applied at its start; a changed ANALOG_BUZZERS counts after the next one.
+     * The value of a setting as the box applied it at its start, or undefined; a changed setting counts after the next
+     * one. For extensions, see IExtensionHost.getBoxSetting.
      */
-    public hasAnalogBuzzers(): boolean {
-        return this.appliedSettings.get('ANALOG_BUZZERS')?.toLowerCase() !== 'no';
+    public getAppliedSetting(key: string): string | undefined {
+        return this.appliedSettings.get(key);
     }
 
     public static get(): BoxSettingsService {

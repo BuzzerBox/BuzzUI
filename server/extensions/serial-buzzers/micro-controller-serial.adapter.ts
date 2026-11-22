@@ -1,7 +1,11 @@
-import {SerialPortService} from '../../services/serial-port.service';
+import {SerialPortService} from './serial-port.service';
 import {ConfigService} from '../../services/config.service';
 import {Byte} from '../../../shared/objects/byte';
 
+/**
+ * The commands to the box's microcontroller: frames of [command, parameter or stuffingBit, eol], see
+ * docs/architecture.md
+ */
 export class MicroControllerSerialAdapter {
   private constructor() {
     // hide public constructor

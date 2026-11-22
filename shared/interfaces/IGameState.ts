@@ -45,4 +45,9 @@ export interface IGameState {
      * The name of the stored game that is played, for the welcome screen; set when the game is set up
      */
     gameName?: string;
+    /**
+     * The data of extensions, by extension ID (see docs/extensions.md). The core keeps it as it is, also when it saves,
+     * loads or imports the state.
+     */
+    ext?: Record<string, unknown>;
 }

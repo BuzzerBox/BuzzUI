@@ -35,6 +35,11 @@ export interface IGameDefinition {
      * How answers are scored; missing settings are on, see ScoringHelper
      */
     scoring?: Partial<IScoring>;
+    /**
+     * The data of extensions, by extension ID (see docs/extensions.md). The core keeps it as it is, also when it saves,
+     * loads or imports the version.
+     */
+    ext?: Record<string, unknown>;
 }
 
 /**

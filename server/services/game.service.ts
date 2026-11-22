@@ -53,29 +53,21 @@ import {
     LanguageHelper,
     TLanguage,
     PacketHelper,
-    ScoringHelper
+    ScoringHelper,
+    PacketTypeHelper
 } from "../../shared/shared";
-import config from '../../config.json';
 import * as Uuid from 'uuid';
 import {LoggerService} from './logger.service';
-import {MicroControllerSerialAdapter} from '../objects/adapters/MicroControllerSerialAdapter';
-import {Buffer} from 'buffer';
-import {SerialPortService} from './serial-port.service';
 import {IUdpBuzzerState, UdpBuzzerService} from './udp-buzzer.service';
 import {BuzzerProvisioningService} from './buzzer-provisioning.service';
 import {BoxSettingsService} from './box-settings.service';
 import {ConfigService} from './config.service';
-import {toInteger} from 'lodash';
 import {ObjectHelper} from '../../shared/helper/object.helper';
 import {UpdateService} from './update.service';
 import {StorageService} from './storage.service';
 import {AutosaveService} from './autosave.service';
 import {ClockService} from './clock.service';
-
-enum LOOKUP_TEAM_CODE {
-    BY_KEYPRESS,
-    BY_BYTE
-}
+import {IExtensionHost, IServerExtension, TExtensionPacketHandler} from '../extensions/server-extension';
 
 export class GameService {
     private static instance: GameService;
@@ -88,7 +80,12 @@ export class GameService {
     private newMessageMasterSubscription: Subscription;
     private currentStateInAutomaton: EGameStates;
     private previousStateInAutomaton: EGameStates;
-    private buzzerConfig: IBuzzer[];
+    // the buzzers of the box, from the config, see getBoxBuzzers()
+    private boxBuzzers: IBuzzer[];
+    // whether an extension presses them, see IExtensionHost.enableBoxBuzzers()
+    private areBoxBuzzersEnabledByExtension = false;
+    private readonly lockReleasedCallbacks: ((origin: string | undefined) => void)[] = [];
+    private readonly extensionPacketHandlers = new Map<number, {handler: TExtensionPacketHandler, isFromAnyConnection: boolean}>();
     private teams: ITeam[] = [];
     private questions: IQuestion[] = [];
     private currentGameState: IGameState;
@@ -97,10 +94,9 @@ export class GameService {
     private resumesRunningGame = false;
     // whether the game was ended, for its saved state
     private gameFinished = false;
-    private keyOrByteCodesInUse: string[] = [];
-    private ignoredKeypresses: string[] = [];
-    // TODO: maybe rename it to lastBuzzerPressed to reflect an upcoming change in behavior for this field
-    private lastKeyPressed: string;
+    // buzzers whose presses don't count in this question (not used yet, see onAnswerSetStatePacket)
+    private ignoredBuzzerIds: string[] = [];
+    private lastBuzzerIdPressed: string;
     private configInvalidReason: string;
     // what the master chose, which the screens follow; unknown until a master registered, and kept across games
     private language: TLanguage | undefined;
@@ -115,12 +111,10 @@ export class GameService {
         this.newConnectionEstablishedSubscription = this.newConnectionEstablished$.subscribe(this.onNewConnection.bind(this))
         // When this is instantiated, the game is looking for a master
         this.setNewState(EGameStates.WAITING_FOR_MASTER);
-        // call this once to read config and create necessary variables
-        this.getBuzzerConfig();
-        SerialPortService.get().addOnDataInCallback(this.onSerialDataIn.bind(this));
-        SerialPortService.get().addOnErrorCallback(this.onSerialError.bind(this));
+        // their IDs stay the same while the server runs
+        this.getBoxBuzzers();
         UdpBuzzerService.get().setStateProvider(this.getUdpBuzzerState.bind(this));
-        UdpBuzzerService.get().addOnPressCallback(this.onUdpBuzzerPress.bind(this));
+        UdpBuzzerService.get().addOnPressCallback(this.pressBuzzers.bind(this));
         UdpBuzzerService.get().addOnBuzzersChangedCallback(() => {
             // a buzzer that got another color shows its team in it
             if (this.applyBuzzerColors(this.teams)) {
@@ -161,6 +155,47 @@ export class GameService {
         this.get();
     }
 
+    /**
+     * Starts the extensions, see IServerExtension. One that fails to start is left out; the game runs without it.
+     */
+    public startExtensions(extensions: IServerExtension[]): void {
+        for (const extension of extensions) {
+            try {
+                extension.start(this.makeExtensionHost());
+                LoggerService.log(`Started the extension ${extension.id}`);
+            } catch (e) {
+                LoggerService.error(`Could not start the extension ${extension.id}`, e);
+            }
+        }
+    }
+
+    private makeExtensionHost(): IExtensionHost {
+        return {
+            getBoxBuzzers: () => this.getBoxBuzzers(),
+            enableBoxBuzzers: () => {
+                this.areBoxBuzzersEnabledByExtension = true;
+            },
+            pressBuzzer: buzzerId => this.pressBuzzers([buzzerId]),
+            releaseFromBox: extensionId => this.releaseFromBox(extensionId),
+            onLockReleased: callback => {
+                this.lockReleasedCallbacks.push(callback);
+            },
+            getBoxSetting: key => BoxSettingsService.get().getAppliedSetting(key),
+            registerPacketHandler: (packetType, handler, options) => {
+                if (!PacketTypeHelper.isExtensionPacketType(packetType)) {
+                    throw new Error(`Packet type ${packetType} is the core's; an extension's start at ${PacketTypeHelper.FIRST_EXTENSION_PACKET_TYPE}`);
+                }
+                if (this.extensionPacketHandlers.has(packetType)) {
+                    throw new Error(`Packet type ${packetType} has a handler already`);
+                }
+                this.extensionPacketHandlers.set(packetType, {handler, isFromAnyConnection: !!options?.isFromAnyConnection});
+            },
+            sendToMaster: packet => this.sendToMaster(packet),
+            sendToAllScreens: packet => this.sendToAllScreens(packet),
+            isGameRunning: () => this.isGameRunning()
+        };
+    }
+
     private onNewConnection(con: WebSocketConnection) {
         console.dir("new connection");
 
@@ -180,6 +215,10 @@ export class GameService {
     }
 
     private onPacket(con: WebSocketConnection, sub: Subscription, packet: IGamePacket): void {
+        if (PacketTypeHelper.isExtensionPacketType(packet.packetType)) {
+            this.onExtensionPacket(con, packet);
+            return;
+        }
         // the "sub" will be unsubscribed in the onRegisterMasterPacket
         if (packet.packetType === EPacketTypes.REGISTER_MASTER) {
             this.onRegisterMasterPacket(con, sub, packet as IRegisterMasterPacket);
@@ -239,6 +278,20 @@ export class GameService {
         } else if (packet.packetType === EPacketTypes.SET_LANGUAGE) {
             this.onSetLanguagePacket(packet as ISetLanguagePacket);
         }
+    }
+
+    private onExtensionPacket(con: WebSocketConnection, packet: IGamePacket): void {
+        const entry = this.extensionPacketHandlers.get(packet.packetType);
+        if (entry == null) {
+            LoggerService.warn(`Ignoring packet ${packet.packetType}, which no extension handles`);
+            return;
+        }
+        const isFromMaster = con === this.webSocketConnectionMaster;
+        if (!isFromMaster && !entry.isFromAnyConnection) {
+            LoggerService.warn(`Ignoring packet ${packet.packetType} since only the master may send it`);
+            return;
+        }
+        entry.handler(packet, isFromMaster);
     }
 
     /**
@@ -304,54 +357,48 @@ export class GameService {
         UdpBuzzerService.get().sendStateToAll();
     }
 
-    private getBuzzerConfig(): IBuzzer[] {
-        if (this.buzzerConfig == null && !BoxSettingsService.get().hasAnalogBuzzers()) {
-            // only the wireless buzzers, see BoxSettingsService
-            this.buzzerConfig = [];
-        }
-        if (this.buzzerConfig == null) {
-            this.buzzerConfig = [];
-            // check if no key was used more than once
-            const keys: string[] = [];
-            for (const buzzConf of ConfigService.get().buzzers) {
-                const eKeyBind = buzzConf.key;
-                if (keys.includes(eKeyBind))
-                {
-                    throw new Error("Cannot used the same key bind more than once");
-                }
-                keys.push(eKeyBind);
+    /**
+     * The buzzers of the box, from config.json's "buzzers": browser keypresses press them (in dev and the test
+     * environment), and so can an extension, see IExtensionHost
+     */
+    private getBoxBuzzers(): IBuzzer[] {
+        if (this.boxBuzzers == null) {
+            const keys = ConfigService.get().buzzers.map(buzzer => buzzer.key);
+            if (new Set(keys).size !== keys.length) {
+                throw new Error("Cannot used the same key bind more than once");
             }
-            for (const buzzConf of ConfigService.get().buzzers) {
-                const id: string = Uuid.v4();
-                const c: IBuzzer = {
-                    name: buzzConf.name,
-                    id,
-                    keyBind: buzzConf.key,
-                    byteBind: buzzConf.byte.toString(10),
-                    type: 'serial',
-                    // optional in the config, so missing from its type
-                    color: BuzzerHelper.normalizeColor((buzzConf as {color?: string}).color)
-                }
-                this.buzzerConfig.push(c);
-                this.keyOrByteCodesInUse.push(c.byteBind);
-                this.keyOrByteCodesInUse.push(c.keyBind);
-            }
+            this.boxBuzzers = ConfigService.get().buzzers.map(buzzer => ({
+                name: buzzer.name,
+                id: Uuid.v4(),
+                keyBind: buzzer.key,
+                type: 'serial',
+                // optional in the config, so missing from its type
+                color: BuzzerHelper.normalizeColor((buzzer as {color?: string}).color)
+            }));
         }
-        return this.buzzerConfig;
+        return this.boxBuzzers;
+    }
+
+    /**
+     * Only while something can press them: the browser keypresses, or an extension (e.g. one for wired buzzers). A
+     * box without either offers only the wireless buzzers.
+     */
+    private areBoxBuzzersEnabled(): boolean {
+        return !!ConfigService.get().enableBrowserKeypressEvents || this.areBoxBuzzersEnabledByExtension;
     }
 
     /**
      * The buzzers of the box and the UDP buzzers found so far, which are only ever appended, so each keeps its index
      */
     private getAvailableBuzzers(): IBuzzer[] {
-        return [...this.getBuzzerConfig(), ...UdpBuzzerService.get().getBuzzers()];
+        return [...(this.areBoxBuzzersEnabled() ? this.getBoxBuzzers() : []), ...UdpBuzzerService.get().getBuzzers()];
     }
 
     private sendPresetupAvailableInfo(): void {
         this.sendToMaster<IPresetupAvailableInfoPacket>({
             packetType: EPacketTypes.PRESETUP_AVAILABLE_INFO,
             availableBuzzers: this.getAvailableBuzzers(),
-            analogBuzzers: BoxSettingsService.get().hasAnalogBuzzers()
+            analogBuzzers: this.areBoxBuzzersEnabled()
         });
     }
 
@@ -610,7 +657,7 @@ export class GameService {
         if (!isCorrect) {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
-            this.releaseHardwareBuzzerLock(true);
+            this.releaseHardwareBuzzerLock();
         }
         // the screens and the master flash the answers for a wrong one
         this.sendToMaster<IGradeAnswerPacket>(packet);
@@ -667,7 +714,7 @@ export class GameService {
         if ((this.currentGameState.markedTeamIds ?? []).some(isRemoved)) {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
-            this.releaseHardwareBuzzerLock(true);
+            this.releaseHardwareBuzzerLock();
         }
         const updateTeamsPacket: IUpdateTeamsPacket = {packetType: EPacketTypes.UPDATE_TEAMS, teams: this.teams};
         this.sendToMaster<IUpdateTeamsPacket>(updateTeamsPacket);
@@ -710,11 +757,11 @@ export class GameService {
         if (packet.state === EAnswerStates.ACTIVATE && !GameStateHelper.areAllCorrectAnswersActivated(this.currentGameState, this.getCurrentQuestion())) {
             this.unmarkAllTeams();
             this.setKeypressLocked(false);
-            this.releaseHardwareBuzzerLock(true);
-            if (this.lastKeyPressed != null) {
-                // if the answer is wrong an there is a last key press, then ignore it for this round
+            this.releaseHardwareBuzzerLock();
+            if (this.lastBuzzerIdPressed != null) {
+                // if the answer is wrong an there is a last buzzer press, then ignore it for this round
                 // TODO: shall be configurable, will be done somewhat later
-                // this.ignoredKeypresses.push(this.lastKeyPressed);
+                // this.ignoredBuzzerIds.push(this.lastBuzzerIdPressed);
             }
         }
         this.sendToAllScreens(packet);
@@ -733,7 +780,7 @@ export class GameService {
         // this.setKeypressLocked(false);
         const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
         this.onSetBuzzerLockPacket(null, lockPacket);
-        this.ignoredKeypresses = [];
+        this.ignoredBuzzerIds = [];
         this.sendToAllScreens(packet);
         let questionConfig = PacketHelper.getDefaultMediaState();
         if (this.getCurrentQuestion().initialConfig) {
@@ -827,9 +874,9 @@ export class GameService {
         this.teams = [];
         this.questions = [];
         this.setKeypressLocked(false)
-        this.releaseHardwareBuzzerLock(true);
-        this.ignoredKeypresses = [];
-        this.lastKeyPressed = null;
+        this.releaseHardwareBuzzerLock();
+        this.ignoredBuzzerIds = [];
+        this.lastBuzzerIdPressed = null;
         this.resumesRunningGame = false;
         this.currentGameState = this.makeInitialGameState();
         UdpBuzzerService.get().sendStateToAll();
@@ -857,22 +904,37 @@ export class GameService {
             return;
         }
         if (packet.keyCode === ConfigService.get().softReleaseKey) {
-            this.releaseHardwareBuzzerLock(true);
+            this.releaseHardwareBuzzerLock();
             this.unmarkAllTeams();
-        } else if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(packet.keyCode)) {
-            const team: ITeam = this.getTeamForKeyPressCode(packet.keyCode);
-            if (team == null) {
-                LoggerService.log("no team found for keycode " + packet.keyCode)
-                return;
-            }
-            this.lastKeyPressed = packet.keyCode;
-            this.lockOnTeam(team);
+            return;
         }
+        const buzzer = this.getBoxBuzzers().find(b => b.keyBind === packet.keyCode);
+        if (buzzer == null) {
+            LoggerService.log("no buzzer for keycode " + packet.keyCode);
+            return;
+        }
+        this.pressBuzzers([buzzer.id]);
     }
 
-    private releaseHardwareBuzzerLock(sendSerial: boolean = false) {
+    /**
+     * Releases the buzzers; origin is the extension that released them, which isn't told, see
+     * IExtensionHost.onLockReleased
+     */
+    private releaseHardwareBuzzerLock(origin?: string) {
         const lockPacket: ISetBuzzerLockPacket = PacketHelper.makeBuzzerLockPacket(false);
-        this.onSetBuzzerLockPacket(null, lockPacket, sendSerial);
+        this.onSetBuzzerLockPacket(null, lockPacket, origin);
+    }
+
+    /**
+     * The release on the box, see IExtensionHost.releaseFromBox
+     */
+    private releaseFromBox(extensionId: string): void {
+        this.unmarkAllTeams();
+        this.setKeypressLocked(false);
+        this.releaseHardwareBuzzerLock(extensionId);
+        if (this.isGameSetUp()) {
+            AutosaveService.get().changed();
+        }
     }
 
     private setKeypressLocked(locked: boolean): void {
@@ -902,98 +964,6 @@ export class GameService {
         return this.keypressLocked;
     }
 
-    /**
-     * This is the look-up function for keypress codes (e.g. from the browser)
-     * @param keyCode
-     * @private
-     */
-    private getTeamForKeyPressCode(keyCode: string): ITeam {
-        // TODO: remove once tested
-        /*if (!this.keyOrByteCodesInUse.includes(keyCode)) {
-            return null;
-        }
-        let b: IBuzzer;
-        for (const buzzer of this.getBuzzerConfig()) {
-            if (buzzer.keyBind === keyCode) {
-                b = buzzer;
-            }
-        }
-        if (b == null) {
-            return null;
-        }
-        for (const team of this.teams) {
-            if (b.id === team.buzzerId) {
-                LoggerService.log("found team " + team.name + " to match keypress " + keyCode);
-                return team;
-            }
-        }
-        return null;*/
-        return this.getTeamForByteOrKeyPressCode(keyCode, LOOKUP_TEAM_CODE.BY_KEYPRESS);
-    }
-
-    private getTeamForByteCode(byteCode: string): ITeam {
-        // TODO: remove once tested
-        /*if (!this.keyOrByteCodesInUse.includes(byteCode)) {
-            return null;
-        }
-        let b: IBuzzer;
-        for (const buzzer of this.getBuzzerConfig()) {
-            if (buzzer.byteBind === byteCode) {
-                b = buzzer;
-            }
-        }
-        if (b == null) {
-            return null;
-        }
-        for (const team of this.teams) {
-            if (b.id === team.buzzerId) {
-                LoggerService.log("found team " + team.name + " to match byte " + byteCode);
-                return team;
-            }
-        }
-        return null;*/
-        return this.getTeamForByteOrKeyPressCode(byteCode, LOOKUP_TEAM_CODE.BY_BYTE);
-    }
-
-    private getTeamForByteOrKeyPressCode(code: string, mode: LOOKUP_TEAM_CODE): ITeam {
-        if (!this.keyOrByteCodesInUse.includes(code)) {
-            return null;
-        }
-        let b: IBuzzer;
-        for (const buzzer of this.getBuzzerConfig()) {
-            if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
-                if (buzzer.byteBind === code) {
-                    b = buzzer;
-                }
-            } else if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
-                if (buzzer.keyBind === code) {
-                    b = buzzer;
-                }
-            } else {
-                return null;
-            }
-        }
-        if (b == null) {
-            return null;
-        }
-        for (const team of this.teams) {
-            if (b.id === team.buzzerId) {
-                if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
-                    LoggerService.log("found team " + team.name + " to match keypress " + code);
-                } else if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
-                    LoggerService.log("found team " + team.name + " to match byte " + code);
-                }
-                return team;
-            }
-        }
-        if (mode === LOOKUP_TEAM_CODE.BY_KEYPRESS) {
-            LoggerService.warn("No team found for keypress " + code);
-        } else if (mode === LOOKUP_TEAM_CODE.BY_BYTE) {
-            LoggerService.warn("No team found for byte " + code);
-        }
-        return null;
-    }
-
     private onMarkTeamPacket(packet: IMarkTeamPacket): void {
         GameStateHelper.applyMarkTeam(this.currentGameState, packet);
         this.sendToMaster<IMarkTeamPacket>(packet);
@@ -1017,14 +987,20 @@ export class GameService {
         return true;
     }
 
-    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, sendSerial: boolean = true): void {
+    private onSetBuzzerLockPacket(con: WebSocketConnection, packet: ISetBuzzerLockPacket, origin?: string): void {
         this.setKeypressLocked(packet.setLock);
         // it is very likely, that the master already reloaded the page, thus this is null
         this.sendToMaster<ISetBuzzerLockPacket>(packet);
         this.sendToAllScreens<ISetBuzzerLockPacket>(packet);
-        // release the box's lock too
-        if (sendSerial && !packet.setLock) {
-            MicroControllerSerialAdapter.sendSerialCommandReleaseLock();
+        // e.g. the box's own lock is released too
+        if (!packet.setLock) {
+            for (const callback of this.lockReleasedCallbacks) {
+                try {
+                    callback(origin);
+                } catch (e) {
+                    LoggerService.error('An extension failed on the release of the buzzers', e);
+                }
+            }
         }
     }
 
@@ -1039,42 +1015,6 @@ export class GameService {
         this.currentGameState.mediaVolume = packet.mediaVolume;
         this.sendToMaster<ISetMediaVolumePacket>(packet);
         this.sendToAllScreens<ISetMediaVolumePacket>(packet);
-    }
-
-    private onSerialDataIn(data: Buffer): void {
-        // one chunk of data can hold several bytes, e.g. when two buzzers were pressed right after each other
-        for (const byte of data) {
-            // like a broken packet, a failing buzzer press must not take the server down
-            try {
-                this.onSerialByteIn(byte);
-                if (this.isGameSetUp()) {
-                    AutosaveService.get().changed();
-                }
-            } catch (e) {
-                LoggerService.error(`Could not handle serial byte ${byte}`, e);
-            }
-        }
-    }
-
-    private onSerialByteIn(byte: number): void {
-        const c: typeof config = ConfigService.get();
-        // the config writes the bytes as their hex digits, e.g. 0x31 as 31
-        const input: number = toInteger(byte.toString(16).padStart(2, '0'));
-        if (input === c.softReleaseByte) {
-            this.unmarkAllTeams();
-            this.setKeypressLocked(false);
-            this.releaseHardwareBuzzerLock(false);
-        } else {
-            const inputAsString = input.toString(10);
-            if (!this.isKeypressLocked() && !this.ignoredKeypresses.includes(inputAsString)) {
-                const team: ITeam = this.getTeamForByteCode(inputAsString);
-                if (team == null) {
-                    LoggerService.error("no team found for byte code " + inputAsString)
-                    return;
-                }
-                this.lockOnTeam(team);
-            }
-        }
     }
 
     private lockOnTeam(team: ITeam) {
@@ -1104,22 +1044,18 @@ export class GameService {
         this.sendToAllScreens<ISetBuzzerLockPacket>(buzzerLockPacket);
     }
 
-    private onSerialError(err): void {
-        // TODO
-        console.log('Serial Error', err);
-    }
-
     /**
-     * The earliest press that counts wins: buzzers without a team, or ignored ones, don't block the others
+     * The earliest press that counts wins: buzzers without a team, or ignored ones, don't block the others. Presses
+     * while the buzzers are locked don't count.
      */
-    private onUdpBuzzerPress(buzzerIds: string[]): void {
+    private pressBuzzers(buzzerIds: string[]): void {
         if (this.isKeypressLocked()) {
             return;
         }
         for (const buzzerId of buzzerIds) {
             const team = this.teams.find(t => t.buzzerId === buzzerId);
-            if (team != null && !this.ignoredKeypresses.includes(buzzerId)) {
-                this.lastKeyPressed = buzzerId;
+            if (team != null && !this.ignoredBuzzerIds.includes(buzzerId)) {
+                this.lastBuzzerIdPressed = buzzerId;
                 this.lockOnTeam(team);
                 if (this.isGameSetUp()) {
                     AutosaveService.get().changed();
@@ -1127,7 +1063,7 @@ export class GameService {
                 return;
             }
         }
-        LoggerService.log(`no team found for UDP buzzers ${buzzerIds.join(', ')}`);
+        LoggerService.log(`no team found for buzzers ${buzzerIds.join(', ')}`);
     }
 
     /**

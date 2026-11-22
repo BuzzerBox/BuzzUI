@@ -21,9 +21,10 @@ no server tests.
 
 | Path | What |
 |---|---|
-| `main.ts` | Starts the services |
+| `main.ts`, `app.ts` | `startServer()` starts the services and the extensions; `main.ts` calls it with the built-in ones |
+| `extensions/` | The extension API (`server-extension.ts`) and the built-in extensions, see [extensions](../docs/extensions.md) |
 | `services/game.service.ts` | The game automaton and the packet dispatch |
-| `services/serial-port.service.ts`, `objects/adapters/` | The box's microcontroller |
+| `extensions/serial-buzzers/` | The box's analog buzzers: its microcontroller on the serial port |
 | `services/udp-buzzer.service.ts` | Wireless buzzers over WiFi, and over USB while they are plugged in |
 | `services/buzzer-provisioning.service.ts` | Wireless buzzers plugged in over USB: adopting them, and the game over USB |
 | `services/storage.service.ts`, `storage-api.service.ts` | Games on the box and on USB sticks, and their REST API |

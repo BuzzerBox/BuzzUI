@@ -694,7 +694,7 @@ export class StorageService {
      * Stores the questions as a new version of the game, which is created if it doesn't exist yet. If they are the same
      * as in the latest version, no version is added.
      */
-    public async saveVersion(locationId: string, gameName: string, body: {questions?: unknown, mediaDefaults?: unknown, scoring?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
+    public async saveVersion(locationId: string, gameName: string, body: {questions?: unknown, mediaDefaults?: unknown, scoring?: unknown, ext?: unknown}): Promise<IGameVersionInfo & {unchanged: boolean}> {
         if (!Array.isArray(body?.questions)) {
             throw new StorageError(400, 'A game version needs its questions');
         }
@@ -704,9 +704,13 @@ export class StorageService {
         if (body.scoring != null && !ScoringHelper.isValid(body.scoring)) {
             throw new StorageError(400, 'The scoring of a game version has unknown settings');
         }
+        if (body.ext != null && (typeof body.ext !== 'object' || Array.isArray(body.ext))) {
+            throw new StorageError(400, 'The extensions\' data of a game version must be an object');
+        }
         const questions = body.questions as IQuestion[];
         const mediaDefaults = body.mediaDefaults as Partial<IMediaQuestionDefaults> | undefined;
         const scoring = body.scoring as Partial<IScoring> | undefined;
+        const ext = body.ext as Record<string, unknown> | undefined;
         const resolved = await this.getWritableLocation(locationId);
         const dirs = this.getGameDirectories(resolved, gameName);
         await fs.mkdir(dirs.versions, {recursive: true}).catch(e => { throw this.toWriteError(e); });
@@ -716,7 +720,8 @@ export class StorageService {
         if (latest != null) {
             const latestDefinition = await this.readJsonOrNull<IGameDefinition>(this.getVersionFile(dirs, latest));
             if (latestDefinition != null && isEqual(latestDefinition.questions, questions)
-                && isEqual(latestDefinition.mediaDefaults, mediaDefaults) && isEqual(latestDefinition.scoring, scoring)) {
+                && isEqual(latestDefinition.mediaDefaults, mediaDefaults) && isEqual(latestDefinition.scoring, scoring)
+                && isEqual(latestDefinition.ext, ext)) {
                 return {...await this.getVersionInfo(resolved, gameName, latest), unchanged: true};
             }
         }
@@ -733,6 +738,9 @@ export class StorageService {
         }
         if (scoring != null) {
             definition.scoring = scoring;
+        }
+        if (ext != null) {
+            definition.ext = ext;
         }
         await this.writeJsonAtomically(this.getVersionFile(dirs, version), definition, false);
         LoggerService.log(`Saved version ${version} of ${gameName} on ${resolved.location.name}`);
@@ -1163,6 +1171,9 @@ export class StorageService {
         }
         if (bundle.game.scoring != null) {
             definition.scoring = bundle.game.scoring;
+        }
+        if (bundle.game.ext != null && typeof bundle.game.ext === 'object' && !Array.isArray(bundle.game.ext)) {
+            definition.ext = bundle.game.ext;
         }
         await this.writeJsonAtomically(this.getVersionFile(dirs, 1), definition, false);
         const result: IGameImportResult = {gameName, missingMedia};
