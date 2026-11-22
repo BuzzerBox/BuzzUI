@@ -1,3 +1,7 @@
+/**
+ * The core's packet types. Append new ones at the end, so the others keep their numbers. Extensions number theirs from
+ * PacketTypeHelper.FIRST_EXTENSION_PACKET_TYPE (1000) instead, see docs/extensions.md.
+ */
 export enum EPacketTypes {
     RESPONSE_PACKET,
     /**

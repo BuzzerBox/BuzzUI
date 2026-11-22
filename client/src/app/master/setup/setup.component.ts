@@ -58,6 +58,8 @@ export class SetupComponent implements OnInit {
   public scoring: IScoring = {...ScoringHelper.NEW_GAME_SCORING};
   // what the loaded version had, which is saved again as it was (also nothing) while the scoring is the same
   private versionScoring: Partial<IScoring> | undefined;
+  // the extensions' data of the loaded version, which the editor doesn't change, see IGameDefinition.ext
+  private versionExt: Record<string, unknown> | undefined;
   // a new game has no version and saves its scoring, see ScoringHelper.NEW_GAME_SCORING
   private isVersionLoaded = false;
   public readonly mediaKinds = MediaHelper.MEDIA_KINDS;
@@ -112,6 +114,7 @@ export class SetupComponent implements OnInit {
         this.initMediaDefaults(definition.questions, definition.mediaDefaults);
         this.scoring = ScoringHelper.complete(definition.scoring);
         this.versionScoring = definition.scoring;
+        this.versionExt = definition.ext;
         this.isVersionLoaded = true;
         this.initQuestionsFormControls(definition.questions);
       }
@@ -401,7 +404,7 @@ export class SetupComponent implements OnInit {
     this.saving = true;
     this.saveError = null;
     try {
-      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults, this.getScoringToSave());
+      const result = await this.storage.saveVersion(this.ref, this.buildSetupQuestionsObject(), this.mediaDefaults, this.getScoringToSave(), this.versionExt);
       this.savedVersion = result.version;
       this.loadedVersion = result.version;
       this.snackBar.open(t(result.unchanged ? 'setup.save.unchanged' : 'setup.save.saved', {version: result.version}),

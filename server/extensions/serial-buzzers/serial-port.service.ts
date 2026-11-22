@@ -1,15 +1,18 @@
 import { SerialPort } from 'serialport';
-import {BoxSettingsService} from './box-settings.service';
-import {ConfigService} from './config.service';
-import {LoggerService} from './logger.service';
+import {ConfigService} from '../../services/config.service';
+import {LoggerService} from '../../services/logger.service';
 import {Buffer} from 'buffer';
-import {Byte} from '../../shared/objects/byte';
-import {ByteHelper} from '../../shared/helper/byte.helper';
+import {Byte} from '../../../shared/objects/byte';
+import {ByteHelper} from '../../../shared/helper/byte.helper';
 
 
 export type SerialPortDataInCallback = (data: Buffer) => void;
 export type SerialPortErrorCallback = (error) => void;
 
+/**
+ * The port to the box's microcontroller, which reads the analog buzzers. Only the serial buzzers' extension uses it,
+ * and only on a box with analog buzzers, so it opens the port when it's first used.
+ */
 export class SerialPortService {
     private static instance: SerialPortService;
     private onDataInCallbacks: SerialPortDataInCallback[];
@@ -22,10 +25,6 @@ export class SerialPortService {
         if (!ConfigService.get().serial.enabled) {
             // e.g. in the test environment, where buzzers come from browser keypresses only
             LoggerService.warn('Serial port is disabled in the config');
-            return;
-        }
-        if (!BoxSettingsService.get().hasAnalogBuzzers()) {
-            // there is no microcontroller for them on the port
             return;
         }
         this.serialPortConnection = new SerialPort({

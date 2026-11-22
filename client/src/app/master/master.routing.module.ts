@@ -11,6 +11,7 @@ import {LoadGameComponent} from './load-game/load-game.component';
 import {StorageManagerComponent} from './storage-manager/storage-manager.component';
 import {PrepareGameComponent} from './prepare-game/prepare-game.component';
 import {BoxSettingsComponent} from './box-settings/box-settings.component';
+import {CLIENT_EXTENSIONS} from '../extensions/extensions';
 
 const routes: Routes = [
   { path: pathsMaster.root, redirectTo: 'start', pathMatch: 'full'},
@@ -23,7 +24,9 @@ const routes: Routes = [
   { path: pathsMaster.settings, component: BoxSettingsComponent, canActivate: [RouteGuard],
     canDeactivate: [(settings: BoxSettingsComponent) => settings.canLeave()]},
   { path: pathsMaster.masterAlreadyRegistered, component: MasterAlreadyRegisteredComponent, canActivate: [RouteGuard]},
-  { path: pathsMaster.play, component: PlayComponent, canActivate: [RouteGuard]}
+  { path: pathsMaster.play, component: PlayComponent, canActivate: [RouteGuard]},
+  // the extensions' pages, see IClientExtension.masterRoutes
+  ...CLIENT_EXTENSIONS.flatMap(extension => extension.masterRoutes ?? [])
 ];
 
 @NgModule({

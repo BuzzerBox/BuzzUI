@@ -1,3 +1,5 @@
+import {CLIENT_EXTENSIONS} from '../extensions/extensions';
+
 /**
  * The looks the screens can have; the master chooses one for each game when it sets it up (IGameState.themeId).
  *
@@ -19,6 +21,7 @@ export interface IScreenTheme {
   preview: {background: string, surface: string, text: string, accent: string};
 }
 
+// the core's, then those of the extensions, see IClientExtension.screenThemes
 export const SCREEN_THEMES: IScreenTheme[] = [
   {
     id: 'studio',
@@ -34,7 +37,8 @@ export const SCREEN_THEMES: IScreenTheme[] = [
     id: 'classic',
     style: 'classic',
     preview: {background: '#dddddd', surface: '#ffffff', text: '#222222', accent: '#00ffff'}
-  }
+  },
+  ...CLIENT_EXTENSIONS.flatMap(extension => extension.screenThemes ?? [])
 ];
 
 export const DEFAULT_SCREEN_THEME_ID = 'studio';

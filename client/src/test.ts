@@ -9,6 +9,10 @@ import {
 
 import {getI18nTestingModule, SPEC_LANGUAGE} from './app/i18n/i18n-testing.module';
 import {setActiveLanguage} from './app/i18n/i18n';
+import {registerClientExtensions} from './app/extensions/extensions';
+
+// like main.ts: the extensions' box settings and texts
+registerClientExtensions();
 
 // First, initialize the Angular testing environment.
 getTestBed().initTestEnvironment(

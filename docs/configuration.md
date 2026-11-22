@@ -65,6 +65,8 @@ and `/srv/storage`.
 
 ### `serial`: the box's microcontroller
 
+Read by the extension `serial-buzzers` (see [extensions](extensions.md)), like `buzzers[].byte` and `softReleaseByte`.
+
 | Key | Default | Meaning |
 |---|---|---|
 | `serial.enabled` | `true` | Whether the server opens the serial port at all. |

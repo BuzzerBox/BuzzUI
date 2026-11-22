@@ -4,11 +4,12 @@ export interface IBuzzer {
     name?: string;
     /** Empty for a UDP buzzer */
     keyBind: string;
-    /** Empty for a UDP buzzer */
-    byteBind: string;
+    /** No longer sent: an extension that presses the box's buzzers maps its own input to them, see IExtensionHost */
+    byteBind?: string;
     /**
-     * 'serial' (or missing) for a buzzer of the box from the config, 'udp' for a wireless buzzer (ESP32) that the
-     * server found on the network, see BuzzerHelper
+     * 'serial' (or missing) for a buzzer of the box from the config, which browser keypresses or an extension press
+     * (the name is from when only the box's microcontroller pressed them, on the serial port), 'udp' for a wireless
+     * buzzer (ESP32) that the server found on the network, see BuzzerHelper
      */
     type?: 'serial' | 'udp';
     /**

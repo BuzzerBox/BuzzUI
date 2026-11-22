@@ -1,4 +1,16 @@
 /**
+ * A setting an extension adds to the box's settings (see docs/extensions.md): its key, its default and the values it
+ * takes. The box's own scripts must know it too, since they apply and write buzzerbox.txt.
+ */
+export interface IBoxSettingDefinition {
+    key: string;
+    defaultValue: string;
+    isValid: (value: string) => boolean;
+    // the setting it follows in KEYS, and so on the master's settings page; without one, it goes at the end
+    after?: string;
+}
+
+/**
  * The box's settings in buzzerbox.txt on its boot partition: KEY=value lines, applied on every start by
  * buzzerbox-apply-settings (provisioning/roles/access_point). The rules here are the ones of its isValid(), which the
  * root helper that writes the file for the master (install/.assets/scripts/buzzerbox-settings.sh) checks again; change
@@ -12,7 +24,7 @@ export class BoxSettingsHelper {
     public static readonly EDIT_KEY = 'EDIT_IN_MASTER';
 
     /**
-     * The settings the master shows and can change, in the order of the file
+     * The settings the master shows and can change, in the order of the file, including those extensions registered
      */
     public static readonly KEYS = [
         'WIFI_SSID',
@@ -20,7 +32,6 @@ export class BoxSettingsHelper {
         'WIFI_COUNTRY_CODE',
         'WIFI_CHANNEL',
         'WIFI_ANTENNA',
-        'ANALOG_BUZZERS',
         'SERVER_IP_ADDRESS',
         'ETHERNET_IP_ADDRESS',
         'SERVER_HOSTNAMES',
@@ -31,7 +42,8 @@ export class BoxSettingsHelper {
     ];
 
     /**
-     * The defaults of provisioning/group_vars/all.yml, for a box (or dev) without /etc/buzzerbox/settings.defaults
+     * The defaults of provisioning/group_vars/all.yml, for a box (or dev) without /etc/buzzerbox/settings.defaults,
+     * including those of the settings extensions registered
      */
     public static readonly DEFAULTS: Record<string, string> = {
         WIFI_SSID: 'BuzzerBoxNetwork',
@@ -39,7 +51,6 @@ export class BoxSettingsHelper {
         WIFI_COUNTRY_CODE: 'DE',
         WIFI_CHANNEL: '8',
         WIFI_ANTENNA: 'internal',
-        ANALOG_BUZZERS: 'yes',
         SERVER_IP_ADDRESS: '10.0.0.5',
         ETHERNET_IP_ADDRESS: '10.0.1.5',
         SERVER_HOSTNAMES: 'buzzer.box buzzerbox.local',
@@ -62,8 +73,25 @@ export class BoxSettingsHelper {
     private static readonly DHCP_LAST = 150;
     private static readonly OCTET = '(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])';
 
+    // the rules of the settings extensions registered, by key
+    private static readonly registered = new Map<string, IBoxSettingDefinition>();
+
     private constructor() {
         // hide
+    }
+
+    /**
+     * Adds an extension's setting, see IBoxSettingDefinition. A key that is already known is left as it is, so the
+     * server and the client can both register the same definition from shared/.
+     */
+    public static register(definition: IBoxSettingDefinition): void {
+        if (BoxSettingsHelper.KEYS.includes(definition.key) || definition.key === BoxSettingsHelper.EDIT_KEY) {
+            return;
+        }
+        const index = definition.after == null ? -1 : BoxSettingsHelper.KEYS.indexOf(definition.after);
+        BoxSettingsHelper.KEYS.splice(index < 0 ? BoxSettingsHelper.KEYS.length : index + 1, 0, definition.key);
+        BoxSettingsHelper.DEFAULTS[definition.key] = definition.defaultValue;
+        BoxSettingsHelper.registered.set(definition.key, definition);
     }
 
     /**
@@ -110,8 +138,6 @@ export class BoxSettingsHelper {
                 return /^([1-9]|1[0-3])$/.test(value);
             case 'WIFI_ANTENNA':
                 return /^(internal|external)$/i.test(value);
-            case 'ANALOG_BUZZERS':
-                return /^(yes|no)$/i.test(value);
             case 'SERVER_IP_ADDRESS':
             case 'ETHERNET_IP_ADDRESS':
                 return BoxSettingsHelper.isValidAddress(value);
@@ -128,7 +154,7 @@ export class BoxSettingsHelper {
                 // 1 to 3 with up to two decimals, or by the display's pixel density
                 return /^auto$/i.test(value) || /^(1(\.[0-9]{1,2})?|2(\.[0-9]{1,2})?|3(\.0{1,2})?)$/.test(value);
             default:
-                return false;
+                return BoxSettingsHelper.registered.get(key)?.isValid(value) ?? false;
         }
     }
 

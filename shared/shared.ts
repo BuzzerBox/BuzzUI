@@ -10,7 +10,8 @@ export {VersionHelper} from './helper/version.helper';
 export {StorageApiHelper} from './helper/storage-api.helper';
 export {BuzzerHelper} from './helper/buzzer.helper';
 export {ScoringHelper} from './helper/scoring.helper';
-export {BoxSettingsHelper} from './helper/box-settings.helper';
+export {BoxSettingsHelper, IBoxSettingDefinition} from './helper/box-settings.helper';
+export {PacketTypeHelper} from './helper/packet-type.helper';
 export {LanguageHelper, TLanguage} from './helper/language.helper';
 
 export {

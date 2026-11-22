@@ -9,7 +9,7 @@ How the parts of the BuzzerBox software fit together. For setting it up on your 
 │ client: /master  │◄───4201────►│ server/ (Node.js)                    │◄────────►│ client:      │
 │ (Angular)        │   HTTP 4202 │  GameService – the game automaton     │          │ /screen      │
 │                  │◄───────────►│  FileServer + StorageApi (media,games)│ HTTP 4202│ (Chromium    │
-└──────────────────┘             │  SerialPortService ◄── UART ── µC ◄── analog buzzers  kiosk)   │
+└──────────────────┘             │  serial-buzzers ext. ◄─ UART ── µC ◄── analog buzzers kiosk)   │
                                  │  UdpBuzzerService ◄── UDP 5005 ── wireless buzzers  └──────────────┘
                                  │  BuzzerProvisioningService ◄── USB ── a wireless buzzer to adopt
                                  └──────────────────────────────────────┘
@@ -23,6 +23,8 @@ How the parts of the BuzzerBox software fit together. For setting it up on your 
   `useAsScreen()`).
 - **`shared/`** has the packet types, enums and helpers both import through `shared/shared.ts`. Nothing links the
   three at build level; they import each other by relative path.
+- **Extensions** add to the server and the client without changing their core, e.g. the analog buzzers
+  (`serial-buzzers`); see [extensions](extensions.md).
 
 ## Packets
 
@@ -112,7 +114,9 @@ The server maps every input (below) to a team's buzzer and handles the lock itse
 ### The box's analog buzzers (serial)
 
 A microcontroller in the box reads the wired buzzers and talks to the Pi over the GPIO UART (`/dev/ttyS0`, 115200
-baud).
+baud). The extension `serial-buzzers` (`server/extensions/serial-buzzers/`, see [extensions](extensions.md)) handles
+it: it presses the box's buzzers (`config.json`'s `buzzers`, which browser keypresses press too) for the bytes it gets,
+and releases the microcontroller's lock whenever the buzzers are released anywhere else.
 
 - **Microcontroller → Pi:** one byte per event: the buzzer's `byte` from `config.json` (`0x31`… for buzzers 1…), or
   `softReleaseByte` (`0x71`) for the release button.
@@ -122,7 +126,8 @@ baud).
   the box shows a lost connection (the dot of its 7-segment display).
 
 `ANALOG_BUZZERS=no` in `buzzerbox.txt` turns all of this off (through `/etc/buzzerbox/box.conf`, read by
-`BoxSettingsService`): the server then offers none of the box's buzzers and leaves the port alone.
+`BoxSettingsService`): the extension then leaves the port alone, and the server offers none of the box's buzzers
+(unless browser keypresses are on, in dev and the test environment). The extension registers the setting itself.
 
 ### Wireless buzzers (UDP)
 

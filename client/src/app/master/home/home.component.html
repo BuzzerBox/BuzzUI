@@ -20,5 +20,9 @@
   </div>
   <app-wireless-buzzers></app-wireless-buzzers>
   <app-update-card></app-update-card>
+  <!-- the extensions' cards, see IClientExtension.homeCards -->
+  @for (card of extensionCards; track card) {
+    <ng-container *ngComponentOutlet="card"></ng-container>
+  }
 </div>
 <span class="version">{{'home.version' | transloco: {version: getVersion()} }}</span>

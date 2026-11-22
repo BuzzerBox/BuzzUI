@@ -7,36 +7,8 @@ import {BoxSettingsHelper, IBoxSetting, IBoxSettingsPacket, IBoxSshKey, IRespons
 import {GameService} from '../../services/game.service';
 import {t, tn} from '../../i18n/i18n';
 import {FormatHelper} from '../../helper/format.helper';
-
-/**
- * A setting's label and hint are the texts boxSettings.fields.<key>.label and .hint
- */
-interface IBoxSettingField {
-  key: string;
-  // e.g. for the passphrase, which is only shown on request
-  isSecret?: boolean;
-  options?: IBoxSettingOption[];
-  // a list to choose from instead of buttons, for more options than fit in a row
-  isSelect?: boolean;
-  // only matters with a touch display, so it is hidden without one
-  needsTouchDisplay?: boolean;
-}
-
-interface IBoxSettingOption {
-  value: string;
-  // the key of its text, with its parameters
-  label: string;
-  params?: Record<string, unknown>;
-  // for the touch display's size: the factor, written as the language writes numbers when it is shown
-  factor?: number;
-}
-
-interface IBoxSettingGroup {
-  // the key of its heading
-  title: string;
-  icon: string;
-  fields: IBoxSettingField[];
-}
+import {CLIENT_EXTENSIONS} from '../../extensions/extensions';
+import {IBoxSettingField, IBoxSettingGroup, IBoxSettingOption} from './box-setting-fields';
 
 /**
  * Shows the box's settings from buzzerbox.txt on its boot partition, and changes them if the file allows it
@@ -51,7 +23,7 @@ interface IBoxSettingGroup {
 })
 export class BoxSettingsComponent implements OnInit, OnDestroy {
   public readonly editKey = BoxSettingsHelper.EDIT_KEY;
-  public readonly groups: IBoxSettingGroup[] = [
+  public readonly groups: IBoxSettingGroup[] = BoxSettingsComponent.withExtensionGroups([
     {
       title: 'boxSettings.groups.wifi', icon: 'wifi', fields: [
         {key: 'WIFI_SSID'},
@@ -64,14 +36,6 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
             {value: 'external', label: 'boxSettings.options.external'}
           ]
         }
-      ]
-    },
-    {
-      title: 'boxSettings.groups.buzzers', icon: 'radio_button_checked', fields: [
-        {key: 'ANALOG_BUZZERS', options: [
-            {value: 'yes', label: 'boxSettings.options.yes'},
-            {value: 'no', label: 'boxSettings.options.no'}
-          ]}
       ]
     },
     {
@@ -113,9 +77,9 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
         }
       ]
     }
-  ];
+  ]);
   // the values that are offered as buttons and that the box reads in any case
-  private static readonly LOWER_CASE_KEYS = ['WIFI_ANTENNA', 'ANALOG_BUZZERS', 'TOUCH_DISPLAY', 'SCREEN_MODE', 'TOUCH_DISPLAY_SCALE'];
+  private static readonly LOWER_CASE_KEYS = ['WIFI_ANTENNA', 'TOUCH_DISPLAY', 'SCREEN_MODE', 'TOUCH_DISPLAY_SCALE'];
 
   public info: IBoxSettingsPacket | null = null;
   public isEditing = false;
@@ -214,7 +178,7 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
   public startEditing(): void {
     this.draft = {};
     for (const setting of this.info.settings) {
-      this.draft[setting.key] = BoxSettingsComponent.LOWER_CASE_KEYS.includes(setting.key) ? setting.value.toLowerCase() : setting.value;
+      this.draft[setting.key] = this.isLowerCase(setting.key) ? setting.value.toLowerCase() : setting.value;
     }
     this.initialDraft = {...this.draft};
     this.error = null;
@@ -411,5 +375,22 @@ export class BoxSettingsComponent implements OnInit, OnDestroy {
       // this page connects again by itself once the box is back
       this.isRestarting = true;
     }
+  }
+
+  /**
+   * The groups of the core with those of the extensions, each after the group it names, see IBoxSettingGroup.after
+   */
+  private static withExtensionGroups(groups: IBoxSettingGroup[]): IBoxSettingGroup[] {
+    const result = [...groups];
+    for (const group of CLIENT_EXTENSIONS.flatMap(extension => extension.boxSettingGroups ?? [])) {
+      const index = group.after == null ? -1 : result.findIndex(other => other.title === group.after);
+      result.splice(index < 0 ? result.length : index + 1, 0, group);
+    }
+    return result;
+  }
+
+  private isLowerCase(key: string): boolean {
+    return BoxSettingsComponent.LOWER_CASE_KEYS.includes(key)
+      || this.groups.some(group => group.fields.some(field => field.key === key && field.isLowerCase));
   }
 }
