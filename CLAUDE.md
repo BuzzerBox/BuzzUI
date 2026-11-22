@@ -11,6 +11,7 @@ This repository (BuzzerBox, formerly BuzzUI) holds the web app and the wireless 
 - `shared/` – enums, packet interfaces and helpers imported by both, through `shared/shared.ts` (the barrel). It has no build of its own.
 - `config.json` (repo root) – runtime config that both the server and the client import directly as JSON.
 - `firmware/wireless-buzzer/` – PlatformIO firmware of the wireless ESP32 buzzers (C++, not linked to the TypeScript parts). The box's microcontroller firmware isn't in this repo; its serial protocol is described in `docs/architecture.md`.
+- `hardware/` – the 3D-printed parts of the BuzzerBox Compact (`compact-box/`, `wireless-buzzer/`), each as Fusion `.f3d` plus STEP, 3MF and STL exports named `buzzerbox-compact-…`; re-export all formats when a design changes.
 
 ## Documentation
 

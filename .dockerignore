@@ -12,3 +12,5 @@ deploy
 # local dev config: the images create their own from config.dev.json.example
 config.dev.json
 **/.DS_Store
+hardware
+firmware
