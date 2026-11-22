@@ -216,10 +216,12 @@ export class StorageService {
   }
 
   /**
-   * Saves the questions and media defaults as a new version, unless they are the same as in the latest one
+   * Saves the questions and media defaults as a new version, unless they are the same as in the latest one. The
+   * extensions' data (IGameDefinition.ext) of the version it was edited from is saved again as it was.
    */
-  public saveVersion(ref: IGameRef, questions: IQuestion[], mediaDefaults: IMediaQuestionDefaults, scoring?: Partial<IScoring>): Promise<IGameVersionInfo & {unchanged: boolean}> {
-    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {questions, mediaDefaults, scoring}, {headers: this.headers()}).toPromise();
+  public saveVersion(ref: IGameRef, questions: IQuestion[], mediaDefaults: IMediaQuestionDefaults, scoring?: Partial<IScoring>,
+                     ext?: Record<string, unknown>): Promise<IGameVersionInfo & {unchanged: boolean}> {
+    return this.http.post<IGameVersionInfo & {unchanged: boolean}>(this.gameUrl(ref, 'versions'), {questions, mediaDefaults, scoring, ext}, {headers: this.headers()}).toPromise();
   }
 
   public deleteVersion(ref: IGameRef, version: number): Promise<void> {

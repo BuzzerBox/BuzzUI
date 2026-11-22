@@ -1,3 +1,4 @@
+import {CLIENT_EXTENSIONS} from '../../extensions/extensions';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import versionInfo from '../../../../../version.json';
@@ -18,6 +19,8 @@ import {baseUrlMaster, pathsMaster} from '../paths-master';
     standalone: false
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  // see IClientExtension.homeCards
+  public readonly extensionCards = CLIENT_EXTENSIONS.flatMap(extension => extension.homeCards ?? []);
   public readonly loadGameUrl = '/' + baseUrlMaster + pathsMaster.loadGame;
   public readonly storageUrl = '/' + baseUrlMaster + pathsMaster.storage;
 
