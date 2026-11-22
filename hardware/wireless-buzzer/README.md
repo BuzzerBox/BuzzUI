@@ -17,4 +17,4 @@ different color. The color is set when the buzzer is adopted, see
 |---|---|---|
 | [Giovenzana PG1M9W01](https://www.giovenzana.com/component/pg1m9w01/) ([datasheet](https://static.giovenzana.com/attachments/datasheets/DS-PG1M9W01-PG8M9W10-EN.pdf)) | 1 | The button: a Ø90 mushroom button in an IP66 station. Its screws go straight into the printed base, without inserts. |
 | [Adafruit ESP32 Feather V2](https://www.adafruit.com/product/5400) or [Feather ESP32-S3](https://www.adafruit.com/product/5323) | 1 | The firmware supports both, see its README |
-| LiPo battery: 850 mAh, 35 × 25 × 10 mm, 2-pin JST-PH plug (2.0 mm pitch) | 1 | Charged over the Feather's USB port |
+| LiPo battery: 850 mAh, 35 × 25 × 10 mm, 2-pin JST-PH plug (2.0 mm pitch) | 1 | Charged over the Feather's USB port. Check the plug's polarity against the Feather's battery socket before connecting it: it differs between makers. |
