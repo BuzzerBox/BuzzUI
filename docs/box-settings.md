@@ -13,7 +13,7 @@ without quotes. For hosts, the [user guide](user/box-settings-and-updates.md) ex
 | `WIFI_COUNTRY_CODE` | `DE` | two letters | The country the box is used in, which decides the allowed channels. |
 | `WIFI_CHANNEL` | `8` | 1–13 | The WiFi channel. In the US, Canada and Taiwan, 12 and 13 become 11. |
 | `WIFI_ANTENNA` | `internal` | `internal`, `external` | `external` uses the antenna connector of a Compute Module 4. A Raspberry Pi 4 has none and ignores it. |
-| `ANALOG_BUZZERS` | `yes` | `yes`, `no` | `no` is for a box without buzzer ports: the master then only offers the wireless buzzers. |
+| `ANALOG_BUZZERS` | `yes` | `yes`, `no` | `no` is for a box without buzzer ports: the master then only offers the wireless buzzers. The extension `serial-buzzers` registers it, see [extensions](extensions.md#box-settings). |
 | `SERVER_IP_ADDRESS` | `10.0.0.5` | an IPv4 address ending in 1–49 or 151–254 | The box's address in its WiFi. Devices get `.50` to `.150` of the same /24 network. |
 | `ETHERNET_IP_ADDRESS` | `10.0.1.5` | as above, in another /24 network than the WiFi's | The box's address for a notebook on a cable, without a router in between. |
 | `SERVER_HOSTNAMES` | `buzzer.box buzzerbox.local` | names separated by spaces | The names devices can open the box under. |
