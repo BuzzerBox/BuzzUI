@@ -1,0 +1,5 @@
+# CAD files: binary, or text too large to diff usefully
+*.f3d  binary
+*.3mf  binary
+*.stl  binary
+*.step -diff

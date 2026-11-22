@@ -66,6 +66,7 @@ buzzer locks out the others, and the game master grades the answer.
 | `install/` | The update helper, its hooks and the public key that updates are checked with. `install.sh` is the old installer for Raspbian Buster and is only kept for boxes from before the image. |
 | `scripts/` | Building the update bundle, and helpers for development. |
 | `deploy/test/` | The test environment that runs the latest `main` in Docker. |
+| [`hardware/`](hardware/README.md) | The 3D-printed case of the BuzzerBox Compact and the base of its wireless buzzers (Fusion, STEP, 3MF and STL). |
 | [`firmware/wireless-buzzer/`](firmware/wireless-buzzer/README.md) | The firmware of the wireless buzzers (ESP32 Feather V2 or Feather ESP32-S3, PlatformIO). Its README documents the UDP and the USB protocol from the buzzer's side; change both sides together. |
 
 ## Trying it out
