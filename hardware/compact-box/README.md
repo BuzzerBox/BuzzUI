@@ -24,7 +24,7 @@ Print one bottom tray, for the Compute Module the box has, and the top.
 |---|---|---|
 | Raspberry Pi Compute Module 4 or 5, 4 GB RAM | 1 | Print the bottom tray for it |
 | The Compute Module's IO board (CM4 IO Board or CM5 IO Board) | 1 | Sits on four standoffs in the tray |
-| Touchscreen | 1 | In the back of the display |
+| Raspberry Pi Touch Display 2, 10 inch | 1 | In the back of the display |
 | M2.5 brass hex standoffs, male-female, 5 mm + 6 mm thread | | Between the back of the display and the screen |
 | M2.5 heat-set inserts | 8 | 4 in the IO board's standoffs, 4 in the pillars of the top |
 | M3 heat-set inserts | 4 | In the top plate |
