@@ -87,4 +87,9 @@ export enum EPacketTypes {
      * ISetLanguagePacket
      */
     SET_LANGUAGE,
+    /**
+     * Sent from the master to switch an extension's mode on or off, and from the server to the master and the screens,
+     * which follow it, see ISetActiveExtensionPacket
+     */
+    SET_ACTIVE_EXTENSION,
 }

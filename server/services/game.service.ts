@@ -44,6 +44,7 @@ import {
     IAddSshKeyPacket,
     IRemoveSshKeyPacket,
     ISetLanguagePacket,
+    ISetActiveExtensionPacket,
     ITeam,
     ITeamSetPointsPacket,
     IUpdateInfoPacket,
@@ -100,6 +101,10 @@ export class GameService {
     private configInvalidReason: string;
     // what the master chose, which the screens follow; unknown until a master registered, and kept across games
     private language: TLanguage | undefined;
+    // the extensions that started, see startExtensions()
+    private readonly startedExtensionIds = new Set<string>();
+    // the extension whose mode is on, which the master and the screens follow, or null for the quiz
+    private activeExtensionId: string | null = null;
 
     private constructor() {
         if (!this.validateConfig()) {
@@ -162,6 +167,7 @@ export class GameService {
         for (const extension of extensions) {
             try {
                 extension.start(this.makeExtensionHost());
+                this.startedExtensionIds.add(extension.id);
                 LoggerService.log(`Started the extension ${extension.id}`);
             } catch (e) {
                 LoggerService.error(`Could not start the extension ${extension.id}`, e);
@@ -192,7 +198,8 @@ export class GameService {
             },
             sendToMaster: packet => this.sendToMaster(packet),
             sendToAllScreens: packet => this.sendToAllScreens(packet),
-            isGameRunning: () => this.isGameRunning()
+            isGameRunning: () => this.isGameRunning(),
+            getActiveExtension: () => this.activeExtensionId
         };
     }
 
@@ -277,6 +284,8 @@ export class GameService {
                 BoxSettingsService.get().removeSshKey((packet as IRemoveSshKeyPacket).fingerprint)));
         } else if (packet.packetType === EPacketTypes.SET_LANGUAGE) {
             this.onSetLanguagePacket(packet as ISetLanguagePacket);
+        } else if (packet.packetType === EPacketTypes.SET_ACTIVE_EXTENSION) {
+            this.onSetActiveExtensionPacket(packet as ISetActiveExtensionPacket);
         }
     }
 
@@ -305,6 +314,26 @@ export class GameService {
         }
         this.language = language;
         this.sendToAllScreens<ISetLanguagePacket>({packetType: EPacketTypes.SET_LANGUAGE, language});
+    }
+
+    /**
+     * Switches an extension's mode on, or back to the quiz (null); only while no game is set up, since the mode takes
+     * over the master and the screens
+     */
+    private onSetActiveExtensionPacket(packet: ISetActiveExtensionPacket): void {
+        const extensionId = packet.extensionId ?? null;
+        if (extensionId !== null && !this.startedExtensionIds.has(extensionId)) {
+            LoggerService.warn(`Ignoring the mode of ${extensionId}, which isn't a started extension`);
+        } else if (this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP) {
+            LoggerService.warn(`Ignoring the mode of ${extensionId ?? 'the quiz'}, since a game is set up`);
+        } else if (extensionId !== this.activeExtensionId) {
+            this.activeExtensionId = extensionId;
+            LoggerService.log(`The mode is now ${extensionId ?? 'the quiz'}`);
+        }
+        // the master is told in any case, so that it shows the mode that is on
+        const answer: ISetActiveExtensionPacket = {packetType: EPacketTypes.SET_ACTIVE_EXTENSION, extensionId: this.activeExtensionId};
+        this.sendToMaster<ISetActiveExtensionPacket>(answer);
+        this.sendToAllScreens<ISetActiveExtensionPacket>(answer);
     }
 
     private isGameSetUp(): boolean {
@@ -406,6 +435,11 @@ export class GameService {
         if (this.currentStateInAutomaton !== EGameStates.WAITING_FOR_SETUP) {
             return;
         }
+        if (this.activeExtensionId !== null) {
+            LoggerService.warn(`Ignoring a setup while the mode of ${this.activeExtensionId} is on`);
+            this.sendToMaster<IResponsePacket>(PacketHelper.makeResponsePacket(packet.packetType, false, `The mode of ${this.activeExtensionId} is on`));
+            return;
+        }
         let packetOk = true;
         // check if at least two teams are defined
         if (packet.teams.length < 2) {
@@ -505,6 +539,8 @@ export class GameService {
                 packetType: EPacketTypes.USB_BUZZERS,
                 buzzers: BuzzerProvisioningService.get().getBuzzers()
             });
+            // after the presetup data, so that a master that rejoins goes back to the mode's pages
+            this.sendToMaster<ISetActiveExtensionPacket>({packetType: EPacketTypes.SET_ACTIVE_EXTENSION, extensionId: this.activeExtensionId});
         } else {
             con.send<IResponsePacket>({
                 ...PacketHelper.makeResponsePacket(packet.packetType, false, 'Another master is connected'),
@@ -832,6 +868,7 @@ export class GameService {
         if (this.language != null) {
             con.send<ISetLanguagePacket>({packetType: EPacketTypes.SET_LANGUAGE, language: this.language});
         }
+        con.send<ISetActiveExtensionPacket>({packetType: EPacketTypes.SET_ACTIVE_EXTENSION, extensionId: this.activeExtensionId});
         if (this.currentStateInAutomaton === EGameStates.WAITING_FOR_START || this.currentStateInAutomaton === EGameStates.LOST_MASTER || this.currentStateInAutomaton === EGameStates.PLAYING) {
             con.send<IDataForScreenPacket>(this.makeInitDataForScreen());
         }

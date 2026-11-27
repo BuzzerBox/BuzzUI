@@ -12,6 +12,7 @@ import {StorageManagerComponent} from './storage-manager/storage-manager.compone
 import {PrepareGameComponent} from './prepare-game/prepare-game.component';
 import {BoxSettingsComponent} from './box-settings/box-settings.component';
 import {CLIENT_EXTENSIONS} from '../extensions/extensions';
+import {ExtensionModeHelper} from '../extensions/extension-modes';
 
 const routes: Routes = [
   { path: pathsMaster.root, redirectTo: 'start', pathMatch: 'full'},
@@ -26,7 +27,9 @@ const routes: Routes = [
   { path: pathsMaster.masterAlreadyRegistered, component: MasterAlreadyRegisteredComponent, canActivate: [RouteGuard]},
   { path: pathsMaster.play, component: PlayComponent, canActivate: [RouteGuard]},
   // the extensions' pages, see IClientExtension.masterRoutes
-  ...CLIENT_EXTENSIONS.flatMap(extension => extension.masterRoutes ?? [])
+  ...CLIENT_EXTENSIONS.flatMap(extension => extension.masterRoutes ?? []),
+  // the pages of their modes, only while the mode is on, see IClientExtensionMode
+  ...CLIENT_EXTENSIONS.flatMap(extension => ExtensionModeHelper.guard(extension.mode?.masterRoutes ?? [], RouteGuard))
 ];
 
 @NgModule({
