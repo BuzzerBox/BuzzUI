@@ -32,7 +32,8 @@ else
 fi
 
 cd "$(dirname "$0")"
-ROOT_DIR="$(cd .. && pwd)"
+# the resolved path (pwd -P): npm ci doesn't take a folder reached through a link (e.g. macOS's /var) for its project
+ROOT_DIR="$(cd .. && pwd -P)"
 COMPILATIONS_DIR="${ROOT_DIR}/install/.assets/compilations"
 OUTPUT_DIR="${ROOT_DIR}/updates"
 VERSION="$(node -p "require('${ROOT_DIR}/version.json').version")${BUZZERBOX_VERSION_SUFFIX:-}"
@@ -85,11 +86,12 @@ fi
 
 # keep macOS metadata (._ files, extended attributes) out of the archives
 export COPYFILE_DISABLE=1
+# empty with GNU tar; expanded with ${…+…} below, since macOS's bash 3.2 calls an empty array unbound under set -u
 TAR_OPTIONS=()
 if tar --version | grep -q bsdtar; then
   TAR_OPTIONS=(--no-mac-metadata --no-xattrs)
 fi
-tar "${TAR_OPTIONS[@]}" -czf "${WORK_DIR}/payload.tar.gz" -C "${WORK_DIR}/payload" .
+tar ${TAR_OPTIONS[@]+"${TAR_OPTIONS[@]}"} -czf "${WORK_DIR}/payload.tar.gz" -C "${WORK_DIR}/payload" .
 
 PAYLOAD_SHA256="$(shasum -a 256 "${WORK_DIR}/payload.tar.gz" | cut -d' ' -f1)"
 COMMIT="$(git -C "${ROOT_DIR}" rev-parse --short HEAD)$(git -C "${ROOT_DIR}" diff --quiet HEAD || echo '-dirty')"
@@ -117,7 +119,7 @@ fi
 
 mkdir -p "${OUTPUT_DIR}"
 BUNDLE="${OUTPUT_DIR}/buzzerbox-update-${VERSION}.tar"
-tar "${TAR_OPTIONS[@]}" -cf "${BUNDLE}" -C "${WORK_DIR}" "${BUNDLE_FILES[@]}"
+tar ${TAR_OPTIONS[@]+"${TAR_OPTIONS[@]}"} -cf "${BUNDLE}" -C "${WORK_DIR}" "${BUNDLE_FILES[@]}"
 if [ -n "${SIGNING_KEY}" ]; then
   echo "Created ${BUNDLE} (commit ${COMMIT}, signed)."
 else
