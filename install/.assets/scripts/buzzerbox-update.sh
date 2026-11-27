@@ -84,6 +84,16 @@ restartAndCheck() {
   return 1
 }
 
+# Checks nginx's whole configuration, which includes the nginx/*.conf of the current release (an extension's), so that a
+# broken one is rolled back before nginx is reloaded with it, or fails to start after the next boot
+# -> 0 if nginx takes it, or there is no nginx
+nginxConfigIsValid() {
+  if ! command -v nginx > /dev/null; then
+    return 0
+  fi
+  nginx -t -q
+}
+
 # Checks the signature and the checksum of a bundle and unpacks it.
 # Bundles without a valid signature are only unpacked with --allow-unsigned.
 # bundle::string: path to the bundle
@@ -266,9 +276,16 @@ install() {
     INSTALL_DIR="${INSTALL_DIR}" PREVIOUS_VERSION="${previous}" "${RELEASES_DIR}/${version}/hooks/post-install.sh" \
       || log "The post-install hook failed"
   fi
-  systemctl reload nginx || true
 
-  if restartAndCheck; then
+  local isNginxConfigValid=1
+  if nginxConfigIsValid; then
+    systemctl reload nginx || true
+  else
+    isNginxConfigValid=""
+    log "nginx refuses the configuration of version ${version}"
+  fi
+
+  if [ -n "${isNginxConfigValid}" ] && restartAndCheck; then
     rm -rf "${replaced}"
     writeStatus succeeded "${version}" "${unsigned:+Installed without a valid signature}"
     log "Version ${version} is running"
@@ -276,13 +293,16 @@ install() {
     return 0
   fi
 
-  log "Version ${version} did not start"
+  [ -z "${isNginxConfigValid}" ] || log "Version ${version} did not start"
   undoInstall "${version}" "${previous}" 1
+  # where to look: nginx's own check, or the server's log
+  local why="journalctl -u ${SERVICE}"
+  [ -n "${isNginxConfigValid}" ] || why="nginx -t (an extension's nginx/*.conf)"
   if [ -n "${previous}" ] && [ -d "${RELEASES_DIR}/${previous}" ]; then
     restartAndCheck || log "The previous version ${previous} does not start either"
-    writeStatus rolled-back "${version}" "Version ${previous} runs again. See: journalctl -u ${SERVICE}"
+    writeStatus rolled-back "${version}" "Version ${previous} runs again. See: ${why}"
   else
-    writeStatus failed "${version}" "The new version did not start. See: journalctl -u ${SERVICE}"
+    writeStatus failed "${version}" "The new version did not start. See: ${why}"
   fi
   return 1
 }

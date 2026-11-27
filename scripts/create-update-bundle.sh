@@ -10,6 +10,13 @@
 #
 # The bundle holds manifest.json (version and checksum of the payload), its signature manifest.sig and payload.tar.gz,
 # which is unpacked into releases/<version> on the box: frontend/, backend/ (with node_modules) and hooks/.
+#
+# A build with other extensions (see docs/extensions.md) sets two variables:
+#   BUZZERBOX_EXTRA_PAYLOAD   a folder whose files are added to the payload, e.g. nginx/<id>.conf (included by the
+#                             box's nginx site) and hooks/post-install.d/<id>.sh (run after the post-install hook).
+#                             They may add files, but not replace any of the core's.
+#   BUZZERBOX_VERSION_SUFFIX  appended to the version, e.g. "+games.1.2", so that the bundle and the release on the box
+#                             have names of their own. Versions are compared without what follows a "+".
 
 set -euo pipefail
 
@@ -25,10 +32,24 @@ else
 fi
 
 cd "$(dirname "$0")"
-ROOT_DIR="$(cd .. && pwd)"
+# the resolved path (pwd -P): npm ci doesn't take a folder reached through a link (e.g. macOS's /var) for its project
+ROOT_DIR="$(cd .. && pwd -P)"
 COMPILATIONS_DIR="${ROOT_DIR}/install/.assets/compilations"
 OUTPUT_DIR="${ROOT_DIR}/updates"
-VERSION="$(node -p "require('${ROOT_DIR}/version.json').version")"
+VERSION="$(node -p "require('${ROOT_DIR}/version.json').version")${BUZZERBOX_VERSION_SUFFIX:-}"
+# as the box's update helper checks it, since it installs to releases/<version>
+if ! [[ "${VERSION}" =~ ^[0-9][0-9A-Za-z.+-]*$ ]]; then
+  echo "Invalid version '${VERSION}': BUZZERBOX_VERSION_SUFFIX may only have letters, digits, '.', '+' and '-'"
+  exit 1
+fi
+EXTRA_PAYLOAD="${BUZZERBOX_EXTRA_PAYLOAD:-}"
+if [ -n "${EXTRA_PAYLOAD}" ] && [ ! -d "${EXTRA_PAYLOAD}" ]; then
+  echo "BUZZERBOX_EXTRA_PAYLOAD is not a folder: ${EXTRA_PAYLOAD}"
+  exit 1
+fi
+if [ -n "${EXTRA_PAYLOAD}" ]; then
+  EXTRA_PAYLOAD="$(cd "${EXTRA_PAYLOAD}" && pwd)"
+fi
 PUBLIC_KEY="${BUZZERBOX_UPDATE_PUBLIC_KEY:-${ROOT_DIR}/install/.assets/update-public-key.pem}"
 
 sh ./create-installation-files.sh
@@ -42,15 +63,35 @@ cp "${ROOT_DIR}/install/.assets/update-hooks/post-install.sh" "${ROOT_DIR}/insta
   "${ROOT_DIR}/install/.assets/scripts/buzzerbox-settings.sh" \
   "${ROOT_DIR}/install/.assets/configs/systemd/buzzerbox-server.service" "${WORK_DIR}/payload/hooks/"
 cp "${ROOT_DIR}/install/.assets/configs/sudoers/buzzerbox-settings" "${WORK_DIR}/payload/hooks/buzzerbox-settings.sudoers"
+cp "${ROOT_DIR}/install/.assets/configs/nginx/sites-available-default.conf" "${WORK_DIR}/payload/hooks/nginx-site.conf"
+
+# the extensions' files: only ones the core doesn't have, and no links, which could point anywhere on the box
+if [ -n "${EXTRA_PAYLOAD}" ]; then
+  if [ -n "$(find "${EXTRA_PAYLOAD}" -type l)" ]; then
+    echo "BUZZERBOX_EXTRA_PAYLOAD has symbolic links, which a bundle must not have"
+    exit 1
+  fi
+  while IFS= read -r -d '' file; do
+    if [ -e "${WORK_DIR}/payload/${file#./}" ]; then
+      echo "BUZZERBOX_EXTRA_PAYLOAD would replace the core's ${file#./}"
+      exit 1
+    fi
+  done < <(cd "${EXTRA_PAYLOAD}" && find . -type f -print0)
+  cp -R "${EXTRA_PAYLOAD}/." "${WORK_DIR}/payload/"
+fi
 chmod 755 "${WORK_DIR}/payload/hooks/"*.sh
+if [ -d "${WORK_DIR}/payload/hooks/post-install.d" ]; then
+  find "${WORK_DIR}/payload/hooks/post-install.d" -name '*.sh' -exec chmod 755 {} +
+fi
 
 # keep macOS metadata (._ files, extended attributes) out of the archives
 export COPYFILE_DISABLE=1
+# empty with GNU tar; expanded with ${…+…} below, since macOS's bash 3.2 calls an empty array unbound under set -u
 TAR_OPTIONS=()
 if tar --version | grep -q bsdtar; then
   TAR_OPTIONS=(--no-mac-metadata --no-xattrs)
 fi
-tar "${TAR_OPTIONS[@]}" -czf "${WORK_DIR}/payload.tar.gz" -C "${WORK_DIR}/payload" .
+tar ${TAR_OPTIONS[@]+"${TAR_OPTIONS[@]}"} -czf "${WORK_DIR}/payload.tar.gz" -C "${WORK_DIR}/payload" .
 
 PAYLOAD_SHA256="$(shasum -a 256 "${WORK_DIR}/payload.tar.gz" | cut -d' ' -f1)"
 COMMIT="$(git -C "${ROOT_DIR}" rev-parse --short HEAD)$(git -C "${ROOT_DIR}" diff --quiet HEAD || echo '-dirty')"
@@ -78,7 +119,7 @@ fi
 
 mkdir -p "${OUTPUT_DIR}"
 BUNDLE="${OUTPUT_DIR}/buzzerbox-update-${VERSION}.tar"
-tar "${TAR_OPTIONS[@]}" -cf "${BUNDLE}" -C "${WORK_DIR}" "${BUNDLE_FILES[@]}"
+tar ${TAR_OPTIONS[@]+"${TAR_OPTIONS[@]}"} -cf "${BUNDLE}" -C "${WORK_DIR}" "${BUNDLE_FILES[@]}"
 if [ -n "${SIGNING_KEY}" ]; then
   echo "Created ${BUNDLE} (commit ${COMMIT}, signed)."
 else

@@ -4,7 +4,8 @@
 
 set -e
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# the resolved path: npm ci doesn't take a folder reached through a link (e.g. macOS's /var) for its project
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 COMPILATIONS_DIR="$ROOT_DIR/install/.assets/compilations"
 
 CLIENT_DIR="$ROOT_DIR/client"
