@@ -21,6 +21,9 @@ import {baseUrlMaster, pathsMaster} from '../paths-master';
 export class HomeComponent implements OnInit, OnDestroy {
   // see IClientExtension.homeCards
   public readonly extensionCards = CLIENT_EXTENSIONS.flatMap(extension => extension.homeCards ?? []);
+  // a button for each extension's mode, see IClientExtensionMode
+  public readonly extensionModes = CLIENT_EXTENSIONS.filter(extension => extension.mode != null)
+    .map(extension => ({id: extension.id, mode: extension.mode!}));
   public readonly loadGameUrl = '/' + baseUrlMaster + pathsMaster.loadGame;
   public readonly storageUrl = '/' + baseUrlMaster + pathsMaster.storage;
 
@@ -67,6 +70,13 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   public getVersion(): string {
     return this.installedVersion;
+  }
+
+  /**
+   * The server switches the master and the screens to the mode's pages
+   */
+  public startMode(extensionId: string): void {
+    this.game.setActiveExtension(extensionId);
   }
 
   public getGameName(): string {

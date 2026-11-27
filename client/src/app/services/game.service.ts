@@ -1,4 +1,4 @@
-import {Injectable, OnDestroy} from '@angular/core';
+import {inject, Injectable, OnDestroy} from '@angular/core';
 import {WebSocketService} from './web-socket.service';
 import {
   IAutosaveInfoPacket,
@@ -49,6 +49,7 @@ import {
   IAddSshKeyPacket,
   IRemoveSshKeyPacket,
   ISetLanguagePacket,
+  ISetActiveExtensionPacket,
   TLanguage,
   BuzzerHelper,
   PacketHelper,
@@ -63,6 +64,7 @@ import {baseUrlMaster, pathsMaster} from '../master/paths-master';
 import {TeamHelper} from '../helper/team.helper';
 import * as Uuid from 'uuid';
 import {baseUrlScreen, pathsScreen} from '../screen/paths-screen';
+import {CLIENT_EXTENSION_LIST, ExtensionModeHelper} from '../extensions/extension-modes';
 import {ConfigService} from './config.service';
 import {LanguageService} from '../i18n/language.service';
 import {tn} from '../i18n/i18n';
@@ -136,6 +138,9 @@ export class GameService implements OnDestroy {
   private readonly masterId = GameService.loadMasterId();
   // registering again after a reconnect has to take over as well, see registerMaster()
   private takeOverRequested = false;
+  // the extension whose mode is on, as the server says, or null for the quiz; see IClientExtensionMode
+  private activeExtensionSubject = new BehaviorSubject<string | null>(null);
+  private readonly extensions = inject(CLIENT_EXTENSION_LIST);
 
   constructor(
     private webSocketService: WebSocketService,
@@ -219,6 +224,43 @@ export class GameService implements OnDestroy {
     this.language.setLanguage(language);
     if (this.initedAsMaster) {
       this.sendLanguage();
+    }
+  }
+
+  /**
+   * The extension whose mode is on, or null for the quiz
+   */
+  public getActiveExtension(): string | null {
+    return this.activeExtensionSubject.value;
+  }
+
+  public observeActiveExtension(): Observable<string | null> {
+    return this.activeExtensionSubject.asObservable();
+  }
+
+  /**
+   * As the master, switches an extension's mode on, or back to the quiz (null). The server only takes it while no
+   * game is set up, and then sends it to the master and the screens, which show the mode's pages.
+   */
+  public setActiveExtension(extensionId: string | null): void {
+    if (this.initedAsMaster) {
+      this.webSocketService.send<ISetActiveExtensionPacket>({packetType: EPacketTypes.SET_ACTIVE_EXTENSION, extensionId});
+    }
+  }
+
+  private handleSetActiveExtensionPacket(packet: ISetActiveExtensionPacket): void {
+    const extensionId = packet.extensionId ?? null;
+    if (extensionId === this.activeExtensionSubject.value) {
+      return;
+    }
+    this.activeExtensionSubject.next(extensionId);
+    // straight to the page, since the router ignores a navigation to the page it shows, so a guard wouldn't run; a
+    // mode this build doesn't know shows the quiz's pages
+    const mode = ExtensionModeHelper.getMode(this.extensions, extensionId);
+    if (this.initedAsMaster && this.currentGameStateInAutomaton === EGameStatesMaster.RECEIVED_PRESETUP_DATA) {
+      this.redirect(baseUrlMaster + (mode != null ? ExtensionModeHelper.getPaths(mode.masterRoutes)[0] : pathsMaster.home));
+    } else if (this.initedAsScreen) {
+      this.redirect(baseUrlScreen + (mode != null ? ExtensionModeHelper.getPaths(mode.screenRoutes)[0] : pathsScreen.main));
     }
   }
 
@@ -368,6 +410,9 @@ export class GameService implements OnDestroy {
         break;
       case EPacketTypes.BOX_SETTINGS:
         this.boxSettingsSubject.next(message as IBoxSettingsPacket);
+        break;
+      case EPacketTypes.SET_ACTIVE_EXTENSION:
+        this.handleSetActiveExtensionPacket(message as ISetActiveExtensionPacket);
         break;
       case EPacketTypes.SET_LANGUAGE:
         // what the master chose

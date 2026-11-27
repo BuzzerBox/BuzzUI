@@ -71,4 +71,10 @@ export interface IExtensionHost {
 
     /** A game is set up and not over yet */
     isGameRunning(): boolean;
+
+    /**
+     * The ID of the extension whose mode is on, or null for the quiz (see ISetActiveExtensionPacket). The master
+     * switches it; an extension only finds out which one is on.
+     */
+    getActiveExtension(): string | null;
 }

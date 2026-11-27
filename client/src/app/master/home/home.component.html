@@ -17,6 +17,13 @@
       <span class="action-title">{{'common.manageGames' | transloco}}</span>
       <span class="action-text">{{'home.manageGames.text' | transloco}}</span>
     </a>
+    @for (extension of extensionModes; track extension.id) {
+      <button mat-raised-button class="action" (click)="startMode(extension.id)">
+        <mat-icon class="action-icon">{{extension.mode.icon}}</mat-icon>
+        <span class="action-title">{{extension.mode.titleKey | transloco}}</span>
+        <span class="action-text">{{extension.mode.textKey | transloco}}</span>
+      </button>
+    }
   </div>
   <app-wireless-buzzers></app-wireless-buzzers>
   <app-update-card></app-update-card>

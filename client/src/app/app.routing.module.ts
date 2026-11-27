@@ -4,6 +4,8 @@ import {RouterModule, Routes} from '@angular/router';
 import {StartComponent} from './master/start/start.component';
 import {ChooseComponent} from './choose/choose.component';
 import {touchDisplayGuard} from './helper/kiosk.helper';
+import {CLIENT_EXTENSIONS} from './extensions/extensions';
+import {ExtensionModeHelper} from './extensions/extension-modes';
 
 
 export const routes: Routes = [
@@ -18,6 +20,8 @@ export const routes: Routes = [
   },
   { path: 'choose', component: ChooseComponent, canActivate: [touchDisplayGuard] },
   { path: '', redirectTo: 'choose', pathMatch: 'full' },
+  // the extensions' pages for guests, see IClientExtension.publicRoutes; not on the box's touch display, like the screen
+  ...CLIENT_EXTENSIONS.flatMap(extension => ExtensionModeHelper.guard(extension.publicRoutes ?? [], touchDisplayGuard)),
   {
     path: 'dev-board',
     canActivate: [touchDisplayGuard],

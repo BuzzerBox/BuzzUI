@@ -7,6 +7,7 @@ import {IRegisterMasterPacket} from './interfaces/IRegisterMasterPacket';
 import {IBuzzer} from './interfaces/IBuzzer';
 import {ICaseColor} from './interfaces/ICaseColor';
 import {ISetLanguagePacket} from './interfaces/ISetLanguagePacket';
+import {ISetActiveExtensionPacket} from './interfaces/ISetActiveExtensionPacket';
 import {IQuestion} from './interfaces/IQuestion';
 import {IMediaDetails} from './interfaces/IMediaDetails';
 import {IMediaQuestionState, IMediaQuestionDefaults, TMediaKind} from './interfaces/IMediaQuestionState';
@@ -114,6 +115,7 @@ export {
 	IAdoptUsbBuzzerPacket,
 	ICaseColor,
 	ISetLanguagePacket,
+	ISetActiveExtensionPacket,
 	IStorageEntry,
 	IStorageFolder,
 	IBoxSetting,
