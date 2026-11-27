@@ -31,7 +31,8 @@ attach their files:
 
 An update bundle `buzzerbox-update-<version>.tar` holds `manifest.json` (the version and the checksum of the
 payload), its signature `manifest.sig`, and `payload.tar.gz`: the built client (`frontend/`), the server with its
-`node_modules` (`backend/`, since the box has no internet) and `hooks/`.
+`node_modules` (`backend/`, since the box has no internet) and `hooks/`. A build with other extensions adds files of its
+own and a suffix to the version, see [builds with other extensions](extensions.md#builds-with-other-extensions).
 
 **Building one by hand:**
 
@@ -83,9 +84,11 @@ software on the box. To turn it off on a box, create `/etc/buzzerbox/require-sig
   `sudo -n /usr/local/sbin/buzzerbox-update start <bundle>` (`install/.assets/scripts/buzzerbox-update.sh`). The helper
   runs as its own systemd unit, since it restarts the server.
 - The helper checks the signature, the checksum and the version, unpacks the release, switches `current` to it, runs
-  its `hooks/post-install.sh` (which brings the update helper and the server's service of the new version onto the
-  box; they stay on a rollback, so they must keep working with older versions) and restarts the server. If the new server doesn't answer within 60 s, it
-  switches back by itself. It keeps the last three releases.
+  its `hooks/post-install.sh` (which brings the update helper, the nginx site and the server's service of the new
+  version onto the box, and then runs the extensions' `hooks/post-install.d/*.sh`; they stay on a rollback, so they
+  must keep working with older versions), checks nginx's configuration with `nginx -t` (it includes the release's
+  `nginx/*.conf`), reloads nginx and restarts the server. If nginx refuses the configuration, or the new server doesn't
+  answer within 60 s, it switches back by itself. It keeps the last three releases.
 - It reports to `/var/lib/buzzerbox/update-status.json`, which the server reads again after the restart. Screens
   reload by themselves; the master offers to reload.
 - Updates need a writable root file system, so they are refused while the overlay file system of `raspi-config` is on.

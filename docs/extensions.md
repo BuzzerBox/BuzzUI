@@ -81,6 +81,35 @@ its own list through `fileReplacements` in its `angular.json`; the file must exp
 `registerClientExtensions()` registers the box settings and merges the texts; `main.ts` calls it before the app starts,
 and `test.ts` before the specs run.
 
+## Builds with other extensions
+
+A build with other extensions takes this repository as it is and changes only what is meant for it: it puts its own
+`client/src/app/extensions/extensions.ts` in place (or replaces it through `fileReplacements`, see [Client](#client)),
+starts the server with its list (a `main.ts` of its own, see [Server](#server)), and adds its files to the update bundle.
+`scripts/create-update-bundle.sh` takes two variables for that:
+
+| Variable | What it does |
+|---|---|
+| `BUZZERBOX_EXTRA_PAYLOAD` | A folder whose files are added to the bundle's payload, i.e. to `releases/<version>` on the box. They may only add files, not replace any of the core's, and symbolic links are refused. |
+| `BUZZERBOX_VERSION_SUFFIX` | Appended to `version.json`'s version, e.g. `+games.1.2`, so that the bundle (`buzzerbox-update-1.7.0+games.1.2.tar`) and its release have names of their own. Only letters, digits, `.`, `+` and `-`. |
+
+The payload can hold, besides anything the extension needs at run time:
+
+- **`nginx/<id>.conf`:** directives for nginx's server block of the box, e.g. a `location` that proxies to a server of
+  the extension's own. The site (`install/.assets/configs/nginx/sites-available-default.conf`) includes
+  `current/nginx/*.conf`, so the snippets switch with the release and a rollback takes them back too. The update
+  helper checks the whole configuration with `nginx -t` before it reloads nginx, and rolls the update back if nginx
+  refuses it. A bundle's post-install hook installs that site, so boxes set up before it get the include with their
+  first such update; that update itself is still checked by the box's old helper, which doesn't run `nginx -t`.
+- **`hooks/post-install.d/<id>.sh`:** run as root by the core's `post-install.sh`, after its own steps, in the order of
+  their names, with `INSTALL_DIR` and `PREVIOUS_VERSION` like it. That's where an extension installs or updates what
+  lives outside the release, e.g. a service of its own. One that fails is logged and the others still run. Like the
+  core's hook, its effects stay when the update is rolled back.
+
+Versions are compared by Semantic Versioning, which ignores what follows a `+`: the master doesn't show
+`1.7.0+games.1.3` as newer than an installed `1.7.0+games.1.2` (or `1.7.0`), though it still installs it. The
+installed version the master shows is `version.json`'s, without the suffix.
+
 ## Plan
 
 The analog buzzers are only on the BuzzerBox Classic, so they leave this repository in three steps:
