@@ -240,6 +240,10 @@ The look of the screens is chosen per game when it is prepared, and travels as `
 - The others are *show* themes: rules under `:host(.screen.show)`, with colors and fonts from `--bb-*` variables in
   `themes/themes.scss`. They add team colors, the buzz banner, grade flashes and counting points, a crown, A–D answer
   badges, a progress bar, the branded waiting screen and the podium.
+- The waiting screen's logo breathes (`BreathHelper`): for a minute after the screen changes, then it rests. It runs at
+  25 frames a second, as Web Animations keyframes sampled from CSS's ease-in-out and held until the next one. A
+  running animation makes Chromium draw a whole frame each time; at the display's 60 frames a second, the idle box ran
+  at 78 °C. Keep further idle animations on the screens short, or at a low frame rate, for the same reason.
 - **A new show theme** only needs a registry entry and a block of variables.
 - The master stays light in every theme. Before a game, a screen uses the theme of its last game (`localStorage`).
 - The fonts (Rubik and Material Icons) are bundled through `angular.json`, since the box has no internet; don't load
