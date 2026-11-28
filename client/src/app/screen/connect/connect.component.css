@@ -31,12 +31,13 @@
   color: var(--bb-text);
 }
 
-/* breathes slowly while the screen waits */
+/* breathes slowly while the screen waits: at 25 fps and for a minute after the screen changed (BreathHelper);
+   this is how it rests */
 .show .logo {
   width: calc(var(--u) * 36);
   height: calc(var(--u) * 36);
+  opacity: 0.9;
   filter: drop-shadow(0 0 calc(var(--u) * 4 * var(--bb-glow)) rgba(211, 47, 47, 0.55));
-  animation: breathe 2.4s ease-in-out infinite;
 }
 
 /* like in the master's toolbar */
@@ -85,7 +86,3 @@
   color: var(--bb-brand-light);
 }
 
-@keyframes breathe {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.06); opacity: 1; }
-}
